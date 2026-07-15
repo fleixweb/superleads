@@ -1,0 +1,4 @@
+interface:
+  display_name: "Scoping Lead Research"
+  short_description: "Scope lead research into a brief"
+  default_prompt: "Use $scoping-lead-research for a Superleads lead-research task."

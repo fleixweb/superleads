@@ -1,0 +1,27 @@
+# User-facing Output Schema
+
+Use Chinese business sheet names.
+
+Default development workbook:
+
+- 客户信息总表
+- 联系方式汇总
+- 开发建议
+- 官网与来源链接
+- 待核查事项
+- 风险与说明
+
+Full review workbook:
+
+- 开发需求
+- 关键词与搜索思路
+- 初筛客户名单
+- 客户信息总表
+- 联系方式汇总
+- 开发建议
+- 官网与来源链接
+- 待核查事项
+- 已排除客户
+- 检查说明
+
+Avoid exposing internal artifact names such as Candidate Preview, Research Draft, Audit Package, Entity, ClaimEvidence, ContactClaim, or DeliveryManifest as user-facing sheet names.

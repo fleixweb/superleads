@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superleads.local/schemas/run.schema.json",
+  "title": "Superleads Run",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run_id",
+    "status",
+    "created_at"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scoped",
+        "planned",
+        "collecting",
+        "assessed",
+        "under_review",
+        "remediation_required",
+        "remediation_submitted",
+        "re_reviewed",
+        "checked"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "minLength": 1
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "platform": {
+      "type": "string"
+    },
+    "capabilities": {
+      "type": "object"
+    },
+    "brief_id": {
+      "type": "string"
+    },
+    "plan_id": {
+      "type": "string"
+    },
+    "review_cycle_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "review_mode": {
+      "type": "string",
+      "enum": [
+        "independent",
+        "self_review_fallback",
+        "not_run"
+      ]
+    }
+  }
+}

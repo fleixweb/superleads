@@ -1,0 +1,4 @@
+interface:
+  display_name: "Assessing Research Evidence"
+  short_description: "Assess lead evidence and tiers"
+  default_prompt: "Use $assessing-research-evidence for a Superleads lead-research task."

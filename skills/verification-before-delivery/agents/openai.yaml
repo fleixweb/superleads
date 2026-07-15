@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verification Before Delivery"
+  short_description: "Verify lead delivery readiness"
+  default_prompt: "Use $verification-before-delivery for a Superleads lead-research task."

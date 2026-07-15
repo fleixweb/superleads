@@ -1,0 +1,4 @@
+interface:
+  display_name: "Using Superleads"
+  short_description: "Route Superleads lead research tasks"
+  default_prompt: "Use $using-superleads for a Superleads lead-research task."

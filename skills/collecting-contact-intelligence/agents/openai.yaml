@@ -1,0 +1,4 @@
+interface:
+  display_name: "Collecting Contact Intelligence"
+  short_description: "Collect sourced contact intelligence"
+  default_prompt: "Use $collecting-contact-intelligence for a Superleads lead-research task."

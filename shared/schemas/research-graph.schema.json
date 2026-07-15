@@ -1,0 +1,402 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superleads.local/schemas/research-graph.schema.json",
+  "title": "Superleads Research Graph",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "runs": {
+      "type": "array",
+      "items": {
+        "$ref": "run.schema.json"
+      }
+    },
+    "briefs": {
+      "type": "array",
+      "items": {
+        "$ref": "brief.schema.json"
+      }
+    },
+    "plans": {
+      "type": "array",
+      "items": {
+        "$ref": "plan.schema.json"
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_id"
+        ],
+        "properties": {
+          "candidate_id": {
+            "type": "string"
+          },
+          "name": {"type": ["string", "null"]},
+          "company_name": {"type": ["string", "null"]},
+          "source_hint": {"type": ["string", "null"]},
+          "source_url": {"type": ["string", "null"]},
+          "status": {"type": ["string", "null"]},
+          "note": {"type": ["string", "null"]}
+          }
+        }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "source-observation.schema.json#/$defs/Source"
+      }
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "$ref": "source-observation.schema.json#/$defs/Observation"
+      }
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entity_id"
+        ],
+        "properties": {
+          "entity_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": ["string", "null"]
+          },
+          "legal_name": {"type": ["string", "null"]},
+          "website": {"type": ["string", "null"]},
+          "domain": {"type": ["string", "null"]},
+          "country_or_region": {"type": ["string", "null"]},
+          "customer_type": {"type": ["string", "null"]}
+          }
+        }
+    },
+    "entity_relationships": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-relationship.schema.json"
+      }
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claim_id",
+          "entity_id",
+          "claim_type",
+          "subject",
+          "predicate",
+          "typed_value",
+          "support_status"
+        ],
+        "properties": {
+          "claim_id": {
+            "type": "string"
+          },
+          "entity_id": {
+            "type": "string"
+          },
+          "claim_type": {
+            "type": "string",
+            "enum": [
+              "product_match",
+              "company_identity",
+              "contact_route",
+              "location",
+              "registration",
+              "brand_trademark",
+              "channel_role",
+              "ownership",
+              "certification"
+            ]
+          },
+          "subject": {
+            "type": "string"
+          },
+          "predicate": {
+            "type": "string"
+          },
+          "typed_value": {},
+          "as_of": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "claim_scope": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "current_source",
+              "source_snapshot",
+              "point_in_time",
+              "unknown",
+              null
+            ]
+          },
+          "support_status": {
+            "type": "string"
+          },
+          "contradiction_status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "claim_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claim_evidence_id",
+          "claim_id",
+          "observation_id",
+          "relation",
+          "directness",
+          "source_authority",
+          "independence_group",
+          "freshness",
+          "excerpt_pointer",
+          "claim_field_anchors"
+        ],
+        "properties": {
+          "claim_evidence_id": {
+            "type": "string"
+          },
+          "claim_id": {
+            "type": "string"
+          },
+          "observation_id": {
+            "type": "string"
+          },
+          "relation": {
+            "type": "string",
+            "enum": [
+              "supports",
+              "contradicts",
+              "contextual"
+            ]
+          },
+          "directness": {"type": "string", "minLength": 1},
+          "source_authority": {"type": "string", "minLength": 1},
+          "independence_group": {"type": "string", "minLength": 1},
+          "freshness": {"type": "string", "minLength": 1},
+          "excerpt_pointer": {"type": "string", "minLength": 1}
+          ,"claim_field_anchors": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["subject", "predicate", "claim_type", "typed_value"],
+            "properties": {
+              "subject": {"type": "string", "minLength": 1},
+              "predicate": {"type": "string", "minLength": 1},
+              "claim_type": {"type": "string", "minLength": 1},
+              "typed_value": {"type": "string", "minLength": 1}
+            }
+          }
+          }
+        }
+    },
+    "contact_points": {
+      "type": "array",
+      "items": {
+        "$ref": "contact-intelligence.schema.json#/$defs/ContactPoint"
+      }
+    },
+    "contact_claims": {
+      "type": "array",
+      "items": {
+        "$ref": "contact-intelligence.schema.json#/$defs/ContactClaim"
+      }
+    },
+    "unassigned_contact_leads": {
+      "type": "array",
+      "items": {
+        "$ref": "contact-intelligence.schema.json#/$defs/UnassignedContactLead"
+      }
+    },
+    "hypotheses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "hypothesis_id",
+          "entity_id",
+          "basis_claim_ids",
+          "hypothesis_text",
+          "unknowns",
+          "suggested_action",
+          "next_verification_action"
+        ],
+        "properties": {
+          "hypothesis_id": {
+            "type": "string"
+          },
+          "entity_id": {
+            "type": "string"
+          },
+          "basis_claim_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "basis_contact_claim_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "hypothesis_text": {
+            "type": "string"
+          },
+          "unknowns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "suggested_action": {
+            "type": "string"
+          },
+          "next_verification_action": {
+            "type": "string"
+          },
+          "expires_at": {"type": ["string", "null"]},
+          "risk_notes": {
+            "type": "array",
+            "items": {"type": "string"}
+          }
+        }
+      }
+    },
+    "assessments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "assessment_id",
+          "run_id",
+          "entity_id",
+          "brief_id",
+          "disposition",
+          "basis_claim_ids",
+          "missing_requirements",
+          "manual_review_required",
+          "rationale_structured"
+        ],
+        "properties": {
+          "assessment_id": {
+            "type": "string"
+          },
+          "run_id": {
+            "type": "string"
+          },
+          "entity_id": {
+            "type": "string"
+          },
+          "brief_id": {
+            "type": "string"
+          },
+          "disposition": {
+            "type": "string",
+            "enum": [
+              "重点开发",
+              "推荐跟进",
+              "需人工核查",
+              "暂不建议",
+              "排除"
+            ]
+          },
+          "basis_claim_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "missing_requirements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "manual_review_required": {
+            "type": "boolean"
+          },
+          "rationale_structured": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["basis_claim_ids"],
+            "properties": {
+              "basis_claim_ids": {
+                "type": "array",
+                "items": {"type": "string"}
+              }
+            }
+          },
+          "related_hypothesis_ids_for_outreach": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "review_findings": {
+      "type": "array",
+      "items": {
+        "$ref": "review-finding.schema.json"
+      }
+    },
+    "audits": {
+      "type": "array",
+      "items": {
+        "$ref": "audit.schema.json"
+      }
+    },
+    "delivery_manifests": {
+      "type": "array",
+      "items": {
+        "$ref": "delivery-manifest.schema.json"
+      }
+    }
+  },
+  "required": [
+    "runs",
+    "briefs",
+    "plans",
+    "candidates",
+    "sources",
+    "observations",
+    "entities",
+    "entity_relationships",
+    "claims",
+    "claim_evidence",
+    "contact_points",
+    "contact_claims",
+    "unassigned_contact_leads",
+    "hypotheses",
+    "assessments",
+    "review_findings",
+    "audits",
+    "delivery_manifests"
+  ]
+}

@@ -1,0 +1,17 @@
+[
+  {
+    "case_id": "legacy_default_icp",
+    "anti_pattern": "Core flow silently assumes a specific region, industry, company size, or customer type.",
+    "expected_use": "eval fixture only; never default policy"
+  },
+  {
+    "case_id": "legacy_contact_hallucination",
+    "anti_pattern": "Constructs email from name/domain because sales wants contacts.",
+    "expected_use": "failure test for contact policy"
+  },
+  {
+    "case_id": "legacy_identity_mismatch",
+    "anti_pattern": "Attaches directory contact to same-name company without association evidence.",
+    "expected_use": "failure test for identity/contact audit"
+  }
+]

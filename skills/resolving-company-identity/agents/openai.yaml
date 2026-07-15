@@ -1,0 +1,4 @@
+interface:
+  display_name: "Resolving Company Identity"
+  short_description: "Resolve lead identity conflicts"
+  default_prompt: "Use $resolving-company-identity for a Superleads lead-research task."

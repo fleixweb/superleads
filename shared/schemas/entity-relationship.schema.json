@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superleads.local/schemas/entity-relationship.schema.json",
+  "title": "Superleads EntityRelationship",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "entity_relationship_id",
+    "relationship_type",
+    "resolution_status",
+    "confidence",
+    "rationale"
+  ],
+  "properties": {
+    "entity_relationship_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_entity_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "target_entity_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "from_entity_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "to_entity_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "parent_entity_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "child_entity_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "relationship_type": {
+      "type": "string",
+      "enum": [
+        "same_as",
+        "brand_of",
+        "legal_entity_of",
+        "branch_of",
+        "dealer_of",
+        "formerly_known_as",
+        "acquired_by",
+        "unrelated_same_name",
+        "needs_manual_review",
+        "other"
+      ]
+    },
+    "evidence_claim_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "evidence_observation_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "confidence": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low",
+        "unknown"
+      ]
+    },
+    "resolution_status": {
+      "type": "string",
+      "enum": [
+        "merge",
+        "split",
+        "manual_check",
+        "contextual",
+        "rejected"
+      ]
+    },
+    "rationale": {
+      "type": "string"
+    }
+  }
+}

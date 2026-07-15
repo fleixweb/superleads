@@ -1,0 +1,4 @@
+interface:
+  display_name: "Writing Research Plans"
+  short_description: "Plan evidence-backed lead research"
+  default_prompt: "Use $writing-research-plans for a Superleads lead-research task."

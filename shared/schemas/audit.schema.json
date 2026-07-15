@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superleads.local/schemas/audit.schema.json",
+  "title": "Superleads Audit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "audit_id",
+    "audited_at",
+    "research_graph_hash",
+    "audit_graph_hash",
+    "audit_status",
+    "delivery_status",
+    "allowed_delivery_statuses",
+    "ok",
+    "issue_count",
+    "issues"
+  ],
+  "properties": {
+    "audit_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "audited_at": {
+      "type": "string",
+      "minLength": 1
+    },
+    "research_graph_hash": {
+      "type": "string",
+      "minLength": 1
+    },
+    "audit_graph_hash": {
+      "type": "string",
+      "minLength": 1
+    },
+    "audit_status": {
+      "type": "string",
+      "enum": [
+        "passed",
+        "failed"
+      ]
+    },
+    "delivery_status": {
+      "type": "string",
+      "enum": [
+        "needs_correction",
+        "initial_lead_list",
+        "standard_development_list",
+        "full_review_package"
+      ]
+    },
+    "allowed_delivery_statuses": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "initial_lead_list",
+          "standard_development_list",
+          "full_review_package"
+        ]
+      }
+    },
+    "disclosure_required": {
+      "type": "boolean"
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "issue_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "severity",
+          "code",
+          "message"
+        ],
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "major",
+              "minor"
+            ]
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

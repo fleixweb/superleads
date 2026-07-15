@@ -1,0 +1,251 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superleads.local/schemas/contact-intelligence.schema.json",
+  "title": "Superleads Contact Intelligence",
+  "$defs": {
+    "ContactPoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contact_id",
+        "contact_type",
+        "normalized_value",
+        "source_literal",
+        "source_observation_id"
+      ],
+      "properties": {
+        "contact_id": {
+          "type": "string"
+        },
+        "contact_type": {
+          "type": "string",
+          "enum": [
+            "email",
+            "department_email",
+            "person_email",
+            "phone",
+            "mobile",
+            "whatsapp",
+            "fax",
+            "contact_form",
+            "supplier_portal",
+            "inquiry_entry",
+            "linkedin_company",
+            "linkedin_person",
+            "person_name",
+            "job_title",
+            "address",
+            "other"
+          ]
+        },
+        "normalized_value": {
+          "type": "string"
+        },
+        "source_literal": {
+          "type": "string"
+        },
+        "source_observation_id": {
+          "type": "string"
+        },
+        "source_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "website",
+            "social",
+            "registry",
+            "directory",
+            "map",
+            "document",
+            "spreadsheet",
+            "user_provided",
+            null
+          ]
+        },
+        "visibility_status": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "last_seen_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "verification_status": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "ContactClaim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contact_claim_id",
+        "contact_id",
+        "relationship_type",
+        "association_observation_id",
+        "source_context",
+        "association_evidence_text",
+        "association_confidence",
+        "export_status"
+      ],
+      "properties": {
+        "contact_claim_id": {
+          "type": "string"
+        },
+        "contact_id": {
+          "type": "string"
+        },
+        "entity_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "person_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "person_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "job_title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "department": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "relationship_type": {
+          "type": "string"
+        },
+        "association_observation_id": {
+          "type": "string"
+        },
+        "association_claim_evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "source_context": {
+          "type": "string"
+        },
+        "association_evidence_text": {
+          "type": "string"
+        },
+        "association_locator": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "association_confidence": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low",
+            "unknown"
+          ]
+        },
+        "is_role_based": {
+          "type": "boolean"
+        },
+        "is_personal_business": {
+          "type": "boolean"
+        },
+        "export_status": {
+          "type": "string",
+          "enum": [
+            "ready",
+            "export_with_source_note",
+            "needs_manual_association_review",
+            "hold_no_source",
+            "hold_inferred"
+          ]
+        },
+        "user_status": {
+          "type": "string",
+          "enum": [
+            "可直接使用",
+            "建议核查后使用",
+            "待确认归属",
+            "不可导出"
+          ]
+        },
+        "manual_check_note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "UnassignedContactLead": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unassigned_contact_lead_id",
+        "contact_id",
+        "reason"
+      ],
+      "properties": {
+        "unassigned_contact_lead_id": {
+          "type": "string"
+        },
+        "contact_id": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "suggested_manual_check": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  },
+  "type": "object",
+  "properties": {
+    "contact_points": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ContactPoint"
+      }
+    },
+    "contact_claims": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ContactClaim"
+      }
+    },
+    "unassigned_contact_leads": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/UnassignedContactLead"
+      }
+    }
+  }
+}

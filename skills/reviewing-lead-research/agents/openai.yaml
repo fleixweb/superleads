@@ -1,0 +1,4 @@
+interface:
+  display_name: "Reviewing Lead Research"
+  short_description: "Review lead research evidence"
+  default_prompt: "Use $reviewing-lead-research for a Superleads lead-research task."

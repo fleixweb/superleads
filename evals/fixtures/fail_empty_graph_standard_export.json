@@ -1,0 +1,27 @@
+{
+  "assessments": [],
+  "audits": [],
+  "briefs": [],
+  "candidates": [],
+  "claim_evidence": [],
+  "claims": [],
+  "contact_claims": [],
+  "contact_points": [],
+  "delivery_manifests": [],
+  "entities": [],
+  "entity_relationships": [],
+  "hypotheses": [],
+  "observations": [],
+  "plans": [],
+  "review_findings": [],
+  "runs": [
+    {
+      "created_at": "2026-01-01T00:00:00Z",
+      "review_mode": "independent",
+      "run_id": "run_empty",
+      "status": "checked"
+    }
+  ],
+  "sources": [],
+  "unassigned_contact_leads": []
+}

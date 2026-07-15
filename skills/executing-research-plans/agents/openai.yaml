@@ -1,0 +1,4 @@
+interface:
+  display_name: "Executing Research Plans"
+  short_description: "Collect sources and observations"
+  default_prompt: "Use $executing-research-plans for a Superleads lead-research task."

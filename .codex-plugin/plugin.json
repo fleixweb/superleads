@@ -1,0 +1,36 @@
+{
+  "name": "superleads",
+  "version": "0.1.0",
+  "description": "Universal foreign-trade online lead research Skill Suite with source evidence, contact intelligence, review gates, and tiered workbook delivery.",
+  "author": {
+    "name": "Local developer"
+  },
+  "license": "UNLICENSED",
+  "keywords": [
+    "foreign-trade",
+    "lead-research",
+    "contact-intelligence",
+    "evidence",
+    "sales-leads",
+    "workbooks"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Superleads",
+    "shortDescription": "Evidence-backed overseas lead research.",
+    "longDescription": "Superleads is a general-purpose foreign-trade online lead research Skill Suite for discovering, organizing, checking, reviewing, and exporting overseas prospects and sourced contact intelligence without hard-coded industry ICP defaults.",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": [
+      "Research",
+      "Files",
+      "Write"
+    ],
+    "brandColor": "#2563EB",
+    "defaultPrompt": [
+      "Use Superleads to find overseas buyers for my product and target market.",
+      "Use Superleads to enrich this customer list with sourced contacts.",
+      "Use Superleads to audit these lead sources before delivery."
+    ]
+  }
+}

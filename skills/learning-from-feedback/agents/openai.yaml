@@ -1,0 +1,4 @@
+interface:
+  display_name: "Learning From Feedback"
+  short_description: "Learn from lead quality feedback"
+  default_prompt: "Use $learning-from-feedback for a Superleads lead-research task."

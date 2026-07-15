@@ -1,0 +1,185 @@
+{
+  "cases": [
+    {
+      "fixture": "pass_minimal_graph.json",
+      "validate": "pass",
+      "audit": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass"
+    },
+    {
+      "fixture": "fail_search_summary_claim.json",
+      "validate": "fail"
+    },
+    {
+      "fixture": "fail_guessed_contact_ready.json",
+      "audit": "fail"
+    },
+    {
+      "fixture": "fail_hypothesis_as_assessment_basis.json",
+      "validate": "fail"
+    },
+    {
+      "fixture": "fail_stale_delivery_manifest.json",
+      "audit": "fail"
+    },
+    {
+      "fixture": "fail_open_review_finding.json",
+      "audit": "fail"
+    },
+    {
+      "fixture": "fail_contact_literal_not_in_observation.json",
+      "audit": "fail"
+    },
+    {
+      "fixture": "fail_email_verify_as_contact_source.json",
+      "audit": "fail"
+    },
+    {
+      "fixture": "fail_review_not_run_standard_export.json",
+      "audit_standard": "fail",
+      "export_standard": "fail"
+    },
+    {
+      "fixture": "fail_empty_graph_standard_export.json",
+      "audit": "pass",
+      "audit_delivery_status": "initial_lead_list",
+      "audit_standard": "fail",
+      "export_standard": "fail"
+    },
+    {
+      "fixture": "fail_rejected_critical_finding.json",
+      "audit": "fail"
+    },
+    {
+      "fixture": "fail_broken_id_chain.json",
+      "validate": "fail"
+    },
+    {
+      "fixture": "fail_hypothesis_written_as_claim.json",
+      "validate": "fail"
+    },
+    {
+      "fixture": "fail_same_page_contact_misattribution.json",
+      "audit": "fail"
+    },
+    {
+      "fixture": "fail_positive_assessment_no_evidence.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail"
+    },
+    {
+      "fixture": "fail_contradicted_claim_basis.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail"
+    },
+    {
+      "fixture": "fail_cross_entity_assessment_claim.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail"
+    },
+    {
+      "fixture": "fail_contact_user_status_bypass.json",
+      "validate": "fail",
+      "audit": "fail"
+    },
+    {
+      "fixture": "fail_fabricated_person_title.json",
+      "validate": "fail",
+      "audit": "fail"
+    },
+    {
+      "fixture": "fail_multi_email_normalized.json",
+      "audit": "fail"
+    },
+    {
+      "fixture": "fail_phone_suffix_truncation.json",
+      "audit": "fail"
+    },
+    {
+      "fixture": "fail_nonready_entity_mismatch.json",
+      "validate": "fail",
+      "audit": "fail"
+    },
+    {
+      "fixture": "fail_scoped_run_formal.json",
+      "audit_standard": "fail",
+      "export_standard": "fail"
+    },
+    {
+      "fixture": "fail_malformed_plan.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail"
+    },
+    {
+      "fixture": "fail_manifest_missing_audit.json",
+      "validate": "fail",
+      "audit": "fail"
+    },
+    {
+      "fixture": "fail_translation_no_origin_support.json",
+      "validate": "fail",
+      "audit": "fail"
+    },
+    {
+      "fixture": "fail_claim_evidence_wrong_entity_observation.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail"
+    },
+    {
+      "fixture": "fail_supporting_observation_no_raw_excerpt.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail"
+    },
+    {
+      "fixture": "pass_hold_inferred_filtered_export.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass",
+      "export_absent": [
+        "sales@example.com"
+      ],
+      "export_present": [
+        "contact_001"
+      ]
+    },
+    {
+      "fixture": "pass_off_current_assessment_filtered_export.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass",
+      "export_absent": [
+        "Historical different brief exclusion",
+        "排除"
+      ]
+    },
+    {
+      "fixture": "fail_run_delivery_status_masquerade.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail"
+    },
+    {
+      "fixture": "fail_duplicate_extended_ids.json",
+      "validate": "fail",
+      "audit": "fail"
+    },
+    {
+      "fixture": "fail_stale_research_hash_only.json",
+      "validate": "fail",
+      "audit": "fail"
+    },
+    {
+      "fixture": "fail_invalid_source_medium.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail"
+    }
+  ]
+}

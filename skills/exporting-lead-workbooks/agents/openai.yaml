@@ -1,0 +1,4 @@
+interface:
+  display_name: "Exporting Lead Workbooks"
+  short_description: "Export lead research workbooks"
+  default_prompt: "Use $exporting-lead-workbooks for a Superleads lead-research task."

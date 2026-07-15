@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superleads.local/schemas/plan.schema.json",
+  "title": "Superleads Research Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "plan_id",
+    "brief_id",
+    "query_groups",
+    "source_categories",
+    "contact_collection_targets",
+    "lead_tiering_criteria",
+    "claim_evidence_requirements",
+    "stop_conditions",
+    "downgrade_strategy"
+  ],
+  "properties": {
+    "plan_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "brief_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "query_groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "source_categories": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "website",
+          "social",
+          "registry",
+          "directory",
+          "map",
+          "document",
+          "spreadsheet",
+          "search_result"
+        ]
+      }
+    },
+    "contact_collection_targets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "lead_tiering_criteria": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "claim_evidence_requirements": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "stop_conditions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "downgrade_strategy": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

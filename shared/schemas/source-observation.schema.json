@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superleads.local/schemas/source-observation.schema.json",
+  "title": "Superleads Source and Observation",
+  "$defs": {
+    "Source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "publisher_relation",
+        "provenance",
+        "medium",
+        "access_boundary"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "canonical_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^https?://"
+        },
+        "final_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^https?://"
+        },
+        "publisher_relation": {
+          "type": "string",
+          "enum": [
+            "first_party",
+            "third_party",
+            "unknown"
+          ]
+        },
+        "provenance": {
+          "type": "string",
+          "enum": [
+            "discovered_public",
+            "user_provided",
+            "tool_enriched",
+            "manual_input"
+          ]
+        },
+        "medium": {
+          "type": "string",
+          "enum": [
+            "website",
+            "social",
+            "registry",
+            "directory",
+            "map",
+            "document",
+            "spreadsheet",
+            "search_result"
+          ]
+        },
+        "access_boundary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "owner_hint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observation_id",
+        "source_id",
+        "capability",
+        "concrete_tool",
+        "observed_at",
+        "access_status",
+        "raw_excerpt",
+        "extraction_method",
+        "language",
+        "translation_status"
+      ],
+      "properties": {
+        "observation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "candidate_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "entity_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "capability": {
+          "type": "string",
+          "enum": [
+            "search.web",
+            "source.open",
+            "browser.render",
+            "document.extract",
+            "source.capture",
+            "url.canonicalize",
+            "entity.dedupe",
+            "translate.text",
+            "company.enrich",
+            "email.verify",
+            "domain.check",
+            "social.visible.read",
+            "registry.lookup",
+            "trademark.lookup",
+            "maps.lookup",
+            "memory.recall"
+          ]
+        },
+        "concrete_tool": {
+          "type": "string"
+        },
+        "observed_at": {
+          "type": "string",
+          "minLength": 1
+        },
+        "access_status": {
+          "type": "string"
+        },
+        "http_status": {
+          "type": [
+            "integer",
+            "string",
+            "null"
+          ]
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "raw_excerpt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "page_or_dom_locator": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "content_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "extraction_method": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tool_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "language": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "translation_status": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "derived_from_observation_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "snapshot_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  },
+  "type": "object",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Source"
+    },
+    {
+      "$ref": "#/$defs/Observation"
+    }
+  ]
+}

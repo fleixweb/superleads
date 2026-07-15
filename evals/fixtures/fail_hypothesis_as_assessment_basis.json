@@ -1,0 +1,229 @@
+{
+  "assessments": [
+    {
+      "assessment_id": "assess_001",
+      "basis_claim_ids": [
+        "hyp_001"
+      ],
+      "brief_id": "brief_001",
+      "disposition": "推荐跟进",
+      "entity_id": "ent_001",
+      "manual_review_required": false,
+      "missing_requirements": [],
+      "rationale_structured": {
+        "summary": "Opened first-party source supports product match and contact route."
+      },
+      "related_hypothesis_ids_for_outreach": [
+        "hyp_001"
+      ]
+    }
+  ],
+  "audits": [],
+  "briefs": [
+    {
+      "brief_id": "brief_001",
+      "contact_detail_level": "standard",
+      "evidence_depth": "standard",
+      "keywords": [
+        "sample product distributor"
+      ],
+      "output_mode": "标准开发名单",
+      "product_or_service": "sample product",
+      "scope_axis": [
+        "target_country_or_region"
+      ],
+      "target_count": 1,
+      "target_country_or_region": "Exampleland",
+      "task_mode": "product_scope_research"
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "cand_001",
+      "name": "Example Buyer",
+      "source_hint": "fixture search",
+      "status": "初筛线索"
+    }
+  ],
+  "claim_evidence": [
+    {
+      "claim_evidence_id": "ce_001",
+      "claim_id": "claim_001",
+      "directness": "direct",
+      "excerpt_pointer": "raw_excerpt",
+      "freshness": "observed",
+      "independence_group": "example.com",
+      "observation_id": "obs_001",
+      "relation": "supports",
+      "source_authority": "first_party"
+    }
+  ],
+  "claims": [
+    {
+      "as_of": "2026-01-01",
+      "claim_id": "claim_001",
+      "claim_scope": "current_source",
+      "claim_type": "product_match",
+      "contradiction_status": "none",
+      "entity_id": "ent_001",
+      "predicate": "offers",
+      "subject": "Example Buyer",
+      "support_status": "supported",
+      "typed_value": {
+        "text": "sample product"
+      }
+    }
+  ],
+  "contact_claims": [
+    {
+      "association_claim_evidence_ids": [
+        "ce_001"
+      ],
+      "association_confidence": "high",
+      "association_evidence_text": "Contact: sales@example.com",
+      "association_locator": "body",
+      "association_observation_id": "obs_001",
+      "contact_claim_id": "cc_001",
+      "contact_id": "contact_001",
+      "department": "Sales",
+      "entity_id": "ent_001",
+      "export_status": "ready",
+      "is_personal_business": false,
+      "is_role_based": false,
+      "job_title": null,
+      "manual_check_note": null,
+      "person_id": null,
+      "person_name": null,
+      "relationship_type": "company_general",
+      "source_context": "first-party contact page",
+      "user_status": "可直接使用"
+    }
+  ],
+  "contact_points": [
+    {
+      "contact_id": "contact_001",
+      "contact_type": "email",
+      "last_seen_at": "2026-01-01T00:00:00Z",
+      "normalized_value": "sales@example.com",
+      "source_literal": "sales@example.com",
+      "source_observation_id": "obs_001",
+      "source_type": "website",
+      "verification_status": "not_verified",
+      "visibility_status": "public"
+    }
+  ],
+  "delivery_manifests": [],
+  "entities": [
+    {
+      "country_or_region": "Exampleland",
+      "entity_id": "ent_001",
+      "name": "Example Buyer",
+      "website": "https://example.com"
+    }
+  ],
+  "entity_relationships": [],
+  "hypotheses": [
+    {
+      "basis_claim_ids": [
+        "claim_001"
+      ],
+      "basis_contact_claim_ids": [
+        "cc_001"
+      ],
+      "entity_id": "ent_001",
+      "expires_at": "2026-04-01T00:00:00Z",
+      "hypothesis_id": "hyp_001",
+      "hypothesis_text": "May be worth outreach for sample product distribution.",
+      "next_verification_action": "Check catalog or supplier portal for category fit.",
+      "risk_notes": [
+        "business intent is a hypothesis"
+      ],
+      "suggested_action": "Contact sales or supplier entry with sourced context.",
+      "unknowns": [
+        "Actual purchase need not verified"
+      ]
+    }
+  ],
+  "observations": [
+    {
+      "access_status": "ok",
+      "candidate_id": "cand_001",
+      "capability": "source.open",
+      "concrete_tool": "fixture",
+      "content_hash": "fixturehash",
+      "entity_id": "ent_001",
+      "extraction_method": "fixture",
+      "http_status": 200,
+      "language": "en",
+      "observation_id": "obs_001",
+      "observed_at": "2026-01-01T00:00:00Z",
+      "page_or_dom_locator": "body",
+      "raw_excerpt": "Example Buyer sells sample product. Contact: sales@example.com",
+      "source_id": "src_001",
+      "title": "Example Buyer Contact",
+      "tool_version": "fixture",
+      "translation_status": "original"
+    }
+  ],
+  "plans": [
+    {
+      "brief_id": "brief_001",
+      "claim_evidence_requirements": {
+        "product_match": "opened source"
+      },
+      "contact_collection_targets": [
+        "email",
+        "phone",
+        "contact_form"
+      ],
+      "downgrade_strategy": [
+        "label weak evidence as initial"
+      ],
+      "lead_tiering_criteria": {
+        "推荐跟进": "opened source plus contact"
+      },
+      "plan_id": "plan_001",
+      "query_groups": [
+        {
+          "purpose": "find first-party buyer",
+          "queries": [
+            "sample product distributor Exampleland"
+          ]
+        }
+      ],
+      "source_categories": [
+        "website",
+        "search_result"
+      ],
+      "stop_conditions": [
+        "target count reached"
+      ]
+    }
+  ],
+  "review_findings": [],
+  "runs": [
+    {
+      "brief_id": "brief_001",
+      "created_at": "2026-01-01T00:00:00Z",
+      "plan_id": "plan_001",
+      "platform": "fixture",
+      "review_cycle_id": "review_run_001",
+      "review_mode": "independent",
+      "run_id": "run_001",
+      "status": "checked"
+    }
+  ],
+  "sources": [
+    {
+      "access_boundary": "public",
+      "canonical_url": "https://example.com",
+      "final_url": "https://example.com/contact",
+      "medium": "website",
+      "owner_hint": "Example Buyer",
+      "provenance": "discovered_public",
+      "publisher_relation": "first_party",
+      "source_id": "src_001"
+    }
+  ],
+  "unassigned_contact_leads": []
+}

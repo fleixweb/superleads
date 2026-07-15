@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superleads.local/schemas/brief.schema.json",
+  "title": "Superleads Research Brief",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "brief_id",
+    "task_mode",
+    "output_mode",
+    "contact_detail_level"
+  ],
+  "properties": {
+    "brief_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "product_or_service": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "scope_axis": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "task_mode": {
+      "type": "string",
+      "enum": [
+        "single_company_analysis",
+        "product_scope_research",
+        "keyword_research",
+        "industry_application_research",
+        "market_customer_type_research",
+        "existing_table_enrichment",
+        "competitor_seed_research",
+        "material_list_extraction",
+        "unknown"
+      ]
+    },
+    "contact_detail_level": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "contact_priority",
+        "full_review"
+      ]
+    },
+    "output_mode": {
+      "type": "string",
+      "enum": [
+        "初筛客户名单",
+        "标准开发名单",
+        "联系方式优先",
+        "补全已有表格",
+        "完整核查版"
+      ]
+    },
+    "application_context": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "target_country_or_region": {
+      "type": [
+        "string",
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "target_customer_type": {
+      "type": [
+        "string",
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "target_channel": {
+      "type": [
+        "string",
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "keywords": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "seed_companies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "seed_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "existing_table": {
+      "type": [
+        "string",
+        "object",
+        "null"
+      ]
+    },
+    "competitors_or_brands": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "excluded_targets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "must_verify_claims": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "evidence_depth": {
+      "type": "string",
+      "enum": [
+        "initial",
+        "standard",
+        "full_review"
+      ]
+    },
+    "target_count": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "business_context": {
+      "type": [
+        "string",
+        "object",
+        "null"
+      ]
+    }
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "assessments": [
+    {
+      "assessment_id": "assess_001",
+      "basis_claim_ids": [],
+      "brief_id": "brief_001",
+      "disposition": "重点开发",
+      "entity_id": "ent_001",
+      "manual_review_required": false,
+      "missing_requirements": [],
+      "rationale_structured": {
+        "summary": "Opened first-party source supports product match and contact route."
+      },
+      "related_hypothesis_ids_for_outreach": []
+    }
+  ],
+  "audits": [],
+  "briefs": [
+    {
+      "brief_id": "brief_001",
+      "contact_detail_level": "standard",
+      "evidence_depth": "standard",
+      "keywords": [
+        "sample product distributor"
+      ],
+      "output_mode": "标准开发名单",
+      "product_or_service": "sample product",
+      "scope_axis": [
+        "target_country_or_region"
+      ],
+      "target_count": 1,
+      "target_country_or_region": "Exampleland",
+      "task_mode": "product_scope_research"
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "cand_001",
+      "name": "Example Buyer",
+      "source_hint": "fixture search",
+      "status": "初筛线索"
+    }
+  ],
+  "claim_evidence": [],
+  "claims": [],
+  "contact_claims": [],
+  "contact_points": [],
+  "delivery_manifests": [],
+  "entities": [
+    {
+      "country_or_region": "Exampleland",
+      "entity_id": "ent_001",
+      "name": "Example Buyer",
+      "website": "https://example.com"
+    }
+  ],
+  "entity_relationships": [],
+  "hypotheses": [],
+  "observations": [],
+  "plans": [
+    {
+      "brief_id": "brief_001",
+      "claim_evidence_requirements": {
+        "product_match": "opened source"
+      },
+      "contact_collection_targets": [
+        "email",
+        "phone",
+        "contact_form"
+      ],
+      "downgrade_strategy": [
+        "label weak evidence as initial"
+      ],
+      "lead_tiering_criteria": {
+        "推荐跟进": "opened source plus contact"
+      },
+      "plan_id": "plan_001",
+      "query_groups": [
+        {
+          "purpose": "find first-party buyer",
+          "queries": [
+            "sample product distributor Exampleland"
+          ]
+        }
+      ],
+      "source_categories": [
+        "website",
+        "search_result"
+      ],
+      "stop_conditions": [
+        "target count reached"
+      ]
+    }
+  ],
+  "review_findings": [],
+  "runs": [
+    {
+      "brief_id": "brief_001",
+      "created_at": "2026-01-01T00:00:00Z",
+      "plan_id": "plan_001",
+      "platform": "fixture",
+      "review_cycle_id": "review_run_001",
+      "review_mode": "independent",
+      "run_id": "run_001",
+      "status": "checked"
+    }
+  ],
+  "sources": [],
+  "unassigned_contact_leads": []
+}
