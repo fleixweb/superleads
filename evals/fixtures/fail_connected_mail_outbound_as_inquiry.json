@@ -1,0 +1,7 @@
+{
+  "extends": "pass_connected_inbound_inquiry.json",
+  "patches": [
+    {"op":"replace","path":"/sources/0/direction","value":"outbound"},
+    {"op":"replace","path":"/inquiries/0/direction","value":"outbound"}
+  ]
+}

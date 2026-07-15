@@ -1,0 +1,6 @@
+{
+  "extends": "pass_aftermarket_neutral_brand_distributor.json",
+  "patches": [
+    {"op":"replace","path":"/scope_decisions/0/overall_status","value":"reference_only"}
+  ]
+}

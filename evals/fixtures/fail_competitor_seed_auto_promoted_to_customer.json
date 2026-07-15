@@ -1,0 +1,6 @@
+{
+  "extends": "pass_aftermarket_neutral_brand_distributor.json",
+  "patches": [
+    {"op":"add","path":"/briefs/0/competitors_or_brands","value":["Example Buyer"]}
+  ]
+}

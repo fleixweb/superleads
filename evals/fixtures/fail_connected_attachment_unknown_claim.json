@@ -1,0 +1,6 @@
+{
+  "extends": "pass_connected_attachment_published_source_claim.json",
+  "patches": [
+    {"op":"replace","path":"/sources/0/material_role","value":"unknown"}
+  ]
+}

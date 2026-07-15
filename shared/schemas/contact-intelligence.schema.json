@@ -60,6 +60,8 @@
             "map",
             "document",
             "spreadsheet",
+            "image",
+            "correspondence",
             "user_provided",
             null
           ]

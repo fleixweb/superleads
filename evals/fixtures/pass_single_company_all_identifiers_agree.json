@@ -1,0 +1,9 @@
+{
+  "extends": "pass_single_company_analysis_bound_target.json",
+  "patches": [
+    {"op": "replace", "path": "/briefs/0/single_company_target/source_id", "value": "src_user_target_pass_001"},
+    {"op": "replace", "path": "/briefs/0/single_company_target/entity_literal", "value": "Example Buyer"},
+    {"op": "append", "path": "/sources/-", "value": {"source_id": "src_user_target_pass_001", "publisher_relation": "unknown", "provenance": "manual_input", "material_role": "user_authored_note", "medium": "document", "access_boundary": "user_supplied", "owner_hint": "user company note"}},
+    {"op": "append", "path": "/observations/-", "value": {"observation_id": "obs_user_target_pass_001", "source_id": "src_user_target_pass_001", "candidate_id": null, "entity_id": "ent_001", "capability": "document.extract", "concrete_tool": "fixture", "observed_at": "2026-07-15T00:00:00Z", "access_status": "ok", "http_status": null, "title": "user company note", "raw_excerpt": "Example Buyer", "page_or_dom_locator": "note", "content_hash": "user_target_pass_001", "extraction_method": "fixture", "tool_version": "fixture", "language": "en", "translation_status": "original", "derived_from_observation_id": null, "snapshot_ref": null}}
+  ]
+}

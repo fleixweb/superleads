@@ -1,0 +1,22 @@
+{
+  "source_id": "src_adapter_mail_001",
+  "observation_id": "obs_adapter_mail_001",
+  "inquiry_id": "inq_adapter_001",
+  "run_id": "run_adapter_001",
+  "message_id": "host-message-adapter-001",
+  "thread_id": "host-thread-adapter-001",
+  "mailbox_ref": "mailbox_inbox_adapter",
+  "received_at": "2026-07-15T08:00:00Z",
+  "direction": "inbound",
+  "access_boundary": "read_only_connected_account",
+  "sender_literal": "Buyer Contact <sales@example.com>",
+  "subject_literal": "RFQ sample product",
+  "message_content_sha256": "abababababababababababababababababababababababababababababababab",
+  "snapshot_ref": "mail:sha256:abababababababababababababababababababababababababababababababab#part=body&offset=0&length=46",
+  "raw_excerpt": "Please quote sample product and advise lead time.",
+  "request_excerpt": "Please quote sample product and advise lead time.",
+  "mentioned_product_or_need": "邮件中提及：sample product、报价和交期",
+  "missing_information": ["数量", "规格"],
+  "entity_resolution_status": "pending",
+  "external_verification_status": "not_started"
+}

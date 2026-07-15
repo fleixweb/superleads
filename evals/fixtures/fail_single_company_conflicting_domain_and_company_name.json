@@ -1,0 +1,6 @@
+{
+  "extends": "pass_single_company_analysis_bound_target.json",
+  "patches": [
+    {"op": "replace", "path": "/briefs/0/single_company_target/website_or_domain", "value": "https://unrelated.example"}
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "cases": [
+    {
+      "fixture": "pass_user_provided_pdf_claim.json",
+      "validate": "pass",
+      "audit": "pass",
+      "audit_delivery_status": "standard_development_list",
+      "audit_standard": "pass",
+      "export_standard": "pass",
+      "export_present": ["用户提供文件：2026展会目录.pdf（第 3 页）"],
+      "export_absent": ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "file://", "/home/"]
+    },
+    {
+      "fixture": "pass_user_provided_spreadsheet_contact.json",
+      "validate": "pass",
+      "audit": "pass",
+      "audit_delivery_status": "standard_development_list",
+      "audit_standard": "pass",
+      "export_standard": "pass",
+      "export_present": ["用户提供文件：客户名单.xlsx（工作表 Contacts，A2:F2）", "sales@example.com"],
+      "export_absent": ["bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "file://", "/home/"]
+    },
+    {
+      "fixture": "fail_user_provided_missing_artifact_hash.json",
+      "validate": "fail", "audit": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["user_provided_artifact_hash_missing"]
+    },
+    {
+      "fixture": "fail_user_provided_invalid_artifact_hash.json",
+      "validate": "fail", "audit": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["user_provided_artifact_hash_invalid"]
+    },
+    {
+      "fixture": "fail_user_provided_invalid_artifact_name.json",
+      "validate": "fail", "audit": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["user_provided_artifact_name_invalid"]
+    },
+    {
+      "fixture": "fail_user_provided_snapshot_ref_missing.json",
+      "validate": "fail", "audit": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["user_provided_snapshot_ref_missing"]
+    },
+    {
+      "fixture": "fail_user_provided_snapshot_ref_hash_mismatch.json",
+      "validate": "fail", "audit": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["user_provided_snapshot_ref_hash_mismatch"]
+    },
+    {
+      "fixture": "fail_user_provided_bad_locator.json",
+      "validate": "fail", "audit": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["user_provided_snapshot_ref_invalid"]
+    },
+    {
+      "fixture": "fail_user_provided_manual_input_claim.json",
+      "validate": "fail", "audit": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["manual_input_not_allowed_for_formal_claim"]
+    },
+    {
+      "fixture": "fail_user_provided_website_without_http_url.json",
+      "validate": "fail", "audit": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["user_provided_medium_not_allowed"]
+    },
+    {
+      "fixture": "fail_user_provided_wrong_capability.json",
+      "validate": "fail", "audit": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["user_provided_capability_not_document_extract"]
+    },
+    {
+      "fixture": "fail_user_provided_translation_missing_or_cross_entity_origin.json",
+      "validate": "fail", "audit": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["translated_support_without_original_root"]
+    },
+    {
+      "fixture": "fail_user_provided_contact_entity_mismatch.json",
+      "validate": "fail", "audit": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["exportable_contact_source_entity_mismatch"]
+    },
+    {
+      "fixture": "fail_user_provided_contact_literal_mismatch.json",
+      "validate": "fail", "audit": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["contact_literal_not_in_observation"]
+    },
+    {
+      "fixture": "fail_user_provided_hold_contact_export_leak.json",
+      "validate": "pass", "audit_delivery_status": "standard_development_list", "audit_standard": "pass", "export_standard": "pass",
+      "export_present": ["Example Buyer"],
+      "export_absent": ["sales@example.com", "C:\\Users\\fleix\\private.xlsx", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"]
+    }
+  ]
+}

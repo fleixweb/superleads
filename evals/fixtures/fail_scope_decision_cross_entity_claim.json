@@ -1,0 +1,7 @@
+{
+  "extends": "pass_aftermarket_neutral_brand_distributor.json",
+  "patches": [
+    {"op":"append","path":"/entities/-","value":{"entity_id":"ent_002","name":"Example Buyer","website":"https://other.example"}},
+    {"op":"replace","path":"/claims/0/entity_id","value":"ent_002"}
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "extends": "pass_minimal_graph.json",
+  "patches": [
+    {"op":"replace","path":"/briefs/0/customer_selection_contract/sample_first_required","value":true},
+    {"op":"replace","path":"/plans/0/sample_first_limit","value":5}
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "extends": "pass_minimal_graph.json",
+  "patches": [
+    {"op":"replace","path":"/briefs/0/customer_selection_contract/selection_requirements/0/required_for_positive","value":false},
+    {"op":"replace","path":"/briefs/0/customer_selection_contract/selection_requirements/0/unknown_blocks_positive","value":false}
+  ]
+}

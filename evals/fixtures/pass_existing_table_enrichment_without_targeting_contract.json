@@ -1,0 +1,4 @@
+{
+  "extends": "pass_user_provided_spreadsheet_contact.json",
+  "patches": []
+}

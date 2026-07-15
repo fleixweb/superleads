@@ -1,0 +1,20 @@
+{
+  "extends": "pass_minimal_graph.json",
+  "patches": [
+    {"op":"replace","path":"/briefs/0/customer_selection_contract","value":{"targeting_contract_id":"target_aftermarket_001","user_intent_verbatim":"我卖自有品牌和中性包装的售后替代件，找公开显示分销和售后服务业务的客户，不找品牌权利人、整机原厂或同类制造商。","offer_definition":"自有品牌和中性包装的售后替代件","commercial_positioning":"自有品牌和中性包装","application_boundary":"售后替代市场","target_role_description":"公开显示分销或售后服务业务的组织","excluded_target_description":"品牌权利人、整机原厂、同类制造商","competitor_handling_note":"品牌和同类制造商仅作参考","competitor_as_prospect_allowed":false,"selection_requirements":[{"rule_id":"sel_channel_001","user_statement":"优先找公开显示分销或售后服务业务的组织。","evidence_needed":"公开业务页面明确显示分销或售后服务。","required_for_positive":true,"unknown_blocks_positive":true,"search_hints":["replacement parts distribution","aftermarket service"],"allowed_claim_types":["channel_role"],"evidence_markers":["replacement parts distributor","aftermarket service"],"conflict_markers":[]}],"exclusion_rules":[{"rule_id":"ex_manufacturer_001","user_statement":"不找品牌权利人、整机原厂或同类制造商。","evidence_signal":"公开资料显示其为用户排除的主体。","block_when_supported":true,"unknown_blocks_positive":false,"search_hints":["manufacturer","brand owner","OEM"],"allowed_claim_types":["channel_role","product_match","brand_trademark"],"evidence_markers":[],"conflict_markers":["manufacturer","brand owner","OEM"]}],"sample_first_required":false,"unresolved_questions":[],"scope_state":"explicit","created_at":"2026-07-15T00:00:00Z"}},
+    {"op":"replace","path":"/plans/0/selection_contract_brief_id","value":"brief_001"},
+    {"op":"replace","path":"/plans/0/selection_requirement_ids","value":["sel_channel_001"]},
+    {"op":"replace","path":"/plans/0/exclusion_rule_ids","value":["ex_manufacturer_001"]},
+    {"op":"replace","path":"/plans/0/positive_query_groups","value":["distribution_check"]},
+    {"op":"replace","path":"/plans/0/exclusion_check_query_groups","value":["manufacturer_check"]},
+    {"op":"replace","path":"/plans/0/query_groups","value":[{"group_id":"distribution_check","query_purpose":"确认本次要求的分销或售后服务公开业务信号。","targeting_rule_ids":["sel_channel_001"],"queries":["replacement parts distribution"]},{"group_id":"manufacturer_check","query_purpose":"核查本次排除范围是否命中。","targeting_rule_ids":["ex_manufacturer_001"],"queries":["Example Buyer manufacturer"]}]},
+    {"op":"replace","path":"/observations/0/raw_excerpt","value":"Example Buyer operates as a replacement parts distributor and provides aftermarket service. Example Buyer Contact: sales@example.com"},
+    {"op":"replace","path":"/claims/0/claim_type","value":"channel_role"},
+    {"op":"replace","path":"/claims/0/predicate","value":"operates_as"},
+    {"op":"replace","path":"/claims/0/typed_value","value":{"text":"replacement parts distributor"}},
+    {"op":"replace","path":"/claim_evidence/0/claim_field_anchors","value":{"subject":"Example Buyer","predicate":"operates as","claim_type":"Example Buyer operates as a replacement parts distributor","typed_value":"replacement parts distributor"}},
+    {"op":"replace","path":"/scope_decisions/0/targeting_contract_id","value":"target_aftermarket_001"},
+    {"op":"replace","path":"/scope_decisions/0/rule_evaluations","value":[{"rule_id":"sel_channel_001","rule_kind":"selection","outcome":"supported_match","supporting_claim_ids":["claim_001"],"conflicting_claim_ids":[],"claim_classifications":[{"claim_id":"claim_001","classification":"supports","matched_marker":"replacement parts distributor","reason":"公开页面含当前正向 marker。"}],"reviewed_observation_ids":["obs_001"],"reason":"公开页面显示分销和售后服务。"},{"rule_id":"ex_manufacturer_001","rule_kind":"exclusion","outcome":"not_observed","supporting_claim_ids":[],"conflicting_claim_ids":[],"claim_classifications":[{"claim_id":"claim_001","classification":"irrelevant","matched_marker":null,"reason":"已查看的 Claim 支撑分销业务，未命中当前排除 marker。"}],"reviewed_observation_ids":["obs_001"],"reason":"本轮已核查公开材料未发现排除信号。"}]},
+    {"op":"replace","path":"/scope_decisions/0/decision_summary","value":"公开业务信号符合本次方向。"}
+  ]
+}

@@ -34,11 +34,11 @@
       "minLength": 1
     },
     "brief_id": {
-      "type": "string",
+      "type": ["string", "null"],
       "minLength": 1
     },
     "plan_id": {
-      "type": "string",
+      "type": ["string", "null"],
       "minLength": 1
     },
     "audit_id": {
@@ -54,7 +54,7 @@
       "minLength": 1
     },
     "review_cycle_id": {
-      "type": "string",
+      "type": ["string", "null"],
       "minLength": 1
     },
     "generated_at": {
@@ -66,7 +66,8 @@
         "needs_correction",
         "initial_lead_list",
         "standard_development_list",
-        "full_review_package"
+        "full_review_package",
+        "inquiry_followup_queue"
       ]
     },
     "output_mode": {
@@ -99,7 +100,9 @@
     "output_files": {
       "type": "array",
       "items": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^[^/\\\\:\u0000-\u001F]+$"
       }
     },
     "warnings": {
@@ -133,5 +136,20 @@
         "issues"
       ]
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"delivery_status": {"enum": ["standard_development_list", "full_review_package"]}},
+        "required": ["delivery_status"]
+      },
+      "then": {
+        "properties": {
+          "brief_id": {"type": "string", "minLength": 1},
+          "plan_id": {"type": "string", "minLength": 1},
+          "review_cycle_id": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  ]
 }

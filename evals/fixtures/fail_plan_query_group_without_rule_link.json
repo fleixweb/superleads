@@ -1,0 +1,6 @@
+{
+  "extends": "pass_aftermarket_neutral_brand_distributor.json",
+  "patches": [
+    {"op":"replace","path":"/plans/0/query_groups/0/targeting_rule_ids","value":[]}
+  ]
+}

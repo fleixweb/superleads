@@ -1,5 +1,16 @@
 # Claim and Source Policy
 
+## Customer-direction boundary
+
+Formal source eligibility proves only the stated Claim. It does not prove that
+the Entity belongs in the user's current development direction. For a new
+customer-development Brief, a positive Assessment additionally requires the
+current Brief's `customer_selection_contract` and an in-scope ScopeDecision
+whose rule evidence is same-Entity, formal ClaimEvidence. Search terms,
+similar keywords, contact completeness, Candidate clues, user material,
+mail.read, image.inspect, and Hypotheses cannot replace this independent
+direction check. See `targeting-and-scope-policy.md`.
+
 Treat Superleads as a weak-evidence research workflow. Weak evidence may be delivered only when it is explicitly labeled as weak, provisional, or requiring manual check.
 
 ## Artifact boundaries
@@ -12,7 +23,19 @@ Treat Superleads as a weak-evidence research workflow. Weak evidence may be deli
 - An Assessment is this run's development judgment and must cite Claim IDs as its qualification basis.
 - Every formal `supports` ClaimEvidence must carry source-visible anchors for the Claim subject, predicate, claim type, and typed value. A Claim field without a source anchor is not a formal fact.
 - A translated Observation may support a Claim only when its `derived_from_observation_id` chain terminates at an accessible, same-entity, non-translated original Observation.
-- Formal Claim support requires an inspectable public `http` or `https` Source URL.
+- Formal Claim support must pass one controlled source branch:
+  - public branch: an inspectable `http` or `https` Source URL and a non-empty Observation excerpt;
+  - published-copy branch: `provenance=user_provided`, `material_role=published_source_copy`, `medium=document|spreadsheet`, a lowercase SHA-256 and safe display filename, `document.extract`, non-empty excerpt/content hash, and a same-hash `artifact:sha256:<hash>#...` locator.
+
+## User-provided file evidence exception
+
+This is a controlled file-evidence exception, not an exception for chat text, pasted prose, `manual_input`, or model memory. A document locator must identify a page, section, or chapter. A spreadsheet locator must identify both a sheet and a cell/range. `snapshot_ref` may not contain a path, `file:`, control characters, or `..`.
+
+The graph gate validates hash format, source/observation linkage, material role, and reference consistency. It does not claim to re-compute an uploaded file's SHA-256 unless the original binary is retained by the execution environment. All ClaimEvidence relation semantics, same-Entity attribution, translation-origin checks, contradictions, Reviews, Audits, and Manifests remain unchanged. See `material-intake-policy.md` for the purpose matrix.
+
+## Mail and inquiry boundary
+
+`connected_account` inbound correspondence uses `material_role=connected_inbound_correspondence`, `medium=correspondence`, `mail.read`, a message-content SHA-256, and a safe `mail:sha256:<hash>#...` excerpt locator. It may create an Inquiry, Candidate clue, or an explicitly sourced contact note. It cannot support a formal Claim, Assessment basis, qualification conclusion, trademark ownership, purchase authority, or `ready` contact. A mailbox sender is a reply lead, not an official or verified contact by default.
 
 ## Hard prohibitions
 

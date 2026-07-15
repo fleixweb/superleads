@@ -1,0 +1,1 @@
+{"extends":"pass_user_provided_spreadsheet_contact.json","patches":[{"op":"replace","path":"/contact_claims/0/export_status","value":"hold_inferred"},{"op":"replace","path":"/contact_claims/0/user_status","value":"不可导出"},{"op":"replace","path":"/assessments/0/missing_requirements","value":["C:\\Users\\fleix\\private.xlsx includes sales@example.com"]}]}

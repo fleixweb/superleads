@@ -1,0 +1,4 @@
+{
+  "extends": "pass_existing_table_enrichment_without_targeting_contract.json",
+  "patches": []
+}

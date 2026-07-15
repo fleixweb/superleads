@@ -120,6 +120,42 @@
         "null"
       ]
     },
+    "single_company_target": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["user_statement", "company_name", "website_or_domain", "source_id", "entity_literal", "resolved_entity_id"],
+      "properties": {
+        "user_statement": {"type": "string", "minLength": 1},
+        "company_name": {"type": ["string", "null"]},
+        "website_or_domain": {"type": ["string", "null"]},
+        "source_id": {"type": ["string", "null"]},
+        "entity_literal": {"type": ["string", "null"]},
+        "resolved_entity_id": {"type": ["string", "null"]}
+      }
+    },
+    "existing_table_binding": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["source_id", "entity_bindings"],
+      "properties": {
+        "source_id": {"type": "string", "minLength": 1},
+        "entity_bindings": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["entity_id", "observation_id", "row_or_cell_locator", "entity_literal"],
+            "properties": {
+              "entity_id": {"type": "string", "minLength": 1},
+              "observation_id": {"type": "string", "minLength": 1},
+              "row_or_cell_locator": {"type": "string", "minLength": 1},
+              "entity_literal": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      }
+    },
     "competitors_or_brands": {
       "type": "array",
       "items": {
@@ -159,6 +195,106 @@
         "object",
         "null"
       ]
+    },
+    "customer_selection_contract": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": [
+        "targeting_contract_id", "user_intent_verbatim", "offer_definition",
+        "commercial_positioning", "application_boundary", "target_role_description",
+        "excluded_target_description", "competitor_handling_note",
+        "competitor_as_prospect_allowed", "selection_requirements", "exclusion_rules",
+        "sample_first_required", "unresolved_questions", "scope_state", "created_at"
+      ],
+      "properties": {
+        "targeting_contract_id": {"type": "string", "minLength": 1},
+        "user_intent_verbatim": {"type": "string", "minLength": 1},
+        "offer_definition": {"type": ["string", "null"]},
+        "commercial_positioning": {"type": ["string", "null"]},
+        "application_boundary": {"type": ["string", "null"]},
+        "target_role_description": {"type": ["string", "null"]},
+        "excluded_target_description": {"type": ["string", "null"]},
+        "competitor_handling_note": {"type": ["string", "null"]},
+        "competitor_as_prospect_allowed": {"type": "boolean"},
+        "selection_requirements": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/selectionRule"}
+        },
+        "exclusion_rules": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/exclusionRule"}
+        },
+        "sample_first_required": {"type": "boolean"},
+        "unresolved_questions": {"type": "array", "items": {"type": "string"}},
+        "scope_state": {"type": "string", "enum": ["explicit", "inferred_low_risk", "provisional"]},
+        "created_at": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"task_mode": {"const": "single_company_analysis"}}, "required": ["task_mode"]},
+      "then": {"required": ["single_company_target"]}
+    },
+    {
+      "if": {"properties": {"task_mode": {"const": "existing_table_enrichment"}}, "required": ["task_mode"]},
+      "then": {"required": ["existing_table_binding"]}
+    },
+    {
+      "if": {
+        "properties": {
+          "single_company_target": {
+            "type": "object",
+            "properties": {"source_id": {"type": "string", "minLength": 1}},
+            "required": ["source_id"]
+          }
+        },
+        "required": ["single_company_target"]
+      },
+      "then": {
+        "properties": {
+          "single_company_target": {
+            "properties": {"entity_literal": {"type": "string", "minLength": 1}},
+            "required": ["entity_literal"]
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "selectionRule": {
+      "type": "object", "additionalProperties": false,
+      "required": ["rule_id", "user_statement", "evidence_needed", "required_for_positive", "unknown_blocks_positive", "search_hints"],
+      "properties": {
+        "rule_id": {"type": "string", "minLength": 1},
+        "user_statement": {"type": "string", "minLength": 1},
+        "evidence_needed": {"type": "string", "minLength": 1},
+        "required_for_positive": {"type": "boolean"},
+        "unknown_blocks_positive": {"type": "boolean"},
+        "search_hints": {"type": "array", "items": {"type": "string"}},
+        "allowed_claim_types": {"type": "array", "items": {"$ref": "#/$defs/allowedClaimType"}},
+        "evidence_markers": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "conflict_markers": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "exclusionRule": {
+      "type": "object", "additionalProperties": false,
+      "required": ["rule_id", "user_statement", "evidence_signal", "block_when_supported", "unknown_blocks_positive", "search_hints"],
+      "properties": {
+        "rule_id": {"type": "string", "minLength": 1},
+        "user_statement": {"type": "string", "minLength": 1},
+        "evidence_signal": {"type": "string", "minLength": 1},
+        "block_when_supported": {"type": "boolean"},
+        "unknown_blocks_positive": {"type": "boolean"},
+        "search_hints": {"type": "array", "items": {"type": "string"}},
+        "allowed_claim_types": {"type": "array", "items": {"$ref": "#/$defs/allowedClaimType"}},
+        "evidence_markers": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "conflict_markers": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "allowedClaimType": {
+      "type": "string",
+      "enum": ["product_match", "company_identity", "contact_route", "location", "registration", "brand_trademark", "channel_role", "ownership", "certification"]
     }
   }
 }

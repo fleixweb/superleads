@@ -28,3 +28,14 @@ Use this skill for similar names, brand/legal entity differences, site conflicts
 ## Hard constraints
 
 Do not use `entity.dedupe`, normalized domain similarity, or name similarity alone as final identity proof.
+
+For a formal single-company or existing-table exception, an `entity_literal`
+must be verbatim in the bound user material and exactly match the resolved
+Entity name/legal name or domain. A brand, holding-company name, old name,
+partial name, or similar-looking identifier must remain an identity-resolution
+or manual-review task until evidence establishes the relation.
+
+`normalize_entities.py` emits an external identity-review report and a
+schema-compatible graph copy. Its normalized names/domains and duplicate flags
+are routing hints only; do not write them into Entity records or treat them as
+an EntityRelationship, Claim, merge, split, or delivery authorization.

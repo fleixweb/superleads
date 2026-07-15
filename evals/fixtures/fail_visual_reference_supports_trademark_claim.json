@@ -1,0 +1,1 @@
+{"extends":"pass_logo_external_trademark_evidence.json","patches":[{"op":"replace","path":"/claim_evidence/0/observation_id","value":"obs_logo_001"}]}

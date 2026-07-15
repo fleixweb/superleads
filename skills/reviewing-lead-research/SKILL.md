@@ -26,6 +26,18 @@ Set `review_mode` to `independent`, `self_review_fallback`, or `not_run`.
 - Are company identities merged or assigned correctly?
 - Are conflicts preserved rather than silently discarded?
 - Are weak leads labeled instead of overstated?
+- Does the retained user language agree with the current Brief's free-text
+  direction contract, without importing a default ICP?
+- Does the Plan cover each positive and exclusion rule with separate discovery
+  and conflict checks?
+- Does each positive Entity have a same-Run/Brief in-scope ScopeDecision with
+  formal same-Entity evidence for every required rule?
+- Did a competitor, brand, manufacturer, or reference seed enter the customer
+  pool without current-task permission, or did an unknown become a match?
+- Trace user wording -> current rule -> opened public excerpt -> Claim ->
+  direction decision -> Assessment. Create a blocking finding for irrelevant
+  Claim types, absent markers, hidden conflicts, or unresolved competitor/brand
+  aliases promoted to customer.
 
 ## Output
 

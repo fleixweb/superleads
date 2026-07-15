@@ -28,7 +28,11 @@
       "type": "array",
       "items": {
         "type": "object",
-        "additionalProperties": true
+        "additionalProperties": true,
+        "properties": {
+          "targeting_rule_ids": {"type": "array", "items": {"type": "string"}},
+          "query_purpose": {"type": "string"}
+        }
       }
     },
     "source_categories": {
@@ -72,6 +76,13 @@
       "items": {
         "type": "string"
       }
+    },
+    "selection_contract_brief_id": {"type": ["string", "null"]},
+    "selection_requirement_ids": {"type": "array", "items": {"type": "string"}},
+    "exclusion_rule_ids": {"type": "array", "items": {"type": "string"}},
+    "positive_query_groups": {"type": "array", "items": {"type": "string"}},
+    "exclusion_check_query_groups": {"type": "array", "items": {"type": "string"}},
+    "candidate_check_steps": {"type": "array", "items": {"type": "string"}},
+    "sample_first_limit": {"type": ["integer", "null"], "minimum": 1, "maximum": 5}
     }
   }
-}

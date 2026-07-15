@@ -1,0 +1,9 @@
+{
+  "extends": "pass_minimal_graph.json",
+  "patches": [
+    {"op": "replace", "path": "/briefs/0/task_mode", "value": "single_company_analysis"},
+    {"op": "remove", "path": "/briefs/0/customer_selection_contract"},
+    {"op": "remove", "path": "/scope_decisions/0"},
+    {"op": "remove", "path": "/assessments/0/scope_decision_id"}
+  ]
+}

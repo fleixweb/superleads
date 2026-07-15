@@ -1,0 +1,105 @@
+{
+  "cases": [
+    {
+      "fixture": "pass_connected_inbound_inquiry.json",
+      "validate": "pass",
+      "audit_inquiry": "pass",
+      "export_inquiry": "pass",
+      "export_assert_mode": "inquiry",
+      "export_present": ["询盘待办", "邮件来信（2026-07-15）"],
+      "export_absent": ["message_id", "thread_id", "mailbox_ref", "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "From: sales@example.com", "file://", "/home/"]
+    },
+    {
+      "fixture": "pass_inquiry_followup_export.json",
+      "validate": "pass", "audit_inquiry": "pass", "export_inquiry": "pass",
+      "export_assert_mode": "inquiry",
+      "export_present": ["询盘待办", "询盘信息摘要", "邮件来信（2026-07-15）"],
+      "export_absent": ["host-message-001", "host-thread-001", "mailbox_inbox_001", "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "file://", "/home/"]
+    },
+    {
+      "fixture": "pass_connected_inbound_contact_with_note.json",
+      "validate": "pass",
+      "audit_delivery_status": "standard_development_list",
+      "audit_standard": "pass",
+      "export_standard": "pass",
+      "export_present": ["sales@example.com", "建议核查后使用", "邮件来信（2026-07-15）"],
+      "export_absent": ["可直接使用", "message_id", "thread_id", "mailbox_ref", "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"]
+    },
+    {
+      "fixture": "pass_correspondence_export_inquiry.json",
+      "validate": "pass", "audit_inquiry": "pass", "export_inquiry": "pass",
+      "export_assert_mode": "inquiry",
+      "export_present": ["用户提供沟通记录：客户往来邮件.pdf（章节 message-1）"],
+      "export_absent": ["dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "file://", "/home/"]
+    },
+    {
+      "fixture": "pass_connected_attachment_published_source_claim.json",
+      "validate": "pass",
+      "audit_delivery_status": "standard_development_list",
+      "audit_standard": "pass",
+      "export_standard": "pass",
+      "export_present": ["邮件附件：2026展会目录.pdf（第 3 页）"],
+      "export_absent": ["host-message-003", "host-thread-003", "mailbox_inbox_001", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]
+    },
+    {
+      "fixture": "fail_connected_attachment_unknown_claim.json",
+      "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1,
+      "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["unknown_not_allowed_for_formal_claim"]
+    },
+    {
+      "fixture": "fail_connected_mail_supports_claim.json",
+      "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1,
+      "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["connected_inbound_correspondence_not_allowed_for_formal_claim"]
+    },
+    {
+      "fixture": "fail_connected_mail_contact_ready.json",
+      "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1,
+      "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["connected_inbound_correspondence_not_allowed_for_contact_ready"]
+    },
+    {
+      "fixture": "fail_connected_mail_missing_required_metadata.json",
+      "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1,
+      "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["connected_mail_metadata_missing"]
+    },
+    {
+      "fixture": "fail_connected_mail_outbound_as_inquiry.json",
+      "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1,
+      "audit_standard": "fail", "export_standard": "fail", "audit_inquiry": "fail", "export_inquiry": "fail",
+      "expected_error_codes": ["connected_mail_direction_not_inbound"]
+    },
+    {
+      "fixture": "fail_mail_rule_missing_scope.json",
+      "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1,
+      "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["mail_rule_scope_missing"]
+    },
+    {
+      "fixture": "fail_mail_rule_mutating_action.json",
+      "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1,
+      "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["mail_rule_mutating_action"]
+    },
+    {
+      "fixture": "fail_mail_rule_continuous_without_approval.json",
+      "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1,
+      "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["mail_rule_continuous_approval_missing"]
+    },
+    {
+      "fixture": "fail_missing_material_role.json",
+      "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1,
+      "audit_standard": "fail", "export_standard": "fail",
+      "expected_error_codes": ["material_role_missing"]
+    },
+    {
+      "fixture": "fail_inquiry_promoted_to_standard_without_assessment.json",
+      "validate": "pass", "audit_delivery_status": "initial_lead_list",
+      "audit_standard": "fail", "export_standard": "fail", "audit_inquiry": "pass", "export_inquiry": "pass",
+      "standard_error_codes": ["formal_delivery_missing_assessment"]
+    }
+  ]
+}

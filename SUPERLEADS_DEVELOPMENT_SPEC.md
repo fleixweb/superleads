@@ -266,6 +266,11 @@ PDF/展会目录整理
 明确公司 / 明确材料 / 可解析名单
 ```
 
+其中单公司分析的正式结果必须保留当前用户指定的公司名、URL/domain 或材料引用，
+并只输出该解析 Entity；已有客户表补全必须绑定用户提供的表格和每个输出 Entity 的
+行/单元格定位。这两类结果不是新客户方向名单，不得使用“符合本次方向”表述，也不能
+因设置 `task_mode` 而绕过本次开发边界合同。
+
 ---
 
 ## 6. 用户输出模式
@@ -832,10 +837,17 @@ source_id
 canonical_url
 final_url
 publisher_relation = first_party / third_party / unknown
-provenance = discovered_public / user_provided / tool_enriched / manual_input
-medium = website / social / registry / directory / map / document / spreadsheet / search_result
+provenance = discovered_public / user_provided / tool_enriched / manual_input / connected_account
+medium = website / social / registry / directory / map / document / spreadsheet / correspondence / image / search_result
 access_boundary
 owner_hint
+artifact_sha256 optional
+artifact_name optional
+artifact_media_type optional
+material_role optional for public Sources; required for user_provided / manual_input / connected_account
+parent_source_id optional for connected attachment
+message_id / thread_id / received_at / direction / sender_literal / subject_literal optional
+message_content_sha256 / mailbox_ref / mail_intake_rule_id optional
 ```
 
 ---
@@ -863,6 +875,184 @@ translation_status
 derived_from_observation_id optional
 snapshot_ref optional
 ```
+
+### 10.2.1 正式来源可用性
+
+正式 Claim 与 `ready` / `export_with_source_note` 联系方式证据只能通过一个共享门禁的两个分支之一：
+
+```text
+公开来源分支：
+- Source 有有效非空 http:// 或 https:// URL
+- Observation 有非空原文
+- 保持 capability、ClaimEvidence、Entity、翻译原文、Review、Audit、Manifest 全部既有门禁
+
+用户提供文件分支：
+- provenance = user_provided，medium = document 或 spreadsheet
+- artifact_sha256 为 64 位小写十六进制，artifact_name 仅为安全文件名
+- Observation.capability = document.extract，raw_excerpt 与 content_hash 非空
+- snapshot_ref = artifact:sha256:<同一hash>#<安全定位>
+- document 至少定位页码/章节；spreadsheet 至少定位工作表与单元格/区域
+```
+
+该例外不是聊天粘贴文本、`manual_input`、记忆、搜索摘要、email.verify、company.enrich 或无定位材料的例外。不得存储或导出本地绝对路径、`file://` URI 或内部 artifact hash。门禁只验证哈希格式、链路与引用一致性；未保存原始二进制文件的运行环境不得声称已重新计算并验证文件字节哈希。
+
+### 10.2.2 用户输入材料分层
+
+`material_role` 用于 `user_provided`、`manual_input` 或 `connected_account`，取值固定为：
+
+```text
+published_source_copy
+user_business_dataset
+correspondence_export
+user_authored_note
+visual_reference
+connected_inbound_correspondence
+unknown
+```
+
+用途矩阵：
+
+| 材料角色 | 正式 Claim / Assessment | ready 联系方式 | export_with_source_note | Candidate / 搜索任务 |
+|---|---|---|---|---|
+| 公开 HTTP(S) | 允许，沿用全部门禁 | 允许 | 允许 | 允许 |
+| published_source_copy | 允许，沿用 hash、定位、实体、翻译链门禁 | 允许 | 允许 | 允许 |
+| user_business_dataset | 不允许单独支撑正向 Assessment | 不允许 | 允许，需逐字与归属语境 | 允许 |
+| correspondence_export | 只可记录沟通中曾表述，不得作为资格依据 | 不允许 | 允许，需逐字与归属语境 | 允许 |
+| user_authored_note | 不允许 | 不允许 | 不允许 | 允许 |
+| visual_reference | 不允许 | 不允许 | 不允许 | 允许 |
+| connected_inbound_correspondence | 不允许作为资格事实 | 不允许 | 允许，需逐字、同实体与邮件来源说明 | 允许，可创建 Inquiry |
+| unknown | 不允许 | 不允许 | 不允许 | 允许 |
+
+用户的产品、能力、开发要求进入 Brief；用户粘贴的公司、竞争对手、联系人和聊天片段只形成 Candidate、Plan、Hypothesis 或 UnassignedContactLead。用户未说明文件性质时，默认 `user_business_dataset` 或 `unknown`，不得自动升级为 `published_source_copy`。必要时只问：`这份材料是原始公开/对方资料，还是你自己整理的历史名单或备注？`
+
+## 16. Phase 2: 本次找客户规则与方向匹配
+
+### 16.1 当前 Brief 专属合同
+
+新客户开发 Brief 使用 `customer_selection_contract` 记录“本次找什么 / 不找什么 / 怎么判断 / 暂不确定什么”。它的供货说明、商业定位、应用边界、目标对象、排除对象、竞争关系说明与全部规则内容均为自由文本；不得建立产品、行业、国家、地区、应用、客户角色、规模、品牌或渠道的固定业务枚举。
+
+合同只属于当前 Brief 和当前 Run。固定值仅限流程控制：
+
+```text
+scope_state: explicit | inferred_low_risk | provisional
+ScopeDecision: in_scope | out_of_scope | needs_confirmation | reference_only
+规则结果: supported_match | supported_conflict | not_observed | unknown
+```
+
+`not_observed` 只表示已查看的公开材料未出现信号，不能表示已证明某类业务不存在。竞争对手、品牌方、制造商及其他参考名称默认仅作搜索/市场参考；只有本 Brief 明确许可后才可进入客户池，且仍须通过同一方向门禁。
+
+### 16.2 用户交互
+
+先以不超过四行自然语言复述：
+
+```text
+我理解你卖的是：
+本次优先找：
+本次不纳入：
+判断依据将重点看：
+```
+
+只有回答不同会导致客户方向相反时，才追问一至三个短问题。用户已经明确时不重复问。关键歧义未解决时设为 `provisional`，只交付三至五家“方向样本，等待确认后再扩展为正式开发名单”；不得输出标准开发名单或完整核查版正向客户。
+
+### 16.3 Plan、ScopeDecision 与 Assessment
+
+Plan 必须绑定当前 Brief，分别列出正向和排除规则，并让每条规则至少对应一个查询或核验步骤。查询词和搜索提示仅从当前 Brief 推导；排除查询只用于发现风险，正式排除或纳入均需要公开 Observation -> 同 Entity Claim -> ClaimEvidence。
+
+`scope_decisions` 记录某 Candidate/Entity 对当前合同的可追溯判断。Candidate 未解析为 Entity 时，只能是 `needs_confirmation` 或 `reference_only`。`supported_match` / `supported_conflict` 必须引用同 Entity、可用于 Assessment 的正式 Claim；用户材料、邮件、图片/OCR、搜索摘要、Candidate 与 Hypothesis 不能替代它。
+
+对新客户开发模式的 `重点开发` / `推荐跟进`：必须有当前 Run、当前 Brief、同一 Entity 的 `in_scope` ScopeDecision；每条 `required_for_positive` 规则必须为 `supported_match`；命中的 `block_when_supported` 排除规则、配置为阻断的 `unknown`、或 `provisional` 合同均阻断正向 Assessment 和标准/完整交付。联系方式、网站、国家、关键词相似度不能绕过方向检查。
+
+### 16.3.1 规则证据映射与 fail-closed 条件
+
+每条当前 Brief 的 selection / exclusion rule 必须声明本轮可接受的通用
+`allowed_claim_types`，以及从用户原话和当前 Plan 推导的自由文本
+`evidence_markers` / `conflict_markers`。这些不是产品、行业、渠道或国家词典；
+核心逻辑不得提供默认业务词。ScopeDecision 对每一条已核查 Claim 必须显式记录
+`supports`、`conflicts` 或 `irrelevant`，同时带可追溯的 Claim、逐字存在于正式
+Observation 原文的 marker 和理由。`supports` / `conflicts` 只能使用同 Entity、
+类型获该 Rule 允许、且有可用于 Assessment 正式来源证据的 Claim。
+
+任何被列为 reviewed 的 Observation 所支撑的正式 Claim 都不得静默遗漏。若排除
+rule 的公开原文命中其 `conflict_markers`，ScopeDecision 必须记录冲突或降级为
+需确认，不能写成 `not_observed`、`irrelevant` 或正向匹配。`not_observed` 只能
+说明本轮已查看材料未显示该信号，绝不是“已证明不存在”。Assessment 的
+`basis_claim_ids` 必须包含每条 required selection rule 的 `supports` Claim；地址、
+注册地等无关事实不能支撑产品、应用、渠道或业务角色 rule，除非该条当前用户规则
+明确允许相应 Claim type 和 marker。
+
+`task_mode=unknown` 只能形成初筛、方向样本或待确认任务，不能生成标准开发名单、
+完整核查版、重点开发或推荐跟进。除 `single_company_analysis` 和
+`existing_table_enrichment` 外，任何正向正式客户交付都须有实质性当前合同：至少
+一条 selection rule，且至少一条 `required_for_positive=true`。`material_list_extraction`
+若未具备该完整合同，只能形成初筛或材料结果；要产生正向 Assessment 或正式名单，
+同样必须通过完整方向门禁。空合同、全部可选的合同和 `scope_state=provisional` 均
+不得绕过此规则。
+
+`sample_first_required=true` 是实际执行的样本门禁：Plan 必须限定一至五家，且只能
+导出初筛方向样本。用户确认后必须明确更新 Brief/合同并重新 Review 后，才可形成
+正式名单。
+
+`single_company_analysis` 与 `existing_table_enrichment` 不是可自我声明的方向门禁
+例外。前者须有当前用户原话和绑定到唯一 Entity 的公司标识、URL/domain 或用户材料；
+后者须有用户提供 spreadsheet Source 及每个输出 Entity 的同实体行/单元格 Observation。
+它们只能交付“单公司分析结果”或“原表补全结果”，不得写为“符合本次方向”，也不得
+扩展输出未绑定的新发现客户。
+
+单公司分析中每一个非空的结构化身份标识都必须独立指向同一 resolved Entity：公司名
+仅可与 Entity name/legal name 的保守规范化结果精确一致，URL/domain 仅可与 Entity
+website/domain 精确一致。若引用用户材料，必须记录材料中逐字可见的 `entity_literal`，
+该 literal 同时须在同 Entity Observation 原文中出现并精确对应 Entity name/legal name
+或 domain。已有表格补全的每条行/单元格 binding 也必须有同样的逐字 `entity_literal`。
+别名、品牌名、集团名、旧名称、局部名称或近似匹配均进入身份解析/人工核查，不能作为
+正式例外交付授权。
+
+`normalize_entities.py` 不得把 normalized name/domain 或 duplicate flag 写入
+research graph。它输出 schema-compatible graph copy，身份归一化提示另存为独立
+identity review report；提示不是 Claim、EntityRelationship、合并/拆分结论或交付许可。
+
+竞争/品牌参考的完全规范名、已知域名或明确 EntityRelationship 命中时保持
+`reference_only`，除非用户在当前 Brief 明确许可。名称近似、集团名、品牌名或法人
+名提示不能自动合并，也不得静默作为 `in_scope` 放行；它们必须为 `needs_confirmation`
+并进入公司身份解析。只有公开证据证明其为不同主体，或用户明确许可后，才可按当前
+合同继续进入正式客户池。
+
+### 16.4 导出和复核
+
+标准开发名单与完整核查版只导出当前 Run 的正向 `in_scope` Entity 及合格联系方式。`needs_confirmation`、`out_of_scope`、`reference_only` 不得进入客户主表、联系人汇总或开发建议；初筛可分区显示业务化标签“需确认 / 不符合本次方向 / 仅作参考”。不得向用户展示 TargetingContract、ScopeDecision、Claim、规则 ID、Review、Audit 或技术引用字段。
+
+独立复核必须检查用户原话与合同是否一致、Plan 是否覆盖正向与排除规则、正向客户是否有同实体公开证据、竞争/品牌/制造商或相近应用对象是否误入客户池，以及未知是否被合理化为符合。
+
+这套门禁不改变用户材料、`mail.read`、`image.inspect`、Inquiry、Claim、Contact、Review、Audit、Manifest、hash 与新鲜度规则。它不绑定 MCP、模型、Agent 或平台，不携带默认 ICP；邮件、图片和用户材料仍只能在各自允许的用途内参与当前方向的线索和核验流程。
+
+原始邮件或完整聊天导出可为 `correspondence_export`，但截图、转述和局部粘贴默认是 `visual_reference` 或 `user_authored_note`。沟通记录只能表述“某人在用户提供沟通记录中这样表述”，不能证明企业资质、采购权、真实需求、商标权属或公司关系，也不能进入 `Assessment.basis_claim_ids`。
+
+### 10.2.3 图片、Logo 与名片线索
+
+新增 `image.inspect` 能力合同，用于 OCR、图片文字、Logo 文字和视觉线索。它不绑定 MCP、模型、厂商或 Agent；Windows、macOS、Linux、WSL 的任意可用图片/OCR 工具均可实现。无该能力时请求更清晰图片、可读品牌文字或公开链接。
+
+```text
+visual_reference + image.inspect
+→ OCR 原文或明确标注的视觉描述
+→ Candidate / 搜索任务 / Hypothesis / UnassignedContactLead
+→ 外部官网、商标库、注册机构等再核验
+```
+
+图片本身不能直接证明 Logo/商标权属、品牌产品归属、联系人采购权或公司授权。多个近似品牌只能输出可能匹配对象和待确认项；只有外部正式来源可形成权属 Claim。
+
+### 10.2.4 已连接邮箱与 Inquiry
+
+`mail.read` 是宿主无关、只读的能力合同。用户必须明确指定邮箱连接、文件夹/标签、时间范围或筛选条件和入站方向；不得默认扫描邮箱或全量邮件。它不绑定 Gmail、Outlook、OAuth、MCP、模型或 API，不保存密码、token、完整原始邮件正文、本地路径或 `file:` URI。
+
+合格的连接来信 Source 必须为 `connected_account + correspondence + connected_inbound_correspondence`，含安全 opaque `mailbox_ref`、入站方向、收件时间、发件人与主题原文、消息内容 SHA-256 与安全 `mail:sha256:<hash>#part=...` 摘录定位。`mail.read` 只可形成 Inquiry、Candidate、外部核验任务和 `export_with_source_note` 联系人，不能支撑 Claim、Assessment、`ready` 联系方式或采购权/企业资质结论。
+
+```text
+入站邮件 -> Inquiry（询盘待办） -> 主体解析/外部核验/跟进
+公开来源或受控 published_source_copy -> Claim -> Assessment -> 标准开发名单
+```
+
+Inquiry 允许 `new`、`triaged`、`needs_entity_resolution`、`ready_for_follow_up`、`closed`，不得写成 qualified、verified_buyer 或 confirmed_purchase。`inquiry_followup_queue` 是独立交付状态与 `--mode inquiry` 导出，不要求完整 Brief/Plan/Assessment，但必须通过 Inquiry 专属审计；它不能伪装成标准开发名单。用户可见字段只显示业务化询盘摘要、待办、待补充信息和“邮件来信（日期）”来源说明，不显示 message/thread ID、hash、完整正文、路径或内部状态。
+
+MailIntakeRule 必须限定非空文件夹/标签、入站、只读与动作白名单。one_shot 必须有明确时间窗口；continuous 必须用户明确批准，且只有宿主提供合规调度/事件能力时才实际运行，否则只表示下次手动运行时应用的筛选规则。严禁发送、回复、标记已读、移动、删除、归档或改写邮件。无 `mail.read` 时请求 EML/PDF/邮件导出。
 
 ---
 
@@ -1174,6 +1364,8 @@ ready 状态但无归属证据的联系方式
 | source.open | Observation | 可形成来源记录 |
 | browser.render | Observation | 可形成来源记录 |
 | document.extract | Observation | 可形成文档来源记录 |
+| image.inspect | Observation / Candidate clue | OCR 与视觉线索，不支撑正式 Claim、商标权属或 ready 联系方式 |
+| mail.read | Inquiry / source-note contact | 只读入站邮件摘录；不支撑 Claim、Assessment 或 ready 联系方式 |
 | source.capture | Observation | 保存摘录、定位、哈希 |
 | url.canonicalize | Source / Entity | 只做归一化 |
 | entity.dedupe | Provisional Entity | 不等于最终身份判定 |
@@ -1206,6 +1398,7 @@ search.web 未直接支持 Claim
 ContactClaim 引用 ContactPoint 和 Observation
 ready ContactClaim 有 association_evidence_text
 ReviewFinding 状态合法
+公开 HTTP(S) 与用户提供文件来源均经同一正式来源资格门禁
 ```
 
 ---
@@ -1227,6 +1420,7 @@ Hypothesis 含 unknowns 和 next_verification_action
 translated Observation 可追溯原文
 critical/major Finding 已处理
 Audit graph hash 新鲜
+用户文件联系方式的 source 与 association Observation 均通过同一正式来源资格门禁
 ```
 
 ---
@@ -1240,6 +1434,7 @@ needs_correction 不允许正式交付
 初筛客户名单允许弱证据，但必须标注状态
 标准开发名单必须包含来源链接和联系方式状态
 完整核查版必须包含检查说明
+用户文件显示为业务化文件名与页码/工作表定位，不输出路径或 artifact hash
 ```
 
 ---
@@ -1260,6 +1455,8 @@ Hypothesis 不写成 Claim
 Assessment 不用 Hypothesis 做资格判断
 Audit hash 失效会阻断交付
 ReviewFinding 未处理会阻断正式交付
+用户提供 PDF / Excel 的合法 hash、定位、Claim 与联系方式链可进入标准交付
+无 hash、错误 hash、路径名、无定位、错误 capability、错误实体归属与 hold 联系方式泄漏均被阻断或脱敏
 ```
 
 ### 行为压力测试

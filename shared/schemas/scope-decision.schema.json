@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superleads.local/schemas/scope-decision.schema.json",
+  "title": "Superleads Scope Decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["scope_decision_id", "run_id", "brief_id", "targeting_contract_id", "entity_id", "overall_status", "rule_evaluations", "decision_summary", "created_at"],
+  "properties": {
+    "scope_decision_id": {"type": "string", "minLength": 1},
+    "run_id": {"type": "string", "minLength": 1},
+    "brief_id": {"type": "string", "minLength": 1},
+    "targeting_contract_id": {"type": "string", "minLength": 1},
+    "candidate_id": {"type": ["string", "null"]},
+    "entity_id": {"type": ["string", "null"]},
+    "overall_status": {"type": "string", "enum": ["in_scope", "out_of_scope", "needs_confirmation", "reference_only"]},
+    "competitor_handling_status": {"type": ["string", "null"], "enum": ["not_applicable", "reference_exact", "identity_unresolved", "explicitly_allowed", "resolved_distinct", null]},
+    "identity_review_required": {"type": ["boolean", "null"]},
+    "rule_evaluations": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["rule_id", "rule_kind", "outcome", "supporting_claim_ids", "conflicting_claim_ids", "claim_classifications", "reviewed_observation_ids", "reason"],
+        "properties": {
+          "rule_id": {"type": "string", "minLength": 1},
+          "rule_kind": {"type": "string", "enum": ["selection", "exclusion"]},
+          "outcome": {"type": "string", "enum": ["supported_match", "supported_conflict", "not_observed", "unknown"]},
+          "supporting_claim_ids": {"type": "array", "items": {"type": "string"}},
+          "conflicting_claim_ids": {"type": "array", "items": {"type": "string"}},
+          "claim_classifications": {
+            "type": "array",
+            "items": {
+              "type": "object", "additionalProperties": false,
+              "required": ["claim_id", "classification", "matched_marker", "reason"],
+              "properties": {
+                "claim_id": {"type": "string", "minLength": 1},
+                "classification": {"type": "string", "enum": ["supports", "conflicts", "irrelevant"]},
+                "matched_marker": {"type": ["string", "null"]},
+                "reason": {"type": "string", "minLength": 1}
+              }
+            }
+          },
+          "reviewed_observation_ids": {"type": "array", "items": {"type": "string"}},
+          "reason": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "decision_summary": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "minLength": 1}
+  }
+}

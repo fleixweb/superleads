@@ -22,9 +22,34 @@ Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/c
 5. Claim evidence requirements, including which claims need first-party or high-authority sources.
 6. Stop conditions and downgrade strategy when tools or evidence are missing.
 
+## Current-direction coverage
+
+When the Brief has a customer selection contract, bind the Plan to that Brief
+and list every selection and exclusion rule ID. Each query group must carry
+the relevant rule IDs and a plain-language `query_purpose`. Build positive
+discovery and exclusion checks separately. A query can discover risk only;
+it cannot permanently exclude an Entity without an opened public Observation,
+same-Entity Claim, and ClaimEvidence.
+
+Plan explicit candidate checks for the public signal needed to match each
+positive rule, the public signal that would support each exclusion, and the
+fallback to `需确认` when evidence is insufficient. If the Brief is
+provisional, set a sample-first limit from one to five and do not plan a
+formal expansion. Search terms come only from the current Brief; a competitor
+or brand is reference material unless the current Brief explicitly allows it
+as a prospect.
+
+For each rule, derive permitted generic Claim types and visible markers from
+the current Brief and Plan. Plan to classify every formal Claim supported by a
+reviewed Observation as support, conflict, or irrelevant. Do not use an
+address, registration, or company identity as product/application/channel
+evidence unless the current rule expressly permits that Claim type and marker.
+
 ## Hard constraints
 
 - Search results can only feed initial clues and logs.
 - Plan for opened sources before Claims.
 - Do not use memory or legacy examples as evidence.
 - Do not lock in any default industry ICP.
+- Similar keywords, a reachable contact, or a well-known company never count
+  as current-direction evidence.

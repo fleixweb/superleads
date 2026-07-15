@@ -1,0 +1,6 @@
+{
+  "extends": "pass_professional_stage_audio_channel.json",
+  "patches": [
+    {"op":"replace","path":"/scope_decisions/0/rule_evaluations/0","value":{"rule_id":"sel_professional_001","rule_kind":"selection","outcome":"unknown","supporting_claim_ids":[],"conflicting_claim_ids":[],"claim_classifications":[{"claim_id":"claim_001","classification":"irrelevant","matched_marker":null,"reason":"已核查材料未能确认本次要求的应用或渠道语境。"}],"reviewed_observation_ids":["obs_001"],"reason":"已核查材料未能确认本次要求的应用或渠道语境。"}}
+  ]
+}

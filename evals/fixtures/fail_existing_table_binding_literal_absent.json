@@ -1,0 +1,6 @@
+{
+  "extends": "pass_existing_table_enrichment_without_targeting_contract.json",
+  "patches": [
+    {"op": "replace", "path": "/briefs/0/existing_table_binding/entity_bindings/0/entity_literal", "value": "https://example.com"}
+  ]
+}

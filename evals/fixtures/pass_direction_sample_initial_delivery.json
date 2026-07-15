@@ -1,0 +1,11 @@
+{
+  "extends": "pass_minimal_graph.json",
+  "patches": [
+    {"op":"replace","path":"/briefs/0/customer_selection_contract/sample_first_required","value":true},
+    {"op":"replace","path":"/plans/0/sample_first_limit","value":3},
+    {"op":"replace","path":"/assessments/0/disposition","value":"需人工核查"},
+    {"op":"replace","path":"/assessments/0/scope_decision_id","value":null},
+    {"op":"replace","path":"/scope_decisions/0/overall_status","value":"needs_confirmation"},
+    {"op":"replace","path":"/scope_decisions/0/rule_evaluations/0","value":{"rule_id":"sel_001","rule_kind":"selection","outcome":"unknown","supporting_claim_ids":[],"conflicting_claim_ids":[],"claim_classifications":[{"claim_id":"claim_001","classification":"irrelevant","matched_marker":null,"reason":"The reviewed source is retained as a direction sample until user confirmation."}],"reviewed_observation_ids":["obs_001"],"reason":"Current direction remains sample-first."}}
+  ]
+}

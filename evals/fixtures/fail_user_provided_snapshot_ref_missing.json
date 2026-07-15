@@ -1,0 +1,1 @@
+{"extends":"pass_user_provided_pdf_claim.json","patches":[{"op":"remove","path":"/observations/0/snapshot_ref"}]}

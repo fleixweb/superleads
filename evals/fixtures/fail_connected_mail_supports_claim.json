@@ -1,0 +1,9 @@
+{
+  "extends": "pass_connected_inbound_inquiry.json",
+  "patches": [
+    {"op":"replace","path":"/observations/0/entity_id","value":"ent_pdf_001"},
+    {"op":"append","path":"/claims/-","value":{"claim_id":"claim_mail_001","entity_id":"ent_pdf_001","claim_type":"product_match","subject":"Example Buyer","predicate":"offers","typed_value":{"text":"sample product"},"claim_scope":"current_source","as_of":"2026-07-15","support_status":"supported","contradiction_status":"none"}},
+    {"op":"append","path":"/claim_evidence/-","value":{"claim_evidence_id":"ce_mail_001","claim_id":"claim_mail_001","observation_id":"obs_mail_001","relation":"supports","directness":"direct","source_authority":"unknown","independence_group":"mail","freshness":"observed","excerpt_pointer":"body","claim_field_anchors":{"subject":"Example Buyer","predicate":"offers","claim_type":"Example Buyer offers sample product","typed_value":"sample product"}}},
+    {"op":"append","path":"/assessments/-","value":{"assessment_id":"assess_mail_001","run_id":"run_pdf_001","entity_id":"ent_pdf_001","brief_id":"brief_pdf_001","disposition":"推荐跟进","basis_claim_ids":["claim_mail_001"],"missing_requirements":[],"manual_review_required":false,"rationale_structured":{"basis_claim_ids":["claim_mail_001"]},"related_hypothesis_ids_for_outreach":[]}}
+  ]
+}

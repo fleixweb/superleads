@@ -46,7 +46,8 @@
             "discovered_public",
             "user_provided",
             "tool_enriched",
-            "manual_input"
+            "manual_input",
+            "connected_account"
           ]
         },
         "medium": {
@@ -59,6 +60,8 @@
             "map",
             "document",
             "spreadsheet",
+            "image",
+            "correspondence",
             "search_result"
           ]
         },
@@ -73,8 +76,169 @@
             "string",
             "null"
           ]
+        },
+        "artifact_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "artifact_name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^/\\\\:\u0000-\u001F]+$",
+          "not": {
+            "pattern": "\\.\\."
+          }
+        },
+        "artifact_media_type": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9.+_-]*(/[A-Za-z0-9][A-Za-z0-9.+_-]*)?$"
+        },
+        "material_role": {
+          "type": "string",
+          "enum": [
+            "published_source_copy",
+            "user_business_dataset",
+            "correspondence_export",
+            "user_authored_note",
+            "visual_reference",
+            "connected_inbound_correspondence",
+            "unknown"
+          ]
+        },
+        "parent_source_id": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "message_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "thread_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "received_at": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "direction": {
+          "type": ["string", "null"],
+          "enum": ["inbound", "outbound", null]
+        },
+        "sender_literal": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "subject_literal": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "message_content_sha256": {
+          "type": ["string", "null"],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "mailbox_ref": {
+          "type": ["string", "null"],
+          "pattern": "^[A-Za-z0-9._-]{1,128}$"
+        },
+        "mail_intake_rule_id": {
+          "type": ["string", "null"],
+          "minLength": 1
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "provenance": {
+                "enum": [
+                  "user_provided",
+                  "manual_input",
+                  "connected_account"
+                ]
+              }
+            },
+            "required": [
+              "provenance"
+            ]
+          },
+          "then": {
+            "required": [
+              "material_role"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "provenance": {
+                "const": "user_provided"
+              },
+              "medium": {
+                "enum": [
+                  "document",
+                  "spreadsheet",
+                  "image",
+                  "correspondence"
+                ]
+              }
+            },
+            "required": [
+              "provenance",
+              "medium"
+            ]
+          },
+          "then": {
+            "required": [
+              "artifact_sha256",
+              "artifact_name"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "provenance": {"const": "connected_account"},
+              "medium": {"const": "correspondence"},
+              "material_role": {"const": "connected_inbound_correspondence"}
+            },
+            "required": ["provenance", "medium", "material_role"]
+          },
+          "then": {
+            "required": [
+              "message_id", "received_at", "direction", "sender_literal",
+              "subject_literal", "message_content_sha256", "mailbox_ref",
+              "access_boundary"
+            ],
+            "properties": {
+              "direction": {"const": "inbound"},
+              "access_boundary": {"const": "read_only_connected_account"},
+              "message_id": {"type": "string", "minLength": 1, "maxLength": 512},
+              "received_at": {"type": "string", "minLength": 1},
+              "sender_literal": {"type": "string", "minLength": 1, "maxLength": 1024},
+              "subject_literal": {"type": "string", "minLength": 1, "maxLength": 2048},
+              "message_content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "mailbox_ref": {"type": "string", "pattern": "^[A-Za-z0-9._-]{1,128}$"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "provenance": {"const": "connected_account"},
+              "medium": {"enum": ["document", "spreadsheet", "image"]}
+            },
+            "required": ["provenance", "medium"]
+          },
+          "then": {"required": ["parent_source_id", "artifact_sha256", "artifact_name"]}
+        }
+      ]
     },
     "Observation": {
       "type": "object",
@@ -130,6 +294,8 @@
             "registry.lookup",
             "trademark.lookup",
             "maps.lookup",
+            "image.inspect",
+            "mail.read",
             "memory.recall"
           ]
         },
@@ -208,9 +374,103 @@
           "type": [
             "string",
             "null"
+          ],
+          "pattern": "^(artifact:sha256:[a-f0-9]{64}|mail:sha256:[a-f0-9]{64})#[^\\\\\u0000-\u001F]+$"
+        },
+        "observation_content_kind": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "verbatim",
+            "ocr_text",
+            "visual_description",
+            null
           ]
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "document.extract"
+              }
+            },
+            "required": [
+              "capability"
+            ]
+          },
+          "then": {
+            "properties": {
+              "raw_excerpt": {
+                "type": "string",
+                "pattern": "\\S"
+              },
+              "content_hash": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "raw_excerpt",
+              "content_hash"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {"capability": {"const": "mail.read"}},
+            "required": ["capability"]
+          },
+          "then": {
+            "properties": {
+              "raw_excerpt": {"type": "string", "pattern": "\\S"},
+              "content_hash": {"type": "string", "minLength": 1},
+              "snapshot_ref": {"type": "string", "pattern": "^mail:sha256:[a-f0-9]{64}#[^\\\\\u0000-\u001F]+$"}
+            },
+            "required": ["raw_excerpt", "content_hash", "snapshot_ref"]
+          }
+        }
+        ,
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "image.inspect"
+              }
+            },
+            "required": [
+              "capability"
+            ]
+          },
+          "then": {
+            "properties": {
+              "raw_excerpt": {
+                "type": "string",
+                "pattern": "\\S"
+              },
+              "content_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "observation_content_kind": {
+                "type": "string",
+                "enum": [
+                  "ocr_text",
+                  "visual_description"
+                ]
+              }
+            },
+            "required": [
+              "raw_excerpt",
+              "content_hash",
+              "observation_content_kind"
+            ]
+          }
+        }
+      ]
     }
   },
   "type": "object",

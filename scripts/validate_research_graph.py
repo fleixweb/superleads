@@ -9,18 +9,37 @@ from typing import Any
 
 from _superleads_common import (
     CLAIM_SUPPORT_ALLOWED_CAPABILITIES,
+    CONTACT_NOTE_ALLOWED_CAPABILITIES,
     CONTACT_SOURCE_ALLOWED_CAPABILITIES,
     CONTACT_SOURCE_ALLOWED_TYPES,
     ID_FIELDS,
+    ARTIFACT_MEDIA,
+    MATERIAL_ROLES,
+    RULE_ALLOWED_CLAIM_TYPES,
+    SCOPE_CLAIM_CLASSIFICATIONS,
+    SCOPE_DECISION_STATUSES,
+    SCOPE_RULE_OUTCOMES,
     all_id_maps,
     as_list,
     canonical_contact_user_status,
     claim_value_is_anchored_in_excerpt,
+    customer_selection_contract,
+    entity_domain_matches_identity_literal,
+    entity_matches_identity_literal,
+    entity_name_matches_identity_literal,
+    formal_exception_entity_ids,
+    formal_exception_mode,
+    formal_targeting_contract_required,
+    contains_local_path,
     contact_literal_is_present,
     ensure_list,
     graph_hash,
     has_text,
-    is_public_http_url,
+    identity_reference_match,
+    normalized_identity_domain,
+    source_evidence_scope,
+    targeting_contract_required,
+    targeting_rule_maps,
     issue,
     load_json,
     normalized_contact_derives_from_literal,
@@ -101,19 +120,68 @@ def translated_support_has_original_root(
         if not has_text(current.get("raw_excerpt")) or current.get("access_status") in BLOCKED_ACCESS:
             return False
         source = ids["sources"].get(current.get("source_id"))
-        if not isinstance(source, dict) or source.get("medium") == "search_result" or not (is_public_http_url(source.get("canonical_url")) or is_public_http_url(source.get("final_url"))):
+        if not isinstance(source, dict) or source.get("medium") == "search_result":
             return False
         if current.get("capability") not in CLAIM_SUPPORT_ALLOWED_CAPABILITIES:
             return False
         status = current.get("translation_status")
         if status in {"original", "not_translated"}:
-            return True
+            return source_evidence_scope(source, current, "translation_origin")[0]
         if not has_text(current.get("derived_from_observation_id")):
             return False
         origin = ids["observations"].get(current.get("derived_from_observation_id"))
         if not isinstance(origin, dict):
             return False
         current = origin
+
+
+def _claim_has_usable_assessment_support(claim_id: Any, ids: dict[str, dict[str, dict[str, Any]]], evidence_by_claim: dict[str, list[dict[str, Any]]]) -> bool:
+    """Check that a scope rule cites a same-entity Claim with formal supports."""
+    claim = ids["claims"].get(claim_id)
+    if not isinstance(claim, dict):
+        return False
+    for evidence in evidence_by_claim.get(str(claim_id), []):
+        if evidence.get("relation") != "supports":
+            continue
+        observation = ids["observations"].get(evidence.get("observation_id"))
+        source = ids["sources"].get(observation.get("source_id")) if isinstance(observation, dict) else None
+        if not isinstance(observation, dict) or observation.get("entity_id") != claim.get("entity_id"):
+            continue
+        if observation.get("access_status") in BLOCKED_ACCESS:
+            continue
+        if source_evidence_scope(source, observation, "assessment_basis")[0]:
+            return True
+    return False
+
+
+def _claim_supporting_observations(claim_id: Any, ids: dict[str, dict[str, dict[str, Any]]], evidence_by_claim: dict[str, list[dict[str, Any]]]) -> list[dict[str, Any]]:
+    """Return only formal, same-Entity Observations that support this Claim."""
+    claim = ids["claims"].get(claim_id)
+    if not isinstance(claim, dict):
+        return []
+    result: list[dict[str, Any]] = []
+    for evidence in evidence_by_claim.get(str(claim_id), []):
+        if evidence.get("relation") != "supports":
+            continue
+        observation = ids["observations"].get(evidence.get("observation_id"))
+        source = ids["sources"].get(observation.get("source_id")) if isinstance(observation, dict) else None
+        if not isinstance(observation, dict) or observation.get("entity_id") != claim.get("entity_id"):
+            continue
+        if source_evidence_scope(source, observation, "assessment_basis")[0]:
+            result.append(observation)
+    return result
+
+
+def _formal_claim_ids_supported_by_observation(observation_id: Any, entity_id: Any, ids: dict[str, dict[str, dict[str, Any]]], evidence_by_claim: dict[str, list[dict[str, Any]]]) -> set[str]:
+    result: set[str] = set()
+    for claim_id, evidence_items in evidence_by_claim.items():
+        claim = ids["claims"].get(claim_id)
+        if not isinstance(claim, dict) or claim.get("entity_id") != entity_id:
+            continue
+        if any(item.get("relation") == "supports" and item.get("observation_id") == observation_id for item in evidence_items):
+            if _claim_has_usable_assessment_support(claim_id, ids, evidence_by_claim):
+                result.add(str(claim_id))
+    return result
 
 
 def _run_allows_delivery_status(run: dict[str, Any], brief: dict[str, Any] | None, status: Any) -> bool:
@@ -169,6 +237,96 @@ def _schema_validation_issues(graph: dict[str, Any]) -> list[dict[str, str]]:
         return [issue("major", "schema_validation_error", f"Research graph schema validation failed to execute: {exc}", "$")]
 
 
+def _formal_exception_binding_issues(
+    brief: dict[str, Any],
+    ids: dict[str, dict[str, dict[str, Any]]],
+    observations: list[Any],
+    path: str,
+) -> list[dict[str, str]]:
+    """Validate the user-input binding required by formal exception modes."""
+    issues: list[dict[str, str]] = []
+    mode = formal_exception_mode(brief)
+    if mode == "single_company_analysis":
+        target = brief.get("single_company_target")
+        target_path = f"{path}.single_company_target"
+        if not isinstance(target, dict):
+            return [issue("critical", "single_company_target_missing", "Formal single-company analysis requires an explicit current-Brief target binding", target_path)]
+        if not has_text(target.get("user_statement")):
+            issues.append(issue("critical", "single_company_target_missing", "Single-company target requires the user's explicit target statement", f"{target_path}.user_statement"))
+        identifiers = (target.get("company_name"), target.get("website_or_domain"), target.get("source_id"))
+        if not any(has_text(value) for value in identifiers):
+            issues.append(issue("critical", "single_company_target_missing", "Single-company target requires a company identifier, URL, or user-material reference", target_path))
+        entity_id = target.get("resolved_entity_id")
+        entity = ids["entities"].get(entity_id)
+        if not has_text(entity_id) or not isinstance(entity, dict):
+            issues.append(issue("critical", "single_company_target_entity_missing", "Single-company target must resolve to an existing Entity", f"{target_path}.resolved_entity_id"))
+            return issues
+        if has_text(target.get("company_name")):
+            if not entity_name_matches_identity_literal(entity, target.get("company_name")):
+                issues.append(issue("critical", "single_company_target_identifier_conflict", "Single-company company_name must exactly identify the resolved Entity", f"{target_path}.company_name"))
+        if has_text(target.get("website_or_domain")):
+            if not entity_domain_matches_identity_literal(entity, target.get("website_or_domain")):
+                issues.append(issue("critical", "single_company_target_identifier_conflict", "Single-company website_or_domain must exactly identify the resolved Entity", f"{target_path}.website_or_domain"))
+        if has_text(target.get("source_id")):
+            source = ids["sources"].get(target.get("source_id"))
+            if not isinstance(source, dict) or source.get("provenance") not in {"user_provided", "manual_input"}:
+                issues.append(issue("critical", "single_company_target_source_unbound", "Single-company user-material reference must contain an Observation resolved to the target Entity", f"{target_path}.source_id"))
+            literal = target.get("entity_literal")
+            if not has_text(literal):
+                issues.append(issue("critical", "single_company_target_entity_literal_missing", "Single-company user-material reference requires a visible Entity literal", f"{target_path}.entity_literal"))
+            elif not entity_matches_identity_literal(entity, literal):
+                issues.append(issue("critical", "single_company_target_literal_entity_mismatch", "Single-company user-material Entity literal must exactly identify the resolved Entity", f"{target_path}.entity_literal"))
+            matching_observations = [
+                observation for observation in observations
+                if isinstance(observation, dict)
+                and observation.get("source_id") == target.get("source_id")
+                and observation.get("entity_id") == entity_id
+            ]
+            if not matching_observations:
+                issues.append(issue("critical", "single_company_target_source_unbound", "Single-company user-material reference must contain an Observation resolved to the target Entity", f"{target_path}.source_id"))
+            elif has_text(literal) and not any(text_contains_exact_phrase(observation.get("raw_excerpt"), literal) for observation in matching_observations):
+                issues.append(issue("critical", "single_company_target_entity_literal_not_in_observation", "Single-company Entity literal must appear verbatim in a same-Entity user-material Observation", f"{target_path}.entity_literal"))
+    elif mode == "existing_table_enrichment":
+        binding = brief.get("existing_table_binding")
+        binding_path = f"{path}.existing_table_binding"
+        if not isinstance(binding, dict):
+            return [issue("critical", "existing_table_binding_missing", "Formal existing-table enrichment requires a bound user-provided table and row/cell mappings", binding_path)]
+        source_id = binding.get("source_id")
+        source = ids["sources"].get(source_id)
+        if not isinstance(source, dict) or source.get("provenance") != "user_provided" or source.get("medium") != "spreadsheet":
+            issues.append(issue("critical", "existing_table_binding_source_invalid", "Existing-table enrichment must bind a user-provided spreadsheet Source", f"{binding_path}.source_id"))
+        bindings = as_list(binding.get("entity_bindings"))
+        if not bindings:
+            issues.append(issue("critical", "existing_table_binding_missing", "Existing-table enrichment requires at least one Entity row/cell binding", f"{binding_path}.entity_bindings"))
+        seen_entities: set[str] = set()
+        for binding_idx, item in enumerate(bindings):
+            item_path = f"{binding_path}.entity_bindings[{binding_idx}]"
+            if not isinstance(item, dict):
+                issues.append(issue("critical", "existing_table_binding_invalid", "Existing-table Entity binding must be an object", item_path))
+                continue
+            entity_id = item.get("entity_id")
+            observation = ids["observations"].get(item.get("observation_id"))
+            if not has_text(entity_id) or entity_id not in ids["entities"]:
+                issues.append(issue("critical", "existing_table_binding_entity_missing", "Existing-table binding references a missing Entity", f"{item_path}.entity_id"))
+            elif entity_id in seen_entities:
+                issues.append(issue("critical", "existing_table_binding_duplicate_entity", "Existing-table binding repeats an Entity", f"{item_path}.entity_id"))
+            else:
+                seen_entities.add(str(entity_id))
+            if not isinstance(observation, dict) or observation.get("source_id") != source_id or observation.get("entity_id") != entity_id:
+                issues.append(issue("critical", "existing_table_binding_observation_mismatch", "Existing-table binding must use a same-Entity Observation from the bound Source", f"{item_path}.observation_id"))
+            elif observation.get("page_or_dom_locator") != item.get("row_or_cell_locator"):
+                issues.append(issue("critical", "existing_table_binding_locator_mismatch", "Existing-table row/cell locator must equal its Observation locator", f"{item_path}.row_or_cell_locator"))
+            literal = item.get("entity_literal")
+            if not has_text(literal):
+                issues.append(issue("critical", "existing_table_binding_entity_literal_missing", "Existing-table binding requires a visible Entity literal from the bound row/cell", f"{item_path}.entity_literal"))
+            elif isinstance(observation, dict) and not text_contains_exact_phrase(observation.get("raw_excerpt"), literal):
+                issues.append(issue("critical", "existing_table_binding_literal_not_in_observation", "Existing-table Entity literal must appear verbatim in its bound row/cell Observation", f"{item_path}.entity_literal"))
+            entity = ids["entities"].get(entity_id)
+            if has_text(literal) and not entity_matches_identity_literal(entity, literal):
+                issues.append(issue("critical", "existing_table_binding_literal_entity_mismatch", "Existing-table Entity literal must exactly identify the bound Entity", f"{item_path}.entity_literal"))
+    return issues
+
+
 def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
     issues: list[dict[str, str]] = []
     issues.extend(_schema_validation_issues(graph))
@@ -215,12 +373,114 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
         ent = obs.get("entity_id")
         if ent and ent not in ids["entities"]:
             issues.append(issue("major", "observation_entity_missing", f"Observation references missing Entity {ent}", f"observations[{idx}].entity_id"))
+        source = ids["sources"].get(sid)
+        if isinstance(source, dict) and source.get("provenance") in {"user_provided", "manual_input", "connected_account"}:
+            for field in ("title", "raw_excerpt", "page_or_dom_locator", "extraction_method", "snapshot_ref"):
+                if contains_local_path(obs.get(field)):
+                    issues.append(issue("critical", "local_path_in_material_metadata", f"User material Observation contains a local path in {field}", f"observations[{idx}].{field}"))
 
     for idx, source in enumerate(ensure_list(graph, "sources")):
         if not isinstance(source, dict): continue
         for field in ("publisher_relation", "provenance", "medium", "access_boundary"):
             if not has_text(source.get(field)):
                 issues.append(issue("major", "source_missing_required_context", f"Source {source.get('source_id')} lacks {field}", f"sources[{idx}].{field}"))
+        if source.get("provenance") in {"user_provided", "manual_input", "connected_account"}:
+            role = source.get("material_role")
+            if not has_text(role):
+                issues.append(issue("critical", "material_role_missing", f"User material Source {source.get('source_id')} lacks material_role", f"sources[{idx}].material_role"))
+            elif role not in MATERIAL_ROLES:
+                issues.append(issue("critical", "material_role_invalid", f"User material Source {source.get('source_id')} has invalid material_role {role}", f"sources[{idx}].material_role"))
+            for field in ("canonical_url", "final_url", "access_boundary", "owner_hint", "artifact_name", "artifact_media_type", "sender_literal", "subject_literal", "mailbox_ref"):
+                if contains_local_path(source.get(field)):
+                    issues.append(issue("critical", "local_path_in_material_metadata", f"User material Source contains a local path in {field}", f"sources[{idx}].{field}"))
+        if source.get("provenance") == "user_provided" and source.get("medium") in ARTIFACT_MEDIA:
+            if not has_text(source.get("artifact_sha256")):
+                issues.append(issue("critical", "user_provided_artifact_hash_missing", f"User-provided Source {source.get('source_id')} lacks artifact_sha256", f"sources[{idx}].artifact_sha256"))
+            elif not __import__("re").fullmatch(r"[a-f0-9]{64}", str(source.get("artifact_sha256"))):
+                issues.append(issue("critical", "user_provided_artifact_hash_invalid", f"User-provided Source {source.get('source_id')} has invalid artifact_sha256", f"sources[{idx}].artifact_sha256"))
+            if not has_text(source.get("artifact_name")) or any(token in str(source.get("artifact_name") or "") for token in ("/", "\\", ":", "..")):
+                issues.append(issue("critical", "user_provided_artifact_name_invalid", f"User-provided Source {source.get('source_id')} has unsafe artifact_name", f"sources[{idx}].artifact_name"))
+        if source.get("provenance") == "connected_account" and source.get("medium") in {"document", "spreadsheet", "image"}:
+            if not has_text(source.get("artifact_sha256")):
+                issues.append(issue("critical", "user_provided_artifact_hash_missing", f"Connected attachment Source {source.get('source_id')} lacks artifact_sha256", f"sources[{idx}].artifact_sha256"))
+            elif not __import__("re").fullmatch(r"[a-f0-9]{64}", str(source.get("artifact_sha256"))):
+                issues.append(issue("critical", "user_provided_artifact_hash_invalid", f"Connected attachment Source {source.get('source_id')} has invalid artifact_sha256", f"sources[{idx}].artifact_sha256"))
+            if not has_text(source.get("artifact_name")) or any(token in str(source.get("artifact_name") or "") for token in ("/", "\\", ":", "..")):
+                issues.append(issue("critical", "user_provided_artifact_name_invalid", f"Connected attachment Source {source.get('source_id')} has unsafe artifact_name", f"sources[{idx}].artifact_name"))
+        if source.get("provenance") == "connected_account":
+            if source.get("medium") == "correspondence":
+                required = ("message_id", "received_at", "sender_literal", "subject_literal", "message_content_sha256", "mailbox_ref")
+                if any(not has_text(source.get(field)) for field in required):
+                    issues.append(issue("critical", "connected_mail_metadata_missing", f"Connected mail Source {source.get('source_id')} lacks required metadata", f"sources[{idx}]"))
+                if source.get("material_role") != "connected_inbound_correspondence":
+                    issues.append(issue("critical", "connected_mail_material_role_invalid", "Connected mail Source must use connected_inbound_correspondence", f"sources[{idx}].material_role"))
+                if source.get("direction") != "inbound":
+                    issues.append(issue("critical", "connected_mail_direction_not_inbound", "Connected mail Source must be inbound", f"sources[{idx}].direction"))
+                if source.get("access_boundary") != "read_only_connected_account":
+                    issues.append(issue("critical", "connected_mail_access_boundary_invalid", "Connected mail Source must have read_only_connected_account boundary", f"sources[{idx}].access_boundary"))
+            elif source.get("medium") in {"document", "spreadsheet", "image"}:
+                parent_id = source.get("parent_source_id")
+                parent = ids["sources"].get(parent_id)
+                if not has_text(parent_id) or not isinstance(parent, dict):
+                    issues.append(issue("critical", "connected_attachment_parent_source_missing", "Connected mail attachment must reference its parent mail Source", f"sources[{idx}].parent_source_id"))
+                elif parent.get("provenance") != "connected_account" or parent.get("medium") != "correspondence":
+                    issues.append(issue("critical", "connected_attachment_parent_source_invalid", "Connected attachment parent must be a connected correspondence Source", f"sources[{idx}].parent_source_id"))
+
+    for idx, obs in enumerate(ensure_list(graph, "observations")):
+        if not isinstance(obs, dict):
+            continue
+        source = ids["sources"].get(obs.get("source_id"))
+        if isinstance(source, dict) and source.get("provenance") == "connected_account" and source.get("medium") == "correspondence":
+            eligible, reason_code = source_evidence_scope(source, obs, "candidate_clue")
+            if not eligible:
+                issues.append(issue("critical", reason_code, "Connected mail Observation does not meet the read-only mail evidence contract", f"observations[{idx}]"))
+
+    inquiry_statuses = {"new", "triaged", "needs_entity_resolution", "ready_for_follow_up", "closed"}
+    for idx, inquiry in enumerate(ensure_list(graph, "inquiries")):
+        if not isinstance(inquiry, dict):
+            continue
+        for field, collection in (("run_id", "runs"), ("source_id", "sources"), ("observation_id", "observations")):
+            value = inquiry.get(field)
+            if not has_text(value) or value not in ids[collection]:
+                issues.append(issue("critical", "inquiry_reference_missing", f"Inquiry {inquiry.get('inquiry_id')} references missing {field}", f"inquiries[{idx}].{field}"))
+        if inquiry.get("entity_id") and inquiry.get("entity_id") not in ids["entities"]:
+            issues.append(issue("major", "inquiry_entity_missing", "Inquiry references missing Entity", f"inquiries[{idx}].entity_id"))
+        if inquiry.get("contact_id") and inquiry.get("contact_id") not in ids["contact_points"]:
+            issues.append(issue("major", "inquiry_contact_missing", "Inquiry references missing ContactPoint", f"inquiries[{idx}].contact_id"))
+        if inquiry.get("direction") != "inbound":
+            issues.append(issue("critical", "inquiry_direction_not_inbound", "Inquiry direction must be inbound", f"inquiries[{idx}].direction"))
+        if inquiry.get("inquiry_status") not in inquiry_statuses:
+            issues.append(issue("critical", "inquiry_status_invalid", "Inquiry uses an unsupported status", f"inquiries[{idx}].inquiry_status"))
+        if not has_text(inquiry.get("received_at")):
+            issues.append(issue("critical", "inquiry_received_at_missing", "Inquiry requires received_at", f"inquiries[{idx}].received_at"))
+        if not has_text(inquiry.get("request_excerpt")) or len(str(inquiry.get("request_excerpt") or "")) > 1000:
+            issues.append(issue("critical", "inquiry_request_excerpt_invalid", "Inquiry request_excerpt must be a non-empty bounded excerpt", f"inquiries[{idx}].request_excerpt"))
+        observation = ids["observations"].get(inquiry.get("observation_id"))
+        source = ids["sources"].get(inquiry.get("source_id"))
+        if isinstance(observation, dict) and source is not None:
+            if observation.get("source_id") != inquiry.get("source_id"):
+                issues.append(issue("critical", "inquiry_source_observation_mismatch", "Inquiry Source and Observation must be linked", f"inquiries[{idx}].observation_id"))
+            eligible, reason_code = source_evidence_scope(source, observation, "inquiry_event")
+            if not eligible:
+                issues.append(issue("critical", reason_code, "Inquiry requires a qualified inbound correspondence Observation", f"inquiries[{idx}].observation_id"))
+            if has_text(inquiry.get("request_excerpt")) and not text_contains(observation.get("raw_excerpt"), inquiry.get("request_excerpt")):
+                issues.append(issue("critical", "inquiry_excerpt_not_in_observation", "Inquiry request_excerpt must be present in its Observation excerpt", f"inquiries[{idx}].request_excerpt"))
+
+    allowed_mail_actions = {"create_inquiry", "create_candidate", "create_contact_with_source_note", "create_entity_resolution_task"}
+    for idx, rule in enumerate(ensure_list(graph, "mail_intake_rules")):
+        if not isinstance(rule, dict):
+            continue
+        if not as_list(rule.get("folders_or_labels")):
+            issues.append(issue("critical", "mail_rule_scope_missing", "MailIntakeRule requires at least one folder or label", f"mail_intake_rules[{idx}].folders_or_labels"))
+        if rule.get("mode") == "one_shot" and (not has_text(rule.get("received_after")) or not has_text(rule.get("received_before"))):
+            issues.append(issue("critical", "mail_rule_scope_missing", "one_shot MailIntakeRule requires received_after and received_before", f"mail_intake_rules[{idx}]"))
+        if rule.get("mode") == "continuous" and (rule.get("enabled") is not True or not has_text(rule.get("user_approved_at"))):
+            issues.append(issue("critical", "mail_rule_continuous_approval_missing", "continuous MailIntakeRule must be enabled and explicitly approved", f"mail_intake_rules[{idx}]"))
+        if rule.get("direction") != "inbound" or rule.get("read_only") is not True:
+            issues.append(issue("critical", "mail_rule_not_read_only_inbound", "MailIntakeRule must be read-only and inbound-only", f"mail_intake_rules[{idx}]"))
+        actions = as_list(rule.get("actions"))
+        if not actions or any(action not in allowed_mail_actions for action in actions):
+            issues.append(issue("critical", "mail_rule_mutating_action", "MailIntakeRule contains a non-permitted or mutating action", f"mail_intake_rules[{idx}].actions"))
 
     # New customer development requires product/service plus at least one scope axis.
     # Single-company analysis, existing-table enrichment, and material/list extraction
@@ -234,6 +494,23 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
                 issues.append(issue("major", "brief_missing_product_or_service", "New customer development Brief lacks product_or_service", f"briefs[{idx}].product_or_service"))
             if not as_list(brief.get("scope_axis")):
                 issues.append(issue("major", "brief_missing_scope_axis", "New customer development Brief lacks scope_axis", f"briefs[{idx}].scope_axis"))
+        if formal_exception_mode(brief):
+            issues.extend(_formal_exception_binding_issues(brief, ids, ensure_list(graph, "observations"), f"briefs[{idx}]"))
+        contract = customer_selection_contract(brief)
+        if isinstance(contract, dict):
+            selection_rules, exclusion_rules = targeting_rule_maps(contract)
+            if not has_text(contract.get("targeting_contract_id")):
+                issues.append(issue("critical", "targeting_contract_id_missing", "Customer selection contract lacks targeting_contract_id", f"briefs[{idx}].customer_selection_contract.targeting_contract_id"))
+            if len(selection_rules) != len(as_list(contract.get("selection_requirements"))) or len(exclusion_rules) != len(as_list(contract.get("exclusion_rules"))):
+                issues.append(issue("critical", "targeting_rule_missing", "Customer selection contract contains missing or duplicate rule IDs", f"briefs[{idx}].customer_selection_contract"))
+            if contract.get("scope_state") not in {"explicit", "inferred_low_risk", "provisional"}:
+                issues.append(issue("critical", "targeting_scope_state_invalid", "Customer selection contract has invalid scope_state", f"briefs[{idx}].customer_selection_contract.scope_state"))
+            if any(not isinstance(rule.get("allowed_claim_types"), list) or not rule.get("allowed_claim_types") or any(claim_type not in RULE_ALLOWED_CLAIM_TYPES for claim_type in rule.get("allowed_claim_types", [])) for rule in [*selection_rules.values(), *exclusion_rules.values()]):
+                issues.append(issue("critical", "targeting_rule_allowed_claim_types_invalid", "Every current-direction rule requires non-empty allowed_claim_types from the generic Claim taxonomy", f"briefs[{idx}].customer_selection_contract"))
+            if any(not isinstance(rule.get("evidence_markers"), list) or not rule.get("evidence_markers") for rule in selection_rules.values()):
+                issues.append(issue("critical", "targeting_rule_evidence_markers_missing", "Every selection rule requires current-Brief evidence_markers", f"briefs[{idx}].customer_selection_contract.selection_requirements"))
+            if any(not isinstance(rule.get("conflict_markers"), list) or not rule.get("conflict_markers") for rule in exclusion_rules.values()):
+                issues.append(issue("critical", "targeting_rule_conflict_markers_missing", "Every exclusion rule requires current-Brief conflict_markers", f"briefs[{idx}].customer_selection_contract.exclusion_rules"))
 
     for idx, plan in enumerate(ensure_list(graph, "plans")):
         if not isinstance(plan, dict): continue
@@ -243,6 +520,29 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
                 issues.append(issue("major", "plan_missing_required_field", f"Plan {plan.get('plan_id')} lacks {field}", f"plans[{idx}].{field}"))
         if plan.get("brief_id") not in ids["briefs"]:
             issues.append(issue("major", "plan_brief_missing", f"Plan {plan.get('plan_id')} references missing Brief {plan.get('brief_id')}", f"plans[{idx}].brief_id"))
+            continue
+        brief = ids["briefs"].get(plan.get("brief_id"))
+        contract = customer_selection_contract(brief)
+        if isinstance(contract, dict):
+            selection_rules, exclusion_rules = targeting_rule_maps(contract)
+            if plan.get("selection_contract_brief_id") != plan.get("brief_id"):
+                issues.append(issue("critical", "targeting_contract_brief_mismatch", "Plan must bind the customer selection contract to its Brief", f"plans[{idx}].selection_contract_brief_id"))
+            if set(as_list(plan.get("selection_requirement_ids"))) != set(selection_rules):
+                issues.append(issue("critical", "plan_selection_requirement_ids_mismatch", "Plan must list every current Brief selection rule", f"plans[{idx}].selection_requirement_ids"))
+            if set(as_list(plan.get("exclusion_rule_ids"))) != set(exclusion_rules):
+                issues.append(issue("critical", "plan_exclusion_rule_ids_mismatch", "Plan must list every current Brief exclusion rule", f"plans[{idx}].exclusion_rule_ids"))
+            query_groups = [group for group in as_list(plan.get("query_groups")) if isinstance(group, dict)]
+            covered_ids = {rule_id for group in query_groups for rule_id in as_list(group.get("targeting_rule_ids"))}
+            expected_ids = set(selection_rules) | set(exclusion_rules)
+            if not expected_ids.issubset(covered_ids):
+                issues.append(issue("critical", "plan_query_group_missing_targeting_rule", "Every customer-selection rule needs a linked query or check step", f"plans[{idx}].query_groups"))
+            group_names = {str(group.get("group_id") or group.get("query_purpose") or group.get("purpose") or "") for group in query_groups}
+            if not set(as_list(plan.get("positive_query_groups"))).issubset(group_names) or not set(as_list(plan.get("exclusion_check_query_groups"))).issubset(group_names):
+                issues.append(issue("major", "plan_targeting_query_group_missing", "Plan targeting query references must name actual query groups", f"plans[{idx}]"))
+            if contract.get("scope_state") == "provisional" and plan.get("sample_first_limit") not in {1, 2, 3, 4, 5}:
+                issues.append(issue("critical", "provisional_scope_sample_limit_missing", "Provisional customer direction requires a 1-5 sample-first limit", f"plans[{idx}].sample_first_limit"))
+            if contract.get("sample_first_required") is True and plan.get("sample_first_limit") not in {1, 2, 3, 4, 5}:
+                issues.append(issue("critical", "sample_first_limit_missing", "sample_first_required requires a 1-5 sample-first limit", f"plans[{idx}].sample_first_limit"))
 
     evidence_by_claim: dict[str, list[dict[str, Any]]] = {}
     supporting_evidence_by_claim: dict[str, list[dict[str, Any]]] = {}
@@ -274,8 +574,9 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
             capability = obs.get("capability")
             if capability not in CLAIM_SUPPORT_ALLOWED_CAPABILITIES or medium == "search_result":
                 issues.append(issue("critical", "capability_not_allowed_to_support_claim", f"{capability or medium} cannot support a formal Claim", f"claim_evidence[{idx}]"))
-            if not isinstance(source, dict) or not (is_public_http_url(source.get("canonical_url")) or is_public_http_url(source.get("final_url"))):
-                issues.append(issue("critical", "claim_support_source_url_invalid", "ClaimEvidence support requires a public http/https Source URL", f"claim_evidence[{idx}].observation_id"))
+            eligible, reason_code = source_evidence_scope(source, obs, "formal_claim")
+            if not eligible:
+                issues.append(issue("critical", reason_code, "ClaimEvidence support does not meet the formal source eligibility contract", f"claim_evidence[{idx}].observation_id"))
             if obs.get("access_status") in BLOCKED_ACCESS:
                 issues.append(issue("critical", "blocked_observation_supports_claim", "Blocked/login-wall/inaccessible Observation supports Claim", f"claim_evidence[{idx}]"))
             ts = obs.get("translation_status")
@@ -362,7 +663,8 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
             issues.append(issue("critical", "exportable_contact_without_resolved_entity", "Exportable ContactClaim must resolve to an Entity; person_id alone is insufficient", f"contact_claims[{idx}].entity_id"))
         if export_status in {"ready", "export_with_source_note", "needs_manual_association_review"}:
             for contact_obs, label in ((source_obs, "source"), (assoc_obs, "association")):
-                if not isinstance(contact_obs, dict) or contact_obs.get("capability") not in CONTACT_SOURCE_ALLOWED_CAPABILITIES:
+                allowed_capabilities = CONTACT_NOTE_ALLOWED_CAPABILITIES if export_status == "export_with_source_note" else CONTACT_SOURCE_ALLOWED_CAPABILITIES
+                if not isinstance(contact_obs, dict) or contact_obs.get("capability") not in allowed_capabilities:
                     issues.append(issue("critical", "contact_capability_not_allowed", f"ContactClaim {cc.get('contact_claim_id')} uses non-permitted {label} capability", f"contact_claims[{idx}]"))
             if isinstance(assoc_obs, dict) and not text_contains(assoc_obs.get("raw_excerpt"), cc.get("association_evidence_text")):
                 issues.append(issue("critical", "association_evidence_not_in_observation", f"ContactClaim {cc.get('contact_claim_id')} association_evidence_text is not present in cited Observation", f"contact_claims[{idx}].association_evidence_text"))
@@ -382,6 +684,12 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
                     other_name = other_entity.get(field)
                     if has_text(other_name) and text_contains_exact_phrase(cc.get("association_evidence_text"), other_name):
                         issues.append(issue("critical", "exportable_contact_association_mentions_other_entity", "Exportable ContactClaim association evidence names another Entity", f"contact_claims[{idx}].association_evidence_text"))
+            contact_purpose = "contact_ready" if export_status == "ready" else "contact_with_source_note"
+            for contact_obs, label in ((source_obs, "source"), (assoc_obs, "association")):
+                contact_source = ids["sources"].get(contact_obs.get("source_id")) if isinstance(contact_obs, dict) else None
+                eligible, reason_code = source_evidence_scope(contact_source, contact_obs, contact_purpose)
+                if not eligible:
+                    issues.append(issue("critical", reason_code, f"Exportable ContactClaim {label} Observation does not meet the formal source eligibility contract", f"contact_claims[{idx}].{label}_observation"))
         # Entity mismatch is unsafe even for non-ready contacts.  Keep such
         # records unassigned instead of binding them to the customer row.
         if ent and isinstance(source_obs, dict) and source_obs.get("entity_id") and source_obs.get("entity_id") != ent:
@@ -436,6 +744,180 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
             if ccid not in ids["contact_claims"]:
                 issues.append(issue("major", "hypothesis_contact_claim_missing", f"Hypothesis references missing ContactClaim {ccid}", f"hypotheses[{idx}].basis_contact_claim_ids"))
 
+    scope_decisions_by_id: dict[str, dict[str, Any]] = {}
+    for idx, decision in enumerate(ensure_list(graph, "scope_decisions")):
+        if not isinstance(decision, dict):
+            continue
+        decision_id = decision.get("scope_decision_id")
+        if has_text(decision_id):
+            scope_decisions_by_id[str(decision_id)] = decision
+        brief = ids["briefs"].get(decision.get("brief_id"))
+        run = ids["runs"].get(decision.get("run_id"))
+        entity_id = decision.get("entity_id")
+        candidate_id = decision.get("candidate_id")
+        if not isinstance(brief, dict):
+            issues.append(issue("critical", "scope_decision_brief_missing", "ScopeDecision references a missing Brief", f"scope_decisions[{idx}].brief_id"))
+            continue
+        contract = customer_selection_contract(brief)
+        if not isinstance(contract, dict):
+            issues.append(issue("critical", "brief_targeting_contract_missing", "ScopeDecision Brief lacks a customer selection contract", f"scope_decisions[{idx}].brief_id"))
+            continue
+        if not isinstance(run, dict):
+            issues.append(issue("critical", "scope_decision_run_missing", "ScopeDecision references a missing Run", f"scope_decisions[{idx}].run_id"))
+        elif run.get("brief_id") != decision.get("brief_id"):
+            issues.append(issue("critical", "scope_decision_run_mismatch", "ScopeDecision Run must belong to the same Brief", f"scope_decisions[{idx}].run_id"))
+        if decision.get("targeting_contract_id") != contract.get("targeting_contract_id"):
+            issues.append(issue("critical", "targeting_contract_brief_mismatch", "ScopeDecision targeting contract must match its Brief", f"scope_decisions[{idx}].targeting_contract_id"))
+        if entity_id is not None and entity_id not in ids["entities"]:
+            issues.append(issue("critical", "scope_decision_entity_missing", "ScopeDecision references a missing Entity", f"scope_decisions[{idx}].entity_id"))
+        if candidate_id is not None and candidate_id not in ids["candidates"]:
+            issues.append(issue("major", "scope_decision_candidate_missing", "ScopeDecision references a missing Candidate", f"scope_decisions[{idx}].candidate_id"))
+        if not has_text(entity_id) and not has_text(candidate_id):
+            issues.append(issue("critical", "scope_decision_subject_missing", "ScopeDecision needs an Entity or Candidate", f"scope_decisions[{idx}]"))
+        if decision.get("overall_status") not in SCOPE_DECISION_STATUSES:
+            issues.append(issue("critical", "scope_decision_status_invalid", "ScopeDecision uses an invalid workflow status", f"scope_decisions[{idx}].overall_status"))
+        if not has_text(entity_id) and decision.get("overall_status") == "in_scope":
+            issues.append(issue("critical", "scope_decision_entity_required_for_in_scope", "An in-scope decision must resolve to an Entity before formal delivery", f"scope_decisions[{idx}].entity_id"))
+        if not has_text(entity_id) and decision.get("overall_status") not in {"needs_confirmation", "reference_only"}:
+            issues.append(issue("critical", "scope_decision_entity_required_for_status", "Candidate-only ScopeDecision may only remain needs_confirmation or reference_only", f"scope_decisions[{idx}].overall_status"))
+        selection_rules, exclusion_rules = targeting_rule_maps(contract)
+        evaluations = [item for item in as_list(decision.get("rule_evaluations")) if isinstance(item, dict)]
+        evaluation_by_key: dict[tuple[str, str], dict[str, Any]] = {}
+        for eval_idx, evaluation in enumerate(evaluations):
+            rule_id = evaluation.get("rule_id")
+            rule_kind = evaluation.get("rule_kind")
+            key = (str(rule_kind), str(rule_id))
+            if key in evaluation_by_key:
+                issues.append(issue("critical", "scope_decision_rule_duplicate", "ScopeDecision evaluates the same rule more than once", f"scope_decisions[{idx}].rule_evaluations[{eval_idx}]"))
+            evaluation_by_key[key] = evaluation
+            expected_rules = selection_rules if rule_kind == "selection" else exclusion_rules if rule_kind == "exclusion" else {}
+            if rule_kind not in {"selection", "exclusion"} or rule_id not in expected_rules:
+                issues.append(issue("critical", "scope_decision_rule_missing", "ScopeDecision references a rule not present in its Brief contract", f"scope_decisions[{idx}].rule_evaluations[{eval_idx}].rule_id"))
+            if evaluation.get("outcome") not in SCOPE_RULE_OUTCOMES:
+                issues.append(issue("critical", "scope_decision_rule_outcome_invalid", "ScopeDecision rule has invalid outcome", f"scope_decisions[{idx}].rule_evaluations[{eval_idx}].outcome"))
+            if evaluation.get("outcome") == "not_observed" and not as_list(evaluation.get("reviewed_observation_ids")):
+                issues.append(issue("critical", "scope_decision_not_observed_without_review", "not_observed requires at least one reviewed Observation and does not prove absence", f"scope_decisions[{idx}].rule_evaluations[{eval_idx}].reviewed_observation_ids"))
+            rule = expected_rules.get(rule_id) if isinstance(expected_rules, dict) else None
+            classifications = [item for item in as_list(evaluation.get("claim_classifications")) if isinstance(item, dict)]
+            classification_by_claim: dict[str, dict[str, Any]] = {}
+            for class_idx, classification in enumerate(classifications):
+                claim_id = classification.get("claim_id")
+                classification_kind = classification.get("classification")
+                class_path = f"scope_decisions[{idx}].rule_evaluations[{eval_idx}].claim_classifications[{class_idx}]"
+                if not has_text(claim_id) or claim_id in classification_by_claim:
+                    issues.append(issue("critical", "scope_rule_evidence_classification_missing", "Each reviewed Claim requires one unique evidence classification", class_path))
+                    continue
+                classification_by_claim[str(claim_id)] = classification
+                if classification_kind not in SCOPE_CLAIM_CLASSIFICATIONS:
+                    issues.append(issue("critical", "scope_rule_evidence_classification_missing", "Scope rule Claim classification is invalid", class_path))
+                    continue
+                claim = ids["claims"].get(claim_id)
+                if not isinstance(claim, dict):
+                    issues.append(issue("critical", "scope_decision_rule_claim_missing", "ScopeDecision references a missing Claim", class_path))
+                    continue
+                if has_text(entity_id) and claim.get("entity_id") != entity_id:
+                    issues.append(issue("critical", "scope_decision_rule_claim_entity_mismatch", "ScopeDecision rule Claim must belong to the same Entity", class_path))
+                    continue
+                if classification_kind != "irrelevant" and not _claim_has_usable_assessment_support(claim_id, ids, evidence_by_claim):
+                    issues.append(issue("critical", "scope_decision_rule_evidence_missing", "ScopeDecision rule Claim lacks usable formal supports evidence", class_path))
+                    continue
+                if classification_kind == "irrelevant":
+                    continue
+                allowed_types = as_list(rule.get("allowed_claim_types")) if isinstance(rule, dict) else []
+                if claim.get("claim_type") not in allowed_types:
+                    issues.append(issue("critical", "scope_rule_claim_type_not_allowed", "Scope rule Claim type is not permitted by this current Brief rule", class_path))
+                marker_field = "evidence_markers" if classification_kind == "supports" else "conflict_markers"
+                allowed_markers = [marker for marker in as_list(rule.get(marker_field)) if has_text(marker)] if isinstance(rule, dict) else []
+                matched_marker = classification.get("matched_marker")
+                if not has_text(matched_marker) or matched_marker not in allowed_markers:
+                    issues.append(issue("critical", "scope_rule_support_not_relevant", "Scope rule classification must use a marker declared by this current Brief rule", class_path))
+                elif not any(text_contains_exact_phrase(observation.get("raw_excerpt"), matched_marker) for observation in _claim_supporting_observations(claim_id, ids, evidence_by_claim)):
+                    issues.append(issue("critical", "scope_rule_marker_missing_from_observation", "Scope rule matched_marker is not present in the Claim's supporting public excerpt", class_path))
+            supports_ids = {str(item.get("claim_id")) for item in classifications if item.get("classification") == "supports" and has_text(item.get("claim_id"))}
+            conflicts_ids = {str(item.get("claim_id")) for item in classifications if item.get("classification") == "conflicts" and has_text(item.get("claim_id"))}
+            if set(as_list(evaluation.get("supporting_claim_ids"))) != supports_ids or set(as_list(evaluation.get("conflicting_claim_ids"))) != conflicts_ids:
+                issues.append(issue("critical", "scope_rule_evidence_classification_missing", "Scope rule legacy Claim lists must exactly match explicit classifications", f"scope_decisions[{idx}].rule_evaluations[{eval_idx}]"))
+            if evaluation.get("outcome") == "supported_match" and not supports_ids:
+                issues.append(issue("critical", "scope_decision_rule_evidence_missing", "supported_match requires a supports classification", f"scope_decisions[{idx}].rule_evaluations[{eval_idx}]"))
+            if evaluation.get("outcome") == "supported_conflict" and not conflicts_ids:
+                issues.append(issue("critical", "scope_decision_rule_evidence_missing", "supported_conflict requires a conflicts classification", f"scope_decisions[{idx}].rule_evaluations[{eval_idx}]"))
+            reviewed_claim_ids: set[str] = set()
+            for observation_id in as_list(evaluation.get("reviewed_observation_ids")):
+                observation = ids["observations"].get(observation_id)
+                if not isinstance(observation, dict):
+                    issues.append(issue("major", "scope_decision_observation_missing", "ScopeDecision references a missing reviewed Observation", f"scope_decisions[{idx}].rule_evaluations[{eval_idx}].reviewed_observation_ids"))
+                elif has_text(entity_id) and observation.get("entity_id") not in {None, entity_id}:
+                    issues.append(issue("critical", "scope_decision_observation_entity_mismatch", "ScopeDecision reviewed Observation belongs to another Entity", f"scope_decisions[{idx}].rule_evaluations[{eval_idx}].reviewed_observation_ids"))
+                elif has_text(entity_id):
+                    reviewed_claim_ids.update(_formal_claim_ids_supported_by_observation(observation_id, entity_id, ids, evidence_by_claim))
+            unclassified_claims = reviewed_claim_ids - set(classification_by_claim)
+            if unclassified_claims:
+                issues.append(issue("critical", "scope_rule_evidence_classification_missing", "Every formal Claim supported by a reviewed Observation must be classified", f"scope_decisions[{idx}].rule_evaluations[{eval_idx}].claim_classifications"))
+            if isinstance(rule, dict):
+                conflict_markers = [marker for marker in as_list(rule.get("conflict_markers")) if has_text(marker)]
+                conflict_claims = {
+                    claim_id for claim_id in reviewed_claim_ids
+                    if any(text_contains_exact_phrase(observation.get("raw_excerpt"), marker) for claim_id in [claim_id] for observation in _claim_supporting_observations(claim_id, ids, evidence_by_claim) for marker in conflict_markers)
+                }
+                if conflict_claims and (not conflict_claims.issubset(conflicts_ids) or evaluation.get("outcome") != "supported_conflict"):
+                    issues.append(issue("critical", "scope_rule_conflict_hidden_as_not_observed", "A reviewed public conflict marker cannot be recorded as not_observed, irrelevant, or a match", f"scope_decisions[{idx}].rule_evaluations[{eval_idx}]"))
+        subject_names: set[str] = set()
+        if has_text(entity_id):
+            entity = ids["entities"].get(entity_id)
+            subject_names.update(str(entity.get(field)).casefold() for field in ("name", "legal_name") if isinstance(entity, dict) and has_text(entity.get(field)))
+        if has_text(candidate_id):
+            candidate = ids["candidates"].get(candidate_id)
+            if isinstance(candidate, dict):
+                subject_names.update(str(candidate.get(field)).casefold() for field in ("name", "company_name") if has_text(candidate.get(field)))
+        subject_domains: set[str] = set()
+        if has_text(entity_id):
+            entity = ids["entities"].get(entity_id)
+            if isinstance(entity, dict):
+                subject_domains.update(filter(None, (normalized_identity_domain(entity.get(field)) for field in ("website", "domain"))))
+        competitor_references = [reference for reference in as_list(brief.get("competitors_or_brands")) if has_text(reference)]
+        reference_matches = [identity_reference_match(subject_names, subject_domains, reference) for reference in competitor_references]
+        relationship_exact = False
+        relationship_distinct = False
+        if has_text(entity_id) and competitor_references:
+            for relation in ensure_list(graph, "entity_relationships"):
+                if not isinstance(relation, dict):
+                    continue
+                endpoint_ids = {relation.get(field) for field in ("source_entity_id", "from_entity_id", "parent_entity_id", "target_entity_id", "to_entity_id", "child_entity_id") if has_text(relation.get(field))}
+                if entity_id not in endpoint_ids:
+                    continue
+                for other_entity_id in endpoint_ids - {entity_id}:
+                    other = ids["entities"].get(other_entity_id)
+                    if not isinstance(other, dict):
+                        continue
+                    other_names = {str(other.get(field)) for field in ("name", "legal_name") if has_text(other.get(field))}
+                    other_domains = set(filter(None, (normalized_identity_domain(other.get(field)) for field in ("website", "domain"))))
+                    if not any(identity_reference_match(other_names, other_domains, reference) == "exact" for reference in competitor_references):
+                        continue
+                    if relation.get("relationship_type") == "unrelated_same_name" and relation.get("resolution_status") == "split":
+                        relationship_distinct = True
+                    elif relation.get("resolution_status") not in {"rejected", "manual_check"}:
+                        relationship_exact = True
+        if competitor_references and contract.get("competitor_as_prospect_allowed") is True:
+            if decision.get("competitor_handling_status") != "explicitly_allowed":
+                issues.append(issue("critical", "competitor_seed_identity_unresolved", "A competitor/brand reference needs an explicit handling result even when the user allows prospects", f"scope_decisions[{idx}].competitor_handling_status"))
+        elif competitor_references and ("exact" in reference_matches or relationship_exact):
+            if decision.get("overall_status") != "reference_only" or decision.get("competitor_handling_status") != "reference_exact":
+                issues.append(issue("critical", "competitor_seed_auto_promoted_to_customer", "A current Brief competitor/brand identity match must remain reference_only", f"scope_decisions[{idx}].overall_status"))
+        elif competitor_references and "unresolved" in reference_matches and not relationship_distinct:
+            if decision.get("overall_status") != "needs_confirmation" or decision.get("competitor_handling_status") != "identity_unresolved" or decision.get("identity_review_required") is not True:
+                issues.append(issue("critical", "competitor_alias_requires_identity_review", "A competitor/brand alias hint requires identity review and cannot be an in-scope formal customer", f"scope_decisions[{idx}]"))
+        elif competitor_references and relationship_distinct:
+            if decision.get("competitor_handling_status") != "resolved_distinct":
+                issues.append(issue("critical", "competitor_seed_identity_unresolved", "A documented distinct-identity result must be recorded before formal prospect use", f"scope_decisions[{idx}].competitor_handling_status"))
+        elif competitor_references and decision.get("competitor_handling_status") != "not_applicable":
+            issues.append(issue("critical", "competitor_seed_identity_unresolved", "A competitor/brand reference requires a recorded current-task handling result", f"scope_decisions[{idx}].competitor_handling_status"))
+        for rule_id in selection_rules:
+            if ("selection", rule_id) not in evaluation_by_key:
+                issues.append(issue("critical", "scope_decision_rule_missing", "ScopeDecision lacks a current Brief selection-rule evaluation", f"scope_decisions[{idx}].rule_evaluations"))
+        for rule_id in exclusion_rules:
+            if ("exclusion", rule_id) not in evaluation_by_key:
+                issues.append(issue("critical", "scope_decision_rule_missing", "ScopeDecision lacks a current Brief exclusion-rule evaluation", f"scope_decisions[{idx}].rule_evaluations"))
+
     for idx, assessment in enumerate(ensure_list(graph, "assessments")):
         if not isinstance(assessment, dict): continue
         for forbidden in ("candidate_id", "candidate_ids", "basis_candidate_ids"):
@@ -452,12 +934,19 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
             issues.append(issue("critical", "assessment_run_missing", f"Assessment references missing Run {assessment.get('run_id')}", f"assessments[{idx}].run_id"))
         elif run.get("brief_id") != assessment.get("brief_id"):
             issues.append(issue("major", "assessment_run_brief_mismatch", "Assessment Brief must match its Run Brief", f"assessments[{idx}].run_id"))
+        brief = ids["briefs"].get(assessment.get("brief_id"))
+        contract = customer_selection_contract(brief)
+        exception_entities = formal_exception_entity_ids(brief)
         basis_claim_ids = as_list(assessment.get("basis_claim_ids"))
         rationale = assessment.get("rationale_structured")
         if not isinstance(rationale, dict) or as_list(rationale.get("basis_claim_ids")) != basis_claim_ids:
             issues.append(issue("critical", "assessment_rationale_basis_mismatch", "Assessment rationale_structured must contain only the same basis_claim_ids", f"assessments[{idx}].rationale_structured"))
         if assessment.get("disposition") in POSITIVE_DISPOSITIONS and not basis_claim_ids:
             issues.append(issue("critical", "positive_assessment_without_basis_claims", f"Assessment {assessment.get('assessment_id')} has positive disposition without basis_claim_ids", f"assessments[{idx}].basis_claim_ids"))
+        if assessment.get("disposition") in POSITIVE_DISPOSITIONS and formal_exception_mode(brief):
+            if assessment.get("entity_id") not in exception_entities:
+                code = "single_company_assessment_outside_target" if formal_exception_mode(brief) == "single_company_analysis" else "existing_table_assessment_outside_bound_input"
+                issues.append(issue("critical", code, "Positive formal exception Assessment must stay within the current Brief's explicit input binding", f"assessments[{idx}].entity_id"))
         for cid in as_list(assessment.get("basis_claim_ids")):
             if cid not in ids["claims"]:
                 code = "assessment_uses_hypothesis_as_basis" if cid in ids["hypotheses"] else "assessment_basis_claim_missing"
@@ -469,6 +958,63 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
             supports = supporting_evidence_by_claim.get(cid, [])
             if not supports:
                 issues.append(issue("critical", "assessment_basis_claim_without_support", f"Assessment basis Claim {cid} has no supporting evidence", f"assessments[{idx}].basis_claim_ids"))
+            else:
+                usable_assessment_support = False
+                for support in supports:
+                    observation = ids["observations"].get(support.get("observation_id"))
+                    source = ids["sources"].get(observation.get("source_id")) if isinstance(observation, dict) else None
+                    if source_evidence_scope(source, observation, "assessment_basis")[0]:
+                        usable_assessment_support = True
+                        break
+                if not usable_assessment_support:
+                    issues.append(issue("critical", "assessment_basis_claim_source_not_eligible", f"Assessment basis Claim {cid} has no source eligible for assessment_basis", f"assessments[{idx}].basis_claim_ids"))
+        if assessment.get("disposition") in POSITIVE_DISPOSITIONS and formal_targeting_contract_required(brief):
+            if isinstance(brief, dict) and brief.get("task_mode") == "unknown":
+                issues.append(issue("critical", "unknown_task_mode_blocks_formal_delivery", "task_mode=unknown cannot create a positive formal customer Assessment", f"assessments[{idx}].brief_id"))
+            if not isinstance(contract, dict):
+                issues.append(issue("critical", "brief_targeting_contract_missing", "Positive new-customer Assessment requires a Brief customer selection contract", f"assessments[{idx}].brief_id"))
+                continue
+            selection_rules, exclusion_rules = targeting_rule_maps(contract)
+            if not selection_rules and not exclusion_rules:
+                issues.append(issue("critical", "targeting_contract_empty_for_formal_delivery", "Positive formal Assessment requires a substantive customer selection contract", f"assessments[{idx}].brief_id"))
+            if not any(rule.get("required_for_positive") is True for rule in selection_rules.values()):
+                issues.append(issue("critical", "targeting_contract_missing_required_selection_rule", "Positive formal Assessment requires at least one required selection rule", f"assessments[{idx}].brief_id"))
+            if contract.get("scope_state") == "provisional":
+                issues.append(issue("critical", "provisional_scope_blocks_formal_delivery", "Provisional customer direction cannot produce a positive formal Assessment", f"assessments[{idx}].brief_id"))
+            if contract.get("sample_first_required") is True:
+                issues.append(issue("critical", "sample_first_required_blocks_formal_delivery", "sample_first_required permits direction samples only until the Brief is explicitly updated and re-reviewed", f"assessments[{idx}].brief_id"))
+            decision = scope_decisions_by_id.get(assessment.get("scope_decision_id"))
+            if not isinstance(decision, dict):
+                issues.append(issue("critical", "scope_decision_missing", "Positive Assessment requires a ScopeDecision", f"assessments[{idx}].scope_decision_id"))
+                continue
+            if decision.get("run_id") != assessment.get("run_id"):
+                issues.append(issue("critical", "scope_decision_run_mismatch", "Positive Assessment ScopeDecision must belong to the current Run", f"assessments[{idx}].scope_decision_id"))
+            if decision.get("brief_id") != assessment.get("brief_id") or decision.get("targeting_contract_id") != contract.get("targeting_contract_id"):
+                issues.append(issue("critical", "scope_decision_brief_mismatch", "Positive Assessment ScopeDecision must belong to the current Brief contract", f"assessments[{idx}].scope_decision_id"))
+            if decision.get("entity_id") != assessment.get("entity_id"):
+                issues.append(issue("critical", "scope_decision_entity_mismatch", "Positive Assessment ScopeDecision must belong to the same Entity", f"assessments[{idx}].scope_decision_id"))
+            if decision.get("overall_status") != "in_scope":
+                issues.append(issue("critical", "positive_assessment_without_eligible_scope_decision", "Positive Assessment requires an in_scope ScopeDecision", f"assessments[{idx}].scope_decision_id"))
+            evaluations = {(item.get("rule_kind"), item.get("rule_id")): item for item in as_list(decision.get("rule_evaluations")) if isinstance(item, dict)}
+            for rule_id, rule in selection_rules.items():
+                evaluation = evaluations.get(("selection", rule_id))
+                outcome = evaluation.get("outcome") if isinstance(evaluation, dict) else None
+                if rule.get("required_for_positive") and outcome != "supported_match":
+                    issues.append(issue("critical", "required_targeting_rule_not_satisfied", "Positive Assessment is missing required current-direction support", f"assessments[{idx}].scope_decision_id"))
+                if rule.get("unknown_blocks_positive") and outcome == "unknown":
+                    issues.append(issue("critical", "targeting_critical_rule_unknown", "A current-direction unknown blocks positive Assessment", f"assessments[{idx}].scope_decision_id"))
+                if rule.get("required_for_positive"):
+                    classifications = as_list(evaluation.get("claim_classifications")) if isinstance(evaluation, dict) else []
+                    supports = {str(item.get("claim_id")) for item in classifications if isinstance(item, dict) and item.get("classification") == "supports"}
+                    if not supports & {str(claim_id) for claim_id in basis_claim_ids}:
+                        issues.append(issue("critical", "assessment_basis_missing_scope_rule_support", "Positive Assessment basis must include a supports Claim for every required current-direction rule", f"assessments[{idx}].basis_claim_ids"))
+            for rule_id, rule in exclusion_rules.items():
+                evaluation = evaluations.get(("exclusion", rule_id))
+                outcome = evaluation.get("outcome") if isinstance(evaluation, dict) else None
+                if rule.get("block_when_supported") and outcome == "supported_conflict":
+                    issues.append(issue("critical", "targeting_exclusion_rule_conflicts", "A supported current exclusion rule blocks positive Assessment", f"assessments[{idx}].scope_decision_id"))
+                if rule.get("unknown_blocks_positive") and outcome == "unknown":
+                    issues.append(issue("critical", "targeting_critical_rule_unknown", "An unknown critical exclusion rule blocks positive Assessment", f"assessments[{idx}].scope_decision_id"))
         for hid in as_list(assessment.get("related_hypothesis_ids_for_outreach")):
             if hid not in ids["hypotheses"]:
                 issues.append(issue("minor", "assessment_related_hypothesis_missing", f"Assessment outreach hypothesis is missing: {hid}", f"assessments[{idx}].related_hypothesis_ids_for_outreach"))
@@ -487,7 +1033,7 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
                 issues.append(issue("major", "audit_missing_required_field", f"Audit {audit.get('audit_id')} lacks {field}", f"audits[{idx}].{field}"))
         if audit.get("audit_status") not in {None, "passed", "failed"}:
             issues.append(issue("major", "invalid_audit_status", f"Invalid Audit audit_status: {audit.get('audit_status')}", f"audits[{idx}].audit_status"))
-        if audit.get("delivery_status") not in {None, "needs_correction", "initial_lead_list", "standard_development_list", "full_review_package"}:
+        if audit.get("delivery_status") not in {None, "needs_correction", "initial_lead_list", "standard_development_list", "full_review_package", "inquiry_followup_queue"}:
             issues.append(issue("major", "invalid_audit_delivery_status", f"Invalid Audit delivery_status: {audit.get('delivery_status')}", f"audits[{idx}].delivery_status"))
         if audit.get("research_graph_hash") and audit.get("research_graph_hash") != current_hash:
             issues.append(issue("major", "stale_audit_research_graph_hash", "Audit research_graph_hash does not match current graph hash", f"audits[{idx}].research_graph_hash"))
@@ -496,13 +1042,15 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
 
     for idx, manifest in enumerate(ensure_list(graph, "delivery_manifests")):
         if not isinstance(manifest, dict): continue
-        for field, collection in (("run_id", "runs"), ("brief_id", "briefs"), ("plan_id", "plans"), ("audit_id", "audits")):
+        inquiry_manifest = manifest.get("delivery_status") == "inquiry_followup_queue"
+        manifest_refs = (("run_id", "runs"), ("audit_id", "audits")) if inquiry_manifest else (("run_id", "runs"), ("brief_id", "briefs"), ("plan_id", "plans"), ("audit_id", "audits"))
+        for field, collection in manifest_refs:
             raw = manifest.get(field)
             if not has_text(raw):
                 issues.append(issue("major", "manifest_missing_reference", f"DeliveryManifest lacks non-empty {field}", f"delivery_manifests[{idx}].{field}"))
             elif raw not in ids[collection]:
                 issues.append(issue("major", "manifest_reference_missing", f"DeliveryManifest references missing {collection[:-1]} {raw}", f"delivery_manifests[{idx}].{field}"))
-        if not has_text(manifest.get("review_cycle_id")):
+        if not inquiry_manifest and not has_text(manifest.get("review_cycle_id")):
             issues.append(issue("major", "manifest_missing_review_cycle_id", "DeliveryManifest lacks non-empty review_cycle_id", f"delivery_manifests[{idx}].review_cycle_id"))
         for field in ("audit_graph_hash", "research_graph_hash"):
             if not has_text(manifest.get(field)):
@@ -523,12 +1071,12 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
                 issues.append(issue("critical", "manifest_audit_delivery_status_mismatch", "DeliveryManifest delivery_status must be allowed by its referenced passed Audit", f"delivery_manifests[{idx}].delivery_status"))
         run = ids["runs"].get(manifest.get("run_id"))
         if isinstance(run, dict):
-            if manifest.get("brief_id") != run.get("brief_id") or manifest.get("plan_id") != run.get("plan_id"):
+            if not inquiry_manifest and (manifest.get("brief_id") != run.get("brief_id") or manifest.get("plan_id") != run.get("plan_id")):
                 issues.append(issue("major", "manifest_run_binding_mismatch", "DeliveryManifest Brief/Plan must match its Run", f"delivery_manifests[{idx}]"))
-            if manifest.get("review_cycle_id") != run.get("review_cycle_id"):
+            if not inquiry_manifest and manifest.get("review_cycle_id") != run.get("review_cycle_id"):
                 issues.append(issue("major", "manifest_review_cycle_mismatch", "DeliveryManifest review_cycle_id must match its Run", f"delivery_manifests[{idx}].review_cycle_id"))
             brief = ids["briefs"].get(run.get("brief_id"))
-            if not _run_allows_delivery_status(run, brief, manifest.get("delivery_status")):
+            if not inquiry_manifest and not _run_allows_delivery_status(run, brief, manifest.get("delivery_status")):
                 issues.append(issue("critical", "stored_manifest_delivery_status_not_allowed", "Stored DeliveryManifest status is not allowed by its Run review mode/state", f"delivery_manifests[{idx}].delivery_status"))
         for field, collection in (("exported_entity_ids", "entities"), ("exported_contact_ids", "contact_points"), ("exported_contact_claim_ids", "contact_claims"), ("exported_assessment_ids", "assessments")):
             for raw in as_list(manifest.get(field)):

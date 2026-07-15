@@ -1,0 +1,9 @@
+{
+  "extends": "pass_user_provided_pdf_claim.json",
+  "patches": [
+    {"op":"replace","path":"/sources/0/provenance","value":"connected_account"},
+    {"op":"replace","path":"/sources/0/access_boundary","value":"read_only_connected_account"},
+    {"op":"add","path":"/sources/0/parent_source_id","value":"src_parent_mail_001"},
+    {"op":"append","path":"/sources/-","value":{"source_id":"src_parent_mail_001","publisher_relation":"unknown","provenance":"connected_account","material_role":"connected_inbound_correspondence","medium":"correspondence","access_boundary":"read_only_connected_account","owner_hint":null,"message_id":"host-message-003","thread_id":"host-thread-003","received_at":"2026-07-15T10:00:00Z","direction":"inbound","sender_literal":"Buyer Contact <sales@example.com>","subject_literal":"Catalogue attachment","message_content_sha256":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","mailbox_ref":"mailbox_inbox_001","mail_intake_rule_id":null}}
+  ]
+}

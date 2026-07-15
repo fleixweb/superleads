@@ -1,0 +1,4 @@
+{
+  "extends": "pass_professional_stage_audio_channel.json",
+  "patches": []
+}

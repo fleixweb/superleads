@@ -1,0 +1,1 @@
+{"extends":"pass_user_business_dataset_contact_with_note.json","patches":[{"op":"replace","path":"/sources/0/artifact_name","value":"C:\\Users\\fleix\\crm.xlsx"}]}

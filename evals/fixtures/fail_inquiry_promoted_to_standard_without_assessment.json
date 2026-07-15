@@ -1,0 +1,4 @@
+{
+  "extends": "pass_connected_inbound_inquiry.json",
+  "patches": []
+}

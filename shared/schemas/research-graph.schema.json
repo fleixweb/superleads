@@ -356,6 +356,9 @@
             "items": {
               "type": "string"
             }
+          },
+          "scope_decision_id": {
+            "type": ["string", "null"]
           }
         }
       }
@@ -377,6 +380,18 @@
       "items": {
         "$ref": "delivery-manifest.schema.json"
       }
+    },
+    "inquiries": {
+      "type": "array",
+      "items": {"$ref": "inquiry.schema.json"}
+    },
+    "mail_intake_rules": {
+      "type": "array",
+      "items": {"$ref": "mail-intake-rule.schema.json"}
+    },
+    "scope_decisions": {
+      "type": "array",
+      "items": {"$ref": "scope-decision.schema.json"}
     }
   },
   "required": [

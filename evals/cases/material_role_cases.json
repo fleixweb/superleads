@@ -1,0 +1,73 @@
+{
+  "cases": [
+    {
+      "fixture": "pass_published_source_copy_pdf_claim.json",
+      "validate": "pass", "audit_delivery_status": "standard_development_list", "audit_standard": "pass", "export_standard": "pass",
+      "export_present": ["用户提供文件：2026展会目录.pdf（第 3 页）"],
+      "export_absent": ["material_role", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "file://", "/home/"]
+    },
+    {
+      "fixture": "pass_published_source_copy_spreadsheet_contact_ready.json",
+      "validate": "pass", "audit_delivery_status": "standard_development_list", "audit_standard": "pass", "export_standard": "pass",
+      "export_present": ["sales@example.com", "可直接使用", "用户提供文件：客户名单.xlsx（工作表 Contacts，A2:F2）"],
+      "export_absent": ["material_role", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"]
+    },
+    {
+      "fixture": "pass_user_business_dataset_contact_with_note.json",
+      "validate": "pass", "audit_delivery_status": "standard_development_list", "audit_standard": "pass", "export_standard": "pass",
+      "export_present": ["sales@example.com", "建议核查后使用", "用户提供文件：历史客户表.xlsx（工作表 Contacts，A2:F2）"],
+      "export_absent": ["可直接使用", "material_role", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"]
+    },
+    {
+      "fixture": "pass_correspondence_export_contact_with_note.json",
+      "validate": "pass", "audit_delivery_status": "standard_development_list", "audit_standard": "pass", "export_standard": "pass",
+      "export_present": ["sales@example.com", "建议核查后使用", "用户提供沟通记录：客户沟通.eml（章节 message-1）"],
+      "export_absent": ["可直接使用", "material_role", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"]
+    },
+    {
+      "fixture": "pass_visual_reference_candidate_only.json",
+      "validate": "pass", "audit_delivery_status": "initial_lead_list", "export_initial": "pass",
+      "export_assert_mode": "initial",
+      "export_present": ["Example Buyer"],
+      "export_absent": ["已确认权属", "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "material_role"]
+    },
+    {
+      "fixture": "pass_logo_external_trademark_evidence.json",
+      "validate": "pass", "audit_delivery_status": "standard_development_list", "audit_standard": "pass", "export_standard": "pass",
+      "export_absent": ["cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "material_role"]
+    },
+    {
+      "fixture": "fail_user_authored_note_supports_claim.json", "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail", "expected_error_codes": ["user_authored_note_not_allowed_for_formal_claim"]
+    },
+    {
+      "fixture": "fail_pasted_chat_contact_ready.json", "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail", "expected_error_codes": ["manual_input_not_allowed_for_contact_ready"]
+    },
+    {
+      "fixture": "fail_user_business_dataset_contact_ready.json", "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail", "expected_error_codes": ["user_business_dataset_not_allowed_for_contact_ready"]
+    },
+    {
+      "fixture": "fail_correspondence_supports_assessment_basis.json", "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail", "expected_error_codes": ["correspondence_export_not_allowed_for_formal_claim"]
+    },
+    {
+      "fixture": "fail_correspondence_contact_without_entity_context.json", "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail", "expected_error_codes": ["exportable_contact_association_missing_entity_name"]
+    },
+    {
+      "fixture": "fail_visual_reference_supports_trademark_claim.json", "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail", "expected_error_codes": ["image_inspect_not_allowed_for_formal_claim"]
+    },
+    {
+      "fixture": "fail_image_inspect_supports_claim.json", "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail", "expected_error_codes": ["image_inspect_not_allowed_for_formal_claim"]
+    },
+    {
+      "fixture": "fail_visual_contact_ready_without_external_association.json", "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail", "expected_error_codes": ["image_inspect_not_allowed_for_contact_ready"]
+    },
+    {
+      "fixture": "fail_missing_material_role_for_user_provided.json", "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail", "expected_error_codes": ["material_role_missing"]
+    },
+    {
+      "fixture": "fail_invalid_material_role.json", "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail", "expected_error_codes": ["material_role_invalid"]
+    },
+    {
+      "fixture": "fail_local_path_in_material_display_or_export.json", "validate": "fail", "audit_delivery_status": "needs_correction", "audit_delivery_returncode": 1, "audit_standard": "fail", "export_standard": "fail", "expected_error_codes": ["user_provided_artifact_name_invalid"]
+    }
+  ]
+}

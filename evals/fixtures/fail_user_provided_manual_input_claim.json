@@ -1,0 +1,1 @@
+{"extends":"pass_user_provided_pdf_claim.json","patches":[{"op":"replace","path":"/sources/0/provenance","value":"manual_input"}]}

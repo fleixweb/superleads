@@ -15,8 +15,17 @@ from typing import Any, Callable
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
 BASE_GRAPH = ROOT / "evals" / "fixtures" / "pass_minimal_graph.json"
+USER_FILE_PDF = ROOT / "evals" / "fixtures" / "pass_user_provided_pdf_claim.json"
+USER_FILE_SHEET = ROOT / "evals" / "fixtures" / "pass_user_provided_spreadsheet_contact.json"
+DATASET_CONTACT = ROOT / "evals" / "fixtures" / "pass_user_business_dataset_contact_with_note.json"
+CORRESPONDENCE_CONTACT = ROOT / "evals" / "fixtures" / "pass_correspondence_export_contact_with_note.json"
+VISUAL_CANDIDATE = ROOT / "evals" / "fixtures" / "pass_visual_reference_candidate_only.json"
+CONNECTED_INQUIRY = ROOT / "evals" / "fixtures" / "pass_connected_inbound_inquiry.json"
+MAIL_ADAPTER_INPUT = ROOT / "evals" / "fixtures" / "mail_read_normalized_input.json"
 sys.path.insert(0, str(SCRIPTS))
 from _superleads_common import graph_hash  # noqa: E402
+sys.path.insert(0, str(ROOT / "evals"))
+from run_evals import _load_fixture_graph  # noqa: E402
 
 
 def _run(command: list[str]) -> subprocess.CompletedProcess[str]:
@@ -69,7 +78,7 @@ def _assert_self_review_disclosure(directory: Path) -> list[str]:
     if any(result.returncode != 0 for result in (validate, audit, export)):
         return [f"self_review_disclosure: expected formal export to pass\n{audit.stdout}\n{export.stdout}"]
     disclosure_sheet = (directory / "self_review_disclosure" / "风险与说明.csv").read_text(encoding="utf-8-sig")
-    if "self_review_fallback" not in disclosure_sheet:
+    if "本次未运行独立复核，建议在使用前进行人工确认。" not in disclosure_sheet:
         errors.append("self_review_disclosure: workbook risk sheet lacks self_review_fallback disclosure")
     return errors
 
@@ -122,6 +131,110 @@ def _assert_historical_assessment_cannot_be_reused(directory: Path) -> list[str]
         errors.append(f"historical_assessment_scope: graph should remain structurally valid\n{validate.stdout}")
     if audit.returncode == 0 or export.returncode == 0:
         errors.append(f"historical_assessment_scope: current Run reused an Assessment from another Run\n{audit.stdout}\n{export.stdout}")
+    return errors
+
+
+def _assert_formal_exception_bindings(directory: Path) -> list[str]:
+    errors: list[str] = []
+    for mode, expected_code in (
+        ("single_company_analysis", "single_company_target_missing"),
+        ("existing_table_enrichment", "existing_table_binding_missing"),
+    ):
+        graph = _base()
+        graph["briefs"][0]["task_mode"] = mode
+        graph["briefs"][0].pop("customer_selection_contract", None)
+        graph["scope_decisions"] = []
+        graph["assessments"][0].pop("scope_decision_id", None)
+        validate, audit, export = _formal_results(graph, directory, f"{mode}_missing_binding")
+        for label, result in (("validate", validate), ("audit", audit), ("export", export)):
+            if result.returncode == 0 or expected_code not in result.stdout:
+                errors.append(f"{mode}_missing_binding: {label} did not block the unbound exception\n{result.stdout}")
+    for mode, expected_code in (
+        ("single_company_analysis", "single_company_assessment_outside_target"),
+        ("existing_table_enrichment", "existing_table_assessment_outside_bound_input"),
+    ):
+        graph = _base()
+        graph["briefs"][0]["task_mode"] = mode
+        graph["briefs"][0].pop("customer_selection_contract", None)
+        graph["scope_decisions"] = []
+        graph["assessments"][0].pop("scope_decision_id", None)
+        if mode == "single_company_analysis":
+            graph["briefs"][0]["single_company_target"] = {
+                "user_statement": "Analyze Example Buyer.", "company_name": "Example Buyer",
+                "website_or_domain": "https://example.com", "source_id": None, "entity_literal": None, "resolved_entity_id": "ent_001",
+            }
+        else:
+            graph["sources"].append({
+                "source_id": "src_table_001", "publisher_relation": "unknown", "provenance": "user_provided",
+                "material_role": "user_business_dataset", "medium": "spreadsheet", "access_boundary": "user_supplied",
+                "owner_hint": "existing table", "artifact_sha256": "f" * 64, "artifact_name": "existing.xlsx",
+                "artifact_media_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            })
+            graph["observations"].append({
+                "observation_id": "obs_table_001", "source_id": "src_table_001", "candidate_id": None, "entity_id": "ent_001",
+                "capability": "document.extract", "concrete_tool": "fixture", "observed_at": "2026-01-01T00:00:00Z",
+                "access_status": "ok", "http_status": None, "title": "existing table", "raw_excerpt": "Example Buyer",
+                "page_or_dom_locator": "Rows!A2", "content_hash": "table_001", "extraction_method": "fixture",
+                "tool_version": "fixture", "language": "en", "translation_status": "original",
+                "derived_from_observation_id": None, "snapshot_ref": "artifact:sha256:" + "f" * 64 + "#sheet=Rows&range=A2",
+            })
+            graph["briefs"][0]["existing_table_binding"] = {
+                "source_id": "src_table_001",
+                "entity_bindings": [{"entity_id": "ent_001", "observation_id": "obs_table_001", "row_or_cell_locator": "Rows!A2", "entity_literal": "Example Buyer"}],
+            }
+        graph["entities"].append({"entity_id": "ent_002", "name": "Unbound Buyer", "website": "https://unbound.example"})
+        graph["assessments"][0]["entity_id"] = "ent_002"
+        validate, audit, export = _formal_results(graph, directory, f"{mode}_outside_binding")
+        for label, result in (("validate", validate), ("audit", audit), ("export", export)):
+            if result.returncode == 0 or expected_code not in result.stdout:
+                errors.append(f"{mode}_outside_binding: {label} did not block the unbound Entity\n{result.stdout}")
+    return errors
+
+
+def _assert_identity_literal_bindings(directory: Path) -> list[str]:
+    errors: list[str] = []
+    graph = _base()
+    graph["briefs"][0]["task_mode"] = "single_company_analysis"
+    graph["briefs"][0].pop("customer_selection_contract", None)
+    graph["scope_decisions"] = []
+    graph["assessments"][0].pop("scope_decision_id", None)
+    graph["briefs"][0]["single_company_target"] = {
+        "user_statement": "Analyze the supplied company.", "company_name": "Unrelated Buyer",
+        "website_or_domain": "https://example.com", "source_id": None, "entity_literal": None,
+        "resolved_entity_id": "ent_001",
+    }
+    validate, audit, export = _formal_results(graph, directory, "single_company_conflicting_identifiers")
+    for label, result in (("validate", validate), ("audit", audit), ("export", export)):
+        if result.returncode == 0 or "single_company_target_identifier_conflict" not in result.stdout:
+            errors.append(f"single_company_conflicting_identifiers: {label} did not block conflicting identifiers\n{result.stdout}")
+
+    graph = _base()
+    graph["briefs"][0]["task_mode"] = "existing_table_enrichment"
+    graph["briefs"][0].pop("customer_selection_contract", None)
+    graph["scope_decisions"] = []
+    graph["assessments"][0].pop("scope_decision_id", None)
+    graph["sources"].append({
+        "source_id": "src_table_literal_001", "publisher_relation": "unknown", "provenance": "user_provided",
+        "material_role": "user_business_dataset", "medium": "spreadsheet", "access_boundary": "user_supplied",
+        "owner_hint": "existing table", "artifact_sha256": "e" * 64, "artifact_name": "existing.xlsx",
+        "artifact_media_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    })
+    graph["observations"].append({
+        "observation_id": "obs_table_literal_001", "source_id": "src_table_literal_001", "candidate_id": None, "entity_id": "ent_001",
+        "capability": "document.extract", "concrete_tool": "fixture", "observed_at": "2026-01-01T00:00:00Z",
+        "access_status": "ok", "http_status": None, "title": "existing table", "raw_excerpt": "Unrelated Buyer",
+        "page_or_dom_locator": "Rows!A2", "content_hash": "table_literal_001", "extraction_method": "fixture",
+        "tool_version": "fixture", "language": "en", "translation_status": "original",
+        "derived_from_observation_id": None, "snapshot_ref": "artifact:sha256:" + "e" * 64 + "#sheet=Rows&range=A2",
+    })
+    graph["briefs"][0]["existing_table_binding"] = {
+        "source_id": "src_table_literal_001",
+        "entity_bindings": [{"entity_id": "ent_001", "observation_id": "obs_table_literal_001", "row_or_cell_locator": "Rows!A2", "entity_literal": "Unrelated Buyer"}],
+    }
+    validate, audit, export = _formal_results(graph, directory, "existing_table_wrong_row_identity")
+    for label, result in (("validate", validate), ("audit", audit), ("export", export)):
+        if result.returncode == 0 or "existing_table_binding_literal_entity_mismatch" not in result.stdout:
+            errors.append(f"existing_table_wrong_row_identity: {label} did not block mismatched row identity\n{result.stdout}")
     return errors
 
 
@@ -179,6 +292,100 @@ def _assert_standard_docs_include_source_links() -> list[str]:
         ROOT / "shared" / "references" / "output-schema.md",
     ]
     return [f"{path}: standard export documentation omits 官网与来源链接" for path in paths if "官网与来源链接" not in path.read_text(encoding="utf-8")]
+
+
+def _assert_user_file_direct_pressure_tests(directory: Path) -> list[str]:
+    errors: list[str] = []
+    validate = _run([sys.executable, "-B", str(SCRIPTS / "validate_research_graph.py"), str(USER_FILE_PDF)])
+    if validate.returncode != 0:
+        errors.append(f"user_file_pdf_validate: expected pass\n{validate.stdout}")
+    audit = _run([sys.executable, "-B", str(SCRIPTS / "audit_delivery.py"), str(USER_FILE_PDF), "--delivery-status", "standard_development_list", "--format", "json"])
+    if audit.returncode != 0 or '"delivery_status": "standard_development_list"' not in audit.stdout:
+        errors.append(f"user_file_pdf_audit: expected standard delivery\n{audit.stdout}")
+    output = directory / "superleads-user-file-test.xlsx"
+    export = _run([sys.executable, "-B", str(SCRIPTS / "export_workbook.py"), str(USER_FILE_SHEET), str(output), "--mode", "standard"])
+    if export.returncode != 0 or not output.exists():
+        errors.append(f"user_file_sheet_export: expected XLSX output\n{export.stdout}")
+        return errors
+    try:
+        import openpyxl  # type: ignore
+        workbook = openpyxl.load_workbook(output, read_only=True, data_only=True)
+        cells = "\n".join(str(value) for sheet in workbook.worksheets for row in sheet.iter_rows(values_only=True) for value in row if value is not None)
+    except Exception as exc:
+        return errors + [f"user_file_sheet_export: could not inspect XLSX: {exc}"]
+    if "用户提供文件：客户名单.xlsx（工作表 Contacts，A2:F2）" not in cells:
+        errors.append("user_file_sheet_export: workbook lacks safe spreadsheet source display")
+    for forbidden in ("file://", "/home/", "C:\\", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"):
+        if forbidden in cells:
+            errors.append(f"user_file_sheet_export: forbidden local/internal value leaked: {forbidden}")
+    return errors
+
+
+def _assert_material_role_direct_pressure_tests(directory: Path) -> list[str]:
+    errors: list[str] = []
+    for name, fixture, expected_label in (
+        ("dataset", DATASET_CONTACT, "用户提供文件：历史客户表.xlsx（工作表 Contacts，A2:F2）"),
+        ("correspondence", CORRESPONDENCE_CONTACT, "用户提供沟通记录：客户沟通.eml（章节 message-1）"),
+    ):
+        out_dir = directory / f"{name}_export"
+        graph_path = directory / f"{name}_source_note.json"
+        _write_graph(graph_path, _load_fixture_graph(fixture))
+        export = _run([sys.executable, "-B", str(SCRIPTS / "export_workbook.py"), str(graph_path), "--output-dir", str(out_dir), "--mode", "standard", "--format", "csv", "--manifest", str(out_dir / "manifest.json")])
+        if export.returncode != 0:
+            errors.append(f"{name}_source_note_export: expected standard export\n{export.stdout}")
+            continue
+        text = "\n".join(path.read_text(encoding="utf-8-sig") for path in out_dir.glob("*.csv"))
+        text += (out_dir / "manifest.json").read_text(encoding="utf-8")
+        if expected_label not in text or "建议核查后使用" not in text:
+            errors.append(f"{name}_source_note_export: missing source-note display or status")
+        for forbidden in ("可直接使用", "material_role", "file://", "/home/", "C:\\", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"):
+            if forbidden in text:
+                errors.append(f"{name}_source_note_export: forbidden value leaked: {forbidden}")
+    visual_path = directory / "visual_candidate.json"
+    visual_output = directory / "visual_export"
+    _write_graph(visual_path, _load_fixture_graph(VISUAL_CANDIDATE))
+    validate = _run([sys.executable, "-B", str(SCRIPTS / "validate_research_graph.py"), str(visual_path)])
+    standard = _run([sys.executable, "-B", str(SCRIPTS / "export_workbook.py"), str(visual_path), "--output-dir", str(visual_output), "--mode", "standard", "--format", "csv"])
+    initial = _run([sys.executable, "-B", str(SCRIPTS / "export_workbook.py"), str(visual_path), "--output-dir", str(visual_output), "--mode", "initial", "--format", "csv"])
+    if validate.returncode != 0 or initial.returncode != 0 or standard.returncode == 0:
+        errors.append(f"visual_candidate_delivery_levels: expected validate+initial pass and standard block\n{validate.stdout}\n{standard.stdout}\n{initial.stdout}")
+    return errors
+
+
+def _assert_inquiry_export_redaction(directory: Path) -> list[str]:
+    graph_path = directory / "connected_inquiry.json"
+    out_dir = directory / "connected_inquiry_export"
+    _write_graph(graph_path, _load_fixture_graph(CONNECTED_INQUIRY))
+    audit = _run([sys.executable, "-B", str(SCRIPTS / "audit_delivery.py"), str(graph_path), "--delivery-status", "inquiry_followup_queue", "--format", "json"])
+    export = _run([sys.executable, "-B", str(SCRIPTS / "export_workbook.py"), str(graph_path), "--output-dir", str(out_dir), "--mode", "inquiry", "--format", "csv", "--manifest", str(out_dir / "manifest.json")])
+    if audit.returncode != 0 or export.returncode != 0:
+        return [f"inquiry_export: expected inquiry audit/export to pass\n{audit.stdout}\n{export.stdout}"]
+    text = "\n".join(path.read_text(encoding="utf-8-sig") for path in out_dir.glob("*.csv"))
+    text += (out_dir / "manifest.json").read_text(encoding="utf-8")
+    errors = []
+    if "邮件来信（2026-07-15）" not in text or "询盘待办" not in text:
+        errors.append("inquiry_export: missing business-facing inquiry label")
+    for forbidden in ("host-message-001", "host-thread-001", "mailbox_inbox_001", "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "From: sales@example.com", "file://", "/home/", "C:\\"):
+        if forbidden in text:
+            errors.append(f"inquiry_export: leaked internal or full-mail value: {forbidden}")
+    return errors
+
+
+def _assert_mail_adapter_boundary(directory: Path) -> list[str]:
+    output = directory / "mail_adapter_output.json"
+    accepted = _run([sys.executable, "-B", str(SCRIPTS / "ingest_mail_read_result.py"), str(MAIL_ADAPTER_INPUT), "--output", str(output)])
+    if accepted.returncode != 0 or not output.exists():
+        return [f"mail_adapter_accept: expected bounded host result to normalize\n{accepted.stdout}"]
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    text = json.dumps(payload, ensure_ascii=False)
+    if "password" in text or "token" in text or "host-message-adapter-001" not in text:
+        return ["mail_adapter_accept: unexpected normalized result boundary"]
+    bad_input = dict(json.loads(MAIL_ADAPTER_INPUT.read_text(encoding="utf-8")))
+    bad_input["access_token"] = "must-not-store"
+    bad_path = directory / "mail_adapter_bad.json"
+    _write_graph(bad_path, bad_input)
+    rejected = _run([sys.executable, "-B", str(SCRIPTS / "ingest_mail_read_result.py"), str(bad_path), "--output", str(directory / "mail_adapter_bad_output.json")])
+    return [] if rejected.returncode != 0 and "mail_input_forbidden_sensitive_field" in rejected.stdout else [f"mail_adapter_reject: sensitive host input was not blocked\n{rejected.stdout}"]
 
 
 def _stored_unauthorized_manifest(graph: dict[str, Any]) -> None:
@@ -333,9 +540,15 @@ def main() -> int:
         errors.extend(_assert_hold_free_text_is_redacted(directory))
         errors.extend(_assert_manual_contact_is_not_exported(directory))
         errors.extend(_assert_standard_docs_include_source_links())
+        errors.extend(_assert_user_file_direct_pressure_tests(directory))
+        errors.extend(_assert_material_role_direct_pressure_tests(directory))
+        errors.extend(_assert_inquiry_export_redaction(directory))
+        errors.extend(_assert_mail_adapter_boundary(directory))
         errors.extend(_assert_self_review_disclosure(directory))
         errors.extend(_assert_historical_review_cannot_approve(directory))
         errors.extend(_assert_historical_assessment_cannot_be_reused(directory))
+        errors.extend(_assert_formal_exception_bindings(directory))
+        errors.extend(_assert_identity_literal_bindings(directory))
         invalid_schema = _base()
         invalid_schema["observations"][0]["capability"] = "vendor.magic_lookup"
         schema_path = directory / "schema_fail_closed.json"
@@ -348,7 +561,7 @@ def main() -> int:
         print("Advanced gate regressions failed:")
         print("\n\n".join(errors))
         return 1
-    print(f"advanced gate regressions passed: {len(tests) + 7}")
+    print(f"advanced gate regressions passed: {len(tests) + 13}")
     return 0
 
 

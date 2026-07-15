@@ -8,13 +8,13 @@ import json
 import re
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import parse_qsl, urlsplit
 
 GRAPH_ARRAY_KEYS = [
     "runs", "briefs", "plans", "candidates", "sources", "observations", "entities",
     "entity_relationships", "claims", "claim_evidence", "contact_points", "contact_claims",
     "unassigned_contact_leads", "hypotheses", "assessments", "review_findings", "audits",
-    "delivery_manifests", "search_logs",
+    "delivery_manifests", "search_logs", "inquiries", "mail_intake_rules", "scope_decisions",
 ]
 
 ID_FIELDS = {
@@ -25,6 +25,7 @@ ID_FIELDS = {
     "unassigned_contact_leads": "unassigned_contact_lead_id", "hypotheses": "hypothesis_id",
     "assessments": "assessment_id", "review_findings": "finding_id", "audits": "audit_id",
     "delivery_manifests": "delivery_manifest_id", "search_logs": "search_log_id",
+    "inquiries": "inquiry_id", "mail_intake_rules": "mail_intake_rule_id", "scope_decisions": "scope_decision_id",
 }
 
 FIXED_FINDING_STATUS = "verified_fixed"
@@ -32,6 +33,63 @@ NON_BLOCKING_DISCLOSURE_STATUSES = {"accepted_with_disclosure", "rejected_with_r
 
 EMAIL_RE = re.compile(r"(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b")
 URL_RE = re.compile(r"(?i)https?://[^\s<>\"']+")
+LOCAL_PATH_RE = re.compile(
+    r"(?i)(?:file://|(?:^|[\s\"'])+[a-z]:[\\/]|(?:^|[\s\"'])+/(?:home|users|tmp|var|etc|mnt|private|volumes)(?:/|\b))"
+)
+SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
+ARTIFACT_SNAPSHOT_RE = re.compile(r"^artifact:sha256:([a-f0-9]{64})#(.+)$")
+SPREADSHEET_CELL_OR_RANGE_RE = re.compile(
+    r"^\$?[A-Z]{1,3}\$?[1-9][0-9]*(?::\$?[A-Z]{1,3}\$?[1-9][0-9]*)?$",
+    re.IGNORECASE,
+)
+ARTIFACT_MEDIA = {"document", "spreadsheet", "image", "correspondence"}
+MATERIAL_ROLES = {
+    "published_source_copy",
+    "user_business_dataset",
+    "correspondence_export",
+    "user_authored_note",
+    "visual_reference",
+    "connected_inbound_correspondence",
+    "unknown",
+}
+SOURCE_EVIDENCE_PURPOSES = {
+    "formal_claim",
+    "assessment_basis",
+    "contact_ready",
+    "contact_with_source_note",
+    "candidate_clue",
+    "translation_origin",
+    "inquiry_event",
+}
+NEW_CUSTOMER_DEVELOPMENT_TASK_MODES = {
+    "product_scope_research",
+    "keyword_research",
+    "industry_application_research",
+    "market_customer_type_research",
+    "competitor_seed_research",
+}
+FORMAL_TARGETING_EXEMPT_TASK_MODES = {
+    "single_company_analysis",
+    "existing_table_enrichment",
+}
+SCOPE_DECISION_STATUSES = {"in_scope", "out_of_scope", "needs_confirmation", "reference_only"}
+SCOPE_RULE_OUTCOMES = {"supported_match", "supported_conflict", "not_observed", "unknown"}
+SCOPE_CLAIM_CLASSIFICATIONS = {"supports", "conflicts", "irrelevant"}
+RULE_ALLOWED_CLAIM_TYPES = {
+    "product_match",
+    "company_identity",
+    "contact_route",
+    "location",
+    "registration",
+    "brand_trademark",
+    "channel_role",
+    "ownership",
+    "certification",
+}
+IDENTITY_LEGAL_SUFFIX_RE = re.compile(
+    r"\b(inc|inc\.|ltd|ltd\.|limited|llc|gmbh|sarl|sas|spa|bv|ag|ab|as|oy|plc|co\.|company|corp\.|corporation)\b",
+    re.IGNORECASE,
+)
 
 # Only capabilities that can inspect source material may support a formal
 # Claim or an exported contact. New capability names must be added here with
@@ -48,6 +106,7 @@ CLAIM_SUPPORT_ALLOWED_CAPABILITIES = {
     "translate.text",
 }
 CONTACT_SOURCE_ALLOWED_CAPABILITIES = CLAIM_SUPPORT_ALLOWED_CAPABILITIES
+CONTACT_NOTE_ALLOWED_CAPABILITIES = CONTACT_SOURCE_ALLOWED_CAPABILITIES | {"mail.read"}
 CONTACT_SOURCE_ALLOWED_TYPES = {
     "website",
     "social",
@@ -56,6 +115,8 @@ CONTACT_SOURCE_ALLOWED_TYPES = {
     "map",
     "document",
     "spreadsheet",
+    "image",
+    "correspondence",
     "user_provided",
 }
 
@@ -102,6 +163,157 @@ def has_text(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
 
+def customer_selection_contract(brief: Any) -> dict[str, Any] | None:
+    """Return the current Brief's free-text targeting contract when present."""
+    if not isinstance(brief, dict):
+        return None
+    contract = brief.get("customer_selection_contract")
+    return contract if isinstance(contract, dict) else None
+
+
+def targeting_contract_required(brief: Any) -> bool:
+    """Only new-customer-development modes need a formal direction contract."""
+    return isinstance(brief, dict) and brief.get("task_mode") in NEW_CUSTOMER_DEVELOPMENT_TASK_MODES
+
+
+def formal_targeting_contract_required(brief: Any) -> bool:
+    """Fail closed for a formal positive list except defined analysis/enrichment work."""
+    return isinstance(brief, dict) and brief.get("task_mode") not in FORMAL_TARGETING_EXEMPT_TASK_MODES
+
+
+def formal_exception_mode(brief: Any) -> str | None:
+    """Return a constrained formal-analysis mode, never a targeting bypass."""
+    if not isinstance(brief, dict):
+        return None
+    mode = brief.get("task_mode")
+    return str(mode) if mode in FORMAL_TARGETING_EXEMPT_TASK_MODES else None
+
+
+def formal_exception_entity_ids(brief: Any) -> set[str]:
+    """Return explicitly bound Entity IDs for a constrained formal exception.
+
+    Validation proves that these identifiers are current, user-specified input
+    bindings before audit/export can use them. This helper intentionally does
+    not infer an Entity from a company name, URL, or table row.
+    """
+    mode = formal_exception_mode(brief)
+    if mode == "single_company_analysis":
+        target = brief.get("single_company_target") if isinstance(brief, dict) else None
+        entity_id = target.get("resolved_entity_id") if isinstance(target, dict) else None
+        return {str(entity_id)} if has_text(entity_id) else set()
+    if mode == "existing_table_enrichment":
+        binding = brief.get("existing_table_binding") if isinstance(brief, dict) else None
+        return {
+            str(item.get("entity_id"))
+            for item in as_list(binding.get("entity_bindings") if isinstance(binding, dict) else None)
+            if isinstance(item, dict) and has_text(item.get("entity_id"))
+        }
+    return set()
+
+
+def formal_exception_result_label(brief: Any) -> str | None:
+    """Return a user-facing label that does not claim current-direction fit."""
+    return {
+        "single_company_analysis": "单公司分析结果",
+        "existing_table_enrichment": "原表补全结果",
+    }.get(formal_exception_mode(brief))
+
+
+def normalized_identity_name(value: Any) -> str:
+    """Conservative normal form for identity-review routing, never identity proof."""
+    if not has_text(value):
+        return ""
+    without_suffix = IDENTITY_LEGAL_SUFFIX_RE.sub("", str(value).casefold().strip())
+    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9]+", " ", without_suffix)).strip()
+
+
+def identity_tokens(value: Any) -> set[str]:
+    return {token for token in normalized_identity_name(value).split() if token}
+
+
+def identity_names_need_review(left: Any, right: Any) -> bool:
+    """Detect a strong alias hint without treating it as an identity match."""
+    left_tokens, right_tokens = identity_tokens(left), identity_tokens(right)
+    return bool(left_tokens and right_tokens and (left_tokens <= right_tokens or right_tokens <= left_tokens))
+
+
+def normalized_identity_domain(value: Any) -> str:
+    """Extract a hostname-like identity hint; it is never identity proof."""
+    if not has_text(value):
+        return ""
+    raw = str(value).strip()
+    parsed = urlsplit(raw if "://" in raw else f"https://{raw}")
+    host = (parsed.hostname or "").casefold()
+    return host[4:] if host.startswith("www.") else host
+
+
+def entity_name_matches_identity_literal(entity: Any, literal: Any) -> bool:
+    """Match only an exact conservative normalized Entity name/legal name."""
+    if not isinstance(entity, dict) or not has_text(literal):
+        return False
+    literal_name = normalized_identity_name(literal)
+    return bool(literal_name and literal_name in {
+        normalized_identity_name(entity.get("name")),
+        normalized_identity_name(entity.get("legal_name")),
+    })
+
+
+def entity_domain_matches_identity_literal(entity: Any, literal: Any) -> bool:
+    """Match only an exact conservative normalized Entity website/domain."""
+    if not isinstance(entity, dict) or not has_text(literal):
+        return False
+    literal_domain = normalized_identity_domain(literal)
+    entity_domains = {
+        normalized_identity_domain(entity.get(field))
+        for field in ("website", "domain")
+        if has_text(entity.get(field))
+    }
+    return bool(literal_domain and literal_domain in entity_domains)
+
+
+def entity_matches_identity_literal(entity: Any, literal: Any) -> bool:
+    """Allow a visible identity literal only when it exactly names or domains an Entity."""
+    return entity_name_matches_identity_literal(entity, literal) or entity_domain_matches_identity_literal(entity, literal)
+
+
+def identity_reference_match(names: set[str], domains: set[str], reference: Any) -> str:
+    """Return exact/unresolved/none without merging entities by name similarity."""
+    reference_name = normalized_identity_name(reference)
+    reference_domain = normalized_identity_domain(reference)
+    if reference_domain and reference_domain in domains:
+        return "exact"
+    normalized_names = {normalized_identity_name(name) for name in names if has_text(name)}
+    if reference_name and reference_name in normalized_names:
+        return "exact"
+    if reference_name and any(identity_names_need_review(name, reference_name) for name in normalized_names):
+        return "unresolved"
+    return "none"
+
+
+def targeting_rule_maps(contract: Any) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
+    """Index contract rules without interpreting their free-text business meaning."""
+    if not isinstance(contract, dict):
+        return {}, {}
+    selection = {
+        str(item.get("rule_id")): item for item in as_list(contract.get("selection_requirements"))
+        if isinstance(item, dict) and has_text(item.get("rule_id"))
+    }
+    exclusion = {
+        str(item.get("rule_id")): item for item in as_list(contract.get("exclusion_rules"))
+        if isinstance(item, dict) and has_text(item.get("rule_id"))
+    }
+    return selection, exclusion
+
+
+def scope_status_user_label(status: Any) -> str:
+    return {
+        "in_scope": "符合本次方向",
+        "out_of_scope": "不符合本次方向",
+        "needs_confirmation": "需确认",
+        "reference_only": "仅作参考",
+    }.get(str(status or ""), "需确认")
+
+
 def compact_text(value: Any) -> str:
     """Case-fold and collapse whitespace for conservative source containment checks."""
     if value is None:
@@ -132,6 +344,335 @@ def is_public_http_url(value: Any) -> bool:
         return False
     parsed = urlsplit(str(value).strip())
     return parsed.scheme.casefold() in {"http", "https"} and bool(parsed.hostname)
+
+
+def is_safe_artifact_name(value: Any) -> bool:
+    """Accept only a display filename, never a path or a drive-qualified name."""
+    if not has_text(value):
+        return False
+    name = str(value).strip()
+    return not (
+        ".." in name
+        or any(char in name for char in ("/", "\\", ":"))
+        or any(ord(char) < 32 or ord(char) == 127 for char in name)
+    )
+
+
+def contains_local_path(value: Any) -> bool:
+    """Reject local-path disclosure in graph metadata and delivery text."""
+    if not isinstance(value, str):
+        return False
+    return LOCAL_PATH_RE.search(value) is not None
+
+
+def _safe_snapshot_locator(value: Any) -> bool:
+    if not has_text(value):
+        return False
+    locator = str(value).strip()
+    lowered = locator.casefold()
+    return not (
+        ".." in locator
+        or "file:" in lowered
+        or "\\" in locator
+        or "/" in locator
+        or any(ord(char) < 32 or ord(char) == 127 for char in locator)
+    )
+
+
+def parse_artifact_snapshot_ref(value: Any) -> tuple[str, str, dict[str, str]] | None:
+    """Parse the closed artifact snapshot format without accepting path syntax."""
+    if not isinstance(value, str):
+        return None
+    match = ARTIFACT_SNAPSHOT_RE.fullmatch(value.strip())
+    if not match:
+        return None
+    artifact_hash, locator = match.groups()
+    if not _safe_snapshot_locator(locator):
+        return None
+    try:
+        pairs = parse_qsl(locator, keep_blank_values=True, strict_parsing=True)
+    except ValueError:
+        return None
+    if not pairs or len({key for key, _ in pairs}) != len(pairs):
+        return None
+    fields = {key: item for key, item in pairs}
+    if any(
+        not has_text(key)
+        or not has_text(item)
+        or not _safe_snapshot_locator(key)
+        or not _safe_snapshot_locator(item)
+        for key, item in fields.items()
+    ):
+        return None
+    return artifact_hash, locator, fields
+
+
+def _document_locator_is_valid(fields: dict[str, str]) -> bool:
+    if set(fields) - {"page", "section", "chapter"}:
+        return False
+    if "page" in fields and fields["page"].isdigit() and int(fields["page"]) >= 1:
+        return True
+    return any(has_text(fields.get(key)) for key in ("section", "chapter"))
+
+
+def _spreadsheet_locator_is_valid(fields: dict[str, str]) -> bool:
+    if set(fields) - {"sheet", "range", "cell"} or not has_text(fields.get("sheet")):
+        return False
+    location = fields.get("range") or fields.get("cell")
+    return bool(has_text(location) and SPREADSHEET_CELL_OR_RANGE_RE.fullmatch(str(location)))
+
+
+def _image_locator_is_valid(fields: dict[str, str]) -> bool:
+    if set(fields) - {"image", "region", "ocr_region"}:
+        return False
+    if fields.get("image", "").isdigit() and int(fields["image"]) >= 1:
+        return True
+    return has_text(fields.get("region")) or has_text(fields.get("ocr_region"))
+
+
+MAIL_SNAPSHOT_RE = re.compile(r"^mail:sha256:([a-f0-9]{64})#(.+)$")
+MAIL_HEADER_FIELDS = {"from", "subject", "date", "reply_to"}
+
+
+def is_safe_opaque_ref(value: Any) -> bool:
+    """Accept a short host-owned opaque handle, not a credential or path."""
+    return isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9._-]{1,128}", value) is not None
+
+
+def parse_mail_snapshot_ref(value: Any) -> tuple[str, str, dict[str, str]] | None:
+    """Parse a bounded mail excerpt pointer without accepting path syntax."""
+    if not isinstance(value, str):
+        return None
+    match = MAIL_SNAPSHOT_RE.fullmatch(value.strip())
+    if not match:
+        return None
+    message_hash, locator = match.groups()
+    if not _safe_snapshot_locator(locator):
+        return None
+    try:
+        pairs = parse_qsl(locator, keep_blank_values=True, strict_parsing=True)
+    except ValueError:
+        return None
+    if not pairs or len({key for key, _ in pairs}) != len(pairs):
+        return None
+    fields = {key: item for key, item in pairs}
+    if any(not has_text(key) or not has_text(item) or not _safe_snapshot_locator(key) or not _safe_snapshot_locator(item) for key, item in fields.items()):
+        return None
+    part = fields.get("part")
+    if part == "header":
+        if set(fields) != {"part", "field"} or fields.get("field") not in MAIL_HEADER_FIELDS:
+            return None
+    elif part == "body":
+        if set(fields) != {"part", "offset", "length"}:
+            return None
+        if not fields["offset"].isdigit() or not fields["length"].isdigit():
+            return None
+        if int(fields["length"]) < 1 or int(fields["length"]) > 1000:
+            return None
+    else:
+        return None
+    return message_hash, locator, fields
+
+
+def _mail_source_scope(source: dict[str, Any], observation: dict[str, Any]) -> tuple[bool, str]:
+    if source.get("provenance") != "connected_account" or source.get("medium") != "correspondence":
+        return False, "connected_mail_source_invalid"
+    if source.get("material_role") != "connected_inbound_correspondence":
+        return False, "connected_mail_material_role_invalid"
+    required = ("message_id", "received_at", "sender_literal", "subject_literal", "message_content_sha256", "mailbox_ref")
+    if any(not has_text(source.get(field)) for field in required):
+        return False, "connected_mail_metadata_missing"
+    if source.get("direction") != "inbound":
+        return False, "connected_mail_direction_not_inbound"
+    if source.get("access_boundary") != "read_only_connected_account":
+        return False, "connected_mail_access_boundary_invalid"
+    if not SHA256_RE.fullmatch(str(source.get("message_content_sha256"))):
+        return False, "connected_mail_content_hash_invalid"
+    if not is_safe_opaque_ref(source.get("mailbox_ref")):
+        return False, "connected_mailbox_ref_invalid"
+    if observation.get("capability") != "mail.read":
+        return False, "connected_mail_capability_not_mail_read"
+    if not has_text(observation.get("raw_excerpt")) or len(str(observation.get("raw_excerpt") or "")) > 1000 or not has_text(observation.get("content_hash")):
+        return False, "connected_mail_observation_missing_excerpt"
+    parsed = parse_mail_snapshot_ref(observation.get("snapshot_ref"))
+    if parsed is None:
+        return False, "connected_mail_snapshot_ref_invalid"
+    if parsed[0] != source.get("message_content_sha256"):
+        return False, "connected_mail_snapshot_ref_hash_mismatch"
+    return True, "ok"
+
+
+def _user_provided_artifact_scope(source: dict[str, Any], observation: dict[str, Any]) -> tuple[bool, str]:
+    """Validate a user-uploaded binary reference without assigning its trust role."""
+    medium = source.get("medium")
+    if medium not in ARTIFACT_MEDIA:
+        return False, "user_provided_medium_not_allowed"
+    artifact_hash = source.get("artifact_sha256")
+    if not has_text(artifact_hash):
+        return False, "user_provided_artifact_hash_missing"
+    if not SHA256_RE.fullmatch(str(artifact_hash)):
+        return False, "user_provided_artifact_hash_invalid"
+    if not is_safe_artifact_name(source.get("artifact_name")):
+        return False, "user_provided_artifact_name_invalid"
+    expected_capability = "image.inspect" if medium == "image" else "document.extract"
+    if observation.get("capability") != expected_capability:
+        return False, "visual_reference_capability_not_image_inspect" if medium == "image" else "user_provided_capability_not_document_extract"
+    if medium == "image" and observation.get("observation_content_kind") not in {"ocr_text", "visual_description"}:
+        return False, "visual_reference_content_kind_invalid"
+    if not has_text(observation.get("raw_excerpt")):
+        return False, "user_provided_raw_excerpt_missing"
+    if not has_text(observation.get("content_hash")):
+        return False, "user_provided_content_hash_missing"
+    snapshot_ref = observation.get("snapshot_ref")
+    if not has_text(snapshot_ref):
+        return False, "user_provided_snapshot_ref_missing"
+    parsed = parse_artifact_snapshot_ref(snapshot_ref)
+    if parsed is None:
+        return False, "user_provided_snapshot_ref_invalid"
+    snapshot_hash, _locator, fields = parsed
+    if snapshot_hash != artifact_hash:
+        return False, "user_provided_snapshot_ref_hash_mismatch"
+    if medium in {"document", "correspondence"} and not _document_locator_is_valid(fields):
+        return False, "user_provided_snapshot_ref_invalid"
+    if medium == "spreadsheet" and not _spreadsheet_locator_is_valid(fields):
+        return False, "user_provided_snapshot_ref_invalid"
+    if medium == "image" and not _image_locator_is_valid(fields):
+        return False, "user_provided_snapshot_ref_invalid"
+    return True, "ok"
+
+
+def source_evidence_scope(source: Any, observation: Any, purpose: str) -> tuple[bool, str]:
+    """Decide whether an Observation may serve one explicit evidence purpose.
+
+    The function validates graph metadata and reference consistency only. It
+    does not establish that a user-provided artifact is official, current, or
+    re-hash the original bytes when those bytes are not retained.
+    """
+    if purpose not in SOURCE_EVIDENCE_PURPOSES:
+        return False, "source_evidence_purpose_invalid"
+    if not isinstance(source, dict) or not isinstance(observation, dict):
+        return False, "formal_source_not_eligible"
+    if observation.get("capability") == "image.inspect" and purpose != "candidate_clue":
+        return False, f"image_inspect_not_allowed_for_{purpose}"
+    provenance = source.get("provenance")
+    role = source.get("material_role")
+    if provenance in {"user_provided", "manual_input", "connected_account"}:
+        if not has_text(role):
+            return False, "material_role_missing"
+        if role not in MATERIAL_ROLES:
+            return False, "material_role_invalid"
+    if provenance == "manual_input":
+        if purpose == "candidate_clue" and has_text(observation.get("raw_excerpt")):
+            return True, "ok"
+        return False, f"manual_input_not_allowed_for_{purpose}"
+    if provenance == "connected_account":
+        if source.get("medium") == "correspondence":
+            mail_ok, reason = _mail_source_scope(source, observation)
+            if not mail_ok:
+                return False, reason
+            if purpose in {"contact_with_source_note", "inquiry_event", "candidate_clue"}:
+                return True, "ok"
+            return False, f"connected_inbound_correspondence_not_allowed_for_{purpose}"
+        if source.get("medium") in ARTIFACT_MEDIA:
+            artifact_ok, reason = _user_provided_artifact_scope(source, observation)
+            if not artifact_ok:
+                return False, reason
+            return _artifact_role_scope(str(source.get("material_role")), str(source.get("medium")), purpose)
+        return False, "connected_account_medium_not_allowed"
+    if provenance == "user_provided":
+        artifact_ok, reason = _user_provided_artifact_scope(source, observation)
+        if not artifact_ok:
+            return False, reason
+        if source.get("medium") == "image" and purpose != "candidate_clue":
+            return False, f"image_inspect_not_allowed_for_{purpose}"
+        if purpose == "inquiry_event":
+            if role != "correspondence_export" or source.get("direction") != "inbound" or not has_text(source.get("received_at")):
+                return False, "correspondence_export_not_allowed_for_inquiry_event"
+        return _artifact_role_scope(str(role), str(source.get("medium")), purpose)
+    if not has_text(observation.get("raw_excerpt")):
+        return False, "formal_source_not_eligible"
+    if purpose == "inquiry_event":
+        return False, "formal_source_not_eligible"
+    if is_public_http_url(source.get("canonical_url")) or is_public_http_url(source.get("final_url")):
+        return True, "ok"
+    return False, "formal_source_not_eligible"
+
+
+def _artifact_role_scope(role: str, medium: str, purpose: str) -> tuple[bool, str]:
+    """Apply the material-role matrix after binary-reference validation."""
+    if role == "published_source_copy" and medium in {"document", "spreadsheet"} and purpose != "inquiry_event":
+        return True, "ok"
+    if role == "user_business_dataset" and purpose in {"contact_with_source_note", "candidate_clue"}:
+        return True, "ok"
+    if role == "correspondence_export" and purpose in {"contact_with_source_note", "candidate_clue", "inquiry_event"}:
+        return True, "ok"
+    if role in {"user_authored_note", "visual_reference", "unknown"} and purpose == "candidate_clue":
+        return True, "ok"
+    return False, f"{role}_not_allowed_for_{purpose}"
+
+
+def is_eligible_formal_source(source: Any, observation: Any) -> tuple[bool, str]:
+    """Compatibility wrapper for legacy formal-Claim callers."""
+    return source_evidence_scope(source, observation, "formal_claim")
+
+
+def safe_public_source_url(source: Any) -> str:
+    """Return the public link suitable for a workbook, never a local URI."""
+    if not isinstance(source, dict):
+        return ""
+    for field in ("final_url", "canonical_url"):
+        value = source.get(field)
+        if is_public_http_url(value):
+            return str(value).strip()
+    return ""
+
+
+def user_provided_source_display(source: Any, observation: Any) -> str:
+    """Render a safe business-facing source label without a hash or path."""
+    if not isinstance(source, dict) or source.get("provenance") != "user_provided":
+        return ""
+    name = str(source.get("artifact_name")).strip() if is_safe_artifact_name(source.get("artifact_name")) else "用户提供文件"
+    parsed = parse_artifact_snapshot_ref(observation.get("snapshot_ref")) if isinstance(observation, dict) else None
+    fields = parsed[2] if parsed else {}
+    prefix = "用户提供沟通记录" if source.get("material_role") == "correspondence_export" else "用户提供文件"
+    if source.get("medium") in {"document", "correspondence"}:
+        if fields.get("page", "").isdigit() and int(fields["page"]) >= 1:
+            return f"{prefix}：{name}（第 {fields['page']} 页）"
+        if has_text(fields.get("section")):
+            return f"{prefix}：{name}（章节 {fields['section']}）"
+        if has_text(fields.get("chapter")):
+            return f"{prefix}：{name}（章节 {fields['chapter']}）"
+    if source.get("medium") == "spreadsheet" and has_text(fields.get("sheet")):
+        location = fields.get("range") or fields.get("cell")
+        if has_text(location) and SPREADSHEET_CELL_OR_RANGE_RE.fullmatch(str(location)):
+            return f"{prefix}：{name}（工作表 {fields['sheet']}，{location}）"
+    if source.get("medium") == "image":
+        location = fields.get("region") or fields.get("ocr_region") or fields.get("image")
+        if has_text(location):
+            return f"用户提供图片线索：{name}（图像 {location}）"
+        return f"用户提供图片线索：{name}"
+    return f"{prefix}：{name}"
+
+
+def connected_source_display(source: Any, observation: Any) -> str:
+    """Render a read-only connected-mail or attachment label without IDs or content."""
+    if not isinstance(source, dict) or source.get("provenance") != "connected_account":
+        return ""
+    if source.get("medium") == "correspondence":
+        received = str(source.get("received_at") or "").strip()
+        return f"邮件来信（{received[:10]}）" if received else "邮件来信"
+    name = str(source.get("artifact_name") or "").strip()
+    if is_safe_artifact_name(name):
+        parsed = parse_artifact_snapshot_ref(observation.get("snapshot_ref")) if isinstance(observation, dict) else None
+        fields = parsed[2] if parsed else {}
+        if source.get("medium") == "spreadsheet" and has_text(fields.get("sheet")):
+            location = fields.get("range") or fields.get("cell")
+            if has_text(location) and SPREADSHEET_CELL_OR_RANGE_RE.fullmatch(str(location)):
+                return f"邮件附件：{name}（工作表 {fields['sheet']}，{location}）"
+        if fields.get("page", "").isdigit():
+            return f"邮件附件：{name}（第 {fields['page']} 页）"
+        return f"邮件附件：{name}"
+    return "邮件附件"
 
 
 def _normalized_url_tokens(value: Any) -> set[str]:

@@ -1,0 +1,1 @@
+{"extends":"pass_user_provided_spreadsheet_contact.json","patches":[{"op":"replace","path":"/contact_points/0/source_literal","value":"wrong@example.com"},{"op":"replace","path":"/contact_points/0/normalized_value","value":"wrong@example.com"}]}

@@ -1,0 +1,9 @@
+{
+  "extends": "pass_aftermarket_user_allows_manufacturer.json",
+  "patches": [
+    {"op":"add","path":"/briefs/0/competitors_or_brands","value":["Example Buyer"]},
+    {"op":"replace","path":"/briefs/0/customer_selection_contract/competitor_as_prospect_allowed","value":true},
+    {"op":"add","path":"/scope_decisions/0/competitor_handling_status","value":"explicitly_allowed"},
+    {"op":"add","path":"/scope_decisions/0/identity_review_required","value":false}
+  ]
+}

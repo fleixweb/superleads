@@ -1,0 +1,12 @@
+{
+  "extends": "pass_professional_stage_audio_channel.json",
+  "patches": [
+    {"op":"replace","path":"/briefs/0/customer_selection_contract/scope_state","value":"provisional"},
+    {"op":"replace","path":"/briefs/0/customer_selection_contract/unresolved_questions","value":["优先对象仍会导致完全不同的客户方向。"]},
+    {"op":"replace","path":"/plans/0/sample_first_limit","value":5},
+    {"op":"replace","path":"/assessments/0/disposition","value":"需人工核查"},
+    {"op":"replace","path":"/assessments/0/scope_decision_id","value":null},
+    {"op":"replace","path":"/scope_decisions/0/overall_status","value":"needs_confirmation"},
+    {"op":"replace","path":"/scope_decisions/0/rule_evaluations/0","value":{"rule_id":"sel_professional_001","rule_kind":"selection","outcome":"unknown","supporting_claim_ids":[],"conflicting_claim_ids":[],"claim_classifications":[{"claim_id":"claim_001","classification":"irrelevant","matched_marker":null,"reason":"当前方向仍需用户确认。"}],"reviewed_observation_ids":["obs_001"],"reason":"当前方向仍需用户确认。"}}
+  ]
+}

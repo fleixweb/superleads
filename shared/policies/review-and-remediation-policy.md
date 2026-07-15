@@ -8,7 +8,16 @@
 
 ## Review checklist
 
-Check source support for every Claim, contact association evidence, Hypothesis/Claim separation, Assessment certainty, identity matching, conflict preservation, and delivery status labels.
+Check source support for every Claim, contact association evidence, Hypothesis/Claim separation, Assessment certainty, identity matching, conflict preservation, delivery status labels, and whether the current Brief's customer-selection contract was followed.
+
+For new customer development, independently compare the user's retained
+wording with the free-text contract, verify that the Plan covers every
+selection and exclusion rule, and check that each positive Entity has a
+same-Run/Brief in-scope ScopeDecision. Treat keyword similarity, a prominent
+brand, manufacturer status, or a complete contact record as insufficient by
+itself. A referenced competitor/brand must be `reference_only` unless the
+current Brief expressly permits it. Do not describe `not_observed` as proof
+that an excluded business fact does not exist.
 
 ## Finding severities
 

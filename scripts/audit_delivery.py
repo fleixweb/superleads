@@ -9,16 +9,22 @@ from typing import Any
 
 from _superleads_common import (
     CLAIM_SUPPORT_ALLOWED_CAPABILITIES,
+    CONTACT_NOTE_ALLOWED_CAPABILITIES,
     CONTACT_SOURCE_ALLOWED_CAPABILITIES,
     CONTACT_SOURCE_ALLOWED_TYPES,
     all_id_maps,
     as_list,
     canonical_contact_user_status,
     claim_value_is_anchored_in_excerpt,
+    customer_selection_contract,
+    formal_exception_entity_ids,
+    formal_exception_mode,
+    formal_targeting_contract_required,
     ensure_list,
     graph_hash,
     has_text,
-    is_public_http_url,
+    source_evidence_scope,
+    targeting_rule_maps,
     issue,
     load_json,
     normalized_contact_derives_from_literal,
@@ -32,6 +38,7 @@ BLOCKED_ACCESS = {"blocked", "login_wall", "login-wall", "login_required", "forb
 FORMAL_STATUSES = {"standard_development_list", "full_review_package"}
 POSITIVE_DISPOSITIONS = {"重点开发", "推荐跟进"}
 FORMAL_RUN_STATUSES = {"checked"}
+INQUIRY_STATUS = "inquiry_followup_queue"
 
 
 def _review_modes(graph: dict[str, Any]) -> set[str]:
@@ -93,7 +100,7 @@ def _claim_has_usable_support(claim_id: str, graph: dict[str, Any], ids: dict[st
             continue
         if obs.get("capability") not in CLAIM_SUPPORT_ALLOWED_CAPABILITIES or medium == "search_result":
             continue
-        if not isinstance(source, dict) or not (is_public_http_url(source.get("final_url")) or is_public_http_url(source.get("canonical_url"))):
+        if not source_evidence_scope(source, obs, "assessment_basis")[0]:
             continue
         if not isinstance(claim, dict) or not claim_value_is_anchored_in_excerpt(claim, obs.get("raw_excerpt")):
             continue
@@ -127,16 +134,67 @@ def _formal_delivery_gate_issues(graph: dict[str, Any], ids: dict[str, dict[str,
     plan = ids["plans"].get(run_plan_id)
     if isinstance(plan, dict) and run_brief_id and plan.get("brief_id") != run_brief_id:
         issues.append(issue("major", "formal_delivery_plan_brief_mismatch", "Formal delivery Run Plan does not belong to Run Brief", "runs[-1].plan_id"))
+    brief = ids["briefs"].get(run_brief_id)
+    contract = customer_selection_contract(brief)
+    exception_mode = formal_exception_mode(brief)
+    if formal_targeting_contract_required(brief):
+        if isinstance(brief, dict) and brief.get("task_mode") == "unknown":
+            issues.append(issue("critical", "unknown_task_mode_blocks_formal_delivery", "task_mode=unknown can produce samples only, not formal delivery", "briefs"))
+        if not isinstance(contract, dict):
+            issues.append(issue("critical", "brief_targeting_contract_missing", "Formal new-customer delivery requires a current customer selection contract", "briefs"))
+        else:
+            selection_rules, exclusion_rules = targeting_rule_maps(contract)
+            if not selection_rules and not exclusion_rules:
+                issues.append(issue("critical", "targeting_contract_empty_for_formal_delivery", "Formal delivery requires a substantive customer selection contract", "briefs"))
+            if not any(rule.get("required_for_positive") is True for rule in selection_rules.values()):
+                issues.append(issue("critical", "targeting_contract_missing_required_selection_rule", "Formal delivery requires at least one required selection rule", "briefs"))
+            if contract.get("scope_state") == "provisional":
+                issues.append(issue("critical", "provisional_scope_blocks_formal_delivery", "Provisional customer direction can produce samples only, not formal delivery", "briefs"))
+            if contract.get("sample_first_required") is True:
+                issues.append(issue("critical", "sample_first_required_blocks_formal_delivery", "sample_first_required permits direction samples only until the Brief is explicitly updated and re-reviewed", "briefs"))
+
+    exception_entities = formal_exception_entity_ids(brief)
+    if exception_mode and not exception_entities:
+        code = "single_company_target_missing" if exception_mode == "single_company_analysis" else "existing_table_binding_missing"
+        issues.append(issue("critical", code, "Formal exception delivery requires an explicit current-Brief input binding", "briefs"))
+
+    decisions_by_entity = {
+        item.get("entity_id"): item for item in ensure_list(graph, "scope_decisions")
+        if isinstance(item, dict) and item.get("run_id") == run.get("run_id") and item.get("brief_id") == run_brief_id and item.get("entity_id")
+    }
 
     assessments_by_entity = {
         a.get("entity_id"): a
         for a in ensure_list(graph, "assessments")
         if isinstance(a, dict) and a.get("entity_id") and a.get("brief_id") == run_brief_id and a.get("run_id") == run.get("run_id")
     }
+    if exception_mode:
+        for entity_id, assessment in assessments_by_entity.items():
+            if assessment.get("disposition") in POSITIVE_DISPOSITIONS and str(entity_id) not in exception_entities:
+                code = "single_company_assessment_outside_target" if exception_mode == "single_company_analysis" else "existing_table_assessment_outside_bound_input"
+                issues.append(issue("critical", code, "Formal exception delivery contains a positive Entity outside its explicit input binding", "assessments"))
+    if formal_targeting_contract_required(brief):
+        in_scope_positive_entities = {
+            str(assessment.get("entity_id"))
+            for assessment in assessments_by_entity.values()
+            if assessment.get("disposition") in POSITIVE_DISPOSITIONS
+            and isinstance(decisions_by_entity.get(assessment.get("entity_id")), dict)
+            and decisions_by_entity[assessment.get("entity_id")].get("overall_status") == "in_scope"
+        }
+        if not in_scope_positive_entities:
+            issues.append(issue("critical", "formal_delivery_no_in_scope_entity", "Formal new-customer delivery requires at least one current positive Entity confirmed in scope", "assessments"))
     for idx, entity in enumerate(ensure_list(graph, "entities")):
         if not isinstance(entity, dict):
             continue
         entity_id = entity.get("entity_id")
+        decision = decisions_by_entity.get(entity_id)
+        if exception_mode and str(entity_id) not in exception_entities:
+            continue
+        # A current graph may retain excluded, reference, or unresolved
+        # entities for traceability. They are not formal-list rows and must
+        # not force an Assessment merely by being present beside in-scope rows.
+        if formal_targeting_contract_required(brief) and isinstance(decision, dict) and decision.get("overall_status") != "in_scope":
+            continue
         assessment = assessments_by_entity.get(entity_id)
         if not isinstance(assessment, dict):
             issues.append(issue("critical", "formal_entity_without_current_run_assessment", f"Formal delivery Entity {entity_id} has no Assessment for current Run {run.get('run_id')}", f"entities[{idx}]"))
@@ -154,6 +212,35 @@ def _formal_delivery_gate_issues(graph: dict[str, Any], ids: dict[str, dict[str,
                     issues.append(issue("critical", "formal_assessment_basis_claim_entity_mismatch", f"Assessment for Entity {entity_id} uses Claim {cid} from Entity {claim.get('entity_id')}", "assessments.basis_claim_ids"))
                 if not _claim_has_usable_support(str(cid), graph, ids):
                     issues.append(issue("critical", "formal_assessment_basis_claim_without_usable_support", f"Assessment basis Claim {cid} has no usable supports evidence", "assessments.basis_claim_ids"))
+            if formal_targeting_contract_required(brief):
+                if not isinstance(decision, dict) or decision.get("overall_status") != "in_scope":
+                    issues.append(issue("critical", "positive_assessment_without_eligible_scope_decision", f"Formal positive Entity {entity_id} is not confirmed in scope for this Brief", f"entities[{idx}]"))
+                elif not isinstance(contract, dict) or decision.get("targeting_contract_id") != contract.get("targeting_contract_id"):
+                    issues.append(issue("critical", "scope_decision_brief_mismatch", "Formal ScopeDecision does not match current Brief contract", f"entities[{idx}]"))
+    return issues
+
+
+def _inquiry_delivery_gate_issues(graph: dict[str, Any], ids: dict[str, dict[str, dict[str, Any]]]) -> list[dict[str, str]]:
+    """Audit the read-only inquiry queue without applying formal-list gates."""
+    issues: list[dict[str, str]] = []
+    inquiries = [item for item in ensure_list(graph, "inquiries") if isinstance(item, dict)]
+    if not inquiries:
+        return [issue("critical", "inquiry_delivery_missing_inquiry", "Inquiry delivery requires at least one Inquiry", "inquiries")]
+    for idx, inquiry in enumerate(inquiries):
+        source = ids["sources"].get(inquiry.get("source_id"))
+        observation = ids["observations"].get(inquiry.get("observation_id"))
+        if not isinstance(source, dict) or not isinstance(observation, dict):
+            issues.append(issue("critical", "inquiry_reference_missing", "Inquiry Source or Observation is missing", f"inquiries[{idx}]"))
+            continue
+        if inquiry.get("direction") != "inbound" or source.get("direction") != "inbound":
+            issues.append(issue("critical", "inquiry_direction_not_inbound", "Inquiry delivery accepts inbound correspondence only", f"inquiries[{idx}].direction"))
+        eligible, reason_code = source_evidence_scope(source, observation, "inquiry_event")
+        if not eligible:
+            issues.append(issue("critical", reason_code, "Inquiry source does not meet the inbound correspondence contract", f"inquiries[{idx}].observation_id"))
+        if not has_text(inquiry.get("request_excerpt")) or len(str(inquiry.get("request_excerpt") or "")) > 1000:
+            issues.append(issue("critical", "inquiry_request_excerpt_invalid", "Inquiry delivery requires a bounded request excerpt", f"inquiries[{idx}].request_excerpt"))
+        if not has_text(inquiry.get("received_at")):
+            issues.append(issue("critical", "inquiry_received_at_missing", "Inquiry delivery requires received_at", f"inquiries[{idx}].received_at"))
     return issues
 
 
@@ -241,10 +328,16 @@ def audit_graph(graph: dict[str, Any], requested_delivery_status: str | None = N
                 if isinstance(obs, dict):
                     source = ids["sources"].get(obs.get("source_id"))
                     medium = source.get("medium") if isinstance(source, dict) else None
-                    if obs.get("capability") not in CONTACT_SOURCE_ALLOWED_CAPABILITIES or medium == "search_result":
+                    allowed_capabilities = CONTACT_NOTE_ALLOWED_CAPABILITIES if export_status == "export_with_source_note" else CONTACT_SOURCE_ALLOWED_CAPABILITIES
+                    if obs.get("capability") not in allowed_capabilities or medium == "search_result":
                         issues.append(issue("critical", "contact_capability_not_allowed", f"ContactClaim {cc.get('contact_claim_id')} uses non-permitted {obs_label} capability {obs.get('capability') or medium}", f"contact_claims[{idx}]"))
                     if obs.get("access_status") in BLOCKED_ACCESS:
                         issues.append(issue("critical", "contact_from_blocked_observation", f"ContactClaim {cc.get('contact_claim_id')} uses blocked {obs_label} Observation", f"contact_claims[{idx}]"))
+                    if export_status in {"ready", "export_with_source_note"}:
+                        purpose = "contact_ready" if export_status == "ready" else "contact_with_source_note"
+                        eligible, reason_code = source_evidence_scope(source, obs, purpose)
+                        if not eligible:
+                            issues.append(issue("critical", reason_code, f"Exportable ContactClaim {obs_label} Observation does not meet the formal source eligibility contract", f"contact_claims[{idx}]"))
             if isinstance(cp, dict) and str(cp.get("source_type") or "").casefold() not in CONTACT_SOURCE_ALLOWED_TYPES:
                 issues.append(issue("critical", "contact_source_type_not_allowed", f"ContactClaim {cc.get('contact_claim_id')} uses non-permitted contact source_type {cp.get('source_type')}", f"contact_claims[{idx}]"))
             if isinstance(cp, dict) and isinstance(assoc_obs, dict) and cc.get("association_observation_id") != cp.get("source_observation_id"):
@@ -278,6 +371,9 @@ def audit_graph(graph: dict[str, Any], requested_delivery_status: str | None = N
             medium = source.get("medium") if isinstance(source, dict) else None
             if obs.get("capability") not in CLAIM_SUPPORT_ALLOWED_CAPABILITIES or medium == "search_result":
                 issues.append(issue("critical", "capability_not_allowed_to_support_claim", f"{obs.get('capability') or medium} cannot support a formal Claim", f"claim_evidence[{idx}]"))
+            eligible, reason_code = source_evidence_scope(source, obs, "formal_claim")
+            if not eligible:
+                issues.append(issue("critical", reason_code, "ClaimEvidence support does not meet the formal source eligibility contract", f"claim_evidence[{idx}].observation_id"))
             if isinstance(claim, dict) and not claim_value_is_anchored_in_excerpt(claim, obs.get("raw_excerpt")):
                 issues.append(issue("critical", "claim_value_not_anchored_in_observation", f"ClaimEvidence {ce.get('claim_evidence_id')} does not anchor Claim typed_value in its Observation raw_excerpt", f"claim_evidence[{idx}]"))
             ts = obs.get("translation_status")
@@ -317,9 +413,12 @@ def audit_graph(graph: dict[str, Any], requested_delivery_status: str | None = N
             issues.append(issue("critical", "open_blocking_review_finding", f"Blocking ReviewFinding {finding.get('finding_id')} is not verified fixed", f"review_findings[{idx}].status"))
 
     formal_gate_issues = _formal_delivery_gate_issues(graph, ids)
+    inquiry_gate_issues = _inquiry_delivery_gate_issues(graph, ids) if requested_delivery_status == INQUIRY_STATUS else []
     formal_ready = not any(i.get("severity") in {"critical", "major"} for i in formal_gate_issues)
     if requested_delivery_status in FORMAL_STATUSES:
         issues.extend(formal_gate_issues)
+    if requested_delivery_status == INQUIRY_STATUS:
+        issues.extend(inquiry_gate_issues)
 
     current_hash = graph_hash(graph)
     for idx, audit in enumerate(ensure_list(graph, "audits")):
@@ -345,6 +444,8 @@ def audit_graph(graph: dict[str, Any], requested_delivery_status: str | None = N
             issues.append(issue("critical", "formal_delivery_has_blockers", "Formal delivery status is present while critical blockers exist", f"delivery_manifests[{idx}].delivery_status"))
 
     allowed_statuses, disclosure_required = _allowed_statuses(graph, issues, formal_ready)
+    if requested_delivery_status == INQUIRY_STATUS and not any(i.get("severity") in {"critical", "major"} for i in issues):
+        allowed_statuses = [INQUIRY_STATUS]
     if requested_delivery_status in FORMAL_STATUSES:
         if requested_delivery_status not in allowed_statuses:
             modes = sorted(_review_modes(graph)) or ["not_run"]
@@ -385,7 +486,7 @@ def main() -> int:
     parser.add_argument("graph")
     parser.add_argument("--format", choices=["text", "json"], default="text")
     parser.add_argument("--output")
-    parser.add_argument("--delivery-status", choices=["initial_lead_list", "standard_development_list", "full_review_package"], help="Optional target status to audit before export")
+    parser.add_argument("--delivery-status", choices=["initial_lead_list", "standard_development_list", "full_review_package", INQUIRY_STATUS], help="Optional target status to audit before export")
     args = parser.parse_args()
     graph = load_json(args.graph)
     audit = audit_graph(graph, requested_delivery_status=args.delivery_status) if isinstance(graph, dict) else {"ok": False, "audit_status": "failed", "delivery_status": "needs_correction", "issues": [issue("critical", "graph_not_object", "Research graph must be a JSON object")], "issue_count": 1}

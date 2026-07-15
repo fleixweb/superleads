@@ -1,0 +1,7 @@
+{
+  "extends": "pass_connected_inbound_contact_with_note.json",
+  "patches": [
+    {"op":"replace","path":"/contact_claims/0/export_status","value":"ready"},
+    {"op":"replace","path":"/contact_claims/0/user_status","value":"可直接使用"}
+  ]
+}

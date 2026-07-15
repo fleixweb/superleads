@@ -21,6 +21,10 @@ Read `../../shared/policies/contact-intelligence-policy.md` and `../../shared/sc
 4. Use `UnassignedContactLead` for valuable contacts with unclear ownership.
 5. Assign export status: `ready`, `export_with_source_note`, `needs_manual_association_review`, `hold_no_source`, or `hold_inferred`.
 
+For `published_source_copy`, source and association Observations must each be eligible `document.extract` records with matching artifact-hash locators. Preserve literal, normalization, and Entity association checks exactly as for public sources; a row or page containing multiple companies is not enough by itself. Historical CRM/dataset and correspondence exports can only be `export_with_source_note`, with explicit same-Entity context. Pasted notes and image/OCR contacts remain Candidate or UnassignedContactLead until independently verified.
+
+Inbound `mail.read` can capture a reply email as a sourced contact lead only when the literal occurs in the bounded mail Observation and entity context is explicit. It is `export_with_source_note` at most and must display as 来信联系人/待核验, never ready, official, or procurement-authority evidence. A From address alone has no automatic company ownership or authority.
+
 ## Inline red flags
 
 - Do not construct `info@domain.com` or any email pattern.

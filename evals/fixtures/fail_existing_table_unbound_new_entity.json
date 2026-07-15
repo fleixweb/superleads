@@ -1,0 +1,7 @@
+{
+  "extends": "pass_existing_table_enrichment_without_targeting_contract.json",
+  "patches": [
+    {"op": "append", "path": "/entities/-", "value": {"entity_id": "ent_unbound_001", "name": "Unbound Buyer", "website": "https://unbound.example", "country_or_region": null, "customer_type": null}},
+    {"op": "replace", "path": "/assessments/0/entity_id", "value": "ent_unbound_001"}
+  ]
+}

@@ -1,0 +1,296 @@
+{
+  "cases": [
+    {
+      "fixture": "pass_aftermarket_neutral_brand_distributor.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass",
+      "export_absent": ["ScopeDecision", "TargetingContract", "sel_channel_001", "ex_manufacturer_001"],
+      "export_present": ["符合本次方向"]
+    },
+    {
+      "fixture": "pass_aftermarket_user_allows_manufacturer.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass"
+    },
+    {
+      "fixture": "pass_professional_stage_audio_channel.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass"
+    },
+    {
+      "fixture": "pass_mixed_business_with_verified_professional_division.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass"
+    },
+    {
+      "fixture": "pass_explicit_scope_without_extra_questions.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass"
+    },
+    {
+      "fixture": "pass_existing_table_enrichment_without_targeting_contract.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass",
+      "export_present": ["原表补全结果"],
+      "export_absent": ["符合本次方向"]
+    },
+    {
+      "fixture": "pass_single_company_analysis_bound_target.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass",
+      "export_present": ["单公司分析结果"],
+      "export_absent": ["符合本次方向"]
+    },
+    {
+      "fixture": "pass_single_company_all_identifiers_agree.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass",
+      "export_present": ["单公司分析结果"],
+      "export_absent": ["符合本次方向"]
+    },
+    {
+      "fixture": "pass_existing_table_binding_exact_entity_literal.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass",
+      "export_present": ["原表补全结果"],
+      "export_absent": ["符合本次方向"]
+    },
+    {
+      "fixture": "fail_aftermarket_oem_or_brand_owner_in_formal_list.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["targeting_exclusion_rule_conflicts"]
+    },
+    {
+      "fixture": "fail_aftermarket_competing_manufacturer_in_formal_list.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["targeting_exclusion_rule_conflicts"]
+    },
+    {
+      "fixture": "fail_stage_audio_home_appliance_channel.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["targeting_exclusion_rule_conflicts"]
+    },
+    {
+      "fixture": "fail_same_keyword_without_required_application_evidence.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["required_targeting_rule_not_satisfied", "targeting_critical_rule_unknown"]
+    },
+    {
+      "fixture": "fail_positive_assessment_without_scope_decision.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["scope_decision_missing"]
+    },
+    {
+      "fixture": "fail_scope_decision_missing_required_rule.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["scope_decision_rule_missing"]
+    },
+    {
+      "fixture": "fail_scope_decision_unknown_critical_rule.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["targeting_critical_rule_unknown"]
+    },
+    {
+      "fixture": "fail_scope_decision_cross_entity_claim.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["scope_decision_rule_claim_entity_mismatch"]
+    },
+    {
+      "fixture": "fail_excluded_or_reference_entity_exported.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["positive_assessment_without_eligible_scope_decision"]
+    },
+    {
+      "fixture": "fail_provisional_scope_standard_delivery.json",
+      "validate": "pass",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "export_initial": "pass",
+      "standard_error_codes": ["provisional_scope_blocks_formal_delivery"],
+      "export_assert_mode": "initial",
+      "export_absent": ["ScopeDecision", "TargetingContract", "scope_001"],
+      "export_present": ["需确认", "方向样本"]
+    },
+    {
+      "fixture": "fail_plan_query_group_without_rule_link.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["plan_query_group_missing_targeting_rule"]
+    },
+    {
+      "fixture": "fail_competitor_seed_auto_promoted_to_customer.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["competitor_seed_auto_promoted_to_customer"]
+    },
+    {
+      "fixture": "fail_unknown_task_mode_standard_delivery.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["unknown_task_mode_blocks_formal_delivery"]
+    },
+    {
+      "fixture": "fail_empty_targeting_contract_standard_delivery.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["targeting_contract_empty_for_formal_delivery", "targeting_contract_missing_required_selection_rule"]
+    },
+    {
+      "fixture": "fail_targeting_contract_without_required_selection.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["targeting_contract_missing_required_selection_rule"]
+    },
+    {
+      "fixture": "fail_irrelevant_location_claim_supports_application_rule.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["scope_rule_claim_type_not_allowed", "scope_rule_marker_missing_from_observation"]
+    },
+    {
+      "fixture": "fail_exclusion_conflict_hidden_as_not_observed.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["scope_rule_conflict_hidden_as_not_observed"]
+    },
+    {
+      "fixture": "fail_consumer_conflict_hidden_as_not_observed.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["scope_rule_conflict_hidden_as_not_observed"]
+    },
+    {
+      "fixture": "fail_competitor_alias_unresolved_standard_delivery.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["competitor_alias_requires_identity_review"]
+    },
+    {
+      "fixture": "fail_sample_first_required_standard_delivery.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["sample_first_required_blocks_formal_delivery"]
+    },
+    {
+      "fixture": "fail_single_company_without_explicit_target.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["single_company_target_missing"]
+    },
+    {
+      "fixture": "fail_existing_table_without_bound_input.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["existing_table_binding_missing"]
+    },
+    {
+      "fixture": "fail_single_company_conflicting_company_name_and_domain.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["single_company_target_identifier_conflict"]
+    },
+    {
+      "fixture": "fail_single_company_conflicting_domain_and_company_name.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["single_company_target_identifier_conflict"]
+    },
+    {
+      "fixture": "fail_single_company_source_literal_entity_mismatch.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["single_company_target_literal_entity_mismatch"]
+    },
+    {
+      "fixture": "fail_existing_table_binding_raw_entity_mismatch.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["existing_table_binding_literal_entity_mismatch"]
+    },
+    {
+      "fixture": "fail_existing_table_binding_literal_absent.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["existing_table_binding_literal_not_in_observation"]
+    },
+    {
+      "fixture": "fail_existing_table_unbound_new_entity.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["existing_table_assessment_outside_bound_input"]
+    },
+    {
+      "fixture": "pass_location_rule_with_location_claim.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass"
+    },
+    {
+      "fixture": "pass_user_explicitly_allows_competitor_or_manufacturer.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass"
+    },
+    {
+      "fixture": "pass_explicit_scope_standard_delivery.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass"
+    },
+    {
+      "fixture": "pass_direction_sample_initial_delivery.json",
+      "validate": "pass",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "export_initial": "pass",
+      "standard_error_codes": ["sample_first_required_blocks_formal_delivery"],
+      "export_assert_mode": "initial",
+      "export_present": ["需确认", "方向样本"]
+    }
+  ]
+}

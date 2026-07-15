@@ -18,6 +18,7 @@
       "related_hypothesis_ids_for_outreach": [
         "hyp_001"
       ],
+      "scope_decision_id": "scope_001",
       "run_id": "run_001"
     }
   ],
@@ -37,6 +38,23 @@
       ],
       "target_count": 1,
       "target_country_or_region": "Exampleland",
+      "customer_selection_contract": {
+        "targeting_contract_id": "target_001",
+        "user_intent_verbatim": "Find organizations that publicly offer sample product.",
+        "offer_definition": "sample product",
+        "commercial_positioning": null,
+        "application_boundary": null,
+        "target_role_description": "organizations that publicly offer sample product",
+        "excluded_target_description": null,
+        "competitor_handling_note": "Reference names need explicit permission before they become prospects.",
+        "competitor_as_prospect_allowed": false,
+        "selection_requirements": [{"rule_id":"sel_001","user_statement":"Find organizations that publicly offer sample product.","evidence_needed":"Public business text states sample product.","required_for_positive":true,"unknown_blocks_positive":true,"search_hints":["sample product"],"allowed_claim_types":["product_match"],"evidence_markers":["sample product"],"conflict_markers":[]}],
+        "exclusion_rules": [],
+        "sample_first_required": false,
+        "unresolved_questions": [],
+        "scope_state": "explicit",
+        "created_at": "2026-01-01T00:00:00Z"
+      },
       "task_mode": "product_scope_research"
     }
   ],
@@ -192,8 +210,18 @@
         "推荐跟进": "opened source plus contact"
       },
       "plan_id": "plan_001",
+      "selection_contract_brief_id": "brief_001",
+      "selection_requirement_ids": ["sel_001"],
+      "exclusion_rule_ids": [],
+      "positive_query_groups": ["positive_fit"],
+      "exclusion_check_query_groups": [],
+      "candidate_check_steps": ["Check current Brief fit using an opened source."],
+      "sample_first_limit": null,
       "query_groups": [
         {
+          "group_id": "positive_fit",
+          "query_purpose": "Find public evidence for the current positive direction.",
+          "targeting_rule_ids": ["sel_001"],
           "purpose": "find first-party buyer",
           "queries": [
             "sample product distributor Exampleland"
@@ -232,6 +260,20 @@
       "provenance": "discovered_public",
       "publisher_relation": "first_party",
       "source_id": "src_001"
+    }
+  ],
+  "scope_decisions": [
+    {
+      "scope_decision_id": "scope_001",
+      "run_id": "run_001",
+      "brief_id": "brief_001",
+      "targeting_contract_id": "target_001",
+      "candidate_id": "cand_001",
+      "entity_id": "ent_001",
+      "overall_status": "in_scope",
+      "rule_evaluations": [{"rule_id":"sel_001","rule_kind":"selection","outcome":"supported_match","supporting_claim_ids":["claim_001"],"conflicting_claim_ids":[],"claim_classifications":[{"claim_id":"claim_001","classification":"supports","matched_marker":"sample product","reason":"The public excerpt contains the current rule marker."}],"reviewed_observation_ids":["obs_001"],"reason":"The opened source states sample product."}],
+      "decision_summary": "Opened public evidence matches this Brief.",
+      "created_at": "2026-01-01T00:00:00Z"
     }
   ],
   "unassigned_contact_leads": []

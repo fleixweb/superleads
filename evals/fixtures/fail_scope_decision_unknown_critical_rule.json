@@ -1,0 +1,6 @@
+{
+  "extends": "pass_aftermarket_neutral_brand_distributor.json",
+  "patches": [
+    {"op":"replace","path":"/scope_decisions/0/rule_evaluations/0","value":{"rule_id":"sel_channel_001","rule_kind":"selection","outcome":"unknown","supporting_claim_ids":[],"conflicting_claim_ids":[],"claim_classifications":[{"claim_id":"claim_001","classification":"irrelevant","matched_marker":null,"reason":"公开材料不足以确认本次要求。"}],"reviewed_observation_ids":["obs_001"],"reason":"公开材料不足以确认本次要求。"}}
+  ]
+}

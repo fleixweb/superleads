@@ -1,0 +1,10 @@
+{
+  "extends": "pass_professional_stage_audio_channel.json",
+  "patches": [
+    {"op":"replace","path":"/observations/0/raw_excerpt","value":"Example Buyer operates as a consumer audio retail channel. Example Buyer Contact: sales@example.com"},
+    {"op":"replace","path":"/claims/0/typed_value","value":{"text":"consumer audio retail"}},
+    {"op":"replace","path":"/claim_evidence/0/claim_field_anchors","value":{"subject":"Example Buyer","predicate":"operates as","claim_type":"Example Buyer operates as a consumer audio retail","typed_value":"consumer audio retail"}},
+    {"op":"replace","path":"/scope_decisions/0/rule_evaluations/0","value":{"rule_id":"sel_professional_001","rule_kind":"selection","outcome":"unknown","supporting_claim_ids":[],"conflicting_claim_ids":[],"claim_classifications":[{"claim_id":"claim_001","classification":"irrelevant","matched_marker":null,"reason":"The Claim does not meet the positive marker."}],"reviewed_observation_ids":["obs_001"],"reason":"No professional support."}},
+    {"op":"replace","path":"/scope_decisions/0/rule_evaluations/1","value":{"rule_id":"ex_consumer_001","rule_kind":"exclusion","outcome":"not_observed","supporting_claim_ids":[],"conflicting_claim_ids":[],"claim_classifications":[{"claim_id":"claim_001","classification":"irrelevant","matched_marker":null,"reason":"Incorrectly hides consumer conflict."}],"reviewed_observation_ids":["obs_001"],"reason":"Incorrectly says no conflict."}}
+  ]
+}
