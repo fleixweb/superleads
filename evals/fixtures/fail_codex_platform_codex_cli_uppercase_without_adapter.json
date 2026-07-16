@@ -1,0 +1,7 @@
+{
+  "extends": "pass_codex_shell_http_source_open_standard.json",
+  "patches": [
+    {"op": "replace", "path": "/runs/0/platform", "value": "CODEX_CLI"},
+    {"op": "remove", "path": "/runs/0/capability_adapter_report"}
+  ]
+}

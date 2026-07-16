@@ -18,7 +18,7 @@ Read `../../shared/references/user-intake.md` for intake modes and minimum resea
 1. Identify the entry mode: single company, product plus scope, keywords, application/downstream field, country/customer type, existing table, competitor/seed, or source material list.
 2. Check the minimum research target. For new customer development require product/service plus at least one scope axis. For single-company analysis, retain the current user's explicit company name, URL/domain, or material reference and bind the result to that Entity only. For existing-table enrichment, retain the user-provided spreadsheet and the rows/cells being supplemented. These two routes do not create a direction-matched customer list without the current development contract.
 3. Create a Run Context with `run_id`, timestamp, task entry mode, platform, detected capabilities, requested output mode, and evidence depth.
-4. Run or emulate `scripts/preflight_capabilities.py` when tools are uncertain. Record gaps and downgrade if source-opening or document extraction is unavailable.
+4. Run or emulate `scripts/preflight_capabilities.py` when tools are uncertain. Record gaps and downgrade if source-opening or document extraction is unavailable. In a Codex CLI session started with `codex --search`, inspect only the currently visible native `web_search` capability and write the controlled adapter report from actual operation results; do not assume another integration exists.
 5. Route to `scoping-lead-research` next unless the task is already a pure verification/export task.
 
 ## 本次方向
@@ -54,5 +54,28 @@ Return a concise Run Context and the next Superleads skill to use. Ask only for 
 - Do not import old industry Skill defaults or assume ICP, country, company size, channel, or platform.
 - Do not treat weak evidence as failure; plan to label it.
 - Do not allow search snippets to become Claims later.
+- Native `web_search` grants only initial search capability by default. Record
+  source opening only after this session actually obtains an HTTP(S) URL,
+  source identifier, verbatim source text, and locator; otherwise offer a
+  research plan or initial leads. Do not install, configure, or rely on an
+  external tool server.
+- The native report controls only search and source opening. Keep separately
+  available document extraction, page rendering, image inspection, or mail
+  reading in their own host capability records; do not discard them because a
+  native search report is present.
+- When a native report is present, record every capability used for a source
+  in that Run explicitly as available. An omitted rendering, document, image,
+  or mail capability cannot be used to form a formal source record.
+- In Codex CLI, a shell reader may separately open a public source only after
+  a recorded successful read-only GET. Keep the host as Codex CLI and record
+  the reader separately; do not describe a command name as the platform, or
+  treat it as search capability. Never use it for logged-in, private, or
+  restricted pages.
+- When recording a platform, use one canonical host ID: lowercase ASCII
+  letters, digits, and underscores only. This keeps hosts such as `hermes`,
+  `claude`, and `workbuddy` portable while rejecting tool names, whitespace,
+  uppercase, and hyphen variants. A public-source graph check rejects literal
+  private and legacy numeric-IP forms without DNS resolution; the actual HTTP
+  executor must still block non-global DNS results and redirect targets.
 - Do not infer a product, application, role, exclusion, commercial model, or
   customer boundary from legacy skills or another Run.

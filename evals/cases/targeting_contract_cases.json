@@ -1,6 +1,222 @@
 {
   "cases": [
     {
+      "fixture": "fail_codex_native_source_open_without_adapter.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["codex_native_capability_adapter_required"]
+    },
+    {
+      "fixture": "fail_codex_native_wrong_mapping_standard_delivery.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["capability_adapter_mapping_mismatch"]
+    },
+    {
+      "fixture": "fail_codex_native_unsupported_adapter_version_standard_delivery.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["capability_adapter_version_unsupported"]
+    },
+    {
+      "fixture": "pass_codex_native_search_plus_user_document_standard.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass"
+    },
+    {
+      "fixture": "pass_codex_native_adapter_plus_independent_browser.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass"
+    },
+    {
+      "fixture": "pass_multi_run_historical_search_current_source_open.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass"
+    },
+    {
+      "fixture": "fail_multi_run_observation_without_run_id.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["observation_run_id_missing"]
+    },
+    {
+      "fixture": "fail_multi_run_observation_unknown_run_id.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["observation_run_missing"]
+    },
+    {
+      "fixture": "fail_codex_native_search_only_standard_delivery.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["run_capability_not_available_for_observation"]
+    },
+    {
+      "fixture": "fail_codex_native_search_only_unrecorded_browser.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["run_capability_not_available_for_observation"]
+    },
+    {
+      "fixture": "fail_codex_native_search_only_unrecorded_document_extract.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["run_capability_not_available_for_observation"]
+    },
+    {
+      "fixture": "pass_codex_native_open_source_verified_standard_delivery.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass"
+    },
+    {
+      "fixture": "pass_codex_shell_http_source_open_standard.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass"
+    },
+    {
+      "fixture": "pass_codex_native_search_plus_shell_http_source_open.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass"
+    },
+    {
+      "fixture": "pass_codex_shell_http_plus_independent_document_extract.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass"
+    },
+    {
+      "fixture": "pass_codex_shell_http_plus_independent_browser_render.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass"
+    },
+    {
+      "fixture": "fail_codex_shell_http_without_adapter.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["codex_native_capability_adapter_required"]
+    },
+    {
+      "fixture": "fail_codex_shell_http_platform_tool_name.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["run_platform_not_canonical"]
+    },
+    {
+      "fixture": "fail_codex_platform_curl_trailing_space_without_adapter.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["run_platform_not_canonical"]
+    },
+    {
+      "fixture": "fail_codex_platform_shell_curl_hyphen_without_adapter.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["run_platform_not_canonical"]
+    },
+    {
+      "fixture": "fail_codex_platform_codex_cli_trailing_space_without_adapter.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["run_platform_not_canonical"]
+    },
+    {
+      "fixture": "fail_codex_platform_codex_cli_uppercase_without_adapter.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["run_platform_not_canonical"]
+    },
+    {
+      "fixture": "fail_codex_shell_http_unsupported_tool.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["codex_observation_concrete_tool_not_allowed_by_adapter"]
+    },
+    {
+      "fixture": "fail_codex_shell_http_post_method.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["codex_shell_http_request_method_not_allowed"]
+    },
+    {
+      "fixture": "fail_codex_shell_http_private_or_file_url.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["codex_shell_http_url_not_public"]
+    },
+    {
+      "fixture": "fail_codex_shell_http_loopback_short_ipv4.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["codex_shell_http_url_not_public"]
+    },
+    {
+      "fixture": "fail_codex_shell_http_loopback_decimal_ipv4.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["codex_shell_http_url_not_public"]
+    },
+    {
+      "fixture": "fail_codex_shell_http_loopback_hex_ipv4.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["codex_shell_http_url_not_public"]
+    },
+    {
+      "fixture": "fail_generic_formal_private_loopback_url.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["public_source_url_not_safe"]
+    },
+    {
+      "fixture": "fail_codex_shell_http_bad_canonical_mapping.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["capability_adapter_mapping_mismatch"]
+    },
+    {
+      "fixture": "fail_codex_shell_http_observation_tool_not_declared.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["codex_observation_concrete_tool_not_allowed_by_adapter"]
+    },
+    {
+      "fixture": "fail_codex_adapter_conflicting_source_open_owners.json",
+      "validate": "fail",
+      "audit_standard": "fail",
+      "export_standard": "fail",
+      "expected_error_codes": ["capability_adapter_capability_owner_conflict"]
+    },
+    {
       "fixture": "pass_aftermarket_neutral_brand_distributor.json",
       "validate": "pass",
       "audit_standard": "pass",

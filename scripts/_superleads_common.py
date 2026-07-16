@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import ipaddress
 import json
 import re
 from pathlib import Path
@@ -127,6 +128,408 @@ CONTACT_USER_STATUS_BY_EXPORT_STATUS = {
     "hold_no_source": "不可导出",
     "hold_inferred": "不可导出",
 }
+
+# Capability reports are supplied by the Agent/host, never discovered by the
+# local scripts.  These are workflow values, not a platform or business ICP.
+CANONICAL_CAPABILITY_STATUSES = {"available", "missing", "unknown"}
+HOST_TOOL_STATUSES = {"available", "missing", "unknown", "failed"}
+HOST_OPERATION_STATUSES = {"verified", "missing", "unknown", "failed", "not_verified"}
+CODEX_NATIVE_WEB_SEARCH_ADAPTER_ID = "codex_cli_native_web_search"
+CODEX_NATIVE_WEB_SEARCH_ADAPTER_VERSION = "1"
+CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES = ("search.web", "source.open")
+CODEX_NATIVE_WEB_SEARCH_ALLOWED_CONCRETE_TOOLS = ("web_search",)
+CODEX_SHELL_HTTP_SOURCE_OPEN_ADAPTER_ID = "codex_cli_shell_http_source_open"
+CODEX_SHELL_HTTP_SOURCE_OPEN_ADAPTER_VERSION = "1"
+CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES = ("source.open",)
+CODEX_SHELL_HTTP_ALLOWED_CONCRETE_TOOLS = ("curl", "wget", "python_requests")
+TOOL_NAME_PLATFORM_VALUES = set(CODEX_SHELL_HTTP_ALLOWED_CONCRETE_TOOLS) | {"shell_curl", "native_fetch"}
+CANONICAL_PLATFORM_ID_RE = re.compile(r"^[a-z][a-z0-9_]{0,127}$")
+DNS_HOST_LABEL_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
+LEGACY_IPV4_PART_RE = re.compile(r"(?:0[xX][0-9A-Fa-f]+|0[0-7]*|[1-9][0-9]*|0)$")
+NUMERIC_IPV4_PART_RE = re.compile(r"(?:0[xX][0-9A-Fa-f]*|[0-9]+)$")
+SHELL_HTTP_SENSITIVE_VALUE_RE = re.compile(
+    r"(?i)(?:\b(?:authorization|cookie|token|password)\s*[:=]|\b(?:bearer|basic)\s+[a-z0-9._~+/-]+)"
+)
+
+
+def _host_status(value: Any) -> str:
+    return str(value).strip().lower() if isinstance(value, str) else "unknown"
+
+
+def _operation_status(operation: Any) -> str:
+    if not isinstance(operation, dict):
+        return "unknown"
+    return _host_status(operation.get("status"))
+
+
+def is_canonical_platform_id(value: Any) -> bool:
+    """Accept one unambiguous host ID, never a concrete tool name."""
+    return (
+        isinstance(value, str)
+        and CANONICAL_PLATFORM_ID_RE.fullmatch(value) is not None
+        and value not in TOOL_NAME_PLATFORM_VALUES
+    )
+
+
+def _legacy_ipv4_address(hostname: str) -> ipaddress.IPv4Address | None:
+    """Parse historical numeric IPv4 spellings accepted by common HTTP stacks.
+
+    This is intentionally local parsing only.  It catches known textual
+    loopback/private bypasses without making a DNS request from graph tools.
+    """
+    parts = hostname.split(".")
+    if not 1 <= len(parts) <= 4 or not all(LEGACY_IPV4_PART_RE.fullmatch(part) for part in parts):
+        return None
+
+    def parse_part(part: str) -> int:
+        lowered = part.casefold()
+        if lowered.startswith("0x"):
+            return int(part[2:], 16)
+        if len(part) > 1 and part.startswith("0"):
+            return int(part, 8)
+        return int(part, 10)
+
+    values = [parse_part(part) for part in parts]
+    if len(values) == 1:
+        if values[0] > 0xFFFFFFFF:
+            return None
+        number = values[0]
+    elif len(values) == 2:
+        if values[0] > 0xFF or values[1] > 0xFFFFFF:
+            return None
+        number = (values[0] << 24) | values[1]
+    elif len(values) == 3:
+        if values[0] > 0xFF or values[1] > 0xFF or values[2] > 0xFFFF:
+            return None
+        number = (values[0] << 24) | (values[1] << 16) | values[2]
+    else:
+        if any(value > 0xFF for value in values):
+            return None
+        number = sum(value << (8 * (3 - index)) for index, value in enumerate(values))
+    return ipaddress.IPv4Address(number)
+
+
+def _looks_like_numeric_ipv4(hostname: str) -> bool:
+    """Recognize invalid numeric IPv4-looking hosts so they fail closed."""
+    parts = hostname.split(".")
+    return bool(1 <= len(parts) <= 4 and all(NUMERIC_IPV4_PART_RE.fullmatch(part) for part in parts))
+
+
+def _is_valid_public_dns_hostname(hostname: str) -> bool:
+    """Validate a normal DNS name without claiming anything about its DNS answer."""
+    try:
+        ascii_hostname = hostname.encode("idna").decode("ascii").casefold()
+    except UnicodeError:
+        return False
+    if len(ascii_hostname) > 253 or "." not in ascii_hostname:
+        return False
+    labels = ascii_hostname.split(".")
+    return all(DNS_HOST_LABEL_RE.fullmatch(label) for label in labels)
+
+
+def is_safe_public_http_url(value: Any) -> bool:
+    """Allow a credential-free public HTTP(S) URL without resolving DNS.
+
+    The graph layer rejects literal global-address failures, including legacy
+    IPv4 spellings such as ``127.1`` and ``0x7f000001``.  It deliberately does
+    not resolve arbitrary DNS names; an HTTP executor must separately pin each
+    connection and redirect target to a global address.
+    """
+    if (
+        not isinstance(value, str)
+        or not value
+        or value != value.strip()
+        or any(ord(char) < 32 or ord(char) == 127 for char in value)
+    ):
+        return False
+    try:
+        parsed = urlsplit(value)
+        hostname = (parsed.hostname or "").casefold().rstrip(".")
+        port = parsed.port
+    except ValueError:
+        return False
+    if parsed.scheme.casefold() not in {"http", "https"} or not hostname:
+        return False
+    if port is not None and not 1 <= port <= 65535:
+        return False
+    if parsed.username is not None or parsed.password is not None:
+        return False
+    if hostname == "localhost" or hostname.endswith(".localhost") or hostname.endswith(".local"):
+        return False
+    try:
+        address = ipaddress.ip_address(hostname)
+    except ValueError:
+        legacy_address = _legacy_ipv4_address(hostname)
+        if legacy_address is not None:
+            return False
+        if _looks_like_numeric_ipv4(hostname):
+            return False
+        return _is_valid_public_dns_hostname(hostname)
+    return address.is_global
+
+
+def source_has_safe_public_http_urls(source: Any) -> bool:
+    """Require a public Source to contain no unsafe declared HTTP endpoint."""
+    if not isinstance(source, dict):
+        return False
+    values = [source.get(field) for field in ("canonical_url", "final_url")]
+    declared = [value for value in values if has_text(value)]
+    return bool(declared) and all(is_safe_public_http_url(value) for value in declared)
+
+
+def contains_shell_http_forbidden_data(value: Any) -> bool:
+    """Reject local paths and credential-shaped text from shell HTTP metadata."""
+    if isinstance(value, dict):
+        return any(contains_shell_http_forbidden_data(item) for item in value.values())
+    if isinstance(value, list):
+        return any(contains_shell_http_forbidden_data(item) for item in value)
+    if not isinstance(value, str):
+        return False
+    return contains_local_path(value) or bool(SHELL_HTTP_SENSITIVE_VALUE_RE.search(value))
+
+
+def _adapter_result(adapter_id: str | None, owned: tuple[str, ...], raw_mapped: dict[str, str],
+                    issues: list[dict[str, str]], recognized: bool,
+                    allowed_tools: dict[str, list[str]] | None = None) -> dict[str, Any]:
+    valid = recognized and not issues
+    return {
+        "adapter_id": adapter_id,
+        "recognized": recognized,
+        "valid": valid,
+        "owned_capabilities": list(owned),
+        "mapped_capabilities": dict(raw_mapped if valid else {capability: "unknown" for capability in owned}),
+        "raw_mapped_capabilities": dict(raw_mapped),
+        "allowed_concrete_tools": allowed_tools or {},
+        "issues": issues,
+    }
+
+
+def _validate_adapter_mapping(report: dict[str, Any], owned: tuple[str, ...], raw_mapped: dict[str, str],
+                              issues: list[dict[str, str]], adapter_label: str) -> None:
+    declared = report.get("canonical_capabilities")
+    if not isinstance(declared, dict):
+        issues.append({"code": "capability_adapter_canonical_mapping_missing", "message": "Capability adapter report requires its canonical capability mapping", "path": "capability_adapter_report.canonical_capabilities"})
+        return
+    if set(declared) != set(owned):
+        issues.append({"code": "capability_adapter_canonical_mapping_invalid", "message": f"{adapter_label} may declare only its owned canonical capabilities", "path": "capability_adapter_report.canonical_capabilities"})
+    for capability in owned:
+        actual = declared.get(capability)
+        if actual not in CANONICAL_CAPABILITY_STATUSES:
+            issues.append({"code": "capability_adapter_canonical_mapping_invalid", "message": f"Canonical mapping for {capability} is missing or invalid", "path": f"capability_adapter_report.canonical_capabilities.{capability}"})
+        elif actual != raw_mapped[capability]:
+            issues.append({"code": "capability_adapter_mapping_mismatch", "message": f"Canonical mapping for {capability} does not match the verified adapter operation", "path": f"capability_adapter_report.canonical_capabilities.{capability}"})
+
+
+def _resolve_native_web_search_adapter(report: Any) -> dict[str, Any]:
+    raw_mapped = {"search.web": "unknown", "source.open": "unknown"}
+    issues: list[dict[str, str]] = []
+    adapter_id = CODEX_NATIVE_WEB_SEARCH_ADAPTER_ID
+
+    def add(code: str, message: str, path: str) -> None:
+        issues.append({"code": code, "message": message, "path": path})
+
+    if not isinstance(report, dict):
+        add("capability_adapter_report_invalid", "Capability adapter report must be an object", "capability_adapter_report")
+        return _adapter_result(adapter_id, CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES, raw_mapped, issues, False)
+    if not is_canonical_platform_id(report.get("platform")):
+        add("capability_adapter_platform_not_canonical", "Capability adapter report platform must be a canonical host ID", "capability_adapter_report.platform")
+    if report.get("platform") != "codex_cli":
+        add("capability_adapter_platform_unsupported", "Capability adapter report platform is not codex_cli", "capability_adapter_report.platform")
+    adapter = report.get("adapter")
+    if not isinstance(adapter, dict) or adapter.get("adapter_id") != adapter_id:
+        add("capability_adapter_unsupported", "Capability adapter report does not identify the supported Codex CLI native web-search adapter", "capability_adapter_report.adapter")
+    if not isinstance(adapter, dict) or not has_text(adapter.get("adapter_version")):
+        add("capability_adapter_version_missing", "Capability adapter report requires an adapter version", "capability_adapter_report.adapter.adapter_version")
+    elif adapter.get("adapter_version") != CODEX_NATIVE_WEB_SEARCH_ADAPTER_VERSION:
+        add("capability_adapter_version_unsupported", "Capability adapter report uses an unsupported adapter version", "capability_adapter_report.adapter.adapter_version")
+    for field in ("detected_at", "detection"):
+        if not has_text(report.get(field)):
+            add("capability_adapter_detection_missing", "Capability adapter report requires detection time and method", f"capability_adapter_report.{field}")
+    tools = report.get("host_tools")
+    if not isinstance(tools, dict) or set(tools) != {"web_search"}:
+        add("capability_adapter_host_tool_unsupported", "Only the explicit native web_search host tool may map through this adapter", "capability_adapter_report.host_tools")
+        tools = {}
+    web_search = tools.get("web_search") if isinstance(tools, dict) else None
+    if not isinstance(web_search, dict):
+        add("capability_adapter_host_tool_invalid", "Native web_search tool report must be an object", "capability_adapter_report.host_tools.web_search")
+        web_search = {}
+    tool_status = _host_status(web_search.get("status"))
+    if tool_status not in HOST_TOOL_STATUSES:
+        add("capability_adapter_host_tool_status_invalid", "Native web_search status is invalid", "capability_adapter_report.host_tools.web_search.status")
+        tool_status = "unknown"
+    operations = web_search.get("operations")
+    if not isinstance(operations, dict) or set(operations) != {"search", "open_source"}:
+        add("capability_adapter_operations_invalid", "Native web_search report must distinguish search from open_source", "capability_adapter_report.host_tools.web_search.operations")
+        operations = {}
+    search_status, open_status = _operation_status(operations.get("search")), _operation_status(operations.get("open_source"))
+    if search_status not in HOST_OPERATION_STATUSES:
+        add("capability_adapter_operation_status_invalid", "search operation status is invalid", "capability_adapter_report.host_tools.web_search.operations.search.status")
+        search_status = "unknown"
+    if open_status not in HOST_OPERATION_STATUSES:
+        add("capability_adapter_operation_status_invalid", "open_source operation status is invalid", "capability_adapter_report.host_tools.web_search.operations.open_source.status")
+        open_status = "unknown"
+    if tool_status == "available" and search_status == "verified": raw_mapped["search.web"] = "available"
+    elif tool_status in {"missing", "failed"} or search_status in {"missing", "failed"}: raw_mapped["search.web"] = "missing"
+    open_record = operations.get("open_source") if isinstance(operations.get("open_source"), dict) else {}
+    open_complete = open_status == "verified" and is_safe_public_http_url(open_record.get("original_url")) and all(has_text(open_record.get(field)) for field in ("source_title", "raw_excerpt", "excerpt_locator"))
+    if open_status == "verified" and not open_complete:
+        add("capability_adapter_open_source_verification_incomplete", "open_source requires a public URL, source identifier, verbatim excerpt, and locator", "capability_adapter_report.host_tools.web_search.operations.open_source")
+    if tool_status == "available" and open_complete: raw_mapped["source.open"] = "available"
+    elif tool_status in {"missing", "failed"}: raw_mapped["source.open"] = "missing"
+    _validate_adapter_mapping(report, CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES, raw_mapped, issues, "Native web-search adapter")
+    for field in ("source_title", "raw_excerpt", "excerpt_locator"):
+        if field in open_record and contains_local_path(open_record.get(field)):
+            add("capability_adapter_local_path_forbidden", "Capability adapter report may not contain a local path", f"capability_adapter_report.host_tools.web_search.operations.open_source.{field}")
+    return _adapter_result(adapter_id, CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES, raw_mapped, issues, True, {"source.open": list(CODEX_NATIVE_WEB_SEARCH_ALLOWED_CONCRETE_TOOLS), "search.web": ["web_search"]})
+
+
+def _resolve_shell_http_source_open_adapter(report: Any) -> dict[str, Any]:
+    raw_mapped = {"source.open": "unknown"}
+    issues: list[dict[str, str]] = []
+    adapter_id = CODEX_SHELL_HTTP_SOURCE_OPEN_ADAPTER_ID
+
+    def add(code: str, message: str, path: str) -> None:
+        issues.append({"code": code, "message": message, "path": path})
+
+    if not isinstance(report, dict):
+        add("capability_adapter_report_invalid", "Capability adapter report must be an object", "capability_adapter_report")
+        return _adapter_result(adapter_id, CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES, raw_mapped, issues, False)
+    if not is_canonical_platform_id(report.get("platform")):
+        add("capability_adapter_platform_not_canonical", "Capability adapter report platform must be a canonical host ID", "capability_adapter_report.platform")
+    if report.get("platform") != "codex_cli": add("capability_adapter_platform_unsupported", "Shell HTTP adapter requires platform codex_cli", "capability_adapter_report.platform")
+    adapter = report.get("adapter")
+    if not isinstance(adapter, dict) or adapter.get("adapter_id") != adapter_id: add("capability_adapter_unsupported", "Capability adapter report does not identify the supported Codex CLI shell HTTP adapter", "capability_adapter_report.adapter")
+    if not isinstance(adapter, dict) or not has_text(adapter.get("adapter_version")):
+        add("capability_adapter_version_missing", "Capability adapter report requires an adapter version", "capability_adapter_report.adapter.adapter_version")
+    elif adapter.get("adapter_version") != CODEX_SHELL_HTTP_SOURCE_OPEN_ADAPTER_VERSION:
+        add("capability_adapter_version_unsupported", "Capability adapter report uses an unsupported adapter version", "capability_adapter_report.adapter.adapter_version")
+    for field in ("detected_at", "detection"):
+        if not has_text(report.get(field)): add("capability_adapter_detection_missing", "Capability adapter report requires detection time and method", f"capability_adapter_report.{field}")
+    tools = report.get("host_tools")
+    if not isinstance(tools, dict) or set(tools) != {"shell_http"}:
+        add("capability_adapter_host_tool_unsupported", "Shell HTTP adapter accepts only the explicit shell_http host tool", "capability_adapter_report.host_tools")
+        tools = {}
+    shell_http = tools.get("shell_http") if isinstance(tools, dict) else None
+    if not isinstance(shell_http, dict):
+        add("capability_adapter_host_tool_invalid", "shell_http tool report must be an object", "capability_adapter_report.host_tools.shell_http")
+        shell_http = {}
+    tool_status = _host_status(shell_http.get("status"))
+    if tool_status not in HOST_TOOL_STATUSES:
+        add("capability_adapter_host_tool_status_invalid", "shell_http status is invalid", "capability_adapter_report.host_tools.shell_http.status")
+        tool_status = "unknown"
+    allowed_tools = shell_http.get("allowed_concrete_tools")
+    if not isinstance(allowed_tools, list) or not allowed_tools or len(set(allowed_tools)) != len(allowed_tools) or any(tool not in CODEX_SHELL_HTTP_ALLOWED_CONCRETE_TOOLS for tool in allowed_tools):
+        add("codex_shell_http_allowed_tool_invalid", "Shell HTTP adapter requires a non-empty unique allowlist of supported concrete tools", "capability_adapter_report.host_tools.shell_http.allowed_concrete_tools")
+        allowed_tools = []
+    operations = shell_http.get("operations")
+    if not isinstance(operations, dict) or set(operations) != {"open_source"}:
+        add("capability_adapter_operations_invalid", "Shell HTTP adapter must record only open_source", "capability_adapter_report.host_tools.shell_http.operations")
+        operations = {}
+    open_record = operations.get("open_source") if isinstance(operations.get("open_source"), dict) else {}
+    open_status = _operation_status(open_record)
+    if open_status not in HOST_OPERATION_STATUSES:
+        add("capability_adapter_operation_status_invalid", "open_source operation status is invalid", "capability_adapter_report.host_tools.shell_http.operations.open_source.status")
+        open_status = "unknown"
+    if open_status == "verified" and open_record.get("request_method") != "GET":
+        add("codex_shell_http_request_method_not_allowed", "Shell HTTP source opening allows GET only", "capability_adapter_report.host_tools.shell_http.operations.open_source.request_method")
+    if open_status == "verified" and (not is_safe_public_http_url(open_record.get("original_url")) or not is_safe_public_http_url(open_record.get("final_url"))):
+        add("codex_shell_http_url_not_public", "Shell HTTP source opening requires public credential-free HTTP(S) original and final URLs", "capability_adapter_report.host_tools.shell_http.operations.open_source")
+    if open_status == "verified" and (not isinstance(open_record.get("http_status"), int) or not 200 <= open_record["http_status"] < 300):
+        add("codex_shell_http_http_status_not_success", "Shell HTTP source opening requires a successful HTTP status", "capability_adapter_report.host_tools.shell_http.operations.open_source.http_status")
+    if open_status == "verified" and not all(has_text(open_record.get(field)) for field in ("source_title", "raw_excerpt", "excerpt_locator")):
+        add("capability_adapter_open_source_verification_incomplete", "Shell HTTP source opening requires source identifier, verbatim excerpt, and locator", "capability_adapter_report.host_tools.shell_http.operations.open_source")
+    if contains_shell_http_forbidden_data(report):
+        add("codex_shell_http_forbidden_request_data", "Shell HTTP adapter report may not contain local paths or credential/request-secret data", "capability_adapter_report")
+    open_complete = open_status == "verified" and open_record.get("request_method") == "GET" and is_safe_public_http_url(open_record.get("original_url")) and is_safe_public_http_url(open_record.get("final_url")) and isinstance(open_record.get("http_status"), int) and 200 <= open_record["http_status"] < 300 and all(has_text(open_record.get(field)) for field in ("source_title", "raw_excerpt", "excerpt_locator")) and bool(allowed_tools)
+    if tool_status == "available" and open_complete: raw_mapped["source.open"] = "available"
+    elif tool_status in {"missing", "failed"}: raw_mapped["source.open"] = "missing"
+    _validate_adapter_mapping(report, CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES, raw_mapped, issues, "Shell HTTP adapter")
+    return _adapter_result(adapter_id, CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES, raw_mapped, issues, True, {"source.open": list(allowed_tools)})
+
+
+def resolve_capability_adapter_report(report: Any) -> dict[str, Any]:
+    """Resolve one backwards-compatible adapter report without probing host tools."""
+    adapter = report.get("adapter") if isinstance(report, dict) else None
+    adapter_id = adapter.get("adapter_id") if isinstance(adapter, dict) else None
+    if adapter_id == CODEX_NATIVE_WEB_SEARCH_ADAPTER_ID:
+        return _resolve_native_web_search_adapter(report)
+    if adapter_id == CODEX_SHELL_HTTP_SOURCE_OPEN_ADAPTER_ID:
+        return _resolve_shell_http_source_open_adapter(report)
+    return _adapter_result(
+        str(adapter_id) if has_text(adapter_id) else None,
+        (), {},
+        [{"code": "capability_adapter_unsupported", "message": "Capability adapter report does not identify a supported adapter", "path": "capability_adapter_report.adapter"}],
+        False,
+    )
+
+
+def resolve_capability_adapter_reports(reports: Any) -> dict[str, Any]:
+    """Aggregate independently verified providers without allowing duplicate active owners."""
+    report_items = reports if isinstance(reports, list) else []
+    adapter_results = [resolve_capability_adapter_report(report) for report in report_items]
+    issues: list[dict[str, str]] = []
+    if not adapter_results:
+        issues.append({
+            "code": "capability_adapter_reports_empty",
+            "message": "Capability adapter reports must contain at least one explicit provider report",
+            "path": "capability_adapter_reports",
+        })
+    owned: set[str] = set()
+    active_owners: dict[str, list[str]] = {}
+    raw_statuses: dict[str, list[str]] = {}
+    for index, result in enumerate(adapter_results):
+        for item in result["issues"]:
+            issues.append({**item, "path": f"capability_adapter_reports[{index}].{item['path']}"})
+        for capability in result["owned_capabilities"]:
+            owned.add(capability)
+            raw_statuses.setdefault(capability, []).append(result["mapped_capabilities"].get(capability, "unknown"))
+            if result["valid"] and result["mapped_capabilities"].get(capability) == "available":
+                active_owners.setdefault(capability, []).append(str(result.get("adapter_id") or "unknown"))
+    for capability, owners in active_owners.items():
+        if len(owners) > 1:
+            issues.append({"code": "capability_adapter_capability_owner_conflict", "message": f"Multiple verified adapters claim {capability}: {', '.join(owners)}", "path": "capability_adapter_reports"})
+    mapped: dict[str, str] = {}
+    for capability in owned:
+        statuses = raw_statuses.get(capability, [])
+        if len(active_owners.get(capability, [])) > 1: mapped[capability] = "unknown"
+        elif active_owners.get(capability): mapped[capability] = "available"
+        elif "missing" in statuses: mapped[capability] = "missing"
+        else: mapped[capability] = "unknown"
+    return {
+        "recognized": bool(adapter_results) and all(result["recognized"] for result in adapter_results),
+        "valid": bool(adapter_results) and not issues,
+        "owned_capabilities": sorted(owned),
+        "mapped_capabilities": mapped,
+        "issues": issues,
+        "adapter_results": adapter_results,
+        "active_owners": active_owners,
+    }
+
+
+def adapter_reports_from_run(run: Any) -> list[Any]:
+    """Read plural reports first while accepting the historical single report."""
+    if not isinstance(run, dict):
+        return []
+    reports: list[Any] = []
+    plural = run.get("capability_adapter_reports")
+    if isinstance(plural, list): reports.extend(plural)
+    if run.get("capability_adapter_report") is not None: reports.append(run["capability_adapter_report"])
+    return reports
+
+
+def codex_adapter_allows_observation(adapter_result: dict[str, Any], capability: Any, concrete_tool: Any) -> bool:
+    """Require an active provider to explicitly authorize a Codex observation tool."""
+    if not isinstance(capability, str) or not isinstance(concrete_tool, str):
+        return False
+    for result in adapter_result.get("adapter_results", []):
+        if not isinstance(result, dict) or not result.get("valid"):
+            continue
+        if result.get("mapped_capabilities", {}).get(capability) != "available":
+            continue
+        allowed = result.get("allowed_concrete_tools", {}).get(capability, [])
+        if concrete_tool in allowed:
+            return True
+    return False
 
 
 def load_json(path: str | Path) -> Any:
@@ -336,14 +739,6 @@ def text_contains_exact_phrase(haystack: Any, needle: Any) -> bool:
         return False
     pattern = rf"(?<!\w){re.escape(compact_needle)}(?!\w)"
     return re.search(pattern, compact_haystack) is not None
-
-
-def is_public_http_url(value: Any) -> bool:
-    """Return whether a source link is an inspectable public web URL."""
-    if not has_text(value):
-        return False
-    parsed = urlsplit(str(value).strip())
-    return parsed.scheme.casefold() in {"http", "https"} and bool(parsed.hostname)
 
 
 def is_safe_artifact_name(value: Any) -> bool:
@@ -593,9 +988,9 @@ def source_evidence_scope(source: Any, observation: Any, purpose: str) -> tuple[
         return False, "formal_source_not_eligible"
     if purpose == "inquiry_event":
         return False, "formal_source_not_eligible"
-    if is_public_http_url(source.get("canonical_url")) or is_public_http_url(source.get("final_url")):
+    if source_has_safe_public_http_urls(source):
         return True, "ok"
-    return False, "formal_source_not_eligible"
+    return False, "public_source_url_not_safe"
 
 
 def _artifact_role_scope(role: str, medium: str, purpose: str) -> tuple[bool, str]:
@@ -618,12 +1013,12 @@ def is_eligible_formal_source(source: Any, observation: Any) -> tuple[bool, str]
 
 def safe_public_source_url(source: Any) -> str:
     """Return the public link suitable for a workbook, never a local URI."""
-    if not isinstance(source, dict):
+    if not source_has_safe_public_http_urls(source):
         return ""
     for field in ("final_url", "canonical_url"):
         value = source.get(field)
-        if is_public_http_url(value):
-            return str(value).strip()
+        if is_safe_public_http_url(value):
+            return str(value)
     return ""
 
 

@@ -1,0 +1,7 @@
+{
+  "extends": "pass_minimal_graph.json",
+  "patches": [
+    {"op": "replace", "path": "/runs/0/platform", "value": "codex_cli"},
+    {"op": "add", "path": "/runs/0/capabilities", "value": {"search.web": "available", "source.open": "available"}}
+  ]
+}

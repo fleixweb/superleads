@@ -16,15 +16,30 @@ Treat Superleads as a weak-evidence research workflow. Weak evidence may be deli
 ## Artifact boundaries
 
 - `search.web` output may create Candidate clues and Search Log rows only.
+- A native host `web_search` call is still `search.web` unless that same
+  session separately verifies an opened HTTP(S) source with a source
+  identifier, verbatim excerpt, and locator. A search result summary, link,
+  or citation cannot become an Observation or ClaimEvidence.
 - A Source exists only after a URL, document, spreadsheet, map result, directory entry, or user-provided material is opened or otherwise inspectable.
 - An Observation records visible or extracted content from a Source, including access status and locator.
+- In a graph containing multiple Runs, each Observation must carry its own
+  `run_id`; capability checks use only that Run. An unknown or absent Run ID
+  fails closed. Single-Run graphs may use the current compatibility association.
+- If that Run carries a native capability adapter report, the Observation's
+  capability must be explicitly present in its canonical capabilities with
+  status `available`; an omitted capability is not evidence authorization.
+- For a Codex shell HTTP Observation, `platform=codex_cli`,
+  `capability=source.open`, and the concrete reader (`curl`, `wget`, or
+  `python_requests`) remain separate fields. The reader needs a verified
+  public-GET provider report and may not be inferred from a tool name or a
+  successful shell command alone.
 - A Claim is a fact directly supported by Observation evidence.
 - A Hypothesis is a business inference or outreach angle. It must not become a Claim.
 - An Assessment is this run's development judgment and must cite Claim IDs as its qualification basis.
 - Every formal `supports` ClaimEvidence must carry source-visible anchors for the Claim subject, predicate, claim type, and typed value. A Claim field without a source anchor is not a formal fact.
 - A translated Observation may support a Claim only when its `derived_from_observation_id` chain terminates at an accessible, same-entity, non-translated original Observation.
 - Formal Claim support must pass one controlled source branch:
-  - public branch: an inspectable `http` or `https` Source URL and a non-empty Observation excerpt;
+  - public branch: strict credential-free public `http` or `https` Source URLs and a non-empty Observation excerpt; local/private/loopback/link-local/reserved/multicast/unspecified hosts, localhost/local names, and legacy numeric IPv4 spellings are not public sources;
   - published-copy branch: `provenance=user_provided`, `material_role=published_source_copy`, `medium=document|spreadsheet`, a lowercase SHA-256 and safe display filename, `document.extract`, non-empty excerpt/content hash, and a same-hash `artifact:sha256:<hash>#...` locator.
 
 ## User-provided file evidence exception
@@ -32,6 +47,12 @@ Treat Superleads as a weak-evidence research workflow. Weak evidence may be deli
 This is a controlled file-evidence exception, not an exception for chat text, pasted prose, `manual_input`, or model memory. A document locator must identify a page, section, or chapter. A spreadsheet locator must identify both a sheet and a cell/range. `snapshot_ref` may not contain a path, `file:`, control characters, or `..`.
 
 The graph gate validates hash format, source/observation linkage, material role, and reference consistency. It does not claim to re-compute an uploaded file's SHA-256 unless the original binary is retained by the execution environment. All ClaimEvidence relation semantics, same-Entity attribution, translation-origin checks, contradictions, Reviews, Audits, and Manifests remain unchanged. See `material-intake-policy.md` for the purpose matrix.
+
+Public-URL validation is intentionally offline and does not resolve arbitrary
+domains. It blocks known IP text bypasses, not DNS rebinding. Any actual HTTP
+executor must re-check the resolved address on connection and each redirect,
+and reject a non-global target. This does not change the controlled
+user-provided PDF/Excel artifact branch.
 
 ## Mail and inquiry boundary
 

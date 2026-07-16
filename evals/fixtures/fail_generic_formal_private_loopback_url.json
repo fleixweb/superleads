@@ -1,0 +1,8 @@
+{
+  "extends": "pass_minimal_graph.json",
+  "patches": [
+    {"op": "replace", "path": "/runs/0/platform", "value": "hermes"},
+    {"op": "replace", "path": "/sources/0/canonical_url", "value": "http://127.0.0.1/private"},
+    {"op": "replace", "path": "/sources/0/final_url", "value": "http://127.0.0.1/private"}
+  ]
+}

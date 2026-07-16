@@ -1,0 +1,7 @@
+{
+  "extends": "pass_codex_shell_http_source_open_standard.json",
+  "patches": [
+    {"op": "replace", "path": "/runs/0/capabilities/source.open", "value": "unknown"},
+    {"op": "replace", "path": "/runs/0/capability_adapter_report/host_tools/shell_http/operations/open_source/request_method", "value": "POST"}
+  ]
+}

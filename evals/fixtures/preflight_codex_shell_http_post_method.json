@@ -1,0 +1,11 @@
+{
+  "platform": "codex_cli",
+  "capability_adapter_report": {
+    "platform": "codex_cli",
+    "adapter": {"adapter_id": "codex_cli_shell_http_source_open", "adapter_version": "1"},
+    "detected_at": "2026-07-16T00:00:00Z",
+    "detection": "current_session_shell_http_success",
+    "host_tools": {"shell_http": {"status": "available", "allowed_concrete_tools": ["curl"], "operations": {"open_source": {"status": "verified", "request_method": "POST", "original_url": "https://example.com/about", "final_url": "https://example.com/about", "http_status": 200, "source_title": "Example source", "raw_excerpt": "Example source provides a visible public statement.", "excerpt_locator": "main"}}}},
+    "canonical_capabilities": {"source.open": "available"}
+  }
+}

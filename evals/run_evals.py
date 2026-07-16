@@ -18,6 +18,7 @@ BEHAVIORAL = ROOT / "evals" / "behavioral"
 INTEGRATION = ROOT / "evals" / "integration"
 LEGACY_DERIVED = ROOT / "evals" / "legacy-derived"
 SCHEMAS = ROOT / "shared" / "schemas"
+CAPABILITY_CASES = ROOT / "evals" / "cases" / "capability_adapter_cases.json"
 
 
 def run(cmd: list[str], expect: int) -> dict[str, object]:
@@ -204,6 +205,61 @@ def run_normalize_chain(py: str, fixture_path: str, tmp_path: Path, index: int) 
     }
 
 
+def run_preflight_assertion(py: str, input_path: str, case: dict[str, object]) -> dict[str, object]:
+    proc = subprocess.run(
+        [py, str(SCRIPTS / "preflight_capabilities.py"), "--input", input_path, "--format", "json"],
+        cwd=str(ROOT), text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    expected_returncode = int(case.get("returncode", 0))
+    actual: dict[str, object] | None = None
+    try:
+        parsed = json.loads(proc.stdout)
+        actual = parsed if isinstance(parsed, dict) else None
+    except Exception:
+        actual = None
+    expected_capabilities = case.get("expected_capabilities", {})
+    missing: list[str] = []
+    for capability, expected_status in expected_capabilities.items() if isinstance(expected_capabilities, dict) else []:
+        current = actual.get("capabilities", {}).get(capability, {}).get("status") if isinstance(actual, dict) and isinstance(actual.get("capabilities"), dict) else None
+        if current != expected_status:
+            missing.append(f"{capability}={expected_status} (got {current})")
+    expected_max = case.get("expected_max_output")
+    if expected_max and (not isinstance(actual, dict) or actual.get("max_output_without_manual_sources") != expected_max):
+        missing.append(f"max_output_without_manual_sources={expected_max}")
+    for code in case.get("expected_adapter_codes", []) if isinstance(case.get("expected_adapter_codes"), list) else []:
+        adapter_issues = actual.get("adapter_report", {}).get("issues", []) if isinstance(actual, dict) and isinstance(actual.get("adapter_report"), dict) else []
+        if not any(isinstance(item, dict) and item.get("code") == code for item in adapter_issues):
+            missing.append(f"adapter code {code}")
+    if "expected_adapter_valid" in case:
+        actual_valid = actual.get("adapter_report", {}).get("valid") if isinstance(actual, dict) and isinstance(actual.get("adapter_report"), dict) else None
+        if actual_valid is not case.get("expected_adapter_valid"):
+            missing.append(f"adapter valid={case.get('expected_adapter_valid')} (got {actual_valid})")
+    ok = proc.returncode == expected_returncode and actual is not None and not missing
+    return {
+        "cmd": [py, str(SCRIPTS / "preflight_capabilities.py"), "--input", input_path, "--format", "json"],
+        "returncode": proc.returncode if ok else 1,
+        "expected": expected_returncode,
+        "ok": ok,
+        "output": proc.stdout if not missing else proc.stdout + "\nmissing preflight assertions: " + ", ".join(missing),
+    }
+
+
+def add_capability_adapter_tests(tests: list[tuple[str, list[str], int, list[str]]]) -> None:
+    if not CAPABILITY_CASES.exists():
+        return
+    payload = json.loads(CAPABILITY_CASES.read_text(encoding="utf-8"))
+    for case in payload.get("cases", []):
+        if not isinstance(case, dict) or not isinstance(case.get("input"), str):
+            continue
+        tests.append((
+            f"capability adapter {case.get('name', case['input'])}",
+            ["__PREFLIGHT_ASSERT__", str(ROOT / case["input"]), json.dumps(case, ensure_ascii=False)],
+            int(case.get("returncode", 0)),
+            [],
+        ))
+
+
 def add_case_tests(py: str, tests: list[tuple[str, list[str], int, list[str]]]) -> None:
     for case_file in sorted(CASES.glob("*.json")):
         payload = json.loads(case_file.read_text(encoding="utf-8"))
@@ -289,6 +345,7 @@ def main() -> int:
         ("advanced delivery gate regressions", [py, str(ROOT / "evals" / "advanced_gate_tests.py")], 0, []),
     ]
     add_case_tests(py, tests)
+    add_capability_adapter_tests(tests)
     add_static_suite_tests(py, tests)
     results = []
     with tempfile.TemporaryDirectory() as tmp:
@@ -313,6 +370,8 @@ def main() -> int:
                 result = run_audit_status(py, cmd[1], cmd[2], int(cmd[3]), tmp_path, index, cmd[4] or None)
             elif cmd and cmd[0] == "__NORMALIZE_CHAIN__":
                 result = run_normalize_chain(py, cmd[1], tmp_path, index)
+            elif cmd and cmd[0] == "__PREFLIGHT_ASSERT__":
+                result = run_preflight_assertion(py, cmd[1], json.loads(cmd[2]))
             elif cmd and cmd[0].startswith("__") and cmd[0].endswith("_CHECK__"):
                 result = static_check(cmd[0], cmd[1])
             else:

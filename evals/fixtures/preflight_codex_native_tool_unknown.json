@@ -1,0 +1,22 @@
+{
+  "platform": "codex_cli",
+  "adapter": {
+    "adapter_id": "codex_cli_native_web_search",
+    "adapter_version": "1"
+  },
+  "detected_at": "2026-07-15T00:00:00Z",
+  "detection": "current_session_tool_visibility",
+  "host_tools": {
+    "web_search": {
+      "status": "unknown",
+      "operations": {
+        "search": {"status": "unknown"},
+        "open_source": {"status": "unknown"}
+      }
+    }
+  },
+  "canonical_capabilities": {
+    "search.web": "unknown",
+    "source.open": "unknown"
+  }
+}

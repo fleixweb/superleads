@@ -1,0 +1,143 @@
+{
+  "cases": [
+    {
+      "name": "canonical_search_only",
+      "input": "evals/fixtures/preflight_canonical_search_only.json",
+      "expected_capabilities": {"search.web": "available", "source.open": "unknown", "browser.render": "unknown"},
+      "expected_max_output": "initial_lead_list"
+    },
+    {
+      "name": "canonical_source_open_compatibility",
+      "input": "evals/fixtures/preflight_canonical_source_open.json",
+      "expected_capabilities": {"search.web": "available", "source.open": "available"},
+      "expected_max_output": "standard_development_list"
+    },
+    {
+      "name": "codex_native_search_only",
+      "input": "evals/fixtures/preflight_codex_native_search_only.json",
+      "expected_capabilities": {"search.web": "available", "source.open": "unknown", "browser.render": "unknown"},
+      "expected_max_output": "initial_lead_list"
+    },
+    {
+      "name": "codex_native_open_source_verified",
+      "input": "evals/fixtures/preflight_codex_native_open_source_verified.json",
+      "expected_capabilities": {"search.web": "available", "source.open": "available", "browser.render": "unknown"},
+      "expected_max_output": "standard_development_list",
+      "expected_adapter_valid": true
+    },
+    {
+      "name": "codex_native_wrong_canonical_mapping",
+      "input": "evals/fixtures/preflight_codex_native_wrong_canonical_mapping.json",
+      "expected_capabilities": {"search.web": "unknown", "source.open": "unknown"},
+      "expected_max_output": "research_plan_only",
+      "expected_adapter_codes": ["capability_adapter_mapping_mismatch"],
+      "expected_adapter_valid": false
+    },
+    {
+      "name": "codex_native_unsupported_adapter_version",
+      "input": "evals/fixtures/preflight_codex_native_unsupported_adapter_version.json",
+      "expected_capabilities": {"search.web": "unknown", "source.open": "unknown"},
+      "expected_max_output": "research_plan_only",
+      "expected_adapter_codes": ["capability_adapter_version_unsupported"],
+      "expected_adapter_valid": false
+    },
+    {
+      "name": "codex_native_search_plus_document_extract",
+      "input": "evals/fixtures/preflight_codex_native_search_plus_document_extract.json",
+      "expected_capabilities": {"search.web": "available", "source.open": "unknown", "document.extract": "available"},
+      "expected_max_output": "standard_development_list",
+      "expected_adapter_valid": true
+    },
+    {
+      "name": "codex_shell_http_source_open",
+      "input": "evals/fixtures/preflight_codex_shell_http_source_open.json",
+      "expected_capabilities": {"search.web": "missing", "source.open": "available"},
+      "expected_max_output": "standard_development_list",
+      "expected_adapter_valid": true
+    },
+    {
+      "name": "codex_native_search_plus_shell_http",
+      "input": "evals/fixtures/preflight_codex_native_search_plus_shell_http.json",
+      "expected_capabilities": {"search.web": "available", "source.open": "available"},
+      "expected_max_output": "standard_development_list",
+      "expected_adapter_valid": true
+    },
+    {
+      "name": "codex_shell_http_post_method_rejected",
+      "input": "evals/fixtures/preflight_codex_shell_http_post_method.json",
+      "expected_capabilities": {"source.open": "unknown"},
+      "expected_max_output": "research_plan_only",
+      "expected_adapter_codes": ["codex_shell_http_request_method_not_allowed"],
+      "expected_adapter_valid": false
+    },
+    {
+      "name": "codex_shell_http_private_url_rejected",
+      "input": "evals/fixtures/preflight_codex_shell_http_bad_url.json",
+      "expected_capabilities": {"source.open": "unknown"},
+      "expected_max_output": "research_plan_only",
+      "expected_adapter_codes": ["codex_shell_http_url_not_public"],
+      "expected_adapter_valid": false
+    },
+    {
+      "name": "malformed_platform_does_not_promote_source_open",
+      "input": "evals/fixtures/preflight_codex_platform_codex_cli_trailing_space.json",
+      "expected_capabilities": {"source.open": "unknown"},
+      "expected_max_output": "research_plan_only",
+      "expected_adapter_codes": ["run_platform_not_canonical"],
+      "expected_adapter_valid": false
+    },
+    {
+      "name": "codex_shell_http_conflicting_source_open_owners",
+      "input": "evals/fixtures/preflight_codex_shell_http_conflicting_owners.json",
+      "expected_capabilities": {"search.web": "available", "source.open": "unknown"},
+      "expected_max_output": "initial_lead_list",
+      "expected_adapter_codes": ["capability_adapter_capability_owner_conflict"],
+      "expected_adapter_valid": false
+    },
+    {
+      "name": "codex_native_tool_unknown",
+      "input": "evals/fixtures/preflight_codex_native_tool_unknown.json",
+      "expected_capabilities": {"search.web": "unknown", "source.open": "unknown"},
+      "expected_max_output": "research_plan_only"
+    },
+    {
+      "name": "codex_native_tool_missing",
+      "input": "evals/fixtures/preflight_codex_native_tool_missing.json",
+      "expected_capabilities": {"search.web": "missing", "source.open": "missing"},
+      "expected_max_output": "research_plan_only"
+    },
+    {
+      "name": "codex_native_tool_failed",
+      "input": "evals/fixtures/preflight_codex_native_tool_failed.json",
+      "expected_capabilities": {"search.web": "missing", "source.open": "missing"},
+      "expected_max_output": "research_plan_only"
+    },
+    {
+      "name": "codex_native_no_search_operation",
+      "input": "evals/fixtures/preflight_codex_native_no_search_operation.json",
+      "expected_capabilities": {"search.web": "unknown", "source.open": "unknown"},
+      "expected_max_output": "research_plan_only"
+    },
+    {
+      "name": "codex_native_similar_tool_rejected",
+      "input": "evals/fixtures/preflight_codex_native_similar_tool.json",
+      "expected_capabilities": {"search.web": "unknown", "source.open": "unknown"},
+      "expected_max_output": "research_plan_only",
+      "expected_adapter_codes": ["capability_adapter_host_tool_unsupported"]
+    },
+    {
+      "name": "codex_native_source_open_claimed_without_verification",
+      "input": "evals/fixtures/preflight_codex_native_source_open_claimed.json",
+      "expected_capabilities": {"search.web": "unknown", "source.open": "unknown"},
+      "expected_max_output": "research_plan_only",
+      "expected_adapter_codes": ["capability_adapter_mapping_mismatch"],
+      "expected_adapter_valid": false
+    },
+    {
+      "name": "empty_capability_report",
+      "input": "evals/fixtures/preflight_empty_capability_report.json",
+      "expected_capabilities": {"search.web": "unknown", "source.open": "unknown"},
+      "expected_max_output": "research_plan_only"
+    }
+  ]
+}

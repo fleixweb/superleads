@@ -7,7 +7,8 @@
   "required": [
     "run_id",
     "status",
-    "created_at"
+    "created_at",
+    "platform"
   ],
   "properties": {
     "run_id": {
@@ -36,10 +37,43 @@
       "type": "string"
     },
     "platform": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9_]{0,127}$",
+      "not": {
+        "enum": ["curl", "wget", "python_requests", "shell_curl", "native_fetch"]
+      }
     },
     "capabilities": {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "search.web": {"$ref": "#/$defs/capabilityStatus"},
+        "source.open": {"$ref": "#/$defs/capabilityStatus"},
+        "browser.render": {"$ref": "#/$defs/capabilityStatus"},
+        "document.extract": {"$ref": "#/$defs/capabilityStatus"},
+        "image.inspect": {"$ref": "#/$defs/capabilityStatus"},
+        "mail.read": {"$ref": "#/$defs/capabilityStatus"},
+        "source.capture": {"$ref": "#/$defs/capabilityStatus"},
+        "url.canonicalize": {"$ref": "#/$defs/capabilityStatus"},
+        "entity.dedupe": {"$ref": "#/$defs/capabilityStatus"},
+        "translate.text": {"$ref": "#/$defs/capabilityStatus"},
+        "company.enrich": {"$ref": "#/$defs/capabilityStatus"},
+        "email.verify": {"$ref": "#/$defs/capabilityStatus"},
+        "domain.check": {"$ref": "#/$defs/capabilityStatus"},
+        "social.visible.read": {"$ref": "#/$defs/capabilityStatus"},
+        "registry.lookup": {"$ref": "#/$defs/capabilityStatus"},
+        "trademark.lookup": {"$ref": "#/$defs/capabilityStatus"},
+        "maps.lookup": {"$ref": "#/$defs/capabilityStatus"},
+        "memory.recall": {"$ref": "#/$defs/capabilityStatus"}
+      }
+    },
+    "capability_adapter_report": {"$ref": "#/$defs/capabilityAdapterReport"},
+    "capability_adapter_reports": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/capabilityAdapterReport"}
     },
     "brief_id": {
       "type": "string"
@@ -60,6 +94,160 @@
         "self_review_fallback",
         "not_run"
       ]
+    }
+  },
+  "$defs": {
+    "capabilityStatus": {"type": "string", "enum": ["available", "missing", "unknown"]},
+    "operationStatus": {"type": "string", "enum": ["verified", "missing", "unknown", "failed", "not_verified"]},
+    "capabilityAdapterReport": {
+      "oneOf": [
+        {"$ref": "#/$defs/codexNativeWebSearchReport"},
+        {"$ref": "#/$defs/codexShellHttpSourceOpenReport"}
+      ]
+    },
+    "codexNativeWebSearchReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["platform", "adapter", "detected_at", "detection", "host_tools", "canonical_capabilities"],
+      "properties": {
+        "platform": {"const": "codex_cli"},
+        "adapter": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["adapter_id", "adapter_version"],
+          "properties": {
+            "adapter_id": {"const": "codex_cli_native_web_search"},
+            "adapter_version": {"const": "1"}
+          }
+        },
+        "detected_at": {"type": "string", "minLength": 1},
+        "detection": {"type": "string", "minLength": 1},
+        "host_tools": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["web_search"],
+          "properties": {
+            "web_search": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["status", "operations"],
+              "properties": {
+                "status": {"type": "string", "enum": ["available", "missing", "unknown", "failed"]},
+                "operations": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["search", "open_source"],
+                  "properties": {
+                    "search": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["status"],
+                      "properties": {"status": {"$ref": "#/$defs/operationStatus"}}
+                    },
+                    "open_source": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["status"],
+                      "properties": {
+                        "status": {"$ref": "#/$defs/operationStatus"},
+                        "original_url": {"type": "string", "pattern": "^https?://"},
+                        "source_title": {"type": "string", "minLength": 1},
+                        "raw_excerpt": {"type": "string", "minLength": 1},
+                        "excerpt_locator": {"type": "string", "minLength": 1}
+                      },
+                      "allOf": [{
+                        "if": {"properties": {"status": {"const": "verified"}}, "required": ["status"]},
+                        "then": {"required": ["original_url", "source_title", "raw_excerpt", "excerpt_locator"]}
+                      }]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "canonical_capabilities": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["search.web", "source.open"],
+          "properties": {
+            "search.web": {"$ref": "#/$defs/capabilityStatus"},
+            "source.open": {"$ref": "#/$defs/capabilityStatus"}
+          }
+        }
+      }
+    },
+    "codexShellHttpSourceOpenReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["platform", "adapter", "detected_at", "detection", "host_tools", "canonical_capabilities"],
+      "properties": {
+        "platform": {"const": "codex_cli"},
+        "adapter": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["adapter_id", "adapter_version"],
+          "properties": {
+            "adapter_id": {"const": "codex_cli_shell_http_source_open"},
+            "adapter_version": {"const": "1"}
+          }
+        },
+        "detected_at": {"type": "string", "minLength": 1},
+        "detection": {"type": "string", "minLength": 1},
+        "host_tools": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["shell_http"],
+          "properties": {
+            "shell_http": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["status", "allowed_concrete_tools", "operations"],
+              "properties": {
+                "status": {"type": "string", "enum": ["available", "missing", "unknown", "failed"]},
+                "allowed_concrete_tools": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": {"type": "string", "enum": ["curl", "wget", "python_requests"]}
+                },
+                "operations": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["open_source"],
+                  "properties": {
+                    "open_source": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["status"],
+                      "properties": {
+                        "status": {"$ref": "#/$defs/operationStatus"},
+                        "request_method": {"type": "string", "enum": ["GET"]},
+                        "original_url": {"type": "string", "pattern": "^https?://"},
+                        "final_url": {"type": "string", "pattern": "^https?://"},
+                        "http_status": {"type": "integer", "minimum": 200, "maximum": 299},
+                        "source_title": {"type": "string", "minLength": 1},
+                        "raw_excerpt": {"type": "string", "minLength": 1},
+                        "excerpt_locator": {"type": "string", "minLength": 1}
+                      },
+                      "allOf": [{
+                        "if": {"properties": {"status": {"const": "verified"}}, "required": ["status"]},
+                        "then": {"required": ["request_method", "original_url", "final_url", "http_status", "source_title", "raw_excerpt", "excerpt_locator"]}
+                      }]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "canonical_capabilities": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source.open"],
+          "properties": {"source.open": {"$ref": "#/$defs/capabilityStatus"}}
+        }
+      }
     }
   }
 }

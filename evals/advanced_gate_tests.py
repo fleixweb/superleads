@@ -97,6 +97,7 @@ def _assert_hold_value_is_not_exported(directory: Path) -> list[str]:
 
 def _assert_historical_review_cannot_approve(directory: Path) -> list[str]:
     graph = _base()
+    graph["observations"][0]["run_id"] = "run_001"
     graph["runs"].append({
         "run_id": "run_002",
         "brief_id": "brief_001",
@@ -104,6 +105,7 @@ def _assert_historical_review_cannot_approve(directory: Path) -> list[str]:
         "created_at": "2026-01-02T00:00:00Z",
         "review_cycle_id": "review_run_002",
         "status": "checked",
+        "platform": "fixture",
     })
     validate, audit, export = _formal_results(graph, directory, "historical_review_scope")
     errors = []
@@ -116,6 +118,7 @@ def _assert_historical_review_cannot_approve(directory: Path) -> list[str]:
 
 def _assert_historical_assessment_cannot_be_reused(directory: Path) -> list[str]:
     graph = _base()
+    graph["observations"][0]["run_id"] = "run_001"
     graph["runs"].append({
         "run_id": "run_002",
         "brief_id": "brief_001",
@@ -124,6 +127,7 @@ def _assert_historical_assessment_cannot_be_reused(directory: Path) -> list[str]
         "review_cycle_id": "review_run_002",
         "review_mode": "independent",
         "status": "checked",
+        "platform": "fixture",
     })
     validate, audit, export = _formal_results(graph, directory, "historical_assessment_scope")
     errors = []
@@ -388,6 +392,45 @@ def _assert_mail_adapter_boundary(directory: Path) -> list[str]:
     return [] if rejected.returncode != 0 and "mail_input_forbidden_sensitive_field" in rejected.stdout else [f"mail_adapter_reject: sensitive host input was not blocked\n{rejected.stdout}"]
 
 
+def _assert_platform_and_public_url_pressure_tests(directory: Path) -> list[str]:
+    """Construct variants directly so coverage cannot depend on fixture names."""
+    errors: list[str] = []
+    platform_variants = ("curl ", "shell-curl", "codex_cli ", "CODEX_CLI")
+    for index, platform in enumerate(platform_variants):
+        graph = _load_fixture_graph(ROOT / "evals" / "fixtures" / "pass_codex_shell_http_source_open_standard.json")
+        graph["runs"][0]["platform"] = platform
+        graph["runs"][0].pop("capability_adapter_report", None)
+        validate, audit, export = _formal_results(graph, directory, f"platform_variant_{index}")
+        for label, result in (("validate", validate), ("audit", audit), ("export", export)):
+            if result.returncode == 0 or "run_platform_not_canonical" not in result.stdout:
+                errors.append(f"platform_variant_{platform!r}: {label} did not block canonical-platform bypass\n{result.stdout}")
+
+    for index, hostname in enumerate(("127.1", "2130706433", "0x7f000001")):
+        graph = _load_fixture_graph(ROOT / "evals" / "fixtures" / "pass_codex_shell_http_source_open_standard.json")
+        url = f"http://{hostname}/private"
+        graph["sources"][0].update({"canonical_url": url, "final_url": url})
+        operation = graph["runs"][0]["capability_adapter_report"]["host_tools"]["shell_http"]["operations"]["open_source"]
+        operation.update({"original_url": url, "final_url": url})
+        validate, audit, export = _formal_results(graph, directory, f"shell_loopback_{index}")
+        for label, result in (("validate", validate), ("audit", audit), ("export", export)):
+            if result.returncode == 0 or "codex_shell_http_url_not_public" not in result.stdout:
+                errors.append(f"shell_loopback_{hostname}: {label} did not block legacy IPv4 loopback\n{result.stdout}")
+
+    generic = _base()
+    generic["runs"][0]["platform"] = "hermes"
+    generic["sources"][0].update({"canonical_url": "http://127.0.0.1/private", "final_url": "http://127.0.0.1/private"})
+    validate, audit, export = _formal_results(generic, directory, "generic_loopback")
+    for label, result in (("validate", validate), ("audit", audit), ("export", export)):
+        if result.returncode == 0 or "public_source_url_not_safe" not in result.stdout:
+            errors.append(f"generic_loopback: {label} did not block formal private URL\n{result.stdout}")
+
+    public_shell = _load_fixture_graph(ROOT / "evals" / "fixtures" / "pass_codex_shell_http_source_open_standard.json")
+    validate, audit, export = _formal_results(public_shell, directory, "public_shell_control")
+    if any(result.returncode != 0 for result in (validate, audit, export)):
+        errors.append(f"public_shell_control: public HTTPS shell source no longer passes\n{validate.stdout}\n{audit.stdout}\n{export.stdout}")
+    return errors
+
+
 def _stored_unauthorized_manifest(graph: dict[str, Any]) -> None:
     graph["runs"][0]["review_mode"] = "not_run"
     current_hash = graph_hash(graph)
@@ -544,6 +587,7 @@ def main() -> int:
         errors.extend(_assert_material_role_direct_pressure_tests(directory))
         errors.extend(_assert_inquiry_export_redaction(directory))
         errors.extend(_assert_mail_adapter_boundary(directory))
+        errors.extend(_assert_platform_and_public_url_pressure_tests(directory))
         errors.extend(_assert_self_review_disclosure(directory))
         errors.extend(_assert_historical_review_cannot_approve(directory))
         errors.extend(_assert_historical_assessment_cannot_be_reused(directory))
@@ -561,7 +605,7 @@ def main() -> int:
         print("Advanced gate regressions failed:")
         print("\n\n".join(errors))
         return 1
-    print(f"advanced gate regressions passed: {len(tests) + 13}")
+    print(f"advanced gate regressions passed: {len(tests) + 14}")
     return 0
 
 

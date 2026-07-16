@@ -198,6 +198,7 @@
       "http_status": 200,
       "language": "en",
       "observation_id": "obs_001",
+      "run_id": "run_001",
       "observed_at": "2026-01-01T00:00:00Z",
       "page_or_dom_locator": "body",
       "raw_excerpt": "Example Buyer sells sample product. Example Buyer Contact: sales@example.com",

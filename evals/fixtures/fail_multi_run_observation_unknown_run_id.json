@@ -1,0 +1,6 @@
+{
+  "extends": "pass_multi_run_historical_search_current_source_open.json",
+  "patches": [
+    {"op": "replace", "path": "/observations/0/run_id", "value": "run_unknown_001"}
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "extends": "pass_minimal_graph.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/runs/0/platform",
+      "value": "codex_cli"
+    },
+    {
+      "op": "add",
+      "path": "/runs/0/capabilities",
+      "value": {
+        "search.web": "available",
+        "source.open": "available",
+        "browser.render": "unknown"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/concrete_tool",
+      "value": "web_search"
+    },
+    {
+      "op": "add",
+      "path": "/runs/0/capability_adapter_report",
+      "value": {
+        "platform": "codex_cli",
+        "adapter": {
+          "adapter_id": "codex_cli_native_web_search",
+          "adapter_version": "1"
+        },
+        "detected_at": "2026-07-15T00:00:00Z",
+        "detection": "current_session_tool_visibility_and_successful_source_open",
+        "host_tools": {
+          "web_search": {
+            "status": "available",
+            "operations": {
+              "search": {"status": "verified"},
+              "open_source": {
+                "status": "verified",
+                "original_url": "https://example.com/products",
+                "source_title": "Example Buyer products",
+                "raw_excerpt": "Example Buyer offers sample product.",
+                "excerpt_locator": "body"
+              }
+            }
+          }
+        },
+        "canonical_capabilities": {
+          "search.web": "available",
+          "source.open": "available"
+        }
+      }
+    }
+  ]
+}

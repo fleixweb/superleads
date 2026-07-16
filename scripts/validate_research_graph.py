@@ -37,6 +37,15 @@ from _superleads_common import (
     has_text,
     identity_reference_match,
     normalized_identity_domain,
+    CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES,
+    CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES,
+    adapter_reports_from_run,
+    codex_adapter_allows_observation,
+    contains_shell_http_forbidden_data,
+    is_canonical_platform_id,
+    is_safe_public_http_url,
+    resolve_capability_adapter_reports,
+    source_has_safe_public_http_urls,
     source_evidence_scope,
     targeting_contract_required,
     targeting_rule_maps,
@@ -361,7 +370,73 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
                 issues.append(issue("major", "run_brief_missing", f"Run references missing Brief {brief_id}", f"runs[{idx}].brief_id"))
             if plan_id and plan_id not in ids["plans"]:
                 issues.append(issue("major", "run_plan_missing", f"Run references missing Plan {plan_id}", f"runs[{idx}].plan_id"))
+            reports = adapter_reports_from_run(run)
+            capabilities = run.get("capabilities")
+            platform = run.get("platform")
+            if not is_canonical_platform_id(platform):
+                issues.append(issue(
+                    "critical",
+                    "run_platform_not_canonical",
+                    "Run platform must be a non-empty canonical host ID, not a concrete tool or variant spelling",
+                    f"runs[{idx}].platform",
+                ))
+            native_capability_declared = (
+                platform == "codex_cli"
+                and isinstance(capabilities, dict)
+                and any(capabilities.get(capability) == "available" for capability in (
+                    *CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES,
+                    *CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES,
+                ))
+            )
+            if native_capability_declared and not reports:
+                issues.append(issue(
+                    "critical",
+                    "codex_native_capability_adapter_required",
+                    "Codex CLI search/source capability requires a valid, explicit capability adapter report",
+                    f"runs[{idx}].capability_adapter_reports",
+                ))
+            if reports:
+                adapter_result = resolve_capability_adapter_reports(reports)
+                for report_index, report in enumerate(reports):
+                    report_platform = report.get("platform") if isinstance(report, dict) else None
+                    if not is_canonical_platform_id(report_platform):
+                        issues.append(issue(
+                            "critical",
+                            "run_platform_not_canonical",
+                            "Capability adapter report platform must be a canonical host ID",
+                            f"runs[{idx}].capability_adapter_reports[{report_index}].platform",
+                        ))
+                    if report_platform != platform:
+                        issues.append(issue(
+                            "critical",
+                            "capability_adapter_run_platform_mismatch",
+                            "Capability adapter report platform must match its Run platform",
+                            f"runs[{idx}].capability_adapter_reports[{report_index}].platform",
+                        ))
+                for adapter_issue in adapter_result["issues"]:
+                    issues.append(issue(
+                        "critical",
+                        str(adapter_issue["code"]),
+                        str(adapter_issue["message"]),
+                        f"runs[{idx}].{adapter_issue['path']}",
+                    ))
+                if not isinstance(capabilities, dict):
+                    issues.append(issue("critical", "capability_adapter_run_mapping_missing", "Run capability adapter reports require canonical Run capabilities", f"runs[{idx}].capabilities"))
+                else:
+                    for capability in adapter_result["owned_capabilities"]:
+                        expected_status = adapter_result["mapped_capabilities"][capability]
+                        if capabilities.get(capability) != expected_status:
+                            issues.append(issue(
+                                "critical",
+                                "capability_adapter_run_mapping_mismatch",
+                                f"Run {capability} must match the verified capability adapter mapping",
+                                f"runs[{idx}].capabilities.{capability}",
+                            ))
 
+    run_items = ensure_list(graph, "runs")
+    valid_runs = [run for run in run_items if isinstance(run, dict) and has_text(run.get("run_id"))]
+    multi_run_graph = len(run_items) > 1
+    sole_run = valid_runs[0] if len(valid_runs) == 1 else None
     for idx, obs in enumerate(ensure_list(graph, "observations")):
         if not isinstance(obs, dict): continue
         sid = obs.get("source_id")
@@ -373,7 +448,90 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
         ent = obs.get("entity_id")
         if ent and ent not in ids["entities"]:
             issues.append(issue("major", "observation_entity_missing", f"Observation references missing Entity {ent}", f"observations[{idx}].entity_id"))
+        observation_run_id = obs.get("run_id")
+        observation_run: dict[str, Any] | None = None
+        if multi_run_graph:
+            if not has_text(observation_run_id):
+                issues.append(issue("critical", "observation_run_id_missing", "A multi-Run graph requires every Observation to declare its Run", f"observations[{idx}].run_id"))
+            elif observation_run_id not in ids["runs"]:
+                issues.append(issue("critical", "observation_run_missing", "Observation references a missing Run", f"observations[{idx}].run_id"))
+            else:
+                observation_run = ids["runs"].get(observation_run_id)
+        elif has_text(observation_run_id):
+            if observation_run_id not in ids["runs"]:
+                issues.append(issue("critical", "observation_run_missing", "Observation references a missing Run", f"observations[{idx}].run_id"))
+            else:
+                observation_run = ids["runs"].get(observation_run_id)
+        else:
+            observation_run = sole_run
         source = ids["sources"].get(sid)
+        observation_reports = adapter_reports_from_run(observation_run)
+        if isinstance(observation_run, dict) and observation_reports:
+            capabilities = observation_run.get("capabilities")
+            capability = obs.get("capability")
+            # A Run with a native adapter report must explicitly account for
+            # every capability used to collect an Observation. The adapter owns
+            # only search/source, but an undeclared independent capability is
+            # still unverified for this Run and cannot support formal evidence.
+            if not isinstance(capabilities, dict) or capabilities.get(capability) != "available":
+                issues.append(issue(
+                    "critical",
+                    "run_capability_not_available_for_observation",
+                    f"Observation uses {capability}, but its Run host capability report did not verify it as available",
+                    f"observations[{idx}].capability",
+                ))
+            if observation_run.get("platform") == "codex_cli" and str(obs.get("concrete_tool")) in {
+                "curl", "wget", "python_requests"
+            } and capability != "source.open":
+                issues.append(issue(
+                    "critical",
+                    "codex_shell_http_tool_capability_mismatch",
+                    "Codex shell HTTP concrete_tool may be used only for source.open Observations",
+                    f"observations[{idx}].capability",
+                ))
+            if observation_run.get("platform") == "codex_cli" and capability in {
+                "search.web", "source.open"
+            }:
+                adapter_result = resolve_capability_adapter_reports(observation_reports)
+                if not codex_adapter_allows_observation(adapter_result, capability, obs.get("concrete_tool")):
+                    issues.append(issue(
+                        "critical",
+                        "codex_observation_concrete_tool_not_allowed_by_adapter",
+                        "Codex search/source Observation concrete_tool is not explicitly authorized by a verified provider",
+                        f"observations[{idx}].concrete_tool",
+                    ))
+                if capability == "source.open" and str(obs.get("concrete_tool")) in {"curl", "wget", "python_requests"}:
+                    if (
+                        not isinstance(source, dict)
+                        or not is_safe_public_http_url(source.get("canonical_url"))
+                        or not is_safe_public_http_url(source.get("final_url"))
+                    ):
+                        issues.append(issue(
+                            "critical",
+                            "codex_shell_http_observation_url_not_public",
+                            "Codex shell HTTP Observation requires public credential-free HTTP(S) Source URLs",
+                            f"observations[{idx}].source_id",
+                        ))
+                    if contains_shell_http_forbidden_data({
+                        "canonical_url": source.get("canonical_url") if isinstance(source, dict) else None,
+                        "final_url": source.get("final_url") if isinstance(source, dict) else None,
+                        "title": obs.get("title"), "raw_excerpt": obs.get("raw_excerpt"),
+                        "page_or_dom_locator": obs.get("page_or_dom_locator"),
+                        "extraction_method": obs.get("extraction_method"),
+                    }):
+                        issues.append(issue(
+                            "critical",
+                            "codex_shell_http_observation_forbidden_data",
+                            "Codex shell HTTP Observation may not contain local paths or credential/request-secret data",
+                            f"observations[{idx}]",
+                        ))
+        elif isinstance(observation_run, dict) and observation_run.get("platform") == "codex_cli" and obs.get("capability") in CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES:
+            issues.append(issue(
+                "critical",
+                "codex_native_capability_adapter_required",
+                "Codex CLI native search/source Observation requires a valid capability adapter report on its Run",
+                f"observations[{idx}].capability",
+            ))
         if isinstance(source, dict) and source.get("provenance") in {"user_provided", "manual_input", "connected_account"}:
             for field in ("title", "raw_excerpt", "page_or_dom_locator", "extraction_method", "snapshot_ref"):
                 if contains_local_path(obs.get(field)):
@@ -384,6 +542,13 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
         for field in ("publisher_relation", "provenance", "medium", "access_boundary"):
             if not has_text(source.get(field)):
                 issues.append(issue("major", "source_missing_required_context", f"Source {source.get('source_id')} lacks {field}", f"sources[{idx}].{field}"))
+        if source.get("provenance") == "discovered_public" and not source_has_safe_public_http_urls(source):
+            issues.append(issue(
+                "critical",
+                "public_source_url_not_safe",
+                "A discovered_public Source requires only strict public credential-free HTTP(S) URLs",
+                f"sources[{idx}]",
+            ))
         if source.get("provenance") in {"user_provided", "manual_input", "connected_account"}:
             role = source.get("material_role")
             if not has_text(role):

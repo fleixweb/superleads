@@ -19,7 +19,8 @@
       "created_at": "2026-01-01T00:00:00Z",
       "review_mode": "independent",
       "run_id": "run_empty",
-      "status": "checked"
+      "status": "checked",
+      "platform": "fixture"
     }
   ],
   "sources": [],

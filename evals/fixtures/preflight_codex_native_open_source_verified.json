@@ -1,0 +1,28 @@
+{
+  "platform": "codex_cli",
+  "adapter": {
+    "adapter_id": "codex_cli_native_web_search",
+    "adapter_version": "1"
+  },
+  "detected_at": "2026-07-15T00:00:00Z",
+  "detection": "current_session_tool_visibility_and_successful_source_open",
+  "host_tools": {
+    "web_search": {
+      "status": "available",
+      "operations": {
+        "search": {"status": "verified"},
+        "open_source": {
+          "status": "verified",
+          "original_url": "https://example.com/about",
+          "source_title": "Example source",
+          "raw_excerpt": "Example source provides a visible public statement.",
+          "excerpt_locator": "main"
+        }
+      }
+    }
+  },
+  "canonical_capabilities": {
+    "search.web": "available",
+    "source.open": "available"
+  }
+}

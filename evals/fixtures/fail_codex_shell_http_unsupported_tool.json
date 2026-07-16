@@ -1,0 +1,4 @@
+{
+  "extends": "pass_codex_shell_http_source_open_standard.json",
+  "patches": [{"op": "replace", "path": "/observations/0/concrete_tool", "value": "wget"}]
+}

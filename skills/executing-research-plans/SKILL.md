@@ -24,6 +24,42 @@ Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/c
    reviewed. A Candidate without a resolved Entity can only remain a direction
    sample or reference; do not mark it as a confirmed prospect.
 
+## Codex CLI Native Search
+
+If the current Codex CLI session was started with `codex --search`, native
+`web_search` may be available. Record its verified `search` operation as
+`search.web` and use it only for Search Logs and Candidate clues. Do not
+assume the same tool can read source text.
+
+Only after the current session actually opens a specific HTTP(S) URL and
+returns the original URL, a title or equivalent source identifier, a non-empty
+verbatim excerpt, and a locator may the Agent report `source.open` as verified
+for this Run. Then create a separate Source and Observation with the existing
+formal fields. Search summaries, result links, citations, and remembered text
+are not source text and never support a formal fact or a contact.
+
+If source opening is unavailable or returns only summaries, retain the search
+records and deliver at most an initial lead list. Do not install, configure,
+or depend on an external tool server.
+
+The native search adapter controls only `search.web` and `source.open`; keep
+independently available rendering and document capabilities in the Run rather
+than replacing them, and explicitly record any capability used by an
+Observation as available for that Run. In a multi-Run graph, write the current
+`run_id` on every Observation. Do not let a historical search-only Run
+authorize or block a current opened-source Observation.
+
+## Codex CLI Shell HTTP Source Opening
+
+When the current Codex CLI host has a permitted shell HTTP reader, a verified
+public `GET` can be recorded as `source.open`. Keep `codex_cli` as the Run
+platform and record `curl`, `wget`, or `python_requests` only as the concrete
+tool on the Observation. It is not native web search and does not create
+search capability. Record the public original/final URL, success status,
+title, verbatim excerpt, and locator; each Observation must use a tool in the
+Run's explicit provider allowlist. Do not use cookies, Authorization headers,
+tokens, passwords, POST, local/private endpoints, or restricted pages.
+
 ## User-provided file evidence
 
 For a PDF or spreadsheet that may later support formal delivery, create a `user_provided` document/spreadsheet Source only after `document.extract` has produced an excerpt. Record a lowercase SHA-256 from the original file bytes when available, a safe filename only, `material_role=published_source_copy`, and `artifact:sha256:<hash>#page=...` or `#sheet=...&range=...`. Historical tables use `user_business_dataset`; original mail/chat exports use `correspondence_export`; pasted notes use `user_authored_note` and stay clues. Never store a local path or treat pasted user text as document extraction.

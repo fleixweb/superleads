@@ -50,6 +50,20 @@ Superleads 是：
 跨 Agent / 跨平台方法论
 ```
 
+### 1.1 平台与公开 HTTP 来源边界
+
+当 Run 记录 `platform` 时，它必须是 canonical host ID：仅小写 ASCII
+字母、数字和下划线，不接受前后空白、大小写变体或连字符。该规则不枚举
+平台；例如 `hermes`、`claude`、`workbuddy` 都是可用宿主名。`curl`、`wget`、
+`python_requests` 等只能是具体读取工具，不能成为平台。
+
+正式公开 HTTP(S) 来源必须无凭证，并拒绝 localhost、`.localhost`、`.local`、
+私网、loopback、link-local、reserved、multicast、unspecified 与历史数字 IPv4
+写法（包括 `127.1`、`2130706433`、`0x7f000001`）。图谱校验不为任意域名做
+DNS 查询，因此该字符串规则不是 DNS rebinding 防护；实际 Shell HTTP 执行器
+必须在连接和每次重定向时阻止解析到非公网地址。用户提供 PDF/Excel 的受控
+文件来源分支不受此公开 URL 规则影响。
+
 ---
 
 ## 2. 最重要的设计原则
@@ -1538,6 +1552,59 @@ Claude Code：Skill/project context + Task reviewer + WebFetch/browser + local s
 Hermes：Local Browser + Web Search + File Operations + Code Execution
 WorkBuddy：平台内置搜索、浏览器、表格工具、工作流 agent
 ```
+
+### Codex CLI 原生 Web Search
+
+```text
+codex --search -C <项目目录>
+```
+
+此启动方式可能在当前会话提供原生 `web_search`。Superleads 只接受 Agent
+根据当前会话实际可见工具和实际操作结果写入的能力报告；本地脚本不自行探测
+模型工具，也不安装、配置或绑定任何外部工具服务。
+
+`web_search` 已实际搜索时，只映射为 `search.web`，因此最多输出初筛客户名单。
+只有当前会话实际打开一个明确 HTTP(S) URL，取得来源标题或等价标识、可定位的
+非空逐字原文摘录，才可记录 `source.open` 已验证。启动参数、模型/Provider 名称、
+工具名称、搜索摘要、链接或引用均不能推导 `source.open`。
+
+即使能力报告记录 `source.open`，每条正式事实和联系方式仍必须通过既有来源、
+原文、实体归属、翻译链、哈希、复核、审计、新鲜度和交付门禁。搜索摘要不得成为
+正式事实或联系方式来源。自定义 model provider 若无原生工具、调用失败或只能返回
+摘要，应记录能力缺口并降级为研究计划或初筛客户名单。
+
+原生 Web Search 适配器只拥有 `search.web` 与 `source.open`。它有效时只覆盖
+这两个能力；`browser.render`、`document.extract`、`image.inspect`、`mail.read`
+和其他能力仍由宿主独立报告并与适配结果合并。适配器版本、映射、操作验证或路径
+安全任一错误时，不得授予原生 search/source 能力，但不得因此抹掉合法的独立能力。
+只要 Run 带有该适配器报告，每条 Observation 使用的能力都必须在该 Run 的
+canonical capabilities 中显式记录为 `available`；未声明、`unknown` 或
+`missing` 的独立能力不得支撑正式来源。该要求不改变适配器只拥有两项能力的边界。
+多 Run 图谱中，每个 Observation 必须记录其采集 Run，能力检查只看该 Run；历史
+Run 不能为当前来源背书，也不能阻断当前 Run 的已验证来源。
+```
+
+### Codex CLI Shell HTTP Source Open
+
+```text
+Run.platform = codex_cli
+Run.capabilities.source.open = available
+Observation.capability = source.open
+Observation.concrete_tool = curl | wget | python_requests
+```
+
+`curl`、`wget` 与 `python_requests` 是 Codex CLI 宿主下的具体只读来源读取
+工具，不是平台，也不提供 `search.web`。它们只能通过
+`codex_cli_shell_http_source_open` 受控 provider 取得 `source.open`：本次
+会话必须记录一次公开、无凭证 HTTP(S) `GET` 成功，包含原始 URL、最终 URL、
+2xx 状态、来源标题或等价标识、逐字原文和定位。每条对应 Observation 仍须由
+当前 Run 显式报告能力，并且具体工具必须在该 provider 的允许列表中。
+
+不得以 shell 命令存在、curl 已安装或工具名相似推导能力；不得把 shell HTTP
+伪装为 native Web Search。禁止 POST、Cookie、Authorization、Token、Password、
+本地/file URL、私有/loopback 地址、登录态、私有接口、验证码或任何绕过访问限制
+的方式。Native 搜索 provider 与 shell HTTP provider 可在同一 Run 并存；只有
+其共享能力映射不冲突时才可聚合。
 
 ### 安装
 
