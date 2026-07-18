@@ -1,1 +1,20 @@
-{"extends":"pass_user_provided_pdf_claim.json","patches":[{"op":"replace","path":"/observations/0/capability","value":"source.open"}]}
+{
+  "extends": "pass_user_provided_pdf_claim.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/observations/0/capability",
+      "value": "source.open"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "23e16a42f4ea9aa978b679ff6fbdb5d6c748c9fa19f700158abd93bc997e893a"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "23e16a42f4ea9aa978b679ff6fbdb5d6c748c9fa19f700158abd93bc997e893a"
+    }
+  ]
+}

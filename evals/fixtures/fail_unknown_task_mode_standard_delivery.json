@@ -1,6 +1,20 @@
 {
   "extends": "pass_minimal_graph.json",
   "patches": [
-    {"op":"replace","path":"/briefs/0/task_mode","value":"unknown"}
+    {
+      "op": "replace",
+      "path": "/briefs/0/task_mode",
+      "value": "unknown"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "2d4867b8e2f0f38c3c39588942ae7c36f8fa86ae4320e0d71a8f319432fc30cc"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "2d4867b8e2f0f38c3c39588942ae7c36f8fa86ae4320e0d71a8f319432fc30cc"
+    }
   ]
 }

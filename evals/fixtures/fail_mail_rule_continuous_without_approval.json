@@ -1,4 +1,44 @@
 {
   "extends": "pass_connected_inbound_inquiry.json",
-  "patches": [{"op":"add","path":"/mail_intake_rules","value":[{"mail_intake_rule_id":"rule_003","enabled":false,"mode":"continuous","mailbox_ref":"mailbox_inbox_001","folders_or_labels":["Inbox"],"received_after":"2026-07-01T00:00:00Z","received_before":null,"keyword_filters":["RFQ"],"sender_filters":null,"subject_filters":null,"direction":"inbound","read_only":true,"actions":["create_inquiry"],"user_approved_at":null,"created_at":"2026-07-15T08:00:00Z"}]}]
+  "patches": [
+    {
+      "op": "add",
+      "path": "/mail_intake_rules",
+      "value": [
+        {
+          "mail_intake_rule_id": "rule_003",
+          "enabled": false,
+          "mode": "continuous",
+          "mailbox_ref": "mailbox_inbox_001",
+          "folders_or_labels": [
+            "Inbox"
+          ],
+          "received_after": "2026-07-01T00:00:00Z",
+          "received_before": null,
+          "keyword_filters": [
+            "RFQ"
+          ],
+          "sender_filters": null,
+          "subject_filters": null,
+          "direction": "inbound",
+          "read_only": true,
+          "actions": [
+            "create_inquiry"
+          ],
+          "user_approved_at": null,
+          "created_at": "2026-07-15T08:00:00Z"
+        }
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "b0b71db5c103cb3330ef913061d9d0783bf2d7b3ebf4b2ffd0a0aedc8e8e5df8"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "b0b71db5c103cb3330ef913061d9d0783bf2d7b3ebf4b2ffd0a0aedc8e8e5df8"
+    }
+  ]
 }

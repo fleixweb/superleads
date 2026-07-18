@@ -1,10 +1,53 @@
 {
   "extends": "pass_connected_inbound_inquiry.json",
   "patches": [
-    {"op":"replace","path":"/sources/0","value":{"source_id":"src_mail_001","publisher_relation":"unknown","provenance":"user_provided","material_role":"correspondence_export","medium":"correspondence","access_boundary":"user_supplied","owner_hint":null,"artifact_sha256":"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","artifact_name":"客户往来邮件.pdf","artifact_media_type":"application/pdf","received_at":"2026-07-15T08:00:00Z","direction":"inbound"}},
-    {"op":"replace","path":"/observations/0/capability","value":"document.extract"},
-    {"op":"replace","path":"/observations/0/concrete_tool","value":"fixture_extractor"},
-    {"op":"replace","path":"/observations/0/extraction_method","value":"document extraction"},
-    {"op":"replace","path":"/observations/0/snapshot_ref","value":"artifact:sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd#section=message-1"}
+    {
+      "op": "replace",
+      "path": "/sources/0",
+      "value": {
+        "source_id": "src_mail_001",
+        "publisher_relation": "unknown",
+        "provenance": "user_provided",
+        "material_role": "correspondence_export",
+        "medium": "correspondence",
+        "access_boundary": "user_supplied",
+        "owner_hint": null,
+        "artifact_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "artifact_name": "客户往来邮件.pdf",
+        "artifact_media_type": "application/pdf",
+        "received_at": "2026-07-15T08:00:00Z",
+        "direction": "inbound"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/capability",
+      "value": "document.extract"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/concrete_tool",
+      "value": "fixture_extractor"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/extraction_method",
+      "value": "document extraction"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/snapshot_ref",
+      "value": "artifact:sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd#section=message-1"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "383f371b12d8221da5c91732d0ec7ced449b6c191d0f13057d3f67a7dc677276"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "383f371b12d8221da5c91732d0ec7ced449b6c191d0f13057d3f67a7dc677276"
+    }
   ]
 }

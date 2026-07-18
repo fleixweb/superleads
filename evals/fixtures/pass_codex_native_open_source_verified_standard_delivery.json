@@ -35,7 +35,9 @@
           "web_search": {
             "status": "available",
             "operations": {
-              "search": {"status": "verified"},
+              "search": {
+                "status": "verified"
+              },
               "open_source": {
                 "status": "verified",
                 "original_url": "https://example.com/products",
@@ -51,6 +53,16 @@
           "source.open": "available"
         }
       }
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "932cd2912779f9537ecc83de1680c501b70bbbbb1d94ca2f020de5e1b1b61af5"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "932cd2912779f9537ecc83de1680c501b70bbbbb1d94ca2f020de5e1b1b61af5"
     }
   ]
 }

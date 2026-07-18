@@ -1,1 +1,111 @@
-{"extends":"pass_user_business_dataset_contact_with_note.json","patches":[{"op":"replace","path":"/sources/0/material_role","value":"correspondence_export"},{"op":"replace","path":"/sources/0/medium","value":"document"},{"op":"replace","path":"/sources/0/artifact_name","value":"客户沟通.eml"},{"op":"replace","path":"/sources/0/artifact_media_type","value":"message/rfc822"},{"op":"replace","path":"/observations/0/title","value":"customer correspondence"},{"op":"replace","path":"/observations/0/page_or_dom_locator","value":"message 1"},{"op":"replace","path":"/observations/0/snapshot_ref","value":"artifact:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb#section=message-1"},{"op":"replace","path":"/contact_claims/0/source_context","value":"用户提供沟通记录"},{"op":"replace","path":"/briefs/0/existing_table_binding/source_id","value":"src_existing_table_001"},{"op":"replace","path":"/briefs/0/existing_table_binding/entity_bindings/0/observation_id","value":"obs_existing_table_001"},{"op":"replace","path":"/briefs/0/existing_table_binding/entity_bindings/0/row_or_cell_locator","value":"Contacts!A2:F2"},{"op":"append","path":"/sources/-","value":{"source_id":"src_existing_table_001","publisher_relation":"unknown","provenance":"user_provided","material_role":"user_business_dataset","medium":"spreadsheet","access_boundary":"user_supplied","owner_hint":"existing customer table","artifact_sha256":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","artifact_name":"已有客户表.xlsx","artifact_media_type":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}},{"op":"append","path":"/observations/-","value":{"observation_id":"obs_existing_table_001","source_id":"src_existing_table_001","candidate_id":null,"entity_id":"ent_sheet_001","capability":"document.extract","concrete_tool":"fixture extractor","observed_at":"2026-07-15T00:00:00Z","access_status":"ok","http_status":null,"title":"existing customer table","raw_excerpt":"Example Buyer","page_or_dom_locator":"Contacts!A2:F2","content_hash":"existing_table_excerpt_001","extraction_method":"spreadsheet extraction","tool_version":"fixture","language":"en","translation_status":"original","derived_from_observation_id":null,"snapshot_ref":"artifact:sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff#sheet=Contacts&range=A2:F2"}}]}
+{
+  "extends": "pass_user_business_dataset_contact_with_note.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/sources/0/material_role",
+      "value": "correspondence_export"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/medium",
+      "value": "document"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/artifact_name",
+      "value": "客户沟通.eml"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/artifact_media_type",
+      "value": "message/rfc822"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/title",
+      "value": "customer correspondence"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/page_or_dom_locator",
+      "value": "message 1"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/snapshot_ref",
+      "value": "artifact:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb#section=message-1"
+    },
+    {
+      "op": "replace",
+      "path": "/contact_claims/0/source_context",
+      "value": "用户提供沟通记录"
+    },
+    {
+      "op": "replace",
+      "path": "/briefs/0/existing_table_binding/source_id",
+      "value": "src_existing_table_001"
+    },
+    {
+      "op": "replace",
+      "path": "/briefs/0/existing_table_binding/entity_bindings/0/observation_id",
+      "value": "obs_existing_table_001"
+    },
+    {
+      "op": "replace",
+      "path": "/briefs/0/existing_table_binding/entity_bindings/0/row_or_cell_locator",
+      "value": "Contacts!A2:F2"
+    },
+    {
+      "op": "append",
+      "path": "/sources/-",
+      "value": {
+        "source_id": "src_existing_table_001",
+        "publisher_relation": "unknown",
+        "provenance": "user_provided",
+        "material_role": "user_business_dataset",
+        "medium": "spreadsheet",
+        "access_boundary": "user_supplied",
+        "owner_hint": "existing customer table",
+        "artifact_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "artifact_name": "已有客户表.xlsx",
+        "artifact_media_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/observations/-",
+      "value": {
+        "observation_id": "obs_existing_table_001",
+        "source_id": "src_existing_table_001",
+        "candidate_id": null,
+        "entity_id": "ent_sheet_001",
+        "capability": "document.extract",
+        "concrete_tool": "fixture extractor",
+        "observed_at": "2026-07-15T00:00:00Z",
+        "access_status": "ok",
+        "http_status": null,
+        "title": "existing customer table",
+        "raw_excerpt": "Example Buyer",
+        "page_or_dom_locator": "Contacts!A2:F2",
+        "content_hash": "existing_table_excerpt_001",
+        "extraction_method": "spreadsheet extraction",
+        "tool_version": "fixture",
+        "language": "en",
+        "translation_status": "original",
+        "derived_from_observation_id": null,
+        "snapshot_ref": "artifact:sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff#sheet=Contacts&range=A2:F2"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "afe9d1ca2d05b62cccf5650f0e23a5e6c4bd17f9893ea8a6472d30b55548d1a9"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "afe9d1ca2d05b62cccf5650f0e23a5e6c4bd17f9893ea8a6472d30b55548d1a9"
+    }
+  ]
+}

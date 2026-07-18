@@ -1,4 +1,15 @@
 {
   "extends": "pass_connected_inbound_inquiry.json",
-  "patches": []
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "4a75d2f021130eb326de6c130082d4a449004740c18e991a06d3065cd3b9ba09"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "4a75d2f021130eb326de6c130082d4a449004740c18e991a06d3065cd3b9ba09"
+    }
+  ]
 }

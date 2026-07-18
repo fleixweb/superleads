@@ -1,1 +1,25 @@
-{"extends":"pass_user_provided_spreadsheet_contact.json","patches":[{"op":"replace","path":"/contact_points/0/source_literal","value":"wrong@example.com"},{"op":"replace","path":"/contact_points/0/normalized_value","value":"wrong@example.com"}]}
+{
+  "extends": "pass_user_provided_spreadsheet_contact.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/contact_points/0/source_literal",
+      "value": "wrong@example.com"
+    },
+    {
+      "op": "replace",
+      "path": "/contact_points/0/normalized_value",
+      "value": "wrong@example.com"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "4dd3723fa3eeb5024f7952e2ebeb3083884de505ff12a11e688ca9a79a09fb60"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "4dd3723fa3eeb5024f7952e2ebeb3083884de505ff12a11e688ca9a79a09fb60"
+    }
+  ]
+}

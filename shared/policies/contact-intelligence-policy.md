@@ -30,6 +30,6 @@ For a `published_source_copy`, both the ContactPoint source Observation and the 
 
 An inbound `mail.read` contact may be `export_with_source_note` only when its literal appears in the bounded header/body excerpt and both ContactPoint and association evidence resolve to the same Entity. Label it 来信联系人/待核验 or 邮件来信; never call it 已核验联系人、官方联系人、采购负责人, or `ready` without independent qualified evidence.
 
-For standard or full delivery, only `ready` and `export_with_source_note` ContactClaims may expose a contact value, and both must resolve to an Entity. `needs_manual_association_review` stays as an internal pending reference. `hold_no_source` and `hold_inferred` values must be redacted from every user-visible field, including notes, warnings, disclosures, CSV, XLSX, and Manifest output.
+For standard delivery, only `ready` and `export_with_source_note` ContactClaims may expose a contact value, and both must resolve to an Entity. `needs_manual_association_review` stays as an internal pending reference. `hold_no_source` and `hold_inferred` values must be redacted from every user-visible field, including notes, warnings, disclosures, CSV, XLSX, and Manifest output.
 
 Visible job titles are role clues. They are not proof of purchasing authority, decision power, or current procurement responsibility unless an observed source directly says so.

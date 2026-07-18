@@ -1,11 +1,116 @@
 {
   "extends": "pass_minimal_graph.json",
   "patches": [
-    {"op": "add", "path": "/runs/0", "value": {"run_id": "run_historical_search_001", "brief_id": "brief_001", "plan_id": "plan_001", "created_at": "2025-12-01T00:00:00Z", "review_cycle_id": "review_historical_001", "review_mode": "not_run", "status": "collecting", "platform": "codex_cli", "capabilities": {"search.web": "available", "source.open": "unknown"}, "capability_adapter_report": {"platform": "codex_cli", "adapter": {"adapter_id": "codex_cli_native_web_search", "adapter_version": "1"}, "detected_at": "2025-12-01T00:00:00Z", "detection": "current_session_tool_visibility", "host_tools": {"web_search": {"status": "available", "operations": {"search": {"status": "verified"}, "open_source": {"status": "not_verified"}}}}, "canonical_capabilities": {"search.web": "available", "source.open": "unknown"}}}},
-    {"op": "replace", "path": "/runs/1/platform", "value": "codex_cli"},
-    {"op": "add", "path": "/runs/1/capabilities", "value": {"search.web": "available", "source.open": "available"}},
-    {"op": "add", "path": "/runs/1/capability_adapter_report", "value": {"platform": "codex_cli", "adapter": {"adapter_id": "codex_cli_native_web_search", "adapter_version": "1"}, "detected_at": "2026-01-01T00:00:00Z", "detection": "current_session_tool_visibility_and_successful_source_open", "host_tools": {"web_search": {"status": "available", "operations": {"search": {"status": "verified"}, "open_source": {"status": "verified", "original_url": "https://example.com/products", "source_title": "Example Buyer products", "raw_excerpt": "Example Buyer offers sample product.", "excerpt_locator": "body"}}}}, "canonical_capabilities": {"search.web": "available", "source.open": "available"}}},
-    {"op": "add", "path": "/observations/0/run_id", "value": "run_001"},
-    {"op": "replace", "path": "/observations/0/concrete_tool", "value": "web_search"}
+    {
+      "op": "add",
+      "path": "/runs/0",
+      "value": {
+        "run_id": "run_historical_search_001",
+        "brief_id": "brief_001",
+        "plan_id": "plan_001",
+        "created_at": "2025-12-01T00:00:00Z",
+        "review_cycle_id": "review_historical_001",
+        "review_mode": "not_run",
+        "status": "collecting",
+        "platform": "codex_cli",
+        "capabilities": {
+          "search.web": "available",
+          "source.open": "unknown"
+        },
+        "capability_adapter_report": {
+          "platform": "codex_cli",
+          "adapter": {
+            "adapter_id": "codex_cli_native_web_search",
+            "adapter_version": "1"
+          },
+          "detected_at": "2025-12-01T00:00:00Z",
+          "detection": "current_session_tool_visibility",
+          "host_tools": {
+            "web_search": {
+              "status": "available",
+              "operations": {
+                "search": {
+                  "status": "verified"
+                },
+                "open_source": {
+                  "status": "not_verified"
+                }
+              }
+            }
+          },
+          "canonical_capabilities": {
+            "search.web": "available",
+            "source.open": "unknown"
+          }
+        }
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/runs/1/platform",
+      "value": "codex_cli"
+    },
+    {
+      "op": "add",
+      "path": "/runs/1/capabilities",
+      "value": {
+        "search.web": "available",
+        "source.open": "available"
+      }
+    },
+    {
+      "op": "add",
+      "path": "/runs/1/capability_adapter_report",
+      "value": {
+        "platform": "codex_cli",
+        "adapter": {
+          "adapter_id": "codex_cli_native_web_search",
+          "adapter_version": "1"
+        },
+        "detected_at": "2026-01-01T00:00:00Z",
+        "detection": "current_session_tool_visibility_and_successful_source_open",
+        "host_tools": {
+          "web_search": {
+            "status": "available",
+            "operations": {
+              "search": {
+                "status": "verified"
+              },
+              "open_source": {
+                "status": "verified",
+                "original_url": "https://example.com/products",
+                "source_title": "Example Buyer products",
+                "raw_excerpt": "Example Buyer offers sample product.",
+                "excerpt_locator": "body"
+              }
+            }
+          }
+        },
+        "canonical_capabilities": {
+          "search.web": "available",
+          "source.open": "available"
+        }
+      }
+    },
+    {
+      "op": "add",
+      "path": "/observations/0/run_id",
+      "value": "run_001"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/concrete_tool",
+      "value": "web_search"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "a3933f8a61ab4941102db2b1df126694f9c8dc3c591d234803298aad19aa995c"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "a3933f8a61ab4941102db2b1df126694f9c8dc3c591d234803298aad19aa995c"
+    }
   ]
 }

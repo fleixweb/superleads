@@ -1,6 +1,19 @@
 {
   "extends": "pass_user_provided_spreadsheet_contact.json",
   "patches": [
-    {"op": "remove", "path": "/briefs/0/existing_table_binding"}
+    {
+      "op": "remove",
+      "path": "/briefs/0/existing_table_binding"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "345f9cd8110d3d537f2c8eb8a82a242d9c59e4ed563f9d25dab2f20571107a51"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "345f9cd8110d3d537f2c8eb8a82a242d9c59e4ed563f9d25dab2f20571107a51"
+    }
   ]
 }

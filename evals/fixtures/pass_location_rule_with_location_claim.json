@@ -1,17 +1,122 @@
 {
   "extends": "pass_minimal_graph.json",
   "patches": [
-    {"op":"replace","path":"/briefs/0/customer_selection_contract/user_intent_verbatim","value":"Find organizations publicly located in Berlin."},
-    {"op":"replace","path":"/briefs/0/customer_selection_contract/offer_definition","value":"Current location rule"},
-    {"op":"replace","path":"/briefs/0/customer_selection_contract/target_role_description","value":"organizations publicly located in Berlin"},
-    {"op":"replace","path":"/briefs/0/customer_selection_contract/selection_requirements/0","value":{"rule_id":"sel_location_001","user_statement":"Find organizations publicly located in Berlin.","evidence_needed":"A public source states the entity is located in Berlin.","required_for_positive":true,"unknown_blocks_positive":true,"search_hints":["Berlin"],"allowed_claim_types":["location"],"evidence_markers":["located in Berlin"],"conflict_markers":[]}},
-    {"op":"replace","path":"/plans/0/selection_requirement_ids","value":["sel_location_001"]},
-    {"op":"replace","path":"/plans/0/query_groups/0/targeting_rule_ids","value":["sel_location_001"]},
-    {"op":"replace","path":"/observations/0/raw_excerpt","value":"Example Buyer is located in Berlin. Example Buyer Contact: sales@example.com"},
-    {"op":"replace","path":"/claims/0/claim_type","value":"location"},
-    {"op":"replace","path":"/claims/0/predicate","value":"is_located_in"},
-    {"op":"replace","path":"/claims/0/typed_value","value":{"text":"Berlin"}},
-    {"op":"replace","path":"/claim_evidence/0/claim_field_anchors","value":{"subject":"Example Buyer","predicate":"located in","claim_type":"Example Buyer is located in Berlin","typed_value":"Berlin"}},
-    {"op":"replace","path":"/scope_decisions/0/rule_evaluations/0","value":{"rule_id":"sel_location_001","rule_kind":"selection","outcome":"supported_match","supporting_claim_ids":["claim_001"],"conflicting_claim_ids":[],"claim_classifications":[{"claim_id":"claim_001","classification":"supports","matched_marker":"located in Berlin","reason":"The public source contains the location marker the user requested."}],"reviewed_observation_ids":["obs_001"],"reason":"Location is the current user rule."}}
+    {
+      "op": "replace",
+      "path": "/briefs/0/customer_selection_contract/user_intent_verbatim",
+      "value": "Find organizations publicly located in Berlin."
+    },
+    {
+      "op": "replace",
+      "path": "/briefs/0/customer_selection_contract/offer_definition",
+      "value": "Current location rule"
+    },
+    {
+      "op": "replace",
+      "path": "/briefs/0/customer_selection_contract/target_role_description",
+      "value": "organizations publicly located in Berlin"
+    },
+    {
+      "op": "replace",
+      "path": "/briefs/0/customer_selection_contract/selection_requirements/0",
+      "value": {
+        "rule_id": "sel_location_001",
+        "user_statement": "Find organizations publicly located in Berlin.",
+        "evidence_needed": "A public source states the entity is located in Berlin.",
+        "required_for_positive": true,
+        "unknown_blocks_positive": true,
+        "search_hints": [
+          "Berlin"
+        ],
+        "allowed_claim_types": [
+          "location"
+        ],
+        "evidence_markers": [
+          "located in Berlin"
+        ],
+        "conflict_markers": []
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/plans/0/selection_requirement_ids",
+      "value": [
+        "sel_location_001"
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/plans/0/query_groups/0/targeting_rule_ids",
+      "value": [
+        "sel_location_001"
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/raw_excerpt",
+      "value": "Example Buyer is located in Berlin. Example Buyer Contact: sales@example.com"
+    },
+    {
+      "op": "replace",
+      "path": "/claims/0/claim_type",
+      "value": "location"
+    },
+    {
+      "op": "replace",
+      "path": "/claims/0/predicate",
+      "value": "is_located_in"
+    },
+    {
+      "op": "replace",
+      "path": "/claims/0/typed_value",
+      "value": {
+        "text": "Berlin"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/claim_evidence/0/claim_field_anchors",
+      "value": {
+        "subject": "Example Buyer",
+        "predicate": "located in",
+        "claim_type": "Example Buyer is located in Berlin",
+        "typed_value": "Berlin"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/scope_decisions/0/rule_evaluations/0",
+      "value": {
+        "rule_id": "sel_location_001",
+        "rule_kind": "selection",
+        "outcome": "supported_match",
+        "supporting_claim_ids": [
+          "claim_001"
+        ],
+        "conflicting_claim_ids": [],
+        "claim_classifications": [
+          {
+            "claim_id": "claim_001",
+            "classification": "supports",
+            "matched_marker": "located in Berlin",
+            "reason": "The public source contains the location marker the user requested."
+          }
+        ],
+        "reviewed_observation_ids": [
+          "obs_001"
+        ],
+        "reason": "Location is the current user rule."
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "707cf9c1fade28241a786d7eb1c3e96811cac37d956e7ca9246490c4c6ecc578"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "707cf9c1fade28241a786d7eb1c3e96811cac37d956e7ca9246490c4c6ecc578"
+    }
   ]
 }

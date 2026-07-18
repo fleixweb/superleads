@@ -18,6 +18,8 @@ from _superleads_common import (
     formal_exception_entity_ids,
     formal_exception_result_label,
     formal_targeting_contract_required,
+    review_provenance_disclosure,
+    review_provenance_snapshot,
     user_provided_source_display,
     write_json,
 )
@@ -148,6 +150,18 @@ def redact_local_paths(value:Any)->Any:
 def redact_delivery_sheets(sheets:dict[str,list[dict[str,Any]]], forbidden:set[str])->dict[str,list[dict[str,Any]]]:
     return {name:[redact_delivery_value(row,forbidden) for row in rows] for name,rows in sheets.items()}
 
+DELIVERY_INTERNAL_KEYS={
+    "query_text", "raw_search_summary", "search_summary", "executor_actor_id",
+    "execution_session_id", "reviewer_actor_id", "reviewer_session_id",
+    "concrete_tool", "capability", "capability_adapter_report", "capability_adapter_reports",
+}
+
+def redact_delivery_internals(value:Any)->Any:
+    """Keep SearchLog/session/tool internals out of user artifacts."""
+    if isinstance(value,list): return [redact_delivery_internals(item) for item in value]
+    if isinstance(value,dict): return {key:redact_delivery_internals(item) for key,item in value.items() if key not in DELIVERY_INTERNAL_KEYS}
+    return value
+
 def source_display(source:dict[str,Any], observation:dict[str,Any]|None=None)->str:
     user_file=user_provided_source_display(source,observation or {})
     if user_file: return user_file
@@ -198,7 +212,7 @@ def build_sheets(graph:dict[str,Any], audit:dict[str,Any], mode:str)->dict[str,l
         for q in p.get("query_groups",[]) or []:
             if not isinstance(q,dict):
                 continue
-            sheets["关键词与搜索思路"].append({"核查目的":q.get("query_purpose") or q.get("purpose") or "公开信息核查","搜索思路":stringify(q.get("queries")),"来源类别":stringify(p.get("source_categories")),"联系方式目标":stringify(p.get("contact_collection_targets")),"证据不足时":stringify(p.get("downgrade_strategy"))})
+            sheets["关键词与搜索思路"].append({"核查目的":q.get("query_purpose") or q.get("purpose") or "公开信息核查","搜索思路":"按当前需求与核查规则执行公开信息检索。","来源类别":stringify(p.get("source_categories")),"联系方式目标":stringify(p.get("contact_collection_targets")),"证据不足时":stringify(p.get("downgrade_strategy"))})
     sheets["初筛客户名单"]=[{"公司/线索名称":c.get("name") or c.get("company_name"),"方向状态":scope_status_user_label(next((d.get("overall_status") for d in ensure_list(graph,"scope_decisions") if isinstance(d,dict) and d.get("candidate_id")==c.get("candidate_id")),"needs_confirmation")),"线索状态":c.get("status") or "初筛线索","来源提示":c.get("source_hint") or c.get("source_url"),"说明":c.get("note") or "方向样本，等待确认后再扩展。"} for c in ensure_list(graph,"candidates") if isinstance(c,dict)]
     sheets["客户信息总表"]=[]
     for entity_id,entity in entities.items():
@@ -303,7 +317,14 @@ def main()->int:
     if requested_status not in audit.get("allowed_delivery_statuses", [requested_status]) and a.mode in {"standard","full","inquiry"}:
         print(f"Refusing export because {requested_status} is not in allowed_delivery_statuses")
         return 1
-    sheets=redact_local_paths(redact_delivery_sheets(build_sheets(graph,audit,a.mode),hold_contact_values(graph))); out=Path(a.output_dir) if a.output_dir else Path(a.output_path).parent; chosen=a.format
+    current_run=get_current_run(graph)
+    brief_id=current_brief_id(graph)
+    provenance=review_provenance_snapshot(graph,current_run)
+    provenance_disclosure=review_provenance_disclosure(provenance.get("review_provenance_level"))
+    sheets=build_sheets(graph,audit,a.mode)
+    if provenance_disclosure and provenance.get("review_provenance_level") in {"declared_separate_session", "not_run"} and "风险与说明" in sheets:
+        sheets["风险与说明"].append({"提示级别":"说明","说明":provenance_disclosure})
+    sheets=redact_local_paths(redact_delivery_sheets(sheets,hold_contact_values(graph))); out=Path(a.output_dir) if a.output_dir else Path(a.output_path).parent; chosen=a.format
     if a.output_path and Path(a.output_path).suffix.casefold()==".xlsx" and chosen=="auto": chosen="xlsx"
     if chosen=="auto":
         try: import openpyxl; chosen="xlsx"  # noqa
@@ -315,17 +336,17 @@ def main()->int:
             print(f"XLSX export unavailable ({exc}); falling back to UTF-8-SIG CSV"); files=write_csv_sheets(sheets,out); chosen="csv"
     else: files=write_csv_sheets(sheets,out)
     disclosures=["初筛/弱证据项仅用于销售人工核查，不代表事实核查完成。"] if a.mode=="initial" else (["询盘信息仅记录来信中提及的内容，不代表企业资格或采购权已核验。"] if a.mode=="inquiry" else [])
-    if "self_review_fallback" in review_modes(graph):
-        disclosures.append("本次为 self_review_fallback 复核，未运行独立复核；交付时需保留该说明。")
-    current_run=get_current_run(graph)
-    brief_id=current_brief_id(graph)
+    if provenance_disclosure and a.mode in {"standard","full"}:
+        disclosures.append(provenance_disclosure)
+    if provenance.get("review_provenance_level") == "not_run" and a.mode == "initial":
+        disclosures.append(provenance_disclosure)
     exported_entity_ids=formal_export_entities(graph,brief_id,current_run.get("run_id")) if a.mode!="inquiry" else set()
     exported_contact_claims=exportable_contact_claims(graph,exported_entity_ids) if a.mode!="inquiry" else []
     exported_assessments=[item for item in assessments_for_current_brief(graph,brief_id,current_run.get("run_id")) if str(item.get("entity_id")) in exported_entity_ids] if a.mode!="inquiry" else []
     inquiry_contact_ids=[item.get("contact_id") for item in ensure_list(graph,"inquiries") if isinstance(item,dict) and item.get("contact_id")] if a.mode=="inquiry" else []
     review_cycle_id=current_run.get("review_cycle_id") if a.mode=="inquiry" else current_run.get("review_cycle_id") or f"review_{current_run.get('run_id','current')}"
-    manifest={"delivery_manifest_id":f"manifest_{audit.get('research_graph_hash','current')[:12]}","run_id":current_run.get("run_id"),"brief_id":None if a.mode=="inquiry" else current_run.get("brief_id") or brief_id,"plan_id":None if a.mode=="inquiry" else current_run.get("plan_id") or (ensure_list(graph,"plans") or [{}])[-1].get("plan_id"),"audit_id":audit.get("audit_id"),"audit_graph_hash":audit.get("audit_graph_hash"),"research_graph_hash":graph_hash(graph),"review_cycle_id":review_cycle_id,"generated_at":audit.get("audited_at"),"delivery_status":requested_status if audit.get("ok") or a.mode=="initial" else "needs_correction","output_mode":a.mode,"exported_entity_ids":sorted(exported_entity_ids),"exported_contact_ids":inquiry_contact_ids or [cc.get("contact_id") for cc in exported_contact_claims if cc.get("contact_id")],"exported_contact_claim_ids":[cc.get("contact_claim_id") for cc in exported_contact_claims if cc.get("contact_claim_id")],"exported_assessment_ids":[x.get("assessment_id") for x in exported_assessments if x.get("assessment_id")],"output_files":files,"warnings":[i.get("message") for i in audit.get("issues",[])],"disclosures":disclosures,"format":chosen,"audit_snapshot":audit}
-    manifest=redact_local_paths(redact_delivery_value(manifest,hold_contact_values(graph)))
+    manifest={"delivery_manifest_id":f"manifest_{audit.get('research_graph_hash','current')[:12]}","run_id":current_run.get("run_id"),"brief_id":None if a.mode=="inquiry" else current_run.get("brief_id") or brief_id,"plan_id":None if a.mode=="inquiry" else current_run.get("plan_id") or (ensure_list(graph,"plans") or [{}])[-1].get("plan_id"),"audit_id":audit.get("audit_id"),"audit_graph_hash":audit.get("audit_graph_hash"),"research_graph_hash":graph_hash(graph),"review_cycle_id":review_cycle_id,"review_attestation_id":provenance.get("review_attestation_id"),"reviewed_subject_hash":provenance.get("reviewed_subject_hash"),"review_provenance_level":provenance.get("review_provenance_level"),"generated_at":audit.get("audited_at"),"delivery_status":requested_status if audit.get("ok") or a.mode=="initial" else "needs_correction","output_mode":a.mode,"exported_entity_ids":sorted(exported_entity_ids),"exported_contact_ids":inquiry_contact_ids or [cc.get("contact_id") for cc in exported_contact_claims if cc.get("contact_id")],"exported_contact_claim_ids":[cc.get("contact_claim_id") for cc in exported_contact_claims if cc.get("contact_claim_id")],"exported_assessment_ids":[x.get("assessment_id") for x in exported_assessments if x.get("assessment_id")],"search_log_ids":[item.get("search_log_id") for item in ensure_list(graph,"search_logs") if isinstance(item,dict) and item.get("search_log_id")],"search_log_count":len([item for item in ensure_list(graph,"search_logs") if isinstance(item,dict)]),"output_files":files,"warnings":[i.get("message") for i in audit.get("issues",[])],"disclosures":disclosures,"format":chosen,"audit_snapshot":audit}
+    manifest=redact_delivery_internals(redact_local_paths(redact_delivery_value(manifest,hold_contact_values(graph))))
     if a.manifest: write_json(a.manifest,manifest)
     print(json.dumps({"ok":True,"format":chosen,"files":files,"audit":audit,"manifest":manifest},ensure_ascii=False,indent=2)); return 0
 if __name__=="__main__": raise SystemExit(main())

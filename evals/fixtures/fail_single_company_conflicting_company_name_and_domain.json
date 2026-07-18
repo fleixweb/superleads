@@ -1,6 +1,20 @@
 {
   "extends": "pass_single_company_analysis_bound_target.json",
   "patches": [
-    {"op": "replace", "path": "/briefs/0/single_company_target/company_name", "value": "Unrelated Buyer"}
+    {
+      "op": "replace",
+      "path": "/briefs/0/single_company_target/company_name",
+      "value": "Unrelated Buyer"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "4fa3c42339b3ac8f6189ce2468c61c30ae4f48aed0cf55a55a0a6eacc206ab0a"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "4fa3c42339b3ac8f6189ce2468c61c30ae4f48aed0cf55a55a0a6eacc206ab0a"
+    }
   ]
 }

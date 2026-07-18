@@ -1,6 +1,19 @@
 {
   "extends": "pass_multi_run_historical_search_current_source_open.json",
   "patches": [
-    {"op": "remove", "path": "/observations/0/run_id"}
+    {
+      "op": "remove",
+      "path": "/observations/0/run_id"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "1b000cfadfbb6dc83b2d8b3b5c81e0f8f390142975d402d49f6cddfe2342a5de"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "1b000cfadfbb6dc83b2d8b3b5c81e0f8f390142975d402d49f6cddfe2342a5de"
+    }
   ]
 }

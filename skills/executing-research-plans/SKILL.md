@@ -15,7 +15,9 @@ Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/c
 
 ## Workflow
 
-1. Run planned searches and record Search Log entries.
+1. Run planned searches and record strict SearchLog entries: Run/Brief/Plan,
+   query time, `search.web`, concrete provider, query text, current geography
+   literals, contract/rule IDs, and candidate-only result locators.
 2. Treat search results as Candidate clues only.
 3. Open or render sources before creating Observations.
 4. For every Observation record capability, concrete tool, observed time, access status, title, raw excerpt, locator, hash when possible, language, and translation linkage if applicable.
@@ -75,6 +77,11 @@ If a page is blocked, inaccessible, login-wall, or unavailable, record that stat
 ## Hard constraints
 
 - `search.web` must never directly support a Claim.
+- Use `result_use=candidate_seed_only`; never turn a SearchLog into a Source,
+  Observation, Claim, ClaimEvidence, ScopeDecision, Assessment, or contact.
+- For user-specified geography, use only the current Brief literals and linked
+  Plan geography query group. Open a public source and record a same-Entity
+  Claim before treating geography as formal support.
 - Do not infer contact ownership from proximity alone on multi-company pages.
 - Do not finalize identity merges; route conflicts to `resolving-company-identity`.
 - Do not promote a competitor, brand, manufacturer, or search seed into the

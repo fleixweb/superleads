@@ -1,9 +1,32 @@
 {
   "extends": "pass_minimal_graph.json",
   "patches": [
-    {"op": "replace", "path": "/briefs/0/task_mode", "value": "single_company_analysis"},
-    {"op": "remove", "path": "/briefs/0/customer_selection_contract"},
-    {"op": "remove", "path": "/scope_decisions/0"},
-    {"op": "remove", "path": "/assessments/0/scope_decision_id"}
+    {
+      "op": "replace",
+      "path": "/briefs/0/task_mode",
+      "value": "single_company_analysis"
+    },
+    {
+      "op": "remove",
+      "path": "/briefs/0/customer_selection_contract"
+    },
+    {
+      "op": "remove",
+      "path": "/scope_decisions/0"
+    },
+    {
+      "op": "remove",
+      "path": "/assessments/0/scope_decision_id"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "1b2aece5baadf7296a37edda4dc514215ebc73a84f4086be9f3efd825ec0d9d4"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "1b2aece5baadf7296a37edda4dc514215ebc73a84f4086be9f3efd825ec0d9d4"
+    }
   ]
 }

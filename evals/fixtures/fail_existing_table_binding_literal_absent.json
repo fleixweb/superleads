@@ -1,6 +1,20 @@
 {
   "extends": "pass_existing_table_enrichment_without_targeting_contract.json",
   "patches": [
-    {"op": "replace", "path": "/briefs/0/existing_table_binding/entity_bindings/0/entity_literal", "value": "https://example.com"}
+    {
+      "op": "replace",
+      "path": "/briefs/0/existing_table_binding/entity_bindings/0/entity_literal",
+      "value": "https://example.com"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "8522942df3ed7a3f4139063a3850ca27373c6c11903bd8ff1b35df5c586355dd"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "8522942df3ed7a3f4139063a3850ca27373c6c11903bd8ff1b35df5c586355dd"
+    }
   ]
 }

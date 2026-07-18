@@ -1,7 +1,25 @@
 {
   "extends": "pass_connected_inbound_inquiry.json",
   "patches": [
-    {"op":"replace","path":"/sources/0/direction","value":"outbound"},
-    {"op":"replace","path":"/inquiries/0/direction","value":"outbound"}
+    {
+      "op": "replace",
+      "path": "/sources/0/direction",
+      "value": "outbound"
+    },
+    {
+      "op": "replace",
+      "path": "/inquiries/0/direction",
+      "value": "outbound"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "48a9ef2efe80173b20bf16938e768df6872fda520872a1f3b15625d841b2cd7f"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "48a9ef2efe80173b20bf16938e768df6872fda520872a1f3b15625d841b2cd7f"
+    }
   ]
 }

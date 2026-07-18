@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superleads.local/schemas/search-log.schema.json",
+  "title": "Superleads SearchLog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "search_log_id",
+    "run_id",
+    "brief_id",
+    "plan_id",
+    "query_group_id",
+    "queried_at",
+    "capability",
+    "concrete_tool",
+    "query_text",
+    "targeted_geography_literals",
+    "customer_selection_contract_id",
+    "selection_rule_id",
+    "result_refs",
+    "result_use"
+  ],
+  "properties": {
+    "search_log_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "brief_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "plan_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "query_group_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "queried_at": {
+      "type": "string",
+      "minLength": 1
+    },
+    "capability": {
+      "type": "string",
+      "const": "search.web"
+    },
+    "concrete_tool": {
+      "type": "string",
+      "minLength": 1
+    },
+    "query_text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "targeted_geography_literals": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "customer_selection_contract_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "selection_rule_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "result_use": {
+      "type": "string",
+      "const": "candidate_seed_only"
+    },
+    "result_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["candidate_id", "result_url", "result_locator"],
+        "properties": {
+          "candidate_id": {"type": "string", "minLength": 1},
+          "result_url": {"type": "string", "minLength": 1, "pattern": "^https?://"},
+          "result_rank": {"type": ["integer", "null"], "minimum": 1},
+          "result_title": {"type": ["string", "null"], "minLength": 1, "maxLength": 256},
+          "result_locator": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9._=&;:#?/-]+$"}
+        }
+      }
+    }
+  }
+}

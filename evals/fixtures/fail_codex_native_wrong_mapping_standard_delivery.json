@@ -1,8 +1,62 @@
 {
   "extends": "pass_minimal_graph.json",
   "patches": [
-    {"op": "replace", "path": "/runs/0/platform", "value": "codex_cli"},
-    {"op": "add", "path": "/runs/0/capabilities", "value": {"search.web": "unknown", "source.open": "unknown"}},
-    {"op": "add", "path": "/runs/0/capability_adapter_report", "value": {"platform": "codex_cli", "adapter": {"adapter_id": "codex_cli_native_web_search", "adapter_version": "1"}, "detected_at": "2026-07-15T00:00:00Z", "detection": "current_session_tool_visibility_and_successful_source_open", "host_tools": {"web_search": {"status": "available", "operations": {"search": {"status": "verified"}, "open_source": {"status": "verified", "original_url": "https://example.com/products", "source_title": "Example Buyer products", "raw_excerpt": "Example Buyer offers sample product.", "excerpt_locator": "body"}}}}, "canonical_capabilities": {"search.web": "available", "source.open": "unknown"}}}
+    {
+      "op": "replace",
+      "path": "/runs/0/platform",
+      "value": "codex_cli"
+    },
+    {
+      "op": "add",
+      "path": "/runs/0/capabilities",
+      "value": {
+        "search.web": "unknown",
+        "source.open": "unknown"
+      }
+    },
+    {
+      "op": "add",
+      "path": "/runs/0/capability_adapter_report",
+      "value": {
+        "platform": "codex_cli",
+        "adapter": {
+          "adapter_id": "codex_cli_native_web_search",
+          "adapter_version": "1"
+        },
+        "detected_at": "2026-07-15T00:00:00Z",
+        "detection": "current_session_tool_visibility_and_successful_source_open",
+        "host_tools": {
+          "web_search": {
+            "status": "available",
+            "operations": {
+              "search": {
+                "status": "verified"
+              },
+              "open_source": {
+                "status": "verified",
+                "original_url": "https://example.com/products",
+                "source_title": "Example Buyer products",
+                "raw_excerpt": "Example Buyer offers sample product.",
+                "excerpt_locator": "body"
+              }
+            }
+          }
+        },
+        "canonical_capabilities": {
+          "search.web": "available",
+          "source.open": "unknown"
+        }
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "3738430304ffaa5068f3c3d66ec65b8792deb77e5d6e197b966231a7145cb470"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "3738430304ffaa5068f3c3d66ec65b8792deb77e5d6e197b966231a7145cb470"
+    }
   ]
 }

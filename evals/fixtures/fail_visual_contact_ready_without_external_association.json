@@ -1,1 +1,50 @@
-{"extends":"pass_user_provided_spreadsheet_contact.json","patches":[{"op":"replace","path":"/sources/0/material_role","value":"visual_reference"},{"op":"replace","path":"/sources/0/medium","value":"image"},{"op":"replace","path":"/sources/0/artifact_name","value":"名片.png"},{"op":"replace","path":"/sources/0/artifact_media_type","value":"image/png"},{"op":"replace","path":"/observations/0/capability","value":"image.inspect"},{"op":"replace","path":"/observations/0/snapshot_ref","value":"artifact:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb#image=1"},{"op":"add","path":"/observations/0/observation_content_kind","value":"ocr_text"}]}
+{
+  "extends": "pass_user_provided_spreadsheet_contact.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/sources/0/material_role",
+      "value": "visual_reference"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/medium",
+      "value": "image"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/artifact_name",
+      "value": "名片.png"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/artifact_media_type",
+      "value": "image/png"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/capability",
+      "value": "image.inspect"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/snapshot_ref",
+      "value": "artifact:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb#image=1"
+    },
+    {
+      "op": "add",
+      "path": "/observations/0/observation_content_kind",
+      "value": "ocr_text"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "c32d1dd87665affeeebfce7f5a085098cf51ef52ada8550c6e4eab84c42a00ef"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "c32d1dd87665affeeebfce7f5a085098cf51ef52ada8550c6e4eab84c42a00ef"
+    }
+  ]
+}

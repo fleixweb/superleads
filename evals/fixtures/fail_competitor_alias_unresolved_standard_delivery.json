@@ -1,6 +1,22 @@
 {
   "extends": "pass_minimal_graph.json",
   "patches": [
-    {"op":"add","path":"/briefs/0/competitors_or_brands","value":["Example Buyer Holdings"]}
+    {
+      "op": "add",
+      "path": "/briefs/0/competitors_or_brands",
+      "value": [
+        "Example Buyer Holdings"
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "6da723562b9c5baf463881584fe12cba138dafdd6ddb60bc0f006920bf09ebca"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "6da723562b9c5baf463881584fe12cba138dafdd6ddb60bc0f006920bf09ebca"
+    }
   ]
 }

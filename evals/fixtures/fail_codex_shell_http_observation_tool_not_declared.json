@@ -1,4 +1,20 @@
 {
   "extends": "pass_codex_shell_http_source_open_standard.json",
-  "patches": [{"op": "replace", "path": "/observations/0/concrete_tool", "value": "wget"}]
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/observations/0/concrete_tool",
+      "value": "wget"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "b164ba1cf6fd380dfdb65dbcc7a3e0b03002f4d437eecf1a2ec26f3b843e39a2"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "b164ba1cf6fd380dfdb65dbcc7a3e0b03002f4d437eecf1a2ec26f3b843e39a2"
+    }
+  ]
 }

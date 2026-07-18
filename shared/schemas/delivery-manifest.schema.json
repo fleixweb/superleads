@@ -13,6 +13,9 @@
     "audit_graph_hash",
     "research_graph_hash",
     "review_cycle_id",
+    "review_attestation_id",
+    "reviewed_subject_hash",
+    "review_provenance_level",
     "generated_at",
     "delivery_status",
     "output_mode",
@@ -56,6 +59,24 @@
     "review_cycle_id": {
       "type": ["string", "null"],
       "minLength": 1
+    },
+    "review_attestation_id": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "reviewed_subject_hash": {
+      "type": ["string", "null"],
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "review_provenance_level": {
+      "type": ["string", "null"],
+      "enum": [
+        "declared_separate_session",
+        "self_review_fallback",
+        "not_run",
+        "not_applicable",
+        null
+      ]
     },
     "generated_at": {
       "type": "string"
@@ -117,6 +138,12 @@
         "type": "string"
       }
     },
+    "search_log_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "search_log_count": {"type": "integer", "minimum": 0},
     "format": {
       "type": "string",
       "enum": [
@@ -133,6 +160,10 @@
         "delivery_status",
         "research_graph_hash",
         "audit_graph_hash",
+        "review_cycle_id",
+        "review_attestation_id",
+        "reviewed_subject_hash",
+        "review_provenance_level",
         "issues"
       ]
     }
@@ -147,7 +178,9 @@
         "properties": {
           "brief_id": {"type": "string", "minLength": 1},
           "plan_id": {"type": "string", "minLength": 1},
-          "review_cycle_id": {"type": "string", "minLength": 1}
+          "review_cycle_id": {"type": "string", "minLength": 1},
+          "reviewed_subject_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "review_provenance_level": {"type": "string", "enum": ["declared_separate_session", "self_review_fallback"]}
         }
       }
     }

@@ -1,8 +1,30 @@
 {
   "extends": "pass_minimal_graph.json",
   "patches": [
-    {"op": "replace", "path": "/runs/0/platform", "value": "hermes"},
-    {"op": "replace", "path": "/sources/0/canonical_url", "value": "http://127.0.0.1/private"},
-    {"op": "replace", "path": "/sources/0/final_url", "value": "http://127.0.0.1/private"}
+    {
+      "op": "replace",
+      "path": "/runs/0/platform",
+      "value": "hermes"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/canonical_url",
+      "value": "http://127.0.0.1/private"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/final_url",
+      "value": "http://127.0.0.1/private"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "4dcfbe80078347e4f4cbaa57a3b71f9b56a55f585c002b5725b973c3b9e39e77"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "4dcfbe80078347e4f4cbaa57a3b71f9b56a55f585c002b5725b973c3b9e39e77"
+    }
   ]
 }

@@ -1,8 +1,65 @@
 {
   "extends": "pass_user_provided_pdf_claim.json",
   "patches": [
-    {"op": "add", "path": "/runs/0/platform", "value": "codex_cli"},
-    {"op": "add", "path": "/runs/0/capabilities", "value": {"search.web": "missing", "source.open": "available", "document.extract": "available"}},
-    {"op": "add", "path": "/runs/0/capability_adapter_report", "value": {"platform": "codex_cli", "adapter": {"adapter_id": "codex_cli_shell_http_source_open", "adapter_version": "1"}, "detected_at": "2026-07-16T00:00:00Z", "detection": "current_session_shell_http_success", "host_tools": {"shell_http": {"status": "available", "allowed_concrete_tools": ["curl"], "operations": {"open_source": {"status": "verified", "request_method": "GET", "original_url": "https://example.com/catalogue", "final_url": "https://example.com/catalogue", "http_status": 200, "source_title": "Example source", "raw_excerpt": "Example source provides a visible public statement.", "excerpt_locator": "body"}}}}, "canonical_capabilities": {"source.open": "available"}}}
+    {
+      "op": "add",
+      "path": "/runs/0/platform",
+      "value": "codex_cli"
+    },
+    {
+      "op": "add",
+      "path": "/runs/0/capabilities",
+      "value": {
+        "search.web": "missing",
+        "source.open": "available",
+        "document.extract": "available"
+      }
+    },
+    {
+      "op": "add",
+      "path": "/runs/0/capability_adapter_report",
+      "value": {
+        "platform": "codex_cli",
+        "adapter": {
+          "adapter_id": "codex_cli_shell_http_source_open",
+          "adapter_version": "1"
+        },
+        "detected_at": "2026-07-16T00:00:00Z",
+        "detection": "current_session_shell_http_success",
+        "host_tools": {
+          "shell_http": {
+            "status": "available",
+            "allowed_concrete_tools": [
+              "curl"
+            ],
+            "operations": {
+              "open_source": {
+                "status": "verified",
+                "request_method": "GET",
+                "original_url": "https://example.com/catalogue",
+                "final_url": "https://example.com/catalogue",
+                "http_status": 200,
+                "source_title": "Example source",
+                "raw_excerpt": "Example source provides a visible public statement.",
+                "excerpt_locator": "body"
+              }
+            }
+          }
+        },
+        "canonical_capabilities": {
+          "source.open": "available"
+        }
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "7f21516ea0635caca843d92e049736073b733f24502c9c31bc5b91f5eeba44a5"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "7f21516ea0635caca843d92e049736073b733f24502c9c31bc5b91f5eeba44a5"
+    }
   ]
 }

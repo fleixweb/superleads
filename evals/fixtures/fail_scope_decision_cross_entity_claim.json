@@ -1,7 +1,29 @@
 {
   "extends": "pass_aftermarket_neutral_brand_distributor.json",
   "patches": [
-    {"op":"append","path":"/entities/-","value":{"entity_id":"ent_002","name":"Example Buyer","website":"https://other.example"}},
-    {"op":"replace","path":"/claims/0/entity_id","value":"ent_002"}
+    {
+      "op": "append",
+      "path": "/entities/-",
+      "value": {
+        "entity_id": "ent_002",
+        "name": "Example Buyer",
+        "website": "https://other.example"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/claims/0/entity_id",
+      "value": "ent_002"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "c72165231aa9f95da03cd81775b556465e4ebd2343156f17a64ed25873392214"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "c72165231aa9f95da03cd81775b556465e4ebd2343156f17a64ed25873392214"
+    }
   ]
 }

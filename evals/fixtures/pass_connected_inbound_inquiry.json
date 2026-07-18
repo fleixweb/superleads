@@ -1,14 +1,117 @@
 {
   "extends": "pass_user_provided_pdf_claim.json",
   "patches": [
-    {"op":"replace","path":"/runs/0/status","value":"collecting"},
-    {"op":"replace","path":"/runs/0/review_mode","value":"not_run"},
-    {"op":"replace","path":"/sources/0","value":{"source_id":"src_mail_001","publisher_relation":"unknown","provenance":"connected_account","material_role":"connected_inbound_correspondence","medium":"correspondence","access_boundary":"read_only_connected_account","owner_hint":null,"message_id":"host-message-001","thread_id":"host-thread-001","received_at":"2026-07-15T08:00:00Z","direction":"inbound","sender_literal":"Buyer Contact <sales@example.com>","subject_literal":"RFQ sample product","message_content_sha256":"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","mailbox_ref":"mailbox_inbox_001","mail_intake_rule_id":null}},
-    {"op":"replace","path":"/observations/0","value":{"observation_id":"obs_mail_001","source_id":"src_mail_001","candidate_id":null,"entity_id":null,"capability":"mail.read","concrete_tool":"host_mail_adapter","observed_at":"2026-07-15T08:01:00Z","access_status":"ok","http_status":null,"title":"Inbound inquiry excerpt","raw_excerpt":"From: sales@example.com\nPlease quote sample product and advise lead time.","page_or_dom_locator":"body excerpt","content_hash":"mail_excerpt_001","extraction_method":"read_only_mail_excerpt","tool_version":"host","language":"en","translation_status":"original","derived_from_observation_id":null,"snapshot_ref":"mail:sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd#part=body&offset=0&length=62"}},
-    {"op":"remove","path":"/claims/0"},
-    {"op":"remove","path":"/claim_evidence/0"},
-    {"op":"remove","path":"/assessments/0"},
-    {"op":"remove","path":"/scope_decisions/0"},
-    {"op":"add","path":"/inquiries","value":[{"inquiry_id":"inq_001","run_id":"run_pdf_001","source_id":"src_mail_001","observation_id":"obs_mail_001","entity_id":null,"contact_id":null,"received_at":"2026-07-15T08:00:00Z","direction":"inbound","inquiry_status":"needs_entity_resolution","priority":"high","requested_action":"核实公司官网并补充报价所需规格","request_excerpt":"Please quote sample product and advise lead time.","mentioned_product_or_need":"邮件中提及：sample product、报价和交期","missing_information":["规格","数量","目的地"],"entity_resolution_status":"pending","external_verification_status":"not_started","created_at":"2026-07-15T08:01:00Z"}]}
+    {
+      "op": "replace",
+      "path": "/runs/0/status",
+      "value": "collecting"
+    },
+    {
+      "op": "replace",
+      "path": "/runs/0/review_mode",
+      "value": "not_run"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0",
+      "value": {
+        "source_id": "src_mail_001",
+        "publisher_relation": "unknown",
+        "provenance": "connected_account",
+        "material_role": "connected_inbound_correspondence",
+        "medium": "correspondence",
+        "access_boundary": "read_only_connected_account",
+        "owner_hint": null,
+        "message_id": "host-message-001",
+        "thread_id": "host-thread-001",
+        "received_at": "2026-07-15T08:00:00Z",
+        "direction": "inbound",
+        "sender_literal": "Buyer Contact <sales@example.com>",
+        "subject_literal": "RFQ sample product",
+        "message_content_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "mailbox_ref": "mailbox_inbox_001",
+        "mail_intake_rule_id": null
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0",
+      "value": {
+        "observation_id": "obs_mail_001",
+        "source_id": "src_mail_001",
+        "candidate_id": null,
+        "entity_id": null,
+        "capability": "mail.read",
+        "concrete_tool": "host_mail_adapter",
+        "observed_at": "2026-07-15T08:01:00Z",
+        "access_status": "ok",
+        "http_status": null,
+        "title": "Inbound inquiry excerpt",
+        "raw_excerpt": "From: sales@example.com\nPlease quote sample product and advise lead time.",
+        "page_or_dom_locator": "body excerpt",
+        "content_hash": "mail_excerpt_001",
+        "extraction_method": "read_only_mail_excerpt",
+        "tool_version": "host",
+        "language": "en",
+        "translation_status": "original",
+        "derived_from_observation_id": null,
+        "snapshot_ref": "mail:sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd#part=body&offset=0&length=62"
+      }
+    },
+    {
+      "op": "remove",
+      "path": "/claims/0"
+    },
+    {
+      "op": "remove",
+      "path": "/claim_evidence/0"
+    },
+    {
+      "op": "remove",
+      "path": "/assessments/0"
+    },
+    {
+      "op": "remove",
+      "path": "/scope_decisions/0"
+    },
+    {
+      "op": "add",
+      "path": "/inquiries",
+      "value": [
+        {
+          "inquiry_id": "inq_001",
+          "run_id": "run_pdf_001",
+          "source_id": "src_mail_001",
+          "observation_id": "obs_mail_001",
+          "entity_id": null,
+          "contact_id": null,
+          "received_at": "2026-07-15T08:00:00Z",
+          "direction": "inbound",
+          "inquiry_status": "needs_entity_resolution",
+          "priority": "high",
+          "requested_action": "核实公司官网并补充报价所需规格",
+          "request_excerpt": "Please quote sample product and advise lead time.",
+          "mentioned_product_or_need": "邮件中提及：sample product、报价和交期",
+          "missing_information": [
+            "规格",
+            "数量",
+            "目的地"
+          ],
+          "entity_resolution_status": "pending",
+          "external_verification_status": "not_started",
+          "created_at": "2026-07-15T08:01:00Z"
+        }
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "4a75d2f021130eb326de6c130082d4a449004740c18e991a06d3065cd3b9ba09"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "4a75d2f021130eb326de6c130082d4a449004740c18e991a06d3065cd3b9ba09"
+    }
   ]
 }

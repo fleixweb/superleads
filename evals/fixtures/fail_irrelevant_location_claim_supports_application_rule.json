@@ -1,12 +1,67 @@
 {
   "extends": "pass_professional_stage_audio_channel.json",
   "patches": [
-    {"op":"replace","path":"/observations/0/raw_excerpt","value":"Example Buyer is located in Berlin. Example Buyer Contact: sales@example.com"},
-    {"op":"replace","path":"/claims/0/claim_type","value":"location"},
-    {"op":"replace","path":"/claims/0/predicate","value":"is_located_in"},
-    {"op":"replace","path":"/claims/0/typed_value","value":{"text":"Berlin"}},
-    {"op":"replace","path":"/claim_evidence/0/claim_field_anchors","value":{"subject":"Example Buyer","predicate":"located in","claim_type":"Example Buyer is located in Berlin","typed_value":"Berlin"}},
-    {"op":"replace","path":"/scope_decisions/0/rule_evaluations/0/claim_classifications/0","value":{"claim_id":"claim_001","classification":"supports","matched_marker":"professional stage audio installation","reason":"Incorrectly treats an address Claim as application evidence."}},
-    {"op":"replace","path":"/scope_decisions/0/rule_evaluations/1/claim_classifications/0","value":{"claim_id":"claim_001","classification":"irrelevant","matched_marker":null,"reason":"Location is unrelated to the exclusion check."}}
+    {
+      "op": "replace",
+      "path": "/observations/0/raw_excerpt",
+      "value": "Example Buyer is located in Berlin. Example Buyer Contact: sales@example.com"
+    },
+    {
+      "op": "replace",
+      "path": "/claims/0/claim_type",
+      "value": "location"
+    },
+    {
+      "op": "replace",
+      "path": "/claims/0/predicate",
+      "value": "is_located_in"
+    },
+    {
+      "op": "replace",
+      "path": "/claims/0/typed_value",
+      "value": {
+        "text": "Berlin"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/claim_evidence/0/claim_field_anchors",
+      "value": {
+        "subject": "Example Buyer",
+        "predicate": "located in",
+        "claim_type": "Example Buyer is located in Berlin",
+        "typed_value": "Berlin"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/scope_decisions/0/rule_evaluations/0/claim_classifications/0",
+      "value": {
+        "claim_id": "claim_001",
+        "classification": "supports",
+        "matched_marker": "professional stage audio installation",
+        "reason": "Incorrectly treats an address Claim as application evidence."
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/scope_decisions/0/rule_evaluations/1/claim_classifications/0",
+      "value": {
+        "claim_id": "claim_001",
+        "classification": "irrelevant",
+        "matched_marker": null,
+        "reason": "Location is unrelated to the exclusion check."
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "f7659c5dc93bd4a659b99058a2370b2f546b0c28af9fddbad1ff448c06fe6a08"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "f7659c5dc93bd4a659b99058a2370b2f546b0c28af9fddbad1ff448c06fe6a08"
+    }
   ]
 }

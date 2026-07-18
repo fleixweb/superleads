@@ -17,6 +17,7 @@ from _superleads_common import (
     canonical_contact_user_status,
     claim_value_is_anchored_in_excerpt,
     customer_selection_contract,
+    current_review_attestation,
     formal_exception_entity_ids,
     formal_exception_mode,
     formal_targeting_contract_required,
@@ -29,6 +30,9 @@ from _superleads_common import (
     load_json,
     normalized_contact_derives_from_literal,
     review_finding_blocks_delivery,
+    review_provenance_disclosure,
+    review_provenance_snapshot,
+    review_subject_hash,
     text_contains,
     write_json,
 )
@@ -48,13 +52,8 @@ def _review_modes(graph: dict[str, Any]) -> set[str]:
     return set()
 
 
-def _evidence_depth(graph: dict[str, Any]) -> str:
-    run = _current_run(graph)
-    brief_id = run.get("brief_id") if isinstance(run, dict) else None
-    for brief in ensure_list(graph, "briefs"):
-        if isinstance(brief, dict) and brief.get("brief_id") == brief_id and has_text(brief.get("evidence_depth")):
-            return str(brief.get("evidence_depth"))
-    return "standard"
+def _review_provenance(graph: dict[str, Any]) -> dict[str, Any]:
+    return review_provenance_snapshot(graph, _current_run(graph))
 
 
 def _has_minimum_formal_content(graph: dict[str, Any]) -> list[dict[str, str]]:
@@ -244,7 +243,12 @@ def _inquiry_delivery_gate_issues(graph: dict[str, Any], ids: dict[str, dict[str
     return issues
 
 
-def _allowed_statuses(graph: dict[str, Any], issues: list[dict[str, str]], formal_ready: bool) -> tuple[list[str], bool]:
+def _allowed_statuses(
+    graph: dict[str, Any],
+    issues: list[dict[str, str]],
+    formal_ready: bool,
+    provenance_level: str | None,
+) -> tuple[list[str], bool]:
     if any(i.get("severity") in {"critical", "major"} for i in issues):
         return [], False
     modes = _review_modes(graph)
@@ -260,9 +264,7 @@ def _allowed_statuses(graph: dict[str, Any], issues: list[dict[str, str]], forma
     if "independent" in modes:
         if formal_ready:
             allowed.append("standard_development_list")
-            if _evidence_depth(graph) == "full_review":
-                allowed.append("full_review_package")
-        return allowed, disclosure_required
+        return allowed, True
     # Absence of review is treated as not reviewed for formal delivery.
     return ["initial_lead_list"], False
 
@@ -270,6 +272,7 @@ def _allowed_statuses(graph: dict[str, Any], issues: list[dict[str, str]], forma
 def audit_graph(graph: dict[str, Any], requested_delivery_status: str | None = None) -> dict[str, Any]:
     issues: list[dict[str, str]] = []
     ids = all_id_maps(graph)
+    provenance = _review_provenance(graph)
 
     for validation_issue in validate_graph(graph):
         if validation_issue.get("severity") in {"critical", "major"}:
@@ -430,6 +433,12 @@ def audit_graph(graph: dict[str, Any], requested_delivery_status: str | None = N
             issues.append(issue("critical", "stale_audit_graph_hash", "Audit audit_graph_hash does not match current graph hash", f"audits[{idx}].audit_graph_hash"))
         if audit.get("audit_status") and audit.get("audit_status") != "passed":
             issues.append(issue("critical", "referenced_audit_not_passed", "Stored Audit is not passed", f"audits[{idx}].audit_status"))
+        if audit.get("review_attestation_id") and audit.get("review_attestation_id") != provenance.get("review_attestation_id"):
+            issues.append(issue("critical", "audit_review_attestation_mismatch", "Audit review_attestation_id does not match current review provenance", f"audits[{idx}].review_attestation_id"))
+        if audit.get("reviewed_subject_hash") and audit.get("reviewed_subject_hash") != provenance.get("reviewed_subject_hash"):
+            issues.append(issue("critical", "audit_reviewed_subject_hash_mismatch", "Audit reviewed_subject_hash does not match current review provenance", f"audits[{idx}].reviewed_subject_hash"))
+        if audit.get("review_provenance_level") and audit.get("review_provenance_level") != provenance.get("review_provenance_level"):
+            issues.append(issue("critical", "audit_review_provenance_level_mismatch", "Audit review_provenance_level does not match current review provenance", f"audits[{idx}].review_provenance_level"))
     for idx, manifest in enumerate(ensure_list(graph, "delivery_manifests")):
         if not isinstance(manifest, dict):
             continue
@@ -437,21 +446,36 @@ def audit_graph(graph: dict[str, Any], requested_delivery_status: str | None = N
             issues.append(issue("critical", "stale_audit_graph_hash", "DeliveryManifest audit_graph_hash does not match current graph hash", f"delivery_manifests[{idx}].audit_graph_hash"))
         if manifest.get("research_graph_hash") and manifest.get("research_graph_hash") != current_hash:
             issues.append(issue("critical", "stale_manifest_research_graph_hash", "DeliveryManifest research_graph_hash does not match current graph hash", f"delivery_manifests[{idx}].research_graph_hash"))
+        if manifest.get("review_attestation_id") and manifest.get("review_attestation_id") != provenance.get("review_attestation_id"):
+            issues.append(issue("critical", "manifest_review_attestation_mismatch", "DeliveryManifest review_attestation_id does not match current review provenance", f"delivery_manifests[{idx}].review_attestation_id"))
+        if manifest.get("reviewed_subject_hash") and manifest.get("reviewed_subject_hash") != provenance.get("reviewed_subject_hash"):
+            issues.append(issue("critical", "manifest_reviewed_subject_hash_mismatch", "DeliveryManifest reviewed_subject_hash does not match current review provenance", f"delivery_manifests[{idx}].reviewed_subject_hash"))
+        if manifest.get("review_provenance_level") and manifest.get("review_provenance_level") != provenance.get("review_provenance_level"):
+            issues.append(issue("critical", "manifest_review_provenance_level_mismatch", "DeliveryManifest review_provenance_level does not match current review provenance", f"delivery_manifests[{idx}].review_provenance_level"))
         audit = ids["audits"].get(manifest.get("audit_id"))
         if isinstance(audit, dict) and audit.get("audit_status") != "passed":
             issues.append(issue("critical", "manifest_audit_not_passed", "DeliveryManifest references an Audit that is not passed", f"delivery_manifests[{idx}].audit_id"))
+        if isinstance(audit, dict):
+            if audit.get("review_attestation_id") and manifest.get("review_attestation_id") != audit.get("review_attestation_id"):
+                issues.append(issue("critical", "manifest_audit_review_attestation_mismatch", "DeliveryManifest review_attestation_id must match its referenced Audit", f"delivery_manifests[{idx}].review_attestation_id"))
+            if audit.get("reviewed_subject_hash") and manifest.get("reviewed_subject_hash") != audit.get("reviewed_subject_hash"):
+                issues.append(issue("critical", "manifest_audit_reviewed_subject_hash_mismatch", "DeliveryManifest reviewed_subject_hash must match its referenced Audit", f"delivery_manifests[{idx}].reviewed_subject_hash"))
+            if audit.get("review_provenance_level") and manifest.get("review_provenance_level") != audit.get("review_provenance_level"):
+                issues.append(issue("critical", "manifest_audit_review_provenance_level_mismatch", "DeliveryManifest review_provenance_level must match its referenced Audit", f"delivery_manifests[{idx}].review_provenance_level"))
         if manifest.get("delivery_status") in FORMAL_STATUSES and any(i.get("severity") == "critical" for i in issues):
             issues.append(issue("critical", "formal_delivery_has_blockers", "Formal delivery status is present while critical blockers exist", f"delivery_manifests[{idx}].delivery_status"))
 
-    allowed_statuses, disclosure_required = _allowed_statuses(graph, issues, formal_ready)
+    allowed_statuses, disclosure_required = _allowed_statuses(graph, issues, formal_ready, provenance.get("review_provenance_level"))
+    if provenance.get("review_provenance_level") in {"declared_separate_session", "self_review_fallback", "not_run"}:
+        disclosure_required = True
     if requested_delivery_status == INQUIRY_STATUS and not any(i.get("severity") in {"critical", "major"} for i in issues):
         allowed_statuses = [INQUIRY_STATUS]
     if requested_delivery_status in FORMAL_STATUSES:
         if requested_delivery_status not in allowed_statuses:
             modes = sorted(_review_modes(graph)) or ["not_run"]
             issues.append(issue("critical", "requested_delivery_not_allowed_by_review", f"Requested {requested_delivery_status} is not allowed by review mode(s): {', '.join(modes)}", "runs.review_mode"))
-    if requested_delivery_status == "full_review_package" and "self_review_fallback" in _review_modes(graph):
-        issues.append(issue("critical", "self_review_cannot_full_review", "self_review_fallback cannot produce full_review_package", "runs.review_mode"))
+    if requested_delivery_status == "full_review_package":
+        issues.append(issue("critical", "full_review_unavailable_in_local_deployment", "This local deployment does not provide full_review_package", "delivery_status"))
 
     blocking = any(i.get("severity") in {"critical", "major"} for i in issues)
     if blocking:
@@ -471,6 +495,10 @@ def audit_graph(graph: dict[str, Any], requested_delivery_status: str | None = N
         "audited_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "research_graph_hash": current_hash,
         "audit_graph_hash": current_hash,
+        "review_cycle_id": (_current_run(graph) or {}).get("review_cycle_id"),
+        "review_attestation_id": provenance.get("review_attestation_id"),
+        "reviewed_subject_hash": provenance.get("reviewed_subject_hash"),
+        "review_provenance_level": provenance.get("review_provenance_level"),
         "audit_status": "failed" if blocking else "passed",
         "delivery_status": delivery_status,
         "allowed_delivery_statuses": allowed_statuses,

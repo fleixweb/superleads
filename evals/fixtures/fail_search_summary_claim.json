@@ -210,7 +210,9 @@
       "review_cycle_id": "review_run_001",
       "review_mode": "independent",
       "run_id": "run_001",
-      "status": "checked"
+      "status": "checked",
+      "executor_actor_id": "executor_run_001",
+      "execution_session_id": "session_run_001"
     }
   ],
   "sources": [
@@ -225,5 +227,30 @@
       "source_id": "src_001"
     }
   ],
-  "unassigned_contact_leads": []
+  "unassigned_contact_leads": [],
+  "search_logs": [
+    {
+      "search_log_id": "search_log_001",
+      "run_id": "run_001",
+      "brief_id": "brief_001",
+      "plan_id": "plan_001",
+      "query_group_id": "find first-party buyer",
+      "searched_at": "2026-01-01T00:00:00Z",
+      "capability": "search.web",
+      "concrete_tool": "fixture",
+      "query": "sample product distributor Exampleland",
+      "target_country_or_region": "Exampleland",
+      "result_use": "candidate_search_log_only",
+      "candidate_ids": [
+        "cand_001"
+      ],
+      "source_ids": [
+        "src_001"
+      ],
+      "observation_ids": [
+        "obs_001"
+      ],
+      "notes": "Search results recorded as candidate clues only; not used as Claim evidence."
+    }
+  ]
 }

@@ -27,9 +27,10 @@ customer-role enums. `scope_state` is only a workflow state:
 ## Scoping rules
 
 - For new customer development, require product/service plus at least one scope axis.
+- When `target_country_or_region` has any non-empty user literal for new customer development, require a non-null `geography_contract`. Preserve the user's literal in the Brief, bind the contract to it by normalized comparison, and do not silently downgrade the task to global research.
 - For single-company analysis, require a current user statement and a company identifier, URL/domain, or user-material reference that resolves to the only output Entity. Every supplied identifier must agree exactly; do not accept an alias, partial name, brand, group, or approximate domain as proof. For existing-table enrichment, require the user-provided spreadsheet plus the source row/cell and visible exact Entity literal for every output Entity. These results are not labelled as direction-matched customers.
-- Record desired contact depth explicitly: standard, contact priority, or full review.
-- Use user-facing output modes: 初筛客户名单, 标准开发名单, 联系方式优先, 补全已有表格, 完整核查版.
+- Record desired contact depth explicitly: standard or contact priority. A full-review request is unavailable in this local deployment.
+- Use user-facing output modes: 初筛客户名单, 标准开发名单, 联系方式优先, 补全已有表格. This local deployment does not provide `full_review_package`.
 - Record the material's declared role without treating it as an ICP default or external verification. User product/capability/target information remains Brief input, not Source Claim evidence.
 - For connected-mail intake, record the user-approved mailbox reference, folders/labels, inbound-only scope, time window/filters, read-only boundary, and allowed create-only actions. A one-shot query needs a time window; continuous filtering needs explicit user approval and host scheduling support.
 - Start with the four business lines: what is offered, what to find, what not

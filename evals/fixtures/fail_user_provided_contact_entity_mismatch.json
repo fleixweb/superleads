@@ -1,1 +1,32 @@
-{"extends":"pass_user_provided_spreadsheet_contact.json","patches":[{"op":"append","path":"/entities/-","value":{"entity_id":"ent_sheet_other","name":"Other Buyer","legal_name":null,"website":"https://other.example","country_or_region":"Exampleland","customer_type":"buyer"}},{"op":"replace","path":"/contact_claims/0/entity_id","value":"ent_sheet_other"}]}
+{
+  "extends": "pass_user_provided_spreadsheet_contact.json",
+  "patches": [
+    {
+      "op": "append",
+      "path": "/entities/-",
+      "value": {
+        "entity_id": "ent_sheet_other",
+        "name": "Other Buyer",
+        "legal_name": null,
+        "website": "https://other.example",
+        "country_or_region": "Exampleland",
+        "customer_type": "buyer"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/contact_claims/0/entity_id",
+      "value": "ent_sheet_other"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "73440209a3aba7ecc5d3a5c39e1a10d0d90b5639e1d8ed036ff08e9a56f42ba8"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "73440209a3aba7ecc5d3a5c39e1a10d0d90b5639e1d8ed036ff08e9a56f42ba8"
+    }
+  ]
+}

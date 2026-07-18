@@ -1,4 +1,20 @@
 {
   "extends": "pass_professional_stage_audio_channel.json",
-  "patches": [{"op":"replace","path":"/briefs/0/customer_selection_contract/unresolved_questions","value":[]}]
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/briefs/0/customer_selection_contract/unresolved_questions",
+      "value": []
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "0ce805326dd904f1a36383f673d8faccfd2ac4a9e442026fd7409ba6698a1110"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "0ce805326dd904f1a36383f673d8faccfd2ac4a9e442026fd7409ba6698a1110"
+    }
+  ]
 }

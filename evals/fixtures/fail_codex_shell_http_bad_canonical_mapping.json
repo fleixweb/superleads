@@ -1,7 +1,25 @@
 {
   "extends": "pass_codex_shell_http_source_open_standard.json",
   "patches": [
-    {"op": "replace", "path": "/runs/0/capabilities/source.open", "value": "unknown"},
-    {"op": "replace", "path": "/runs/0/capability_adapter_report/canonical_capabilities/source.open", "value": "unknown"}
+    {
+      "op": "replace",
+      "path": "/runs/0/capabilities/source.open",
+      "value": "unknown"
+    },
+    {
+      "op": "replace",
+      "path": "/runs/0/capability_adapter_report/canonical_capabilities/source.open",
+      "value": "unknown"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "1714cf28f9b10f6e82c061874cebf1657cf0801c38b235d859a549850f26954a"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "1714cf28f9b10f6e82c061874cebf1657cf0801c38b235d859a549850f26954a"
+    }
   ]
 }

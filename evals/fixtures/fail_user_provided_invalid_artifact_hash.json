@@ -1,1 +1,20 @@
-{"extends":"pass_user_provided_pdf_claim.json","patches":[{"op":"replace","path":"/sources/0/artifact_sha256","value":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}]}
+{
+  "extends": "pass_user_provided_pdf_claim.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/sources/0/artifact_sha256",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "caf905df4c407bf0bfb95a6ffce13b940e8ded5025ff549f053b944f0082f0c3"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "caf905df4c407bf0bfb95a6ffce13b940e8ded5025ff549f053b944f0082f0c3"
+    }
+  ]
+}

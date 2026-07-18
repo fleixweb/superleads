@@ -1,1 +1,20 @@
-{"extends":"pass_logo_external_trademark_evidence.json","patches":[{"op":"replace","path":"/claim_evidence/0/observation_id","value":"obs_logo_001"}]}
+{
+  "extends": "pass_logo_external_trademark_evidence.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/claim_evidence/0/observation_id",
+      "value": "obs_logo_001"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "e57552c1a4b71b3c268eb46a17706d460dc33aed63f59984e6cd99988211a828"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "e57552c1a4b71b3c268eb46a17706d460dc33aed63f59984e6cd99988211a828"
+    }
+  ]
+}

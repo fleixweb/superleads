@@ -1,21 +1,139 @@
 {
   "extends": "pass_aftermarket_neutral_brand_distributor.json",
   "patches": [
-    {"op":"replace","path":"/briefs/0/customer_selection_contract/targeting_contract_id","value":"target_manufacturer_allowed_001"},
-    {"op":"replace","path":"/briefs/0/customer_selection_contract/user_intent_verbatim","value":"本次明确允许找同类制造商。"},
-    {"op":"replace","path":"/briefs/0/customer_selection_contract/excluded_target_description","value":"无本次制造商排除。"},
-    {"op":"replace","path":"/briefs/0/customer_selection_contract/exclusion_rules","value":[]},
-    {"op":"replace","path":"/briefs/0/customer_selection_contract/selection_requirements/0/allowed_claim_types","value":["product_match"]},
-    {"op":"replace","path":"/briefs/0/customer_selection_contract/selection_requirements/0/evidence_markers","value":["replacement parts"]},
-    {"op":"replace","path":"/plans/0/exclusion_rule_ids","value":[]},
-    {"op":"replace","path":"/plans/0/exclusion_check_query_groups","value":[]},
-    {"op":"replace","path":"/plans/0/query_groups","value":[{"group_id":"distribution_check","query_purpose":"确认本次允许的制造业务公开信号。","targeting_rule_ids":["sel_channel_001"],"queries":["replacement parts manufacturer"]}]},
-    {"op":"replace","path":"/observations/0/raw_excerpt","value":"Example Buyer manufactures replacement parts. Example Buyer Contact: sales@example.com"},
-    {"op":"replace","path":"/claims/0/claim_type","value":"product_match"},
-    {"op":"replace","path":"/claims/0/predicate","value":"manufactures"},
-    {"op":"replace","path":"/claims/0/typed_value","value":{"text":"replacement parts"}},
-    {"op":"replace","path":"/claim_evidence/0/claim_field_anchors","value":{"subject":"Example Buyer","predicate":"manufactures","claim_type":"Example Buyer manufactures replacement parts","typed_value":"replacement parts"}},
-    {"op":"replace","path":"/scope_decisions/0/targeting_contract_id","value":"target_manufacturer_allowed_001"},
-    {"op":"replace","path":"/scope_decisions/0/rule_evaluations","value":[{"rule_id":"sel_channel_001","rule_kind":"selection","outcome":"supported_match","supporting_claim_ids":["claim_001"],"conflicting_claim_ids":[],"claim_classifications":[{"claim_id":"claim_001","classification":"supports","matched_marker":"replacement parts","reason":"公开页面含当前许可的业务 marker。"}],"reviewed_observation_ids":["obs_001"],"reason":"公开页面显示本次允许的制造业务。"}]}
+    {
+      "op": "replace",
+      "path": "/briefs/0/customer_selection_contract/targeting_contract_id",
+      "value": "target_manufacturer_allowed_001"
+    },
+    {
+      "op": "replace",
+      "path": "/briefs/0/customer_selection_contract/user_intent_verbatim",
+      "value": "本次明确允许找同类制造商。"
+    },
+    {
+      "op": "replace",
+      "path": "/briefs/0/customer_selection_contract/excluded_target_description",
+      "value": "无本次制造商排除。"
+    },
+    {
+      "op": "replace",
+      "path": "/briefs/0/customer_selection_contract/exclusion_rules",
+      "value": []
+    },
+    {
+      "op": "replace",
+      "path": "/briefs/0/customer_selection_contract/selection_requirements/0/allowed_claim_types",
+      "value": [
+        "product_match"
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/briefs/0/customer_selection_contract/selection_requirements/0/evidence_markers",
+      "value": [
+        "replacement parts"
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/plans/0/exclusion_rule_ids",
+      "value": []
+    },
+    {
+      "op": "replace",
+      "path": "/plans/0/exclusion_check_query_groups",
+      "value": []
+    },
+    {
+      "op": "replace",
+      "path": "/plans/0/query_groups",
+      "value": [
+        {
+          "group_id": "distribution_check",
+          "query_purpose": "确认本次允许的制造业务公开信号。",
+          "targeting_rule_ids": [
+            "sel_channel_001"
+          ],
+          "queries": [
+            "replacement parts manufacturer"
+          ]
+        }
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/raw_excerpt",
+      "value": "Example Buyer manufactures replacement parts. Example Buyer Contact: sales@example.com"
+    },
+    {
+      "op": "replace",
+      "path": "/claims/0/claim_type",
+      "value": "product_match"
+    },
+    {
+      "op": "replace",
+      "path": "/claims/0/predicate",
+      "value": "manufactures"
+    },
+    {
+      "op": "replace",
+      "path": "/claims/0/typed_value",
+      "value": {
+        "text": "replacement parts"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/claim_evidence/0/claim_field_anchors",
+      "value": {
+        "subject": "Example Buyer",
+        "predicate": "manufactures",
+        "claim_type": "Example Buyer manufactures replacement parts",
+        "typed_value": "replacement parts"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/scope_decisions/0/targeting_contract_id",
+      "value": "target_manufacturer_allowed_001"
+    },
+    {
+      "op": "replace",
+      "path": "/scope_decisions/0/rule_evaluations",
+      "value": [
+        {
+          "rule_id": "sel_channel_001",
+          "rule_kind": "selection",
+          "outcome": "supported_match",
+          "supporting_claim_ids": [
+            "claim_001"
+          ],
+          "conflicting_claim_ids": [],
+          "claim_classifications": [
+            {
+              "claim_id": "claim_001",
+              "classification": "supports",
+              "matched_marker": "replacement parts",
+              "reason": "公开页面含当前许可的业务 marker。"
+            }
+          ],
+          "reviewed_observation_ids": [
+            "obs_001"
+          ],
+          "reason": "公开页面显示本次允许的制造业务。"
+        }
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "eb410d2a0eb643a4d1fe848dd01ad1a85dfb525e3913f0602a7013b782efd329"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "eb410d2a0eb643a4d1fe848dd01ad1a85dfb525e3913f0602a7013b782efd329"
+    }
   ]
 }

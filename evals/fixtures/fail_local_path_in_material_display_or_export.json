@@ -1,1 +1,20 @@
-{"extends":"pass_user_business_dataset_contact_with_note.json","patches":[{"op":"replace","path":"/sources/0/artifact_name","value":"C:\\Users\\fleix\\crm.xlsx"}]}
+{
+  "extends": "pass_user_business_dataset_contact_with_note.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/sources/0/artifact_name",
+      "value": "C:\\Users\\fleix\\crm.xlsx"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "3fc99e386a0d3411390a4edc3dc721a3e01d5982abb27f62f36d3e0522a4582b"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "3fc99e386a0d3411390a4edc3dc721a3e01d5982abb27f62f36d3e0522a4582b"
+    }
+  ]
+}

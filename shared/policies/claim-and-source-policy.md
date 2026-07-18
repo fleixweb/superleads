@@ -15,7 +15,13 @@ Treat Superleads as a weak-evidence research workflow. Weak evidence may be deli
 
 ## Artifact boundaries
 
-- `search.web` output may create Candidate clues and Search Log rows only.
+- `search.web` output may create Candidate clues and formal SearchLog rows only.
+- A SearchLog records the actual query, target geography literals, current
+  contract/rule binding, capability/provider record, and candidate result
+  locators. Its fixed `result_use=candidate_seed_only` means it is never a
+  Source, Observation, Claim, ClaimEvidence, ScopeDecision, Assessment, or
+  ready-contact evidence. Query text, snippets, actor/session IDs, and tool
+  internals are never exported to workbooks or user-facing manifests.
 - A native host `web_search` call is still `search.web` unless that same
   session separately verifies an opened HTTP(S) source with a source
   identifier, verbatim excerpt, and locator. A search result summary, link,

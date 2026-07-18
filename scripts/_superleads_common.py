@@ -7,6 +7,7 @@ import hashlib
 import ipaddress
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qsl, urlsplit
@@ -15,7 +16,8 @@ GRAPH_ARRAY_KEYS = [
     "runs", "briefs", "plans", "candidates", "sources", "observations", "entities",
     "entity_relationships", "claims", "claim_evidence", "contact_points", "contact_claims",
     "unassigned_contact_leads", "hypotheses", "assessments", "review_findings", "audits",
-    "delivery_manifests", "search_logs", "inquiries", "mail_intake_rules", "scope_decisions",
+    "delivery_manifests", "search_logs", "review_attestations", "inquiries", "mail_intake_rules",
+    "scope_decisions",
 ]
 
 ID_FIELDS = {
@@ -26,6 +28,7 @@ ID_FIELDS = {
     "unassigned_contact_leads": "unassigned_contact_lead_id", "hypotheses": "hypothesis_id",
     "assessments": "assessment_id", "review_findings": "finding_id", "audits": "audit_id",
     "delivery_manifests": "delivery_manifest_id", "search_logs": "search_log_id",
+    "review_attestations": "attestation_id",
     "inquiries": "inquiry_id", "mail_intake_rules": "mail_intake_rule_id", "scope_decisions": "scope_decision_id",
 }
 
@@ -38,6 +41,7 @@ LOCAL_PATH_RE = re.compile(
     r"(?i)(?:file://|(?:^|[\s\"'])+[a-z]:[\\/]|(?:^|[\s\"'])+/(?:home|users|tmp|var|etc|mnt|private|volumes)(?:/|\b))"
 )
 SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
+SAFE_ANONYMOUS_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 ARTIFACT_SNAPSHOT_RE = re.compile(r"^artifact:sha256:([a-f0-9]{64})#(.+)$")
 SPREADSHEET_CELL_OR_RANGE_RE = re.compile(
     r"^\$?[A-Z]{1,3}\$?[1-9][0-9]*(?::\$?[A-Z]{1,3}\$?[1-9][0-9]*)?$",
@@ -76,6 +80,16 @@ FORMAL_TARGETING_EXEMPT_TASK_MODES = {
 SCOPE_DECISION_STATUSES = {"in_scope", "out_of_scope", "needs_confirmation", "reference_only"}
 SCOPE_RULE_OUTCOMES = {"supported_match", "supported_conflict", "not_observed", "unknown"}
 SCOPE_CLAIM_CLASSIFICATIONS = {"supports", "conflicts", "irrelevant"}
+REVIEW_ATTESTATION_CONCLUSIONS = {"passed", "failed"}
+REVIEW_PROVENANCE_LEVELS = {"declared_separate_session"}
+AUDIT_REVIEW_PROVENANCE_LEVELS = REVIEW_PROVENANCE_LEVELS | {
+    "self_review_fallback",
+    "not_run",
+    "not_applicable",
+}
+REVIEW_SUBJECT_EXCLUDED_KEYS = {"review_attestations", "audits", "delivery_manifests"}
+SEARCH_LOG_RESULT_USES = {"candidate_seed_only"}
+OPAQUE_ID_FORBIDDEN_TERMS = {"token", "cookie", "password", "passwd", "secret", "bearer", "authorization"}
 RULE_ALLOWED_CLAIM_TYPES = {
     "product_match",
     "company_identity",
@@ -566,6 +580,19 @@ def has_text(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
 
+def is_safe_anonymous_id(value: Any) -> bool:
+    """Accept only short host/session opaque IDs, not names, emails, tokens, or paths."""
+    lowered = str(value or "").casefold()
+    return (
+        isinstance(value, str)
+        and SAFE_ANONYMOUS_ID_RE.fullmatch(value) is not None
+        and not contains_local_path(value)
+        and not EMAIL_RE.search(value)
+        and not URL_RE.search(value)
+        and not any(term in lowered for term in OPAQUE_ID_FORBIDDEN_TERMS)
+    )
+
+
 def customer_selection_contract(brief: Any) -> dict[str, Any] | None:
     """Return the current Brief's free-text targeting contract when present."""
     if not isinstance(brief, dict):
@@ -620,6 +647,75 @@ def formal_exception_result_label(brief: Any) -> str | None:
         "single_company_analysis": "单公司分析结果",
         "existing_table_enrichment": "原表补全结果",
     }.get(formal_exception_mode(brief))
+
+
+def current_run(graph: dict[str, Any]) -> dict[str, Any] | None:
+    """Return the last Run, matching the existing delivery scripts' convention."""
+    for run in reversed(ensure_list(graph, "runs")):
+        if isinstance(run, dict):
+            return run
+    return None
+
+
+def current_brief(graph: dict[str, Any], run: dict[str, Any] | None = None) -> dict[str, Any] | None:
+    run = run or current_run(graph)
+    brief_id = run.get("brief_id") if isinstance(run, dict) else None
+    for brief in ensure_list(graph, "briefs"):
+        if isinstance(brief, dict) and brief.get("brief_id") == brief_id:
+            return brief
+    return None
+
+
+def formal_positive_assessments_for_run(graph: dict[str, Any], run: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    """Return current-run positive Assessments that a formal export would review."""
+    run = run or current_run(graph)
+    if not isinstance(run, dict):
+        return []
+    run_id = run.get("run_id")
+    brief_id = run.get("brief_id")
+    brief = current_brief(graph, run)
+    contract_required = formal_targeting_contract_required(brief)
+    exception_entities = formal_exception_entity_ids(brief)
+    exception_mode = formal_exception_mode(brief)
+    in_scope_entities = {
+        str(item.get("entity_id"))
+        for item in ensure_list(graph, "scope_decisions")
+        if isinstance(item, dict)
+        and item.get("run_id") == run_id
+        and item.get("brief_id") == brief_id
+        and item.get("overall_status") == "in_scope"
+        and has_text(item.get("entity_id"))
+    }
+    result: list[dict[str, Any]] = []
+    for assessment in ensure_list(graph, "assessments"):
+        if not isinstance(assessment, dict):
+            continue
+        entity_id = assessment.get("entity_id")
+        if assessment.get("run_id") != run_id or assessment.get("brief_id") != brief_id:
+            continue
+        if assessment.get("disposition") not in {"重点开发", "推荐跟进"}:
+            continue
+        if exception_mode:
+            if str(entity_id) not in exception_entities:
+                continue
+        elif contract_required:
+            if str(entity_id) not in in_scope_entities:
+                continue
+        result.append(assessment)
+    return result
+
+
+def normalize_region_values(value: Any) -> set[str]:
+    """Normalize a user-specified country/region value without inventing defaults."""
+    if isinstance(value, str):
+        return {compact_text(value).casefold()} if has_text(value) else set()
+    if isinstance(value, list):
+        result: set[str] = set()
+        for item in value:
+            if has_text(item):
+                result.add(compact_text(item).casefold())
+        return result
+    return set()
 
 
 def normalized_identity_name(value: Any) -> str:
@@ -1218,9 +1314,25 @@ def all_id_maps(graph: dict[str, Any]) -> dict[str, dict[str, dict[str, Any]]]:
 
 
 def canonical_graph_for_hash(graph: dict[str, Any]) -> dict[str, Any]:
+    """Return the stable semantic research projection used for freshness checks.
+
+    The projection is intentionally not a raw JSON file-byte hash.  It keeps
+    all research and review-input objects that can affect conclusions
+    (Run/Brief/Plan, entities, sources, observations, Claims, ClaimEvidence,
+    contacts, ScopeDecision, Assessment, ReviewFinding, SearchLog, inquiries,
+    and similar graph records) while excluding self-referential delivery
+    objects: ReviewAttestation, Audit, and DeliveryManifest.
+    """
     copy_graph = copy.deepcopy(graph)
-    copy_graph.pop("audits", None)
-    copy_graph.pop("delivery_manifests", None)
+    for key in REVIEW_SUBJECT_EXCLUDED_KEYS:
+        copy_graph.pop(key, None)
+    # Array order is a storage detail, not a research conclusion.  The
+    # documented semantic projection sorts every graph collection by its
+    # formal ID before canonical JSON serialization.
+    for key, id_field in ID_FIELDS.items():
+        items = copy_graph.get(key)
+        if isinstance(items, list) and all(isinstance(item, dict) for item in items):
+            copy_graph[key] = sorted(items, key=lambda item: str(item.get(id_field) or ""))
     return copy_graph
 
 
@@ -1228,3 +1340,249 @@ def graph_hash(graph: dict[str, Any]) -> str:
     canonical = canonical_graph_for_hash(graph)
     data = json.dumps(canonical, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(data.encode("utf-8")).hexdigest()
+
+
+def review_subject_hash(graph: dict[str, Any]) -> str:
+    """Hash the documented canonical projection reviewed by an attestation."""
+    return graph_hash(graph)
+
+
+def active_review_attestations(graph: dict[str, Any], run: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    """Return passed attestations for the current Run/Brief/Plan/review cycle."""
+    run = run or current_run(graph)
+    if not isinstance(run, dict):
+        return []
+    result: list[dict[str, Any]] = []
+    for item in ensure_list(graph, "review_attestations"):
+        if not isinstance(item, dict):
+            continue
+        if (
+            item.get("run_id") == run.get("run_id")
+            and item.get("brief_id") == run.get("brief_id")
+            and item.get("plan_id") == run.get("plan_id")
+            and item.get("review_cycle_id") == run.get("review_cycle_id")
+            and item.get("conclusion") == "passed"
+        ):
+            result.append(item)
+    return result
+
+
+def current_review_attestation(graph: dict[str, Any], run: dict[str, Any] | None = None) -> dict[str, Any] | None:
+    items = active_review_attestations(graph, run)
+    return items[0] if len(items) == 1 else None
+
+
+def review_provenance_snapshot(graph: dict[str, Any], run: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Return audit/manifest review-provenance fields for the current subject.
+
+    ``reviewed_subject_hash`` is the canonical semantic projection hash, not
+    the input file-byte hash.  The projection excludes ReviewAttestation,
+    Audit, and DeliveryManifest so that a stored attestation can be checked
+    without a self-reference loop.
+    """
+    run = run or current_run(graph)
+    subject_hash = review_subject_hash(graph)
+    if not isinstance(run, dict):
+        return {
+            "review_attestation_id": None,
+            "reviewed_subject_hash": subject_hash,
+            "review_provenance_level": "not_applicable",
+        }
+    formal_subjects = formal_positive_assessments_for_run(graph, run)
+    if not formal_subjects:
+        return {
+            "review_attestation_id": None,
+            "reviewed_subject_hash": subject_hash,
+            "review_provenance_level": "not_applicable",
+        }
+    if run.get("review_mode") == "independent":
+        att = current_review_attestation(graph, run)
+        return {
+            "review_attestation_id": att.get("attestation_id") if isinstance(att, dict) else None,
+            "reviewed_subject_hash": att.get("reviewed_subject_hash") if isinstance(att, dict) else subject_hash,
+            "review_provenance_level": att.get("provenance_level") if isinstance(att, dict) else None,
+        }
+    if run.get("review_mode") == "self_review_fallback":
+        return {
+            "review_attestation_id": None,
+            "reviewed_subject_hash": subject_hash,
+            "review_provenance_level": "self_review_fallback",
+        }
+    if run.get("review_mode") == "not_run":
+        return {
+            "review_attestation_id": None,
+            "reviewed_subject_hash": subject_hash,
+            "review_provenance_level": "not_run",
+        }
+    return {
+        "review_attestation_id": None,
+        "reviewed_subject_hash": subject_hash,
+        "review_provenance_level": "not_applicable",
+    }
+
+
+def review_provenance_disclosure(level: Any) -> str:
+    """Return the required user-facing disclosure for local review provenance."""
+    if level == "declared_separate_session":
+        return "本次复核由独立会话声明完成，未获得平台身份验证。"
+    if level == "self_review_fallback":
+        return "本次为 self_review_fallback 复核，未运行独立复核；交付时需保留该说明。"
+    if level == "not_run":
+        return "本次未运行复核，仅可作为初筛或待核查输出。"
+    return ""
+
+
+def validate_current_review_attestation(graph: dict[str, Any]) -> list[dict[str, str]]:
+    """Fail closed unless independent review has a current declared attestation."""
+    issues: list[dict[str, str]] = []
+    run = current_run(graph)
+    if not isinstance(run, dict):
+        return [issue("critical", "review_attestation_run_missing", "Review provenance requires a current Run", "runs")]
+    mode = run.get("review_mode")
+    if mode != "independent":
+        return issues
+    if not formal_positive_assessments_for_run(graph, run):
+        return issues
+    attestations = active_review_attestations(graph, run)
+    if len(attestations) != 1:
+        issues.append(issue(
+            "critical",
+            "independent_review_attestation_missing",
+            "review_mode=independent requires exactly one current passed ReviewAttestation",
+            "review_attestations",
+        ))
+        for idx, other in enumerate(ensure_list(graph, "review_attestations")):
+            if not isinstance(other, dict) or other.get("conclusion") != "passed" or other.get("run_id") != run.get("run_id"):
+                continue
+            for field, code in (
+                ("brief_id", "review_attestation_brief_mismatch"),
+                ("plan_id", "review_attestation_plan_mismatch"),
+                ("review_cycle_id", "review_attestation_cycle_mismatch"),
+            ):
+                if other.get(field) != run.get(field):
+                    issues.append(issue("critical", code, f"ReviewAttestation {field} must match current Run", f"review_attestations[{idx}].{field}"))
+        return issues
+    att = attestations[0]
+    for field in ("executor_actor_id", "execution_session_id"):
+        if not has_text(run.get(field)):
+            issues.append(issue(
+                "critical",
+                "run_execution_identity_missing",
+                f"Independent review requires Run.{field}",
+                f"runs.{field}",
+            ))
+    for field in (
+        "attestation_id", "run_id", "brief_id", "plan_id", "review_cycle_id",
+        "executor_actor_id", "execution_session_id", "reviewer_actor_id",
+        "reviewer_session_id", "reviewed_at", "conclusion", "input_graph_hash",
+        "reviewed_subject_hash", "provenance_level",
+    ):
+        if not has_text(att.get(field)):
+            issues.append(issue("critical", "review_attestation_field_missing", f"ReviewAttestation lacks {field}", f"review_attestations.{field}"))
+    try:
+        datetime.fromisoformat(str(att.get("reviewed_at")).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        issues.append(issue("critical", "review_attestation_reviewed_at_invalid", "ReviewAttestation reviewed_at must be an ISO-8601 timestamp", "review_attestations.reviewed_at"))
+    if att.get("conclusion") not in REVIEW_ATTESTATION_CONCLUSIONS:
+        issues.append(issue("critical", "review_attestation_conclusion_invalid", "ReviewAttestation conclusion is invalid", "review_attestations.conclusion"))
+    if att.get("provenance_level") not in REVIEW_PROVENANCE_LEVELS:
+        issues.append(issue("critical", "review_attestation_provenance_level_invalid", "ReviewAttestation provenance_level is invalid", "review_attestations.provenance_level"))
+    for field in ("reviewed_entity_ids", "reviewed_assessment_ids"):
+        if not isinstance(att.get(field), list):
+            issues.append(issue("critical", "review_attestation_field_missing", f"ReviewAttestation lacks list {field}", f"review_attestations.{field}"))
+    for left, right, code, message in (
+        (att.get("run_id"), run.get("run_id"), "review_attestation_run_mismatch", "ReviewAttestation run_id must match current Run"),
+        (att.get("brief_id"), run.get("brief_id"), "review_attestation_brief_mismatch", "ReviewAttestation brief_id must match current Run"),
+        (att.get("plan_id"), run.get("plan_id"), "review_attestation_plan_mismatch", "ReviewAttestation plan_id must match current Run"),
+        (att.get("review_cycle_id"), run.get("review_cycle_id"), "review_attestation_cycle_mismatch", "ReviewAttestation review_cycle_id must match current Run"),
+        (att.get("executor_actor_id"), run.get("executor_actor_id"), "review_attestation_executor_mismatch", "ReviewAttestation executor_actor_id must match current Run"),
+        (att.get("execution_session_id"), run.get("execution_session_id"), "review_attestation_execution_session_mismatch", "ReviewAttestation execution_session_id must match current Run"),
+    ):
+        if left != right:
+            issues.append(issue("critical", code, message, "review_attestations"))
+    for idx, other in enumerate(ensure_list(graph, "review_attestations")):
+        if not isinstance(other, dict):
+            continue
+        if (
+            other is not att
+            and other.get("run_id") == run.get("run_id")
+            and other.get("brief_id") == run.get("brief_id")
+            and other.get("plan_id") == run.get("plan_id")
+            and other.get("review_cycle_id") == run.get("review_cycle_id")
+            and other.get("conclusion") == "failed"
+        ):
+            issues.append(issue(
+                "critical",
+                "review_cycle_reused_after_failed_attestation",
+                "A new independent review must use a new review_cycle_id after a failed attestation",
+                f"review_attestations[{idx}].review_cycle_id",
+            ))
+    for field in ("executor_actor_id", "execution_session_id", "reviewer_actor_id", "reviewer_session_id"):
+        if has_text(att.get(field)) and not is_safe_anonymous_id(att.get(field)):
+            issues.append(issue(
+                "critical",
+                "review_attestation_identity_not_opaque",
+                "ReviewAttestation identity fields must be short opaque actor/session IDs, not names, emails, paths, or secrets",
+                f"review_attestations.{field}",
+            ))
+    for field in ("executor_actor_id", "execution_session_id"):
+        if has_text(run.get(field)) and not is_safe_anonymous_id(run.get(field)):
+            issues.append(issue(
+                "critical",
+                "run_execution_identity_not_opaque",
+                "Run execution identity fields must be short opaque host/session IDs",
+                f"runs.{field}",
+            ))
+    if att.get("reviewer_actor_id") == run.get("executor_actor_id"):
+        issues.append(issue("critical", "review_attestation_reviewer_actor_not_independent", "Reviewer actor must differ from executor actor", "review_attestations.reviewer_actor_id"))
+    if att.get("reviewer_session_id") == run.get("execution_session_id"):
+        issues.append(issue("critical", "review_attestation_reviewer_session_not_independent", "Reviewer session must differ from execution session", "review_attestations.reviewer_session_id"))
+    subject_hash = review_subject_hash(graph)
+    if att.get("reviewed_subject_hash") != subject_hash:
+        issues.append(issue(
+            "critical",
+            "review_attestation_subject_hash_mismatch",
+            "ReviewAttestation reviewed_subject_hash must match the current canonical review subject",
+            "review_attestations.reviewed_subject_hash",
+        ))
+    if has_text(att.get("input_graph_hash")) and att.get("input_graph_hash") != att.get("reviewed_subject_hash"):
+        issues.append(issue(
+            "critical",
+            "review_attestation_input_hash_mismatch",
+            "ReviewAttestation input_graph_hash must match the reviewed canonical subject for the delivered graph",
+            "review_attestations.input_graph_hash",
+        ))
+    formal_assessments = formal_positive_assessments_for_run(graph, run)
+    required_assessment_ids = {str(item.get("assessment_id")) for item in formal_assessments if has_text(item.get("assessment_id"))}
+    required_entity_ids = {str(item.get("entity_id")) for item in formal_assessments if has_text(item.get("entity_id"))}
+    reviewed_assessment_ids = {str(item) for item in as_list(att.get("reviewed_assessment_ids")) if has_text(item)}
+    reviewed_entity_ids = {str(item) for item in as_list(att.get("reviewed_entity_ids")) if has_text(item)}
+    ids = all_id_maps(graph)
+    for raw in reviewed_assessment_ids:
+        if raw not in ids["assessments"]:
+            issues.append(issue("critical", "review_attestation_reviewed_assessment_missing", "ReviewAttestation reviewed_assessment_ids references a missing Assessment", "review_attestations.reviewed_assessment_ids"))
+    for raw in reviewed_entity_ids:
+        if raw not in ids["entities"]:
+            issues.append(issue("critical", "review_attestation_reviewed_entity_missing", "ReviewAttestation reviewed_entity_ids references a missing Entity", "review_attestations.reviewed_entity_ids"))
+    if not required_assessment_ids.issubset(reviewed_assessment_ids):
+        issues.append(issue(
+            "critical",
+            "review_attestation_assessment_coverage_missing",
+            "ReviewAttestation must cover all current formal positive Assessments",
+            "review_attestations.reviewed_assessment_ids",
+        ))
+    if not required_entity_ids.issubset(reviewed_entity_ids):
+        issues.append(issue(
+            "critical",
+            "review_attestation_entity_coverage_missing",
+            "ReviewAttestation must cover all Entities for current formal positive Assessments",
+            "review_attestations.reviewed_entity_ids",
+        ))
+    if not required_assessment_ids and run.get("status") == "checked":
+        issues.append(issue(
+            "critical",
+            "review_attestation_no_formal_subject",
+            "Independent review attestation cannot approve an empty formal subject",
+            "review_attestations.reviewed_assessment_ids",
+        ))
+    return issues

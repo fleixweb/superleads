@@ -40,9 +40,20 @@
           "source_hint": {"type": ["string", "null"]},
           "source_url": {"type": ["string", "null"]},
           "status": {"type": ["string", "null"]},
-          "note": {"type": ["string", "null"]}
+          "note": {"type": ["string", "null"]},
+          "run_id": {"type": ["string", "null"]},
+          "brief_id": {"type": ["string", "null"]},
+          "plan_id": {"type": ["string", "null"]},
+          "discovery_method": {"type": ["string", "null"], "enum": ["search_web", "user_provided", "manual", "other", null]},
+          "search_log_id": {"type": ["string", "null"]}
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"discovery_method": {"const": "search_web"}}, "required": ["discovery_method"]},
+            "then": {"required": ["run_id", "brief_id", "plan_id", "search_log_id"]}
+          }
+        ]
     },
     "sources": {
       "type": "array",
@@ -379,6 +390,18 @@
       "type": "array",
       "items": {
         "$ref": "delivery-manifest.schema.json"
+      }
+    },
+    "search_logs": {
+      "type": "array",
+      "items": {
+        "$ref": "search-log.schema.json"
+      }
+    },
+    "review_attestations": {
+      "type": "array",
+      "items": {
+        "$ref": "review-attestation.schema.json"
       }
     },
     "inquiries": {

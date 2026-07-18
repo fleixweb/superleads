@@ -227,7 +227,29 @@
         "sample_first_required": {"type": "boolean"},
         "unresolved_questions": {"type": "array", "items": {"type": "string"}},
         "scope_state": {"type": "string", "enum": ["explicit", "inferred_low_risk", "provisional"]},
-        "created_at": {"type": "string", "minLength": 1}
+        "created_at": {"type": "string", "minLength": 1},
+        "geography_contract": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": [
+            "included_geography_literals",
+            "excluded_geography_literals",
+            "admission_definition",
+            "required_selection_rule_ids",
+            "required_exclusion_rule_ids",
+            "allowed_claim_types",
+            "source_relation_requirement"
+          ],
+          "properties": {
+            "included_geography_literals": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+            "excluded_geography_literals": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+            "admission_definition": {"type": "string", "minLength": 1},
+            "required_selection_rule_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+            "required_exclusion_rule_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+            "allowed_claim_types": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/allowedClaimType"}},
+            "source_relation_requirement": {"type": "string", "enum": ["first_party_only", "public_source_allowed"]}
+          }
+        }
       }
     }
   },
@@ -256,6 +278,43 @@
           "single_company_target": {
             "properties": {"entity_literal": {"type": "string", "minLength": 1}},
             "required": ["entity_literal"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["task_mode", "target_country_or_region"],
+        "properties": {
+          "task_mode": {
+            "enum": [
+              "product_scope_research",
+              "keyword_research",
+              "industry_application_research",
+              "market_customer_type_research",
+              "competitor_seed_research"
+            ]
+          },
+          "target_country_or_region": {
+            "anyOf": [
+              {"type": "string", "pattern": "\\S"},
+              {
+                "type": "array",
+                "contains": {"type": "string", "pattern": "\\S"}
+              }
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": ["customer_selection_contract"],
+        "properties": {
+          "customer_selection_contract": {
+            "type": "object",
+            "required": ["geography_contract"],
+            "properties": {
+              "geography_contract": {"type": "object"}
+            }
           }
         }
       }

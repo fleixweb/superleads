@@ -1,7 +1,25 @@
 {
   "extends": "pass_minimal_graph.json",
   "patches": [
-    {"op":"replace","path":"/briefs/0/customer_selection_contract/sample_first_required","value":true},
-    {"op":"replace","path":"/plans/0/sample_first_limit","value":5}
+    {
+      "op": "replace",
+      "path": "/briefs/0/customer_selection_contract/sample_first_required",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/plans/0/sample_first_limit",
+      "value": 5
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "1a05620dae9d4afa7855a9aa405312ff659a3931b63ed63b0925c876911d6613"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "1a05620dae9d4afa7855a9aa405312ff659a3931b63ed63b0925c876911d6613"
+    }
   ]
 }

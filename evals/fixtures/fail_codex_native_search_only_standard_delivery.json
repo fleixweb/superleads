@@ -25,8 +25,12 @@
           "web_search": {
             "status": "available",
             "operations": {
-              "search": {"status": "verified"},
-              "open_source": {"status": "not_verified"}
+              "search": {
+                "status": "verified"
+              },
+              "open_source": {
+                "status": "not_verified"
+              }
             }
           }
         },
@@ -35,6 +39,16 @@
           "source.open": "unknown"
         }
       }
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "20c2d9e4e90c0dae3117f83ba2b117c5571db37b95b2593f273f83d5bcf57884"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "20c2d9e4e90c0dae3117f83ba2b117c5571db37b95b2593f273f83d5bcf57884"
     }
   ]
 }

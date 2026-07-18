@@ -1,8 +1,36 @@
 {
   "extends": "pass_codex_native_search_plus_shell_http_source_open.json",
   "patches": [
-    {"op": "replace", "path": "/runs/0/capabilities/source.open", "value": "unknown"},
-    {"op": "replace", "path": "/runs/0/capability_adapter_reports/0/host_tools/web_search/operations/open_source", "value": {"status": "verified", "original_url": "https://example.com/native", "source_title": "Example source", "raw_excerpt": "Example source provides a visible public statement.", "excerpt_locator": "body"}},
-    {"op": "replace", "path": "/runs/0/capability_adapter_reports/0/canonical_capabilities/source.open", "value": "available"}
+    {
+      "op": "replace",
+      "path": "/runs/0/capabilities/source.open",
+      "value": "unknown"
+    },
+    {
+      "op": "replace",
+      "path": "/runs/0/capability_adapter_reports/0/host_tools/web_search/operations/open_source",
+      "value": {
+        "status": "verified",
+        "original_url": "https://example.com/native",
+        "source_title": "Example source",
+        "raw_excerpt": "Example source provides a visible public statement.",
+        "excerpt_locator": "body"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/runs/0/capability_adapter_reports/0/canonical_capabilities/source.open",
+      "value": "available"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "d41daa3df6a0bc267569ef00133e18ca5be50bc579d3aec45e878f6b87d00bbd"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "d41daa3df6a0bc267569ef00133e18ca5be50bc579d3aec45e878f6b87d00bbd"
+    }
   ]
 }

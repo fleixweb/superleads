@@ -1,1 +1,20 @@
-{"extends":"pass_user_provided_spreadsheet_contact.json","patches":[{"op":"replace","path":"/sources/0/material_role","value":"user_business_dataset"}]}
+{
+  "extends": "pass_user_provided_spreadsheet_contact.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/sources/0/material_role",
+      "value": "user_business_dataset"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "82b9ecb6d10c53f964bc32cd58afe35904a5ac19f45a3ebe5cc599411c812b01"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "82b9ecb6d10c53f964bc32cd58afe35904a5ac19f45a3ebe5cc599411c812b01"
+    }
+  ]
+}

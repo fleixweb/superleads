@@ -1,7 +1,24 @@
 {
   "extends": "pass_codex_shell_http_source_open_standard.json",
   "patches": [
-    {"op": "replace", "path": "/runs/0/platform", "value": "codex_cli "},
-    {"op": "remove", "path": "/runs/0/capability_adapter_report"}
+    {
+      "op": "replace",
+      "path": "/runs/0/platform",
+      "value": "codex_cli "
+    },
+    {
+      "op": "remove",
+      "path": "/runs/0/capability_adapter_report"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "0845777c8148cb5606998cd63708d3665559ff42e5ef4cd83ee33ca7bd98a9f5"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "0845777c8148cb5606998cd63708d3665559ff42e5ef4cd83ee33ca7bd98a9f5"
+    }
   ]
 }

@@ -1,6 +1,38 @@
 {
   "extends": "pass_professional_stage_audio_channel.json",
   "patches": [
-    {"op":"replace","path":"/scope_decisions/0/rule_evaluations/0","value":{"rule_id":"sel_professional_001","rule_kind":"selection","outcome":"unknown","supporting_claim_ids":[],"conflicting_claim_ids":[],"claim_classifications":[{"claim_id":"claim_001","classification":"irrelevant","matched_marker":null,"reason":"已核查材料未能确认本次要求的应用或渠道语境。"}],"reviewed_observation_ids":["obs_001"],"reason":"已核查材料未能确认本次要求的应用或渠道语境。"}}
+    {
+      "op": "replace",
+      "path": "/scope_decisions/0/rule_evaluations/0",
+      "value": {
+        "rule_id": "sel_professional_001",
+        "rule_kind": "selection",
+        "outcome": "unknown",
+        "supporting_claim_ids": [],
+        "conflicting_claim_ids": [],
+        "claim_classifications": [
+          {
+            "claim_id": "claim_001",
+            "classification": "irrelevant",
+            "matched_marker": null,
+            "reason": "已核查材料未能确认本次要求的应用或渠道语境。"
+          }
+        ],
+        "reviewed_observation_ids": [
+          "obs_001"
+        ],
+        "reason": "已核查材料未能确认本次要求的应用或渠道语境。"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "7a3b66ba8846a8f53f867193a155beede8d634982ff305bfead1b9bb93dc4fc2"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "7a3b66ba8846a8f53f867193a155beede8d634982ff305bfead1b9bb93dc4fc2"
+    }
   ]
 }

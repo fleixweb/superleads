@@ -1,4 +1,15 @@
 {
   "extends": "pass_user_provided_spreadsheet_contact.json",
-  "patches": []
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "aeac6d6acd3992d79f806f4e2b7b89613cfbb582d69e42baafce57a8d73abe40"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "aeac6d6acd3992d79f806f4e2b7b89613cfbb582d69e42baafce57a8d73abe40"
+    }
+  ]
 }

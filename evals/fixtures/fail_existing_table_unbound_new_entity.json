@@ -1,7 +1,31 @@
 {
   "extends": "pass_existing_table_enrichment_without_targeting_contract.json",
   "patches": [
-    {"op": "append", "path": "/entities/-", "value": {"entity_id": "ent_unbound_001", "name": "Unbound Buyer", "website": "https://unbound.example", "country_or_region": null, "customer_type": null}},
-    {"op": "replace", "path": "/assessments/0/entity_id", "value": "ent_unbound_001"}
+    {
+      "op": "append",
+      "path": "/entities/-",
+      "value": {
+        "entity_id": "ent_unbound_001",
+        "name": "Unbound Buyer",
+        "website": "https://unbound.example",
+        "country_or_region": null,
+        "customer_type": null
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/assessments/0/entity_id",
+      "value": "ent_unbound_001"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "99d891431167dbff5de913af02f16ebf50cd58eb34e74398fe9d20a9b98f5528"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "99d891431167dbff5de913af02f16ebf50cd58eb34e74398fe9d20a9b98f5528"
+    }
   ]
 }

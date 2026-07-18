@@ -1,7 +1,25 @@
 {
   "extends": "pass_professional_stage_audio_channel.json",
   "patches": [
-    {"op":"replace","path":"/observations/0/raw_excerpt","value":"Example Buyer operates as a professional stage audio installation service through its professional division. Example Buyer also has other consumer lines. Example Buyer Contact: sales@example.com"},
-    {"op":"replace","path":"/scope_decisions/0/decision_summary","value":"公开材料明确显示符合本次方向的专业业务线。"}
+    {
+      "op": "replace",
+      "path": "/observations/0/raw_excerpt",
+      "value": "Example Buyer operates as a professional stage audio installation service through its professional division. Example Buyer also has other consumer lines. Example Buyer Contact: sales@example.com"
+    },
+    {
+      "op": "replace",
+      "path": "/scope_decisions/0/decision_summary",
+      "value": "公开材料明确显示符合本次方向的专业业务线。"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "4b7e3231277e25e0bca3a18c8b481a30a61aa99afb244a5dfc510a9a83ef9949"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "4b7e3231277e25e0bca3a18c8b481a30a61aa99afb244a5dfc510a9a83ef9949"
+    }
   ]
 }

@@ -1,10 +1,44 @@
 {
   "extends": "pass_minimal_graph.json",
   "patches": [
-    {"op": "replace", "path": "/briefs/0/task_mode", "value": "single_company_analysis"},
-    {"op": "remove", "path": "/briefs/0/customer_selection_contract"},
-    {"op": "add", "path": "/briefs/0/single_company_target", "value": {"user_statement": "请分析 Example Buyer。", "company_name": "Example Buyer", "website_or_domain": "https://example.com", "source_id": null, "entity_literal": null, "resolved_entity_id": "ent_001"}},
-    {"op": "remove", "path": "/scope_decisions/0"},
-    {"op": "remove", "path": "/assessments/0/scope_decision_id"}
+    {
+      "op": "replace",
+      "path": "/briefs/0/task_mode",
+      "value": "single_company_analysis"
+    },
+    {
+      "op": "remove",
+      "path": "/briefs/0/customer_selection_contract"
+    },
+    {
+      "op": "add",
+      "path": "/briefs/0/single_company_target",
+      "value": {
+        "user_statement": "请分析 Example Buyer。",
+        "company_name": "Example Buyer",
+        "website_or_domain": "https://example.com",
+        "source_id": null,
+        "entity_literal": null,
+        "resolved_entity_id": "ent_001"
+      }
+    },
+    {
+      "op": "remove",
+      "path": "/scope_decisions/0"
+    },
+    {
+      "op": "remove",
+      "path": "/assessments/0/scope_decision_id"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "36f4bc786f336b3a3fb62e6f60fe417401f47c905751d8c7eb650d149f8123a9"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "36f4bc786f336b3a3fb62e6f60fe417401f47c905751d8c7eb650d149f8123a9"
+    }
   ]
 }

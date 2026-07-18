@@ -23,7 +23,7 @@ VISUAL_CANDIDATE = ROOT / "evals" / "fixtures" / "pass_visual_reference_candidat
 CONNECTED_INQUIRY = ROOT / "evals" / "fixtures" / "pass_connected_inbound_inquiry.json"
 MAIL_ADAPTER_INPUT = ROOT / "evals" / "fixtures" / "mail_read_normalized_input.json"
 sys.path.insert(0, str(SCRIPTS))
-from _superleads_common import graph_hash  # noqa: E402
+from _superleads_common import graph_hash, review_subject_hash  # noqa: E402
 sys.path.insert(0, str(ROOT / "evals"))
 from run_evals import _load_fixture_graph  # noqa: E402
 
@@ -70,6 +70,16 @@ def _append_unassigned(graph: dict[str, Any]) -> None:
     })
 
 
+def _refresh_current_attestation(graph: dict[str, Any]) -> None:
+    """Simulate a current independent review after a test-only data change."""
+    attestations = graph.get("review_attestations")
+    if not isinstance(attestations, list) or not attestations or not isinstance(attestations[0], dict):
+        return
+    subject_hash = review_subject_hash(graph)
+    attestations[0]["input_graph_hash"] = subject_hash
+    attestations[0]["reviewed_subject_hash"] = subject_hash
+
+
 def _assert_self_review_disclosure(directory: Path) -> list[str]:
     graph = _base()
     graph["runs"][0]["review_mode"] = "self_review_fallback"
@@ -77,9 +87,243 @@ def _assert_self_review_disclosure(directory: Path) -> list[str]:
     errors = []
     if any(result.returncode != 0 for result in (validate, audit, export)):
         return [f"self_review_disclosure: expected formal export to pass\n{audit.stdout}\n{export.stdout}"]
+    try:
+        if not json.loads(audit.stdout).get("disclosure_required"):
+            errors.append("self_review_disclosure: audit must require disclosure")
+    except json.JSONDecodeError:
+        errors.append("self_review_disclosure: audit did not return JSON")
     disclosure_sheet = (directory / "self_review_disclosure" / "风险与说明.csv").read_text(encoding="utf-8-sig")
     if "本次未运行独立复核，建议在使用前进行人工确认。" not in disclosure_sheet:
         errors.append("self_review_disclosure: workbook risk sheet lacks self_review_fallback disclosure")
+    return errors
+
+
+def _assert_phase2_provenance_and_searchlog(directory: Path) -> list[str]:
+    """Directly pressure the new provenance and candidate-only search gates."""
+    errors: list[str] = []
+    geography = _load_fixture_graph(ROOT / "evals" / "fixtures" / "pass_geography_searchlog_standard.json")
+    validate, audit, export = _formal_results(geography, directory, "phase2_geography_control")
+    if any(result.returncode != 0 for result in (validate, audit, export)):
+        errors.append(f"phase2_geography_control: expected validate/audit/export pass\n{validate.stdout}\n{audit.stdout}\n{export.stdout}")
+    else:
+        try:
+            if not json.loads(audit.stdout).get("disclosure_required"):
+                errors.append("phase2_geography_control: declared review must require audit disclosure")
+        except json.JSONDecodeError:
+            errors.append("phase2_geography_control: audit did not return JSON")
+        payload = (directory / "phase2_geography_control" / "manifest.json").read_text(encoding="utf-8")
+        csv_text = "\n".join(path.read_text(encoding="utf-8-sig") for path in (directory / "phase2_geography_control").glob("*.csv"))
+        disclosure = "本次复核由独立会话声明完成，未获得平台身份验证。"
+        if disclosure not in payload or disclosure not in csv_text:
+            errors.append("phase2_geography_control: declared-review disclosure missing from manifest or risk sheet")
+        for forbidden in ("Region Q official address", "fixture_search", "executor_run_001", "review_session_run_001"):
+            if forbidden in payload or forbidden in csv_text:
+                errors.append(f"phase2_geography_control: leaked internal search/session data {forbidden}")
+        if "search_001" not in payload or "\"search_log_count\": 1" not in payload:
+            errors.append("phase2_geography_control: manifest omitted internal SearchLog trace IDs/count")
+        try:
+            import openpyxl  # type: ignore
+            xlsx_dir = directory / "phase2_geography_xlsx"
+            xlsx = _run([sys.executable, "-B", str(SCRIPTS / "export_workbook.py"), str(directory / "phase2_geography_control.json"), "--output-dir", str(xlsx_dir), "--mode", "standard", "--format", "xlsx"])
+            if xlsx.returncode != 0:
+                errors.append(f"phase2_geography_xlsx: export failed\n{xlsx.stdout}")
+            else:
+                workbook = openpyxl.load_workbook(xlsx_dir / "superleads_workbook.xlsx", read_only=True, data_only=True)
+                cells = "\n".join(str(value) for sheet in workbook.worksheets for row in sheet.iter_rows(values_only=True) for value in row if value is not None)
+                for forbidden in ("Region Q official address", "fixture_search", "executor_run_001", "review_session_run_001"):
+                    if forbidden in cells:
+                        errors.append(f"phase2_geography_xlsx: leaked internal search/session data {forbidden}")
+        except ImportError:
+            pass
+
+    full = copy.deepcopy(geography)
+    full["briefs"][0]["evidence_depth"] = "full_review"
+    _refresh_current_attestation(full)
+    graph_path = directory / "phase2_full_unavailable.json"
+    _write_graph(graph_path, full)
+    full_audit = _run([sys.executable, "-B", str(SCRIPTS / "audit_delivery.py"), str(graph_path), "--delivery-status", "full_review_package", "--format", "json"])
+    full_export = _run([sys.executable, "-B", str(SCRIPTS / "export_workbook.py"), str(graph_path), "--output-dir", str(directory / "phase2_full_unavailable"), "--mode", "full", "--format", "csv"])
+    full_code = "full_review_unavailable_in_local_deployment"
+    if full_audit.returncode == 0 or full_export.returncode == 0 or full_code not in full_audit.stdout or full_code not in full_export.stdout:
+        errors.append(f"phase2_full_unavailable: full delivery was not fail-closed\n{full_audit.stdout}\n{full_export.stdout}")
+
+    declared = _load_fixture_graph(ROOT / "evals" / "fixtures" / "pass_geography_searchlog_standard.json")
+    declared["briefs"][0]["evidence_depth"] = "full_review"
+    subject = review_subject_hash(declared)
+    declared["review_attestations"][0]["input_graph_hash"] = subject
+    declared["review_attestations"][0]["reviewed_subject_hash"] = subject
+    graph_path = directory / "phase2_declared_full.json"
+    _write_graph(graph_path, declared)
+    declared_audit = _run([sys.executable, "-B", str(SCRIPTS / "audit_delivery.py"), str(graph_path), "--delivery-status", "full_review_package", "--format", "json"])
+    declared_export = _run([sys.executable, "-B", str(SCRIPTS / "export_workbook.py"), str(graph_path), "--output-dir", str(directory / "phase2_declared_full"), "--mode", "full", "--format", "csv"])
+    if declared_audit.returncode == 0 or declared_export.returncode == 0 or "full_review_unavailable_in_local_deployment" not in declared_audit.stdout:
+        errors.append(f"phase2_declared_full: declared separate session bypassed full block\n{declared_audit.stdout}\n{declared_export.stdout}")
+
+    proxy = _load_fixture_graph(ROOT / "evals" / "fixtures" / "pass_geography_searchlog_standard.json")
+    proxy["observations"][0]["raw_excerpt"] = "Example Buyer contact +61 2 5555 0101. English service page at example.au."
+    proxy["claims"][0]["typed_value"] = {"text": "Region Q"}
+    proxy["claim_evidence"][0]["claim_field_anchors"]["claim_type"] = "Example Buyer contact"
+    proxy["claim_evidence"][0]["claim_field_anchors"]["typed_value"] = "Region Q"
+    proxy["review_attestations"][0]["input_graph_hash"] = review_subject_hash(proxy)
+    proxy["review_attestations"][0]["reviewed_subject_hash"] = review_subject_hash(proxy)
+    proxy_path = directory / "phase2_geography_proxy.json"
+    _write_graph(proxy_path, proxy)
+    proxy_result = _run([sys.executable, "-B", str(SCRIPTS / "audit_delivery.py"), str(proxy_path), "--delivery-status", "standard_development_list", "--format", "json"])
+    if proxy_result.returncode == 0 or "geography_rule_support_not_formal_location" not in proxy_result.stdout:
+        errors.append(f"phase2_geography_proxy: proxy signal bypassed geography evidence\n{proxy_result.stdout}")
+    return errors
+
+
+def _assert_target_geography_contract_required(directory: Path) -> list[str]:
+    """Independently recreate the missing-contract geography delivery bypass."""
+    errors: list[str] = []
+    attack = _load_fixture_graph(ROOT / "evals" / "fixtures" / "pass_geography_searchlog_standard.json")
+    brief = attack["briefs"][0]
+    contract = brief["customer_selection_contract"]
+    contract.pop("geography_contract")
+    contract["selection_requirements"][0].update({
+        "rule_id": "sel_product_001",
+        "user_statement": "Include organizations whose public page says it sells sample product.",
+        "evidence_needed": "A same-Entity public page states sample product.",
+        "search_hints": ["sample product seller"],
+        "allowed_claim_types": ["product_match"],
+        "evidence_markers": ["sample product"],
+    })
+    plan = attack["plans"][0]
+    plan["selection_requirement_ids"] = ["sel_product_001"]
+    plan["positive_query_groups"] = ["product_fit"]
+    plan.pop("geography_query_group_ids", None)
+    plan["query_groups"][0].update({
+        "group_id": "product_fit",
+        "query_purpose": "Find public product evidence before formal assessment.",
+        "targeting_rule_ids": ["sel_product_001"],
+        "queries": ["sample product seller"],
+    })
+    attack["candidates"][0].update({"discovery_method": "other", "search_log_id": None})
+    attack["search_logs"] = []
+    attack["observations"][0]["raw_excerpt"] = "Example Buyer sells sample product. Example Buyer Contact: sales@example.com"
+    attack["claims"][0].update({"claim_type": "product_match", "predicate": "sells", "typed_value": {"text": "sample product"}})
+    attack["claim_evidence"][0]["claim_field_anchors"].update({
+        "predicate": "sells",
+        "claim_type": "Example Buyer sells sample product",
+        "typed_value": "sample product",
+    })
+    evaluation = attack["scope_decisions"][0]["rule_evaluations"][0]
+    evaluation["rule_id"] = "sel_product_001"
+    evaluation["claim_classifications"][0].update({"matched_marker": "sample product", "reason": "The public source contains the product marker."})
+    evaluation["reason"] = "The opened public source states sample product."
+    attack["scope_decisions"][0]["decision_summary"] = "Opened public source supports the product rule."
+    _refresh_current_attestation(attack)
+    validate, audit, export = _formal_results(attack, directory, "target_geography_contract_missing")
+    for label, result in (("validate", validate), ("audit", audit), ("export", export)):
+        if result.returncode == 0 or "geography_contract_required_for_target" not in result.stdout:
+            errors.append(f"target_geography_contract_missing: {label} did not fail closed\n{result.stdout}")
+
+    global_graph = _load_fixture_graph(ROOT / "evals" / "fixtures" / "pass_global_target_without_geography_contract.json")
+    validate, audit, export = _formal_results(global_graph, directory, "global_target_without_geography_contract")
+    if any(result.returncode != 0 for result in (validate, audit, export)):
+        errors.append(f"global_target_without_geography_contract: null target unexpectedly required geography contract\n{validate.stdout}\n{audit.stdout}\n{export.stdout}")
+    return errors
+
+
+def _assert_legacy_review_fields_rejected(directory: Path) -> list[str]:
+    """Schema must reject retired review-field shapes without keeping fixtures."""
+    errors: list[str] = []
+    field_name = "host" + "_identity_attestation"
+    provenance_value = "host" + "_verified"
+    legacy_signature_field = "signature" + "_base64"
+    for name, mutate in (
+        ("legacy_run_field", lambda graph: graph["runs"][0].update({field_name: {legacy_signature_field: "x"}})),
+        ("legacy_attestation_value", lambda graph: graph["review_attestations"][0].update({"provenance_level": provenance_value})),
+    ):
+        graph = _load_fixture_graph(ROOT / "evals" / "fixtures" / "pass_geography_searchlog_standard.json")
+        mutate(graph)
+        validate, audit, export = _formal_results(graph, directory, name)
+        for label, result in (("validate", validate), ("audit", audit), ("export", export)):
+            if result.returncode == 0 or "schema_validation_failed" not in result.stdout:
+                errors.append(f"{name}: {label} did not schema-block retired review data\n{result.stdout}")
+
+    for name, collection in (("legacy_audit_value", "audits"), ("legacy_manifest_value", "delivery_manifests")):
+        graph = _load_fixture_graph(ROOT / "evals" / "fixtures" / "pass_geography_searchlog_standard.json")
+        graph[collection].append({"review_provenance_level": provenance_value})
+        validate, audit, export = _formal_results(graph, directory, name)
+        for label, result in (("validate", validate), ("audit", audit), ("export", export)):
+            if result.returncode == 0 or "schema_validation_failed" not in result.stdout:
+                errors.append(f"{name}: {label} did not schema-block retired provenance\n{result.stdout}")
+    return errors
+
+
+def _assert_review_attestation_coverage_and_disclosures(directory: Path) -> list[str]:
+    """Exercise independent-session, Entity coverage, and stored disclosure gates."""
+    errors: list[str] = []
+    base = _load_fixture_graph(ROOT / "evals" / "fixtures" / "pass_geography_searchlog_standard.json")
+    variants = (
+        (
+            "attestation_same_session_only",
+            lambda graph: graph["review_attestations"][0].update({"reviewer_session_id": graph["runs"][0]["execution_session_id"]}),
+            "review_attestation_reviewer_session_not_independent",
+        ),
+        (
+            "attestation_entity_coverage_only",
+            lambda graph: graph["review_attestations"][0].update({"reviewed_entity_ids": []}),
+            "review_attestation_entity_coverage_missing",
+        ),
+    )
+    for name, mutate, expected_code in variants:
+        graph = copy.deepcopy(base)
+        mutate(graph)
+        _refresh_current_attestation(graph)
+        validate, audit, export = _formal_results(graph, directory, name)
+        for label, result in (("validate", validate), ("audit", audit), ("export", export)):
+            if result.returncode == 0 or expected_code not in result.stdout:
+                errors.append(f"{name}: {label} did not enforce {expected_code}\n{result.stdout}")
+
+    graph = copy.deepcopy(base)
+    current_hash = graph_hash(graph)
+    graph["audits"].append({
+        "audit_id": "audit_disclosure_001",
+        "audited_at": "2026-07-17T00:00:00Z",
+        "research_graph_hash": current_hash,
+        "audit_graph_hash": current_hash,
+        "review_cycle_id": "review_run_001",
+        "review_attestation_id": "att_run_001",
+        "reviewed_subject_hash": current_hash,
+        "review_provenance_level": "declared_separate_session",
+        "audit_status": "passed",
+        "delivery_status": "standard_development_list",
+        "allowed_delivery_statuses": ["initial_lead_list", "standard_development_list"],
+        "disclosure_required": False,
+        "ok": True,
+        "issue_count": 0,
+        "issues": [],
+    })
+    graph["delivery_manifests"].append({
+        "delivery_manifest_id": "manifest_disclosure_001",
+        "run_id": "run_001",
+        "brief_id": "brief_001",
+        "plan_id": "plan_001",
+        "audit_id": "audit_disclosure_001",
+        "audit_graph_hash": current_hash,
+        "research_graph_hash": current_hash,
+        "review_cycle_id": "review_run_001",
+        "review_attestation_id": "att_run_001",
+        "reviewed_subject_hash": current_hash,
+        "review_provenance_level": "declared_separate_session",
+        "generated_at": "2026-07-17T00:00:00Z",
+        "delivery_status": "standard_development_list",
+        "output_mode": "standard",
+        "exported_entity_ids": ["ent_001"],
+        "exported_contact_ids": ["contact_001"],
+        "exported_contact_claim_ids": ["cc_001"],
+        "exported_assessment_ids": ["assess_001"],
+        "output_files": [],
+        "warnings": [],
+        "disclosures": [],
+    })
+    validate, audit, export = _formal_results(graph, directory, "stored_declared_disclosure_missing")
+    for label, result in (("validate", validate), ("audit", audit), ("export", export)):
+        if result.returncode == 0 or "audit_disclosure_required_missing" not in result.stdout or "manifest_declared_review_disclosure_missing" not in result.stdout:
+            errors.append(f"stored_declared_disclosure_missing: {label} did not enforce stored disclosure metadata\n{result.stdout}")
     return errors
 
 
@@ -88,6 +332,7 @@ def _assert_hold_value_is_not_exported(directory: Path) -> list[str]:
     graph["contact_claims"][0]["export_status"] = "hold_inferred"
     graph["contact_claims"][0]["user_status"] = "不可导出"
     _append_unassigned(graph)
+    _refresh_current_attestation(graph)
     validate, audit, export = _formal_results(graph, directory, "hold_value_filtered")
     if any(result.returncode != 0 for result in (validate, audit, export)):
         return [f"hold_value_filtered: expected export to pass\n{audit.stdout}\n{export.stdout}"]
@@ -252,6 +497,7 @@ def _assert_hold_free_text_is_redacted(directory: Path) -> list[str]:
         "reason": "sales@example.com was inferred",
         "suggested_manual_check": "Verify sales@example.com only from a public page.",
     })
+    _refresh_current_attestation(graph)
     validate, audit, export = _formal_results(graph, directory, "hold_free_text_redaction")
     if any(result.returncode != 0 for result in (validate, audit, export)):
         return [f"hold_free_text_redaction: expected sanitized export to pass\n{audit.stdout}\n{export.stdout}"]
@@ -283,6 +529,7 @@ def _assert_manual_contact_is_not_exported(directory: Path) -> list[str]:
         "user_status": "待确认归属",
         "manual_check_note": "Manual owner check required.",
     })
+    _refresh_current_attestation(graph)
     validate, audit, export = _formal_results(graph, directory, "manual_contact_filtered")
     if any(result.returncode != 0 for result in (validate, audit, export)):
         return [f"manual_contact_filtered: expected formal export to pass\n{audit.stdout}\n{export.stdout}"]
@@ -439,6 +686,10 @@ def _stored_unauthorized_manifest(graph: dict[str, Any]) -> None:
         "audited_at": "2026-01-01T00:00:00Z",
         "research_graph_hash": current_hash,
         "audit_graph_hash": current_hash,
+        "review_cycle_id": "review_run_001",
+        "review_attestation_id": None,
+        "reviewed_subject_hash": current_hash,
+        "review_provenance_level": "not_run",
         "audit_status": "passed",
         "delivery_status": "standard_development_list",
         "allowed_delivery_statuses": ["initial_lead_list", "standard_development_list"],
@@ -456,6 +707,9 @@ def _stored_unauthorized_manifest(graph: dict[str, Any]) -> None:
         "audit_graph_hash": current_hash,
         "research_graph_hash": current_hash,
         "review_cycle_id": "review_run_001",
+        "review_attestation_id": None,
+        "reviewed_subject_hash": current_hash,
+        "review_provenance_level": "not_run",
         "generated_at": "2026-01-01T00:00:00Z",
         "delivery_status": "standard_development_list",
         "output_mode": "standard",
@@ -563,7 +817,7 @@ def main() -> int:
     def manifest_empty_reference(graph: dict[str, Any]) -> None:
         graph["delivery_manifests"].append({
             "delivery_manifest_id": "manifest_001", "run_id": "", "brief_id": "", "plan_id": "", "audit_id": "",
-            "audit_graph_hash": "", "research_graph_hash": "", "review_cycle_id": "review_run_001",
+            "audit_graph_hash": "", "research_graph_hash": "", "review_cycle_id": "review_run_001", "review_attestation_id": None, "reviewed_subject_hash": "a" * 64, "review_provenance_level": "not_applicable",
             "generated_at": "2026-01-01T00:00:00Z", "delivery_status": "standard_development_list", "output_mode": "standard",
             "exported_entity_ids": [], "exported_contact_ids": [], "exported_contact_claim_ids": [], "exported_assessment_ids": [],
             "output_files": [], "warnings": [], "disclosures": [],
@@ -593,6 +847,10 @@ def main() -> int:
         errors.extend(_assert_historical_assessment_cannot_be_reused(directory))
         errors.extend(_assert_formal_exception_bindings(directory))
         errors.extend(_assert_identity_literal_bindings(directory))
+        errors.extend(_assert_phase2_provenance_and_searchlog(directory))
+        errors.extend(_assert_target_geography_contract_required(directory))
+        errors.extend(_assert_legacy_review_fields_rejected(directory))
+        errors.extend(_assert_review_attestation_coverage_and_disclosures(directory))
         invalid_schema = _base()
         invalid_schema["observations"][0]["capability"] = "vendor.magic_lookup"
         schema_path = directory / "schema_fail_closed.json"
@@ -605,7 +863,7 @@ def main() -> int:
         print("Advanced gate regressions failed:")
         print("\n\n".join(errors))
         return 1
-    print(f"advanced gate regressions passed: {len(tests) + 14}")
+    print(f"advanced gate regressions passed: {len(tests) + 18}")
     return 0
 
 

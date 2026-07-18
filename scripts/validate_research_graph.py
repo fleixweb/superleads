@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -14,16 +15,22 @@ from _superleads_common import (
     CONTACT_SOURCE_ALLOWED_TYPES,
     ID_FIELDS,
     ARTIFACT_MEDIA,
+    AUDIT_REVIEW_PROVENANCE_LEVELS,
     MATERIAL_ROLES,
     RULE_ALLOWED_CLAIM_TYPES,
+    REVIEW_ATTESTATION_CONCLUSIONS,
+    REVIEW_PROVENANCE_LEVELS,
     SCOPE_CLAIM_CLASSIFICATIONS,
     SCOPE_DECISION_STATUSES,
     SCOPE_RULE_OUTCOMES,
+    SEARCH_LOG_RESULT_USES,
     all_id_maps,
     as_list,
     canonical_contact_user_status,
     claim_value_is_anchored_in_excerpt,
     customer_selection_contract,
+    current_brief,
+    current_run,
     entity_domain_matches_identity_literal,
     entity_matches_identity_literal,
     entity_name_matches_identity_literal,
@@ -35,6 +42,7 @@ from _superleads_common import (
     ensure_list,
     graph_hash,
     has_text,
+    is_safe_anonymous_id,
     identity_reference_match,
     normalized_identity_domain,
     CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES,
@@ -52,6 +60,10 @@ from _superleads_common import (
     issue,
     load_json,
     normalized_contact_derives_from_literal,
+    normalize_region_values,
+    review_subject_hash,
+    review_provenance_snapshot,
+    validate_current_review_attestation,
     text_contains,
     text_contains_exact_phrase,
 )
@@ -201,7 +213,7 @@ def _run_allows_delivery_status(run: dict[str, Any], brief: dict[str, Any] | Non
     mode = run.get("review_mode")
     if status == "standard_development_list":
         return mode in {"independent", "self_review_fallback"}
-    return mode == "independent" and isinstance(brief, dict) and brief.get("evidence_depth") == "full_review"
+    return False
 
 
 def _require_id(item: dict[str, Any], field: str, key: str, index: int, issues: list[dict[str, str]]) -> None:
@@ -336,11 +348,201 @@ def _formal_exception_binding_issues(
     return issues
 
 
+def _query_group_ids(plan: dict[str, Any] | None) -> set[str]:
+    result: set[str] = set()
+    if not isinstance(plan, dict):
+        return result
+    for group in as_list(plan.get("query_groups")):
+        if not isinstance(group, dict):
+            continue
+        for field in ("group_id", "query_group_id", "query_purpose", "purpose"):
+            if has_text(group.get(field)):
+                result.add(str(group.get(field)))
+                break
+    return result
+
+
+def _valid_timestamp(value: Any) -> bool:
+    if not has_text(value):
+        return False
+    try:
+        datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    return True
+
+
+def _geography_support_is_formal(
+    claim: dict[str, Any],
+    entity_id: Any,
+    target_literals: list[str],
+    geography_contract: dict[str, Any],
+    rule: dict[str, Any] | None,
+    ids: dict[str, dict[str, dict[str, Any]]],
+    evidence_by_claim: dict[str, list[dict[str, Any]]],
+) -> bool:
+    """Require a same-Entity public source literal for a geography decision."""
+    allowed_types = set(as_list(geography_contract.get("allowed_claim_types")))
+    rule_allowed_types = set(as_list(rule.get("allowed_claim_types"))) if isinstance(rule, dict) else set()
+    if (
+        not target_literals
+        or claim.get("entity_id") != entity_id
+        or claim.get("claim_type") not in allowed_types
+        or claim.get("claim_type") not in rule_allowed_types
+    ):
+        return False
+    typed_value = json.dumps(claim.get("typed_value"), ensure_ascii=False)
+    if not any(text_contains_exact_phrase(typed_value, literal) for literal in target_literals):
+        return False
+    for evidence in evidence_by_claim.get(str(claim.get("claim_id")), []):
+        if evidence.get("relation") != "supports":
+            continue
+        observation = ids["observations"].get(evidence.get("observation_id"))
+        source = ids["sources"].get(observation.get("source_id")) if isinstance(observation, dict) else None
+        if not isinstance(observation, dict) or not isinstance(source, dict):
+            continue
+        if (
+            observation.get("entity_id") != entity_id
+            or observation.get("access_status") in BLOCKED_ACCESS
+            or observation.get("capability") not in CLAIM_SUPPORT_ALLOWED_CAPABILITIES
+            or source.get("provenance") != "discovered_public"
+            or not source_evidence_scope(source, observation, "assessment_basis")[0]
+        ):
+            continue
+        if geography_contract.get("source_relation_requirement") == "first_party_only" and source.get("publisher_relation") != "first_party":
+            continue
+        if any(text_contains_exact_phrase(observation.get("raw_excerpt"), literal) for literal in target_literals):
+            return True
+    return False
+
+
+def _search_log_issues(
+    graph: dict[str, Any],
+    ids: dict[str, dict[str, dict[str, Any]]],
+) -> list[dict[str, str]]:
+    issues: list[dict[str, str]] = []
+    current = current_run(graph)
+    logs_by_id = ids["search_logs"]
+    candidate_refs: dict[str, set[str]] = {}
+    for idx, log in enumerate(ensure_list(graph, "search_logs")):
+        if not isinstance(log, dict):
+            continue
+        path = f"search_logs[{idx}]"
+        for field, collection in (("run_id", "runs"), ("brief_id", "briefs"), ("plan_id", "plans")):
+            raw = log.get(field)
+            if not has_text(raw) or raw not in ids[collection]:
+                issues.append(issue("critical", "search_log_reference_missing", f"SearchLog references missing {field}", f"{path}.{field}"))
+        run = ids["runs"].get(log.get("run_id"))
+        brief = ids["briefs"].get(log.get("brief_id"))
+        plan = ids["plans"].get(log.get("plan_id"))
+        if isinstance(run, dict):
+            if log.get("brief_id") != run.get("brief_id") or log.get("plan_id") != run.get("plan_id"):
+                issues.append(issue("critical", "search_log_run_binding_mismatch", "SearchLog Brief/Plan must match its Run", path))
+            reports = adapter_reports_from_run(run)
+            if not reports:
+                issues.append(issue("critical", "search_log_adapter_missing", "SearchLog requires a verified Run capability adapter for its concrete search tool", f"{path}.concrete_tool"))
+            else:
+                adapter_result = resolve_capability_adapter_reports(reports)
+                if not codex_adapter_allows_observation(adapter_result, "search.web", log.get("concrete_tool")):
+                    issues.append(issue("critical", "search_log_tool_not_allowed_by_adapter", "SearchLog concrete_tool is not authorized by this Run's verified search provider", f"{path}.concrete_tool"))
+            capabilities = run.get("capabilities")
+            if not isinstance(capabilities, dict) or capabilities.get("search.web") != "available":
+                issues.append(issue("critical", "search_log_capability_not_available", "SearchLog requires an explicit search.web=available Run capability", f"{path}.capability"))
+        contract = customer_selection_contract(brief)
+        if isinstance(plan, dict):
+            allowed_group_ids = _query_group_ids(plan)
+            if allowed_group_ids and log.get("query_group_id") not in allowed_group_ids:
+                issues.append(issue("critical", "search_log_query_group_missing", "SearchLog query_group_id must match a query group in its Plan", f"{path}.query_group_id"))
+        if not isinstance(contract, dict):
+            issues.append(issue("critical", "search_log_contract_missing", "SearchLog requires the Brief customer selection contract", path))
+        else:
+            selection_rules, _ = targeting_rule_maps(contract)
+            if log.get("customer_selection_contract_id") != contract.get("targeting_contract_id"):
+                issues.append(issue("critical", "search_log_contract_mismatch", "SearchLog customer_selection_contract_id must match its Brief", f"{path}.customer_selection_contract_id"))
+            if log.get("selection_rule_id") not in selection_rules:
+                issues.append(issue("critical", "search_log_selection_rule_missing", "SearchLog selection_rule_id must be a current Brief selection rule", f"{path}.selection_rule_id"))
+        if log.get("capability") != "search.web":
+            issues.append(issue("critical", "search_log_capability_invalid", "SearchLog capability must be search.web", f"{path}.capability"))
+        if not has_text(log.get("concrete_tool")) or str(log.get("concrete_tool")) in {"curl", "wget", "python_requests"}:
+            issues.append(issue("critical", "search_log_concrete_tool_invalid", "SearchLog concrete_tool must identify the search provider, not a source-opening reader", f"{path}.concrete_tool"))
+        if not _valid_timestamp(log.get("queried_at")):
+            issues.append(issue("critical", "search_log_queried_at_missing", "SearchLog requires queried_at", f"{path}.queried_at"))
+        if not has_text(log.get("query_text")):
+            issues.append(issue("critical", "search_log_query_missing", "SearchLog requires a non-empty query_text", f"{path}.query_text"))
+        if contains_local_path(log.get("query_text")) or "file:" in str(log.get("query_text") or "").casefold():
+            issues.append(issue("critical", "search_log_query_contains_local_path", "SearchLog query_text must not contain a local path or file URI", f"{path}.query_text"))
+        if __import__("re").search(r"(?i)\b(?:cookie|authorization|bearer|api[_ -]?key|access[_ -]?token|password)\b", str(log.get("query_text") or "")):
+            issues.append(issue("critical", "search_log_query_contains_sensitive_data", "SearchLog query_text must not contain secret or credential material", f"{path}.query_text"))
+        if log.get("result_use") not in SEARCH_LOG_RESULT_USES:
+            issues.append(issue("critical", "search_log_result_use_invalid", "SearchLog result_use is invalid", f"{path}.result_use"))
+        geography = [item for item in as_list(log.get("targeted_geography_literals")) if has_text(item)]
+        if not geography or len(geography) != len(as_list(log.get("targeted_geography_literals"))):
+            issues.append(issue("critical", "search_log_geography_missing", "SearchLog requires explicit non-empty targeted_geography_literals", f"{path}.targeted_geography_literals"))
+        if isinstance(contract, dict):
+            geography_contract = contract.get("geography_contract")
+            if not isinstance(geography_contract, dict):
+                issues.append(issue("critical", "search_log_geography_contract_missing", "SearchLog requires a current Brief geography contract", path))
+            else:
+                allowed_geography = normalize_region_values(geography_contract.get("included_geography_literals"))
+                if not normalize_region_values(geography).issubset(allowed_geography):
+                    issues.append(issue("critical", "search_log_target_geography_mismatch", "SearchLog targeted geography must be drawn from current Brief literals", f"{path}.targeted_geography_literals"))
+                if log.get("selection_rule_id") not in set(as_list(geography_contract.get("required_selection_rule_ids"))):
+                    issues.append(issue("critical", "search_log_geography_rule_mismatch", "SearchLog selection_rule_id must be a Brief geography selection rule", f"{path}.selection_rule_id"))
+        for ref_idx, ref in enumerate(as_list(log.get("result_refs"))):
+            ref_path = f"{path}.result_refs[{ref_idx}]"
+            if not isinstance(ref, dict):
+                issues.append(issue("critical", "search_log_result_ref_invalid", "SearchLog result_refs must be structured candidate locators", ref_path))
+                continue
+            candidate_id = ref.get("candidate_id")
+            if not is_safe_public_http_url(ref.get("result_url")):
+                issues.append(issue("critical", "search_log_result_url_not_public", "SearchLog result_url must be a safe public HTTP(S) locator", f"{ref_path}.result_url"))
+            for field in ("result_title", "result_locator"):
+                value = ref.get(field)
+                if contains_local_path(value) or "file:" in str(value or "").casefold():
+                    issues.append(issue("critical", "search_log_result_ref_contains_local_path", "SearchLog result locator fields must not contain a local path or file URI", f"{ref_path}.{field}"))
+                if __import__("re").search(r"(?i)\b(?:cookie|authorization|bearer|api[_ -]?key|access[_ -]?token|password)\b", str(value or "")):
+                    issues.append(issue("critical", "search_log_result_ref_contains_sensitive_data", "SearchLog result locator fields must not contain secret or credential material", f"{ref_path}.{field}"))
+            candidate = ids["candidates"].get(candidate_id)
+            if not isinstance(candidate, dict):
+                issues.append(issue("critical", "search_log_candidate_missing", "SearchLog result ref must point to an existing Candidate", f"{ref_path}.candidate_id"))
+                continue
+            candidate_refs.setdefault(str(candidate_id), set()).add(str(log.get("search_log_id")))
+            if candidate.get("discovery_method") == "search_web" and candidate.get("search_log_id") != log.get("search_log_id"):
+                issues.append(issue("critical", "search_log_candidate_reverse_link_missing", "SearchLog candidate ref must agree with Candidate.search_log_id", ref_path))
+    for idx, candidate in enumerate(ensure_list(graph, "candidates")):
+        if not isinstance(candidate, dict) or candidate.get("discovery_method") != "search_web":
+            continue
+        path = f"candidates[{idx}]"
+        search_log_id = candidate.get("search_log_id")
+        log = logs_by_id.get(search_log_id)
+        if not isinstance(log, dict):
+            issues.append(issue("critical", "search_web_candidate_without_search_log", "search_web Candidate requires a formal same-run SearchLog", f"{path}.search_log_id"))
+            continue
+        if any(candidate.get(field) != log.get(field) for field in ("run_id", "brief_id", "plan_id")):
+            issues.append(issue("critical", "search_web_candidate_binding_mismatch", "search_web Candidate Run/Brief/Plan must match its SearchLog", path))
+        if str(search_log_id) not in candidate_refs.get(str(candidate.get("candidate_id")), set()):
+            issues.append(issue("critical", "search_log_candidate_result_ref_missing", "search_web Candidate must appear in its SearchLog result_refs", path))
+    has_search_artifact = any(
+        isinstance(item, dict) and item.get("capability") == "search.web"
+        for item in ensure_list(graph, "observations")
+    ) or any(
+        isinstance(item, dict) and item.get("medium") == "search_result"
+        for item in ensure_list(graph, "sources")
+    )
+    if has_search_artifact:
+        issues.append(issue("critical", "search_result_must_not_be_source_or_observation", "SearchLog is the only formal search-result record; open sources separately before Observation", "sources/observations"))
+    return issues
+
+
 def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
     issues: list[dict[str, str]] = []
     issues.extend(_schema_validation_issues(graph))
     ids = all_id_maps(graph)
     current_hash = graph_hash(graph)
+    current_subject_hash = review_subject_hash(graph)
+    expected_review_snapshot = review_provenance_snapshot(graph)
+    issues.extend(validate_current_review_attestation(graph))
+    issues.extend(_search_log_issues(graph, ids))
     required_ids = ID_FIELDS
     seen_ids: dict[str, str] = {}
     for key, field in required_ids.items():
@@ -364,6 +566,14 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
                 issues.append(issue("major", "run_status_is_delivery_status", f"Run status must not be a delivery status: {status}", f"runs[{idx}].status"))
             if "delivery_status" in run:
                 issues.append(issue("major", "run_contains_delivery_status", "Run must not carry delivery_status; use Audit or DeliveryManifest", f"runs[{idx}].delivery_status"))
+            for field in ("executor_actor_id", "execution_session_id"):
+                if has_text(run.get(field)) and not is_safe_anonymous_id(run.get(field)):
+                    issues.append(issue(
+                        "critical",
+                        "run_execution_identity_not_opaque",
+                        "Run execution identity must be a short opaque host/session ID, not a name, email, token, cookie, or path",
+                        f"runs[{idx}].{field}",
+                    ))
             brief_id = run.get("brief_id")
             plan_id = run.get("plan_id")
             if brief_id and brief_id not in ids["briefs"]:
@@ -662,6 +872,18 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
         if formal_exception_mode(brief):
             issues.extend(_formal_exception_binding_issues(brief, ids, ensure_list(graph, "observations"), f"briefs[{idx}]"))
         contract = customer_selection_contract(brief)
+        target_literals = [str(value) for value in as_list(brief.get("target_country_or_region")) if has_text(value)]
+        if (
+            targeting_contract_required(brief)
+            and target_literals
+            and (not isinstance(contract, dict) or not isinstance(contract.get("geography_contract"), dict))
+        ):
+            issues.append(issue(
+                "critical",
+                "geography_contract_required_for_target",
+                "A non-empty target_country_or_region requires a geography_contract for new customer development",
+                f"briefs[{idx}].customer_selection_contract.geography_contract",
+            ))
         if isinstance(contract, dict):
             selection_rules, exclusion_rules = targeting_rule_maps(contract)
             if not has_text(contract.get("targeting_contract_id")):
@@ -676,6 +898,30 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
                 issues.append(issue("critical", "targeting_rule_evidence_markers_missing", "Every selection rule requires current-Brief evidence_markers", f"briefs[{idx}].customer_selection_contract.selection_requirements"))
             if any(not isinstance(rule.get("conflict_markers"), list) or not rule.get("conflict_markers") for rule in exclusion_rules.values()):
                 issues.append(issue("critical", "targeting_rule_conflict_markers_missing", "Every exclusion rule requires current-Brief conflict_markers", f"briefs[{idx}].customer_selection_contract.exclusion_rules"))
+            geography_contract = contract.get("geography_contract")
+            if geography_contract is not None:
+                if not isinstance(geography_contract, dict):
+                    issues.append(issue("critical", "geography_contract_invalid", "Brief geography contract must be a strict object", f"briefs[{idx}].customer_selection_contract.geography_contract"))
+                else:
+                    included = normalize_region_values(geography_contract.get("included_geography_literals"))
+                    normalized_target_literals = normalize_region_values(brief.get("target_country_or_region"))
+                    required_selection = {str(item) for item in as_list(geography_contract.get("required_selection_rule_ids")) if has_text(item)}
+                    required_exclusion = {str(item) for item in as_list(geography_contract.get("required_exclusion_rule_ids")) if has_text(item)}
+                    allowed_types = {str(item) for item in as_list(geography_contract.get("allowed_claim_types")) if has_text(item)}
+                    if not included:
+                        issues.append(issue("critical", "geography_contract_included_literals_missing", "Brief geography contract requires included geography literals", f"briefs[{idx}].customer_selection_contract.geography_contract.included_geography_literals"))
+                    if normalized_target_literals and included != normalized_target_literals:
+                        issues.append(issue("critical", "geography_contract_brief_literal_mismatch", "Brief geography contract must preserve the user's target geography literals", f"briefs[{idx}].customer_selection_contract.geography_contract.included_geography_literals"))
+                    if not has_text(geography_contract.get("admission_definition")):
+                        issues.append(issue("critical", "geography_contract_admission_definition_missing", "Brief geography contract requires a natural-language admission definition", f"briefs[{idx}].customer_selection_contract.geography_contract.admission_definition"))
+                    if not required_selection or not required_selection.issubset(selection_rules):
+                        issues.append(issue("critical", "geography_contract_selection_rule_missing", "Brief geography contract must cite current selection rules", f"briefs[{idx}].customer_selection_contract.geography_contract.required_selection_rule_ids"))
+                    if not required_exclusion.issubset(exclusion_rules):
+                        issues.append(issue("critical", "geography_contract_exclusion_rule_missing", "Brief geography contract cites a missing exclusion rule", f"briefs[{idx}].customer_selection_contract.geography_contract.required_exclusion_rule_ids"))
+                    if not allowed_types or not allowed_types.issubset(RULE_ALLOWED_CLAIM_TYPES):
+                        issues.append(issue("critical", "geography_contract_claim_types_invalid", "Brief geography contract requires permitted generic Claim types", f"briefs[{idx}].customer_selection_contract.geography_contract.allowed_claim_types"))
+                    if not isinstance(geography_contract.get("source_relation_requirement"), str):
+                        issues.append(issue("critical", "geography_contract_source_requirement_missing", "Brief geography contract requires its source relation requirement", f"briefs[{idx}].customer_selection_contract.geography_contract.source_relation_requirement"))
 
     for idx, plan in enumerate(ensure_list(graph, "plans")):
         if not isinstance(plan, dict): continue
@@ -708,6 +954,20 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
                 issues.append(issue("critical", "provisional_scope_sample_limit_missing", "Provisional customer direction requires a 1-5 sample-first limit", f"plans[{idx}].sample_first_limit"))
             if contract.get("sample_first_required") is True and plan.get("sample_first_limit") not in {1, 2, 3, 4, 5}:
                 issues.append(issue("critical", "sample_first_limit_missing", "sample_first_required requires a 1-5 sample-first limit", f"plans[{idx}].sample_first_limit"))
+            geography_contract = contract.get("geography_contract")
+            if isinstance(geography_contract, dict):
+                group_names = {str(group.get("group_id") or group.get("query_purpose") or group.get("purpose") or "") for group in query_groups}
+                geography_groups = {str(item) for item in as_list(plan.get("geography_query_group_ids")) if has_text(item)}
+                if not geography_groups or not geography_groups.issubset(group_names):
+                    issues.append(issue("critical", "plan_geography_query_group_missing", "Plan must record valid geography query groups for the Brief geography contract", f"plans[{idx}].geography_query_group_ids"))
+                geography_rules = {str(item) for item in as_list(geography_contract.get("required_selection_rule_ids")) if has_text(item)}
+                covered_geography_rules = {
+                    str(rule_id) for group in query_groups
+                    if str(group.get("group_id") or group.get("query_purpose") or group.get("purpose") or "") in geography_groups
+                    for rule_id in as_list(group.get("targeting_rule_ids"))
+                }
+                if not geography_rules.issubset(covered_geography_rules):
+                    issues.append(issue("critical", "plan_geography_rule_not_covered", "Plan geography query groups must link every required geography selection rule", f"plans[{idx}].geography_query_group_ids"))
 
     evidence_by_claim: dict[str, list[dict[str, Any]]] = {}
     supporting_evidence_by_claim: dict[str, list[dict[str, Any]]] = {}
@@ -786,6 +1046,16 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
             issues.append(issue("critical", "claim_without_evidence", f"Claim {claim_id} has no ClaimEvidence", f"claims[{idx}]"))
         if claim_id not in supporting_evidence_by_claim:
             issues.append(issue("critical", "claim_without_supporting_evidence", f"Claim {claim_id} has no supporting ClaimEvidence", f"claims[{idx}]"))
+
+    # Search result records are discovery-only.  They cannot be promoted into
+    # any formal conclusion even through an indirect scope classification.
+    search_log_ids = set(ids["search_logs"])
+    for idx, assessment in enumerate(ensure_list(graph, "assessments")):
+        if isinstance(assessment, dict) and any(key in assessment for key in ("search_log_id", "search_log_ids", "query_text", "result_refs")):
+            issues.append(issue("critical", "search_log_directly_in_assessment", "Assessment must cite Claims, never SearchLog data", f"assessments[{idx}]"))
+    for idx, decision in enumerate(ensure_list(graph, "scope_decisions")):
+        if isinstance(decision, dict) and any(key in decision for key in ("search_log_id", "search_log_ids", "query_text", "result_refs")):
+            issues.append(issue("critical", "search_log_directly_in_scope_decision", "ScopeDecision must rely on formal Claims, never SearchLog data", f"scope_decisions[{idx}]"))
 
     for idx, cp in enumerate(ensure_list(graph, "contact_points")):
         if not isinstance(cp, dict): continue
@@ -946,6 +1216,7 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
         if not has_text(entity_id) and decision.get("overall_status") not in {"needs_confirmation", "reference_only"}:
             issues.append(issue("critical", "scope_decision_entity_required_for_status", "Candidate-only ScopeDecision may only remain needs_confirmation or reference_only", f"scope_decisions[{idx}].overall_status"))
         selection_rules, exclusion_rules = targeting_rule_maps(contract)
+        geography_contract = contract.get("geography_contract") if isinstance(contract, dict) else None
         evaluations = [item for item in as_list(decision.get("rule_evaluations")) if isinstance(item, dict)]
         evaluation_by_key: dict[tuple[str, str], dict[str, Any]] = {}
         for eval_idx, evaluation in enumerate(evaluations):
@@ -986,6 +1257,22 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
                 if classification_kind != "irrelevant" and not _claim_has_usable_assessment_support(claim_id, ids, evidence_by_claim):
                     issues.append(issue("critical", "scope_decision_rule_evidence_missing", "ScopeDecision rule Claim lacks usable formal supports evidence", class_path))
                     continue
+                if (
+                    isinstance(geography_contract, dict)
+                    and rule_kind == "selection"
+                    and rule_id in set(as_list(geography_contract.get("required_selection_rule_ids")))
+                    and classification_kind == "supports"
+                    and not _geography_support_is_formal(
+                        claim,
+                        entity_id,
+                        [str(value) for value in as_list(brief.get("target_country_or_region")) if has_text(value)],
+                        geography_contract,
+                        rule,
+                        ids,
+                        evidence_by_claim,
+                    )
+                ):
+                    issues.append(issue("critical", "geography_rule_support_not_formal_location", "Geography ScopeDecision support must be a same-Entity public Claim whose literal appears in the source excerpt", class_path))
                 if classification_kind == "irrelevant":
                     continue
                 allowed_types = as_list(rule.get("allowed_claim_types")) if isinstance(rule, dict) else []
@@ -1193,20 +1480,35 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
 
     for idx, audit in enumerate(ensure_list(graph, "audits")):
         if not isinstance(audit, dict): continue
-        for field in ("audited_at", "research_graph_hash", "audit_graph_hash", "audit_status", "delivery_status", "allowed_delivery_statuses", "ok", "issue_count", "issues"):
+        for field in ("audited_at", "research_graph_hash", "audit_graph_hash", "review_cycle_id", "review_attestation_id", "reviewed_subject_hash", "review_provenance_level", "audit_status", "delivery_status", "allowed_delivery_statuses", "ok", "issue_count", "issues"):
             if field not in audit:
                 issues.append(issue("major", "audit_missing_required_field", f"Audit {audit.get('audit_id')} lacks {field}", f"audits[{idx}].{field}"))
         if audit.get("audit_status") not in {None, "passed", "failed"}:
             issues.append(issue("major", "invalid_audit_status", f"Invalid Audit audit_status: {audit.get('audit_status')}", f"audits[{idx}].audit_status"))
         if audit.get("delivery_status") not in {None, "needs_correction", "initial_lead_list", "standard_development_list", "full_review_package", "inquiry_followup_queue"}:
             issues.append(issue("major", "invalid_audit_delivery_status", f"Invalid Audit delivery_status: {audit.get('delivery_status')}", f"audits[{idx}].delivery_status"))
+        if audit.get("delivery_status") == "full_review_package":
+            issues.append(issue("critical", "stored_audit_full_review_unavailable", "This local deployment does not provide full_review_package", f"audits[{idx}].delivery_status"))
+        if audit.get("delivery_status") == "standard_development_list" and audit.get("review_provenance_level") in {"declared_separate_session", "self_review_fallback"} and audit.get("disclosure_required") is not True:
+            issues.append(issue("critical", "audit_disclosure_required_missing", "Standard delivery with review disclosure provenance must set disclosure_required=true", f"audits[{idx}].disclosure_required"))
         if audit.get("research_graph_hash") and audit.get("research_graph_hash") != current_hash:
             issues.append(issue("major", "stale_audit_research_graph_hash", "Audit research_graph_hash does not match current graph hash", f"audits[{idx}].research_graph_hash"))
         if audit.get("audit_graph_hash") and audit.get("audit_graph_hash") != current_hash:
             issues.append(issue("major", "stale_audit_graph_hash", "Audit audit_graph_hash does not match current graph hash", f"audits[{idx}].audit_graph_hash"))
+        if audit.get("review_attestation_id") != expected_review_snapshot.get("review_attestation_id"):
+            issues.append(issue("critical", "audit_review_attestation_mismatch", "Audit must cite the current ReviewAttestation", f"audits[{idx}].review_attestation_id"))
+        if audit.get("reviewed_subject_hash") != expected_review_snapshot.get("reviewed_subject_hash"):
+            issues.append(issue("critical", "audit_reviewed_subject_hash_mismatch", "Audit must cite the current canonical review subject hash", f"audits[{idx}].reviewed_subject_hash"))
+        if audit.get("review_provenance_level") != expected_review_snapshot.get("review_provenance_level"):
+            issues.append(issue("critical", "audit_review_provenance_level_mismatch", "Audit must cite the current review provenance level", f"audits[{idx}].review_provenance_level"))
+        active_run = current_run(graph)
+        if isinstance(active_run, dict) and audit.get("review_cycle_id") != active_run.get("review_cycle_id"):
+            issues.append(issue("critical", "audit_review_cycle_mismatch", "Audit review_cycle_id must match the current Run", f"audits[{idx}].review_cycle_id"))
 
     for idx, manifest in enumerate(ensure_list(graph, "delivery_manifests")):
         if not isinstance(manifest, dict): continue
+        if manifest.get("delivery_status") == "full_review_package":
+            issues.append(issue("critical", "stored_manifest_full_review_unavailable", "This local deployment does not provide full_review_package", f"delivery_manifests[{idx}].delivery_status"))
         inquiry_manifest = manifest.get("delivery_status") == "inquiry_followup_queue"
         manifest_refs = (("run_id", "runs"), ("audit_id", "audits")) if inquiry_manifest else (("run_id", "runs"), ("brief_id", "briefs"), ("plan_id", "plans"), ("audit_id", "audits"))
         for field, collection in manifest_refs:
@@ -1217,9 +1519,21 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
                 issues.append(issue("major", "manifest_reference_missing", f"DeliveryManifest references missing {collection[:-1]} {raw}", f"delivery_manifests[{idx}].{field}"))
         if not inquiry_manifest and not has_text(manifest.get("review_cycle_id")):
             issues.append(issue("major", "manifest_missing_review_cycle_id", "DeliveryManifest lacks non-empty review_cycle_id", f"delivery_manifests[{idx}].review_cycle_id"))
+        for field in ("review_attestation_id", "reviewed_subject_hash", "review_provenance_level"):
+            if field not in manifest:
+                issues.append(issue("major", "manifest_review_provenance_missing", f"DeliveryManifest lacks {field}", f"delivery_manifests[{idx}].{field}"))
+        if manifest.get("delivery_status") == "standard_development_list" and manifest.get("review_provenance_level") == "declared_separate_session":
+            disclosure = "本次复核由独立会话声明完成，未获得平台身份验证。"
+            if disclosure not in as_list(manifest.get("disclosures")):
+                issues.append(issue("critical", "manifest_declared_review_disclosure_missing", "Standard declared review manifest must include the required disclosure", f"delivery_manifests[{idx}].disclosures"))
         for field in ("audit_graph_hash", "research_graph_hash"):
             if not has_text(manifest.get(field)):
                 issues.append(issue("major", "manifest_missing_hash", f"DeliveryManifest lacks {field}", f"delivery_manifests[{idx}].{field}"))
+        snapshot = manifest.get("audit_snapshot")
+        if isinstance(snapshot, dict):
+            for field in ("review_cycle_id", "review_attestation_id", "reviewed_subject_hash", "review_provenance_level"):
+                if snapshot.get(field) != manifest.get(field):
+                    issues.append(issue("critical", "manifest_audit_snapshot_review_provenance_mismatch", f"DeliveryManifest audit_snapshot {field} must match its top-level value", f"delivery_manifests[{idx}].audit_snapshot.{field}"))
         if manifest.get("audit_graph_hash") and manifest.get("audit_graph_hash") != current_hash:
             issues.append(issue("major", "stale_manifest_audit_graph_hash", "DeliveryManifest audit_graph_hash does not match current graph hash", f"delivery_manifests[{idx}].audit_graph_hash"))
         if manifest.get("research_graph_hash") and manifest.get("research_graph_hash") != current_hash:
@@ -1234,12 +1548,21 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
                 issues.append(issue("major", "manifest_audit_not_passed", "DeliveryManifest references an Audit that is not passed", f"delivery_manifests[{idx}].audit_id"))
             if manifest.get("delivery_status") != audit.get("delivery_status") or manifest.get("delivery_status") not in as_list(audit.get("allowed_delivery_statuses")):
                 issues.append(issue("critical", "manifest_audit_delivery_status_mismatch", "DeliveryManifest delivery_status must be allowed by its referenced passed Audit", f"delivery_manifests[{idx}].delivery_status"))
+            for field in ("review_attestation_id", "reviewed_subject_hash", "review_provenance_level"):
+                if manifest.get(field) != audit.get(field):
+                    issues.append(issue("critical", "manifest_audit_review_provenance_mismatch", f"DeliveryManifest {field} must match its referenced Audit", f"delivery_manifests[{idx}].{field}"))
+            if manifest.get("review_cycle_id") != audit.get("review_cycle_id"):
+                issues.append(issue("critical", "manifest_audit_review_cycle_mismatch", "DeliveryManifest review_cycle_id must match its referenced Audit", f"delivery_manifests[{idx}].review_cycle_id"))
         run = ids["runs"].get(manifest.get("run_id"))
         if isinstance(run, dict):
             if not inquiry_manifest and (manifest.get("brief_id") != run.get("brief_id") or manifest.get("plan_id") != run.get("plan_id")):
                 issues.append(issue("major", "manifest_run_binding_mismatch", "DeliveryManifest Brief/Plan must match its Run", f"delivery_manifests[{idx}]"))
             if not inquiry_manifest and manifest.get("review_cycle_id") != run.get("review_cycle_id"):
                 issues.append(issue("major", "manifest_review_cycle_mismatch", "DeliveryManifest review_cycle_id must match its Run", f"delivery_manifests[{idx}].review_cycle_id"))
+            if not inquiry_manifest:
+                for field in ("review_attestation_id", "reviewed_subject_hash", "review_provenance_level"):
+                    if manifest.get(field) != expected_review_snapshot.get(field):
+                        issues.append(issue("critical", "manifest_review_provenance_mismatch", f"DeliveryManifest {field} must match current review provenance", f"delivery_manifests[{idx}].{field}"))
             brief = ids["briefs"].get(run.get("brief_id"))
             if not inquiry_manifest and not _run_allows_delivery_status(run, brief, manifest.get("delivery_status")):
                 issues.append(issue("critical", "stored_manifest_delivery_status_not_allowed", "Stored DeliveryManifest status is not allowed by its Run review mode/state", f"delivery_manifests[{idx}].delivery_status"))

@@ -1,1 +1,144 @@
-{"extends":"pass_user_provided_pdf_claim.json","patches":[{"op":"replace","path":"/sources/0/source_id","value":"src_image_001"},{"op":"replace","path":"/sources/0/material_role","value":"visual_reference"},{"op":"replace","path":"/sources/0/medium","value":"image"},{"op":"replace","path":"/sources/0/artifact_sha256","value":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"},{"op":"replace","path":"/sources/0/artifact_name","value":"logo.png"},{"op":"replace","path":"/sources/0/artifact_media_type","value":"image/png"},{"op":"replace","path":"/observations/0/observation_id","value":"obs_image_001"},{"op":"replace","path":"/observations/0/source_id","value":"src_image_001"},{"op":"replace","path":"/observations/0/entity_id","value":null},{"op":"replace","path":"/observations/0/capability","value":"image.inspect"},{"op":"replace","path":"/observations/0/title","value":"logo OCR"},{"op":"replace","path":"/observations/0/raw_excerpt","value":"Example Buyer"},{"op":"replace","path":"/observations/0/content_hash","value":"image_ocr_001"},{"op":"replace","path":"/observations/0/extraction_method","value":"OCR"},{"op":"replace","path":"/observations/0/snapshot_ref","value":"artifact:sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc#image=1"},{"op":"add","path":"/observations/0/observation_content_kind","value":"ocr_text"},{"op":"remove","path":"/claims/0"},{"op":"remove","path":"/claim_evidence/0"},{"op":"remove","path":"/assessments/0"},{"op":"remove","path":"/scope_decisions/0"},{"op":"append","path":"/candidates/-","value":{"candidate_id":"cand_image_001","name":"Example Buyer","source_hint":"OCR visual reference","status":"初筛线索","note":"需要外部核验"}},{"op":"replace","path":"/plans/0/query_groups/0/purpose","value":"verify OCR brand candidate"},{"op":"replace","path":"/plans/0/query_groups/0/queries","value":["Example Buyer trademark"]},{"op":"replace","path":"/runs/0/status","value":"collecting"},{"op":"replace","path":"/runs/0/review_mode","value":"not_run"}]}
+{
+  "extends": "pass_user_provided_pdf_claim.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/sources/0/source_id",
+      "value": "src_image_001"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/material_role",
+      "value": "visual_reference"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/medium",
+      "value": "image"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/artifact_sha256",
+      "value": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/artifact_name",
+      "value": "logo.png"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/artifact_media_type",
+      "value": "image/png"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/observation_id",
+      "value": "obs_image_001"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/source_id",
+      "value": "src_image_001"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/entity_id",
+      "value": null
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/capability",
+      "value": "image.inspect"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/title",
+      "value": "logo OCR"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/raw_excerpt",
+      "value": "Example Buyer"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/content_hash",
+      "value": "image_ocr_001"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/extraction_method",
+      "value": "OCR"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/snapshot_ref",
+      "value": "artifact:sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc#image=1"
+    },
+    {
+      "op": "add",
+      "path": "/observations/0/observation_content_kind",
+      "value": "ocr_text"
+    },
+    {
+      "op": "remove",
+      "path": "/claims/0"
+    },
+    {
+      "op": "remove",
+      "path": "/claim_evidence/0"
+    },
+    {
+      "op": "remove",
+      "path": "/assessments/0"
+    },
+    {
+      "op": "remove",
+      "path": "/scope_decisions/0"
+    },
+    {
+      "op": "append",
+      "path": "/candidates/-",
+      "value": {
+        "candidate_id": "cand_image_001",
+        "name": "Example Buyer",
+        "source_hint": "OCR visual reference",
+        "status": "初筛线索",
+        "note": "需要外部核验"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/plans/0/query_groups/0/purpose",
+      "value": "verify OCR brand candidate"
+    },
+    {
+      "op": "replace",
+      "path": "/plans/0/query_groups/0/queries",
+      "value": [
+        "Example Buyer trademark"
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/runs/0/status",
+      "value": "collecting"
+    },
+    {
+      "op": "replace",
+      "path": "/runs/0/review_mode",
+      "value": "not_run"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "a9775d7663ed7087421a874526c2be2a110ed2dde8bd2342ba7102357c8072ab"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "a9775d7663ed7087421a874526c2be2a110ed2dde8bd2342ba7102357c8072ab"
+    }
+  ]
+}

@@ -1,7 +1,25 @@
 {
   "extends": "pass_minimal_graph.json",
   "patches": [
-    {"op":"replace","path":"/briefs/0/customer_selection_contract/selection_requirements/0/required_for_positive","value":false},
-    {"op":"replace","path":"/briefs/0/customer_selection_contract/selection_requirements/0/unknown_blocks_positive","value":false}
+    {
+      "op": "replace",
+      "path": "/briefs/0/customer_selection_contract/selection_requirements/0/required_for_positive",
+      "value": false
+    },
+    {
+      "op": "replace",
+      "path": "/briefs/0/customer_selection_contract/selection_requirements/0/unknown_blocks_positive",
+      "value": false
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "3ebd89969c57fe8b3279c9b148f1aee4cc2e867940dc1799303631bfc1608a2a"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "3ebd89969c57fe8b3279c9b148f1aee4cc2e867940dc1799303631bfc1608a2a"
+    }
   ]
 }

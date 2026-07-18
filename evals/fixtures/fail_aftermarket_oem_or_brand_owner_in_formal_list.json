@@ -1,9 +1,83 @@
 {
   "extends": "pass_aftermarket_neutral_brand_distributor.json",
   "patches": [
-    {"op":"replace","path":"/observations/0/raw_excerpt","value":"Example Buyer operates as a brand owner. Example Buyer Contact: sales@example.com"},
-    {"op":"replace","path":"/claims/0/typed_value","value":{"text":"brand owner"}},
-    {"op":"replace","path":"/claim_evidence/0/claim_field_anchors","value":{"subject":"Example Buyer","predicate":"operates as","claim_type":"Example Buyer operates as a brand owner","typed_value":"brand owner"}},
-    {"op":"replace","path":"/scope_decisions/0/rule_evaluations","value":[{"rule_id":"sel_channel_001","rule_kind":"selection","outcome":"unknown","supporting_claim_ids":[],"conflicting_claim_ids":[],"claim_classifications":[{"claim_id":"claim_001","classification":"irrelevant","matched_marker":null,"reason":"该 Claim 不是当前正向分销 marker。"}],"reviewed_observation_ids":["obs_001"],"reason":"公开材料未确认正向规则。"},{"rule_id":"ex_manufacturer_001","rule_kind":"exclusion","outcome":"supported_conflict","supporting_claim_ids":[],"conflicting_claim_ids":["claim_001"],"claim_classifications":[{"claim_id":"claim_001","classification":"conflicts","matched_marker":"brand owner","reason":"公开资料命中当前排除 marker。"}],"reviewed_observation_ids":["obs_001"],"reason":"公开资料显示命中本次排除范围。"}]}
+    {
+      "op": "replace",
+      "path": "/observations/0/raw_excerpt",
+      "value": "Example Buyer operates as a brand owner. Example Buyer Contact: sales@example.com"
+    },
+    {
+      "op": "replace",
+      "path": "/claims/0/typed_value",
+      "value": {
+        "text": "brand owner"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/claim_evidence/0/claim_field_anchors",
+      "value": {
+        "subject": "Example Buyer",
+        "predicate": "operates as",
+        "claim_type": "Example Buyer operates as a brand owner",
+        "typed_value": "brand owner"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/scope_decisions/0/rule_evaluations",
+      "value": [
+        {
+          "rule_id": "sel_channel_001",
+          "rule_kind": "selection",
+          "outcome": "unknown",
+          "supporting_claim_ids": [],
+          "conflicting_claim_ids": [],
+          "claim_classifications": [
+            {
+              "claim_id": "claim_001",
+              "classification": "irrelevant",
+              "matched_marker": null,
+              "reason": "该 Claim 不是当前正向分销 marker。"
+            }
+          ],
+          "reviewed_observation_ids": [
+            "obs_001"
+          ],
+          "reason": "公开材料未确认正向规则。"
+        },
+        {
+          "rule_id": "ex_manufacturer_001",
+          "rule_kind": "exclusion",
+          "outcome": "supported_conflict",
+          "supporting_claim_ids": [],
+          "conflicting_claim_ids": [
+            "claim_001"
+          ],
+          "claim_classifications": [
+            {
+              "claim_id": "claim_001",
+              "classification": "conflicts",
+              "matched_marker": "brand owner",
+              "reason": "公开资料命中当前排除 marker。"
+            }
+          ],
+          "reviewed_observation_ids": [
+            "obs_001"
+          ],
+          "reason": "公开资料显示命中本次排除范围。"
+        }
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "c23f402247f2d5e15f87894b2483d92b7ceb6fa1ce61173d61434c810399fbea"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "c23f402247f2d5e15f87894b2483d92b7ceb6fa1ce61173d61434c810399fbea"
+    }
   ]
 }

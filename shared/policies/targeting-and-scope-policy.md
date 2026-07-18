@@ -26,6 +26,26 @@ and Plan, not from a product, industry, application, geography, brand, or
 channel dictionary. A Claim supports a rule only if its type is permitted and
 the selected marker is present in the supporting public excerpt.
 
+## Geography In The Current Contract
+
+For every new customer-development Brief with any non-empty
+`target_country_or_region` literal, the same `customer_selection_contract`
+must carry a non-null `geography_contract`: included and excluded geography
+literals, a natural-language admission definition, linked selection/exclusion
+rule IDs, allowed generic Claim types, and whether a first-party source is
+required. The included literals must equal the Brief target's normalized set;
+the original user literals remain in the Brief. The Plan records linked
+geography query groups. A missing contract is a formal-delivery blocker, not a
+reason to treat the task as global. No country list, TLD table, language
+dictionary, phone-prefix rule, or default market profile is used.
+
+A formal geography decision needs a same-Entity Claim supported by an eligible
+public source whose excerpt contains the current Brief geography literal.
+Search results, domains, language, phone codes, keyword matches, rank, and
+Candidates do not prove location or market coverage. Whether an address,
+service coverage, local branch, or channel coverage qualifies is defined only
+by this Brief's admission definition and its linked rules.
+
 ## Interaction
 
 First restate, in no more than four user-facing lines:
@@ -38,7 +58,7 @@ First restate, in no more than four user-facing lines:
 Ask at most one to three short questions only when a different answer would
 reverse the customer direction. When a critical ambiguity remains,
 `scope_state=provisional`; provide only three to five 方向样本 and do not create
-a standard or full formal list. A user who has already stated the boundary is
+a standard formal list. A user who has already stated the boundary is
 not asked again.
 
 Names supplied as competitors, brands, original manufacturers, or other
@@ -106,7 +126,7 @@ formal delivery. Each existing-table row/cell binding likewise stores an
 the bound Entity. A partial name, brand, holding-company hint, alias, or other
 near match is an identity-review task, not a formal exception authorization.
 
-Standard and full lists export only current positive in-scope Entities and
+Standard lists export only current positive in-scope Entities and
 their eligible contacts. `needs_confirmation`, `out_of_scope`, and
 `reference_only` stay out of the customer and contact main tables. Initial
 output may show them separately using the business labels `需确认`, `不符合本次

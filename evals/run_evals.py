@@ -19,6 +19,12 @@ INTEGRATION = ROOT / "evals" / "integration"
 LEGACY_DERIVED = ROOT / "evals" / "legacy-derived"
 SCHEMAS = ROOT / "shared" / "schemas"
 CAPABILITY_CASES = ROOT / "evals" / "cases" / "capability_adapter_cases.json"
+MODE_TO_STATUS = {
+    "initial": "initial_lead_list",
+    "standard": "standard_development_list",
+    "full": "full_review_package",
+    "inquiry": "inquiry_followup_queue",
+}
 
 
 def run(cmd: list[str], expect: int) -> dict[str, object]:
@@ -163,7 +169,7 @@ def run_audit_status(py: str, fixture_path: str, expected_status: str, expected_
     cmd = [py, str(SCRIPTS / "audit_delivery.py"), fixture_path, "--format", "json"]
     if requested_status:
         cmd.extend(["--delivery-status", requested_status])
-    proc = subprocess.run(cmd, cwd=str(ROOT), text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    proc = subprocess.run(cmd, cwd=str(ROOT), text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"})
     ok = False
     actual_status = None
     try:
@@ -296,6 +302,50 @@ def add_case_tests(py: str, tests: list[tuple[str, list[str], int, list[str]]]) 
                 tests.append((f"case {fixture} export assertions", ["__EXPORT_ASSERT__", path, json.dumps(case, ensure_ascii=False)], 0, []))
 
 
+def add_phase2_tests(py: str, tests: list[tuple[str, list[str], int, list[str]]]) -> None:
+    """Exercise each Phase 2 fixture through validate, standard audit, and export."""
+    cases = [
+        ("fail_independent_without_attestation.json", ["independent_review_attestation_missing"], "standard"),
+        ("fail_attestation_subject_hash_stale.json", ["review_attestation_subject_hash_mismatch"], "standard"),
+        ("fail_attestation_same_actor_session.json", ["review_attestation_reviewer_actor_not_independent"], "standard"),
+        ("fail_attestation_binding_mismatch.json", ["independent_review_attestation_missing"], "standard"),
+        ("fail_attestation_assessment_coverage.json", ["review_attestation_assessment_coverage_missing"], "standard"),
+        ("fail_manifest_review_provenance_mismatch.json", ["audit_review_attestation_mismatch"], "standard"),
+        ("fail_searchlog_missing_required.json", ["search_log_query_missing"], "standard"),
+        ("fail_searchlog_duplicate_id.json", ["duplicate_global_id"], "standard"),
+        ("fail_searchlog_wrong_run.json", ["search_log_reference_missing"], "standard"),
+        ("fail_searchlog_unauthorized_tool.json", ["search_log_concrete_tool_invalid"], "standard"),
+        ("fail_searchweb_candidate_without_log.json", ["search_web_candidate_without_search_log"], "standard"),
+        ("fail_geography_nonlocation_claim.json", ["geography_rule_support_not_formal_location"], "standard"),
+        ("fail_geography_rule_nonlocation_support.json", ["geography_rule_support_not_formal_location"], "standard"),
+        ("fail_target_country_without_geography_contract.json", ["geography_contract_required_for_target"], "standard"),
+        ("fail_target_country_array_without_geography_contract.json", ["geography_contract_required_for_target"], "standard"),
+    ]
+    for fixture, codes, mode in cases:
+        path = str(FIXTURES / fixture)
+        tests.extend([
+            (f"phase2 {fixture} validate fail", [py, str(SCRIPTS / "validate_research_graph.py"), path], 1, codes),
+            (f"phase2 {fixture} audit {mode} fail", [py, str(SCRIPTS / "audit_delivery.py"), path, "--delivery-status", MODE_TO_STATUS[mode]], 1, codes),
+            (f"phase2 {fixture} export {mode} fail", ["__EXPORT_FULL__" if mode == "full" else "__EXPORT_STANDARD__", path], 1, codes),
+        ])
+    declared_path = str(FIXTURES / "fail_declared_separate_session_full.json")
+    tests.extend([
+        ("phase2 fail_declared_separate_session_full.json validate pass", [py, str(SCRIPTS / "validate_research_graph.py"), declared_path], 0, []),
+        ("phase2 fail_declared_separate_session_full.json audit full fail", [py, str(SCRIPTS / "audit_delivery.py"), declared_path, "--delivery-status", "full_review_package"], 1, ["full_review_unavailable_in_local_deployment"]),
+        ("phase2 fail_declared_separate_session_full.json export full fail", ["__EXPORT_FULL__", declared_path], 1, ["full_review_unavailable_in_local_deployment"]),
+    ])
+    for fixture, mode, audit_status, export_present, export_absent in (
+        ("pass_geography_searchlog_standard.json", "standard", "standard_development_list", ["本次复核由独立会话声明完成，未获得平台身份验证。"], ["Region Q official address", "fixture_search", "executor_run_001", "review_session_run_001"]),
+        ("pass_global_target_without_geography_contract.json", "standard", "standard_development_list", ["本次复核由独立会话声明完成，未获得平台身份验证。"], []),
+    ):
+        path = str(FIXTURES / fixture)
+        tests.extend([
+            (f"phase2 {fixture} validate pass", [py, str(SCRIPTS / "validate_research_graph.py"), path], 0, []),
+            (f"phase2 {fixture} audit {mode} pass", ["__AUDIT_STATUS__", path, audit_status, "0", audit_status], 0, []),
+            (f"phase2 {fixture} export assertions", ["__EXPORT_ASSERT__", path, json.dumps({"export_assert_mode": mode, "export_present": export_present, "export_absent": export_absent}, ensure_ascii=False)], 0, []),
+        ])
+
+
 def add_static_suite_tests(py: str, tests: list[tuple[str, list[str], int, list[str]]]) -> None:
     for schema_file in sorted(SCHEMAS.glob("*.schema.json")):
         tests.append((f"schema self-check {schema_file.name}", ["__SCHEMA_CHECK__", str(schema_file)], 0, []))
@@ -345,6 +395,7 @@ def main() -> int:
         ("advanced delivery gate regressions", [py, str(ROOT / "evals" / "advanced_gate_tests.py")], 0, []),
     ]
     add_case_tests(py, tests)
+    add_phase2_tests(py, tests)
     add_capability_adapter_tests(tests)
     add_static_suite_tests(py, tests)
     results = []
@@ -359,6 +410,10 @@ def main() -> int:
             elif cmd and cmd[0] == "__EXPORT_INITIAL__":
                 fixture_path = materialize_fixture(cmd[1], tmp_path, index)
                 cmd = [py, str(SCRIPTS / "export_workbook.py"), fixture_path, "--output-dir", str(tmp_path / f"export_{index}"), "--mode", "initial", "--format", "csv", "--manifest", str(tmp_path / f"manifest_{index}.json")]
+                result = run(cmd, expect)
+            elif cmd and cmd[0] == "__EXPORT_FULL__":
+                fixture_path = materialize_fixture(cmd[1], tmp_path, index)
+                cmd = [py, str(SCRIPTS / "export_workbook.py"), fixture_path, "--output-dir", str(tmp_path / f"export_{index}"), "--mode", "full", "--format", "csv", "--manifest", str(tmp_path / f"manifest_{index}.json")]
                 result = run(cmd, expect)
             elif cmd and cmd[0] == "__EXPORT_INQUIRY__":
                 fixture_path = materialize_fixture(cmd[1], tmp_path, index)

@@ -1,1 +1,25 @@
-{"extends":"pass_user_provided_pdf_claim.json","patches":[{"op":"replace","path":"/sources/0/material_role","value":"correspondence_export"},{"op":"replace","path":"/sources/0/artifact_name","value":"客户沟通.eml"}]}
+{
+  "extends": "pass_user_provided_pdf_claim.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/sources/0/material_role",
+      "value": "correspondence_export"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/artifact_name",
+      "value": "客户沟通.eml"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "7ab33a83a202ee63beaa2f87f76c6f799bfd9a9e5e6d54b43d6bc1a4924e52e8"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "7ab33a83a202ee63beaa2f87f76c6f799bfd9a9e5e6d54b43d6bc1a4924e52e8"
+    }
+  ]
+}

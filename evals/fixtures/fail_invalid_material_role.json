@@ -1,1 +1,20 @@
-{"extends":"pass_user_provided_pdf_claim.json","patches":[{"op":"replace","path":"/sources/0/material_role","value":"trusted_user_fact"}]}
+{
+  "extends": "pass_user_provided_pdf_claim.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/sources/0/material_role",
+      "value": "trusted_user_fact"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "82827b2f610d65d852da754b1a0a804247fcd02d73e699a0ea834a4912670f9b"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "82827b2f610d65d852da754b1a0a804247fcd02d73e699a0ea834a4912670f9b"
+    }
+  ]
+}

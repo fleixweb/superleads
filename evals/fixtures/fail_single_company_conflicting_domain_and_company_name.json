@@ -1,6 +1,20 @@
 {
   "extends": "pass_single_company_analysis_bound_target.json",
   "patches": [
-    {"op": "replace", "path": "/briefs/0/single_company_target/website_or_domain", "value": "https://unrelated.example"}
+    {
+      "op": "replace",
+      "path": "/briefs/0/single_company_target/website_or_domain",
+      "value": "https://unrelated.example"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "4c542e9de0755f1362f58348f436269aa562750da6d96bdf143612a54cb2254a"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "4c542e9de0755f1362f58348f436269aa562750da6d96bdf143612a54cb2254a"
+    }
   ]
 }

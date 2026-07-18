@@ -45,6 +45,13 @@ reviewed Observation as support, conflict, or irrelevant. Do not use an
 address, registration, or company identity as product/application/channel
 evidence unless the current rule expressly permits that Claim type and marker.
 
+When `target_country_or_region` has any non-empty literal, its required
+geography contract must have query-group IDs on the Plan and link each to the
+geography selection rule. Use exactly the user's included/excluded literals
+and admission definition; do not generate defaults from country, TLD,
+language, phone code, or legacy ICP material. Plan an opened same-Entity
+public-source check for every geography inclusion decision.
+
 ## Hard constraints
 
 - Search results can only feed initial clues and logs.

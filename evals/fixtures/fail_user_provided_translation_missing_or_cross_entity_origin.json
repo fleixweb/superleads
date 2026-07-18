@@ -1,1 +1,25 @@
-{"extends":"pass_user_provided_pdf_claim.json","patches":[{"op":"replace","path":"/observations/0/translation_status","value":"translated"},{"op":"replace","path":"/observations/0/derived_from_observation_id","value":"obs_pdf_missing_origin"}]}
+{
+  "extends": "pass_user_provided_pdf_claim.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/observations/0/translation_status",
+      "value": "translated"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/derived_from_observation_id",
+      "value": "obs_pdf_missing_origin"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "e369258f5ee5a8db24ff39af7d041245aab461d23054cf5c8b028ad84933856b"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "e369258f5ee5a8db24ff39af7d041245aab461d23054cf5c8b028ad84933856b"
+    }
+  ]
+}

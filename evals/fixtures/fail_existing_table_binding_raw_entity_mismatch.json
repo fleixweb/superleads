@@ -1,9 +1,55 @@
 {
   "extends": "pass_existing_table_enrichment_without_targeting_contract.json",
   "patches": [
-    {"op": "replace", "path": "/briefs/0/existing_table_binding/entity_bindings/0/entity_literal", "value": "Unrelated Buyer"},
-    {"op": "append", "path": "/observations/-", "value": {"observation_id": "obs_bound_row_001", "source_id": "src_sheet_001", "candidate_id": null, "entity_id": "ent_sheet_001", "capability": "document.extract", "concrete_tool": "fixture extractor", "observed_at": "2026-07-15T00:00:00Z", "access_status": "ok", "http_status": null, "title": "bound row", "raw_excerpt": "Unrelated Buyer", "page_or_dom_locator": "Bound!A2", "content_hash": "bound_row_001", "extraction_method": "spreadsheet extraction", "tool_version": "fixture", "language": "en", "translation_status": "original", "derived_from_observation_id": null, "snapshot_ref": "artifact:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb#sheet=Bound&range=A2"}},
-    {"op": "replace", "path": "/briefs/0/existing_table_binding/entity_bindings/0/observation_id", "value": "obs_bound_row_001"},
-    {"op": "replace", "path": "/briefs/0/existing_table_binding/entity_bindings/0/row_or_cell_locator", "value": "Bound!A2"}
+    {
+      "op": "replace",
+      "path": "/briefs/0/existing_table_binding/entity_bindings/0/entity_literal",
+      "value": "Unrelated Buyer"
+    },
+    {
+      "op": "append",
+      "path": "/observations/-",
+      "value": {
+        "observation_id": "obs_bound_row_001",
+        "source_id": "src_sheet_001",
+        "candidate_id": null,
+        "entity_id": "ent_sheet_001",
+        "capability": "document.extract",
+        "concrete_tool": "fixture extractor",
+        "observed_at": "2026-07-15T00:00:00Z",
+        "access_status": "ok",
+        "http_status": null,
+        "title": "bound row",
+        "raw_excerpt": "Unrelated Buyer",
+        "page_or_dom_locator": "Bound!A2",
+        "content_hash": "bound_row_001",
+        "extraction_method": "spreadsheet extraction",
+        "tool_version": "fixture",
+        "language": "en",
+        "translation_status": "original",
+        "derived_from_observation_id": null,
+        "snapshot_ref": "artifact:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb#sheet=Bound&range=A2"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/briefs/0/existing_table_binding/entity_bindings/0/observation_id",
+      "value": "obs_bound_row_001"
+    },
+    {
+      "op": "replace",
+      "path": "/briefs/0/existing_table_binding/entity_bindings/0/row_or_cell_locator",
+      "value": "Bound!A2"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "9f08575b8aece6a784239bb401c7a2ebfbd81d0d19b758d7d7e1cedd51090b31"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "9f08575b8aece6a784239bb401c7a2ebfbd81d0d19b758d7d7e1cedd51090b31"
+    }
   ]
 }

@@ -1,1 +1,20 @@
-{"extends":"pass_user_provided_pdf_claim.json","patches":[{"op":"replace","path":"/sources/0/material_role","value":"user_authored_note"}]}
+{
+  "extends": "pass_user_provided_pdf_claim.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/sources/0/material_role",
+      "value": "user_authored_note"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "01f4526c843cb2d139587e920f8ed8a82c9b549af2a3cb00813b3c47d1f2fd0e"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "01f4526c843cb2d139587e920f8ed8a82c9b549af2a3cb00813b3c47d1f2fd0e"
+    }
+  ]
+}

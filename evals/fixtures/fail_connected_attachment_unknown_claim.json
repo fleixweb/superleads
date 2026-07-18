@@ -1,6 +1,20 @@
 {
   "extends": "pass_connected_attachment_published_source_claim.json",
   "patches": [
-    {"op":"replace","path":"/sources/0/material_role","value":"unknown"}
+    {
+      "op": "replace",
+      "path": "/sources/0/material_role",
+      "value": "unknown"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "36bce45a06daa90327dd8e96bec1bad6a913dbc6861d524a3a33db843e7182a7"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "36bce45a06daa90327dd8e96bec1bad6a913dbc6861d524a3a33db843e7182a7"
+    }
   ]
 }

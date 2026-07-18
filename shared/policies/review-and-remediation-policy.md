@@ -1,10 +1,30 @@
 # Review and Remediation Policy
 
-## Review modes
+## Review modes and provenance
 
-- `independent`: a separate reviewer pass checks semantics and evidence. Full delivery may proceed if no blocking findings remain and the brief requests full-review evidence depth.
+- `independent`: a separate reviewer pass checks semantics and evidence. Standard delivery requires one current passed `ReviewAttestation` binding Run, Brief, Plan, review cycle, opaque executor/reviewer actor and session IDs, conclusion, reviewed formal Entity/Assessment IDs, and the reviewed subject hash.
 - `self_review_fallback`: the same agent reviews because independent review is unavailable. Standard delivery may proceed only with disclosure; full-review delivery is not allowed.
 - `not_run`: no review. Only initial or clearly pending outputs may be delivered.
+
+`reviewed_subject_hash` is SHA-256 over the documented canonical semantic
+projection: all research-conclusion inputs, including Run, Brief, Plan,
+Candidates, Entities, Sources, Observations, Claims, ClaimEvidence,
+ScopeDecisions, Assessments, ReviewFindings, SearchLogs, contacts, and other
+research records. It excludes only `review_attestations`, `audits`, and
+`delivery_manifests` to avoid self-reference; collections are sorted by their
+formal IDs before canonical JSON serialization. It is not a raw JSON file-byte
+hash.
+
+In this local deployment, `provenance_level` is always
+`declared_separate_session`. It permits standard delivery only with the
+disclosure “本次复核由独立会话声明完成，未获得平台身份验证。”.
+`full_review_package` is not available in this local deployment. Different
+JSON IDs prove structured declarations only; they cannot by themselves prove
+truly independent people or models.
+
+A failed attestation consumes its `review_cycle_id`; a later independent
+review must use a new cycle. Audit snapshots and DeliveryManifests must cite
+the current attestation, subject hash, provenance level, and Run cycle.
 
 ## Review checklist
 

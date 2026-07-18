@@ -1,1 +1,20 @@
-{"extends":"pass_correspondence_export_contact_with_note.json","patches":[{"op":"replace","path":"/contact_claims/0/association_evidence_text","value":"sales@example.com"}]}
+{
+  "extends": "pass_correspondence_export_contact_with_note.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/contact_claims/0/association_evidence_text",
+      "value": "sales@example.com"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "118daba4056c56c038bab1f5aeadeb20648396298adb11a13cd9dd8e7a84f8fb"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "118daba4056c56c038bab1f5aeadeb20648396298adb11a13cd9dd8e7a84f8fb"
+    }
+  ]
+}

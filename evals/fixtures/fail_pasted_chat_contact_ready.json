@@ -1,1 +1,25 @@
-{"extends":"pass_user_provided_spreadsheet_contact.json","patches":[{"op":"replace","path":"/sources/0/provenance","value":"manual_input"},{"op":"replace","path":"/sources/0/material_role","value":"user_authored_note"}]}
+{
+  "extends": "pass_user_provided_spreadsheet_contact.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/sources/0/provenance",
+      "value": "manual_input"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/material_role",
+      "value": "user_authored_note"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "213a51569d90d142bb09850bbb501d759c07b18b247d339078f3def669198680"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "213a51569d90d142bb09850bbb501d759c07b18b247d339078f3def669198680"
+    }
+  ]
+}

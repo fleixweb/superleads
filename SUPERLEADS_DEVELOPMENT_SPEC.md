@@ -27,6 +27,8 @@ Superleads 是一套通用外贸线上客户开发 Skill Suite。
 它用于从公开互联网、用户提供文件、官网、目录、PDF、展会资料、地图、社媒可见页面等来源中，发现、整理、核查、分层输出海外潜在客户和联系方式。
 ```
 
+它以类似通用 Agent Skill 的方式运行于 Codex、Claude Code、Hermes、WorkBuddy 等宿主：Skill 指导 Agent 理解当前任务、调用宿主实际可用工具并组织研究步骤；它不是独立应用界面、客户数据库、工作台或企业合规平台。
+
 Superleads 不是：
 
 ```text
@@ -43,14 +45,25 @@ LinkedIn 抓取器
 Superleads 是：
 
 ```text
-外贸客户开发工作流
-联系方式情报系统
-证据分层系统
-客户线索分层交付系统
+跨 Agent 外贸客户开发方法
+联系方式情报与证据约束方法
+客户线索分层交付方法
 跨 Agent / 跨平台方法论
 ```
 
-### 1.1 平台与公开 HTTP 来源边界
+### 1.1 职责边界
+
+```text
+用户当前 Brief：定义本次产品/能力、目标对象、排除对象、国家或地区语义与交付目标
+Agent 语义研究：理解自由文本商业语境，生成查询策略，判断候选、冲突与待确认事项
+宿主工具：按实际可用能力执行搜索、打开公开来源、读取文件或其他受控操作
+轻量脚本门禁：仅阻止可确定的虚构、证据错配、联系方式猜测、实体错配、违反当前 Brief 的正式交付与敏感信息泄漏
+用户反馈与人工复核：校正本次业务判断，并在后续任务中改进 Brief、查询和核验方法
+```
+
+外贸客户开发的产品边界、应用边界、客户角色、地区含义、竞争对象处理和商业可行性，主要依赖当前用户语境、Agent 的语义研究和人工复核；不得以静态行业词典、默认 ICP 或脚本规则替代这些判断。脚本是交付安全带，不是商业判断器；不得要求用户直接操作内部图谱、Claim、ScopeDecision、Audit 或规则 ID。
+
+### 1.2 平台与公开 HTTP 来源边界
 
 当 Run 记录 `platform` 时，它必须是 canonical host ID：仅小写 ASCII
 字母、数字和下划线，不接受前后空白、大小写变体或连字符。该规则不枚举
@@ -305,7 +318,7 @@ D. 补全已有表格
    保留原字段，补官网、联系方式、来源链接和开发建议。
 
 E. 完整核查版
-   输出来源链接、联系方式归属、待核查事项和检查说明。
+   当前个人本地部署不提供该交付级别；请求必须被拒绝。
 ```
 
 避免用户端术语：
@@ -651,7 +664,7 @@ not_run
 交付影响：
 
 ```text
-independent + 检查通过 → 可完整交付
+independent + 检查通过 → 可标准交付并保留独立复核披露
 self_review_fallback → 只能带说明交付
 not_run → 只能输出初筛/待核查
 ```
@@ -679,6 +692,9 @@ initial_lead_list
 standard_development_list
 full_review_package
 ```
+
+当前个人本地部署不提供 `full_review_package`；该值仅用于拒绝请求或
+识别历史产物，不能成为可交付状态。
 
 用户端：
 
@@ -717,6 +733,8 @@ full_review_package
 已排除客户
 检查说明
 ```
+
+当前个人本地部署不导出完整核查版工作簿。
 
 ---
 
@@ -792,7 +810,7 @@ scoped
 → remediation_submitted
 → re_reviewed
 → checked
-→ initial_lead_list / standard_development_list / full_review_package
+→ initial_lead_list / standard_development_list
 ```
 
 注意：
@@ -941,6 +959,16 @@ unknown
 
 ## 16. Phase 2: 本次找客户规则与方向匹配
 
+### 16.0 Phase 2 实施重点
+
+Phase 2 的目标是让 Skill 在真实宿主能力下完成“理解需求 -> 形成 Brief -> 规划 -> 搜索发现 -> 打开来源 -> 收集公开联系方式 -> 判断 -> 复核 -> 导出”的最小研究闭环，而不是把 Superleads 扩展为工作台、合规平台或静态行业决策系统。
+
+产品、行业、国家、地区、客户角色和竞争关系必须由当前用户的自由文本定义。比如中性包装 aftermarket 与原厂件、舞台专业音响与家电音响、“当地实体”与“服务该市场”的区别、经销商/维修商/制造商/终端用户的取舍，均应由 Brief 澄清、Agent 语义判断、公开证据和人工复核共同处理，不能由核心脚本硬编码推断。
+
+协议与脚本只保留高价值、可机械验证的最后一道约束：不得把搜索摘要当正式事实、不得猜测或错配联系方式、不得跨 Entity 拼接证据、不得越过当前 Brief 的明确纳入/排除边界、不得把未打开或无证据对象伪装为已核验客户。除非真实任务反复暴露同一种可确定的交付风险，不得仅为增加 eval 数量而新增 schema、状态机、字段或门禁。
+
+Phase 2 以连续真实业务任务验收，而不是以门禁数量验收。每次任务至少记录候选发现数、成功打开来源数、满足方向和地区证据数、最终可跟进名单数、人工抽查结果、联系方式可用性和用户业务反馈。只有跨任务重复出现的真实问题，才应转化为 fixture、Skill 改进或确定性脚本修复。
+
 ### 16.1 当前 Brief 专属合同
 
 新客户开发 Brief 使用 `customer_selection_contract` 记录“本次找什么 / 不找什么 / 怎么判断 / 暂不确定什么”。它的供货说明、商业定位、应用边界、目标对象、排除对象、竞争关系说明与全部规则内容均为自由文本；不得建立产品、行业、国家、地区、应用、客户角色、规模、品牌或渠道的固定业务枚举。
@@ -972,6 +1000,15 @@ ScopeDecision: in_scope | out_of_scope | needs_confirmation | reference_only
 
 Plan 必须绑定当前 Brief，分别列出正向和排除规则，并让每条规则至少对应一个查询或核验步骤。查询词和搜索提示仅从当前 Brief 推导；排除查询只用于发现风险，正式排除或纳入均需要公开 Observation -> 同 Entity Claim -> ClaimEvidence。
 
+只要新客户开发 Brief 的 `target_country_or_region` 含任一非空用户 literal，
+`customer_selection_contract.geography_contract` 即为必填正式合同，不得缺失或为
+`null`。它的 `included_geography_literals` 与目标地区的规范化集合必须精确一致，
+但 Brief 中原始用户 literal 必须保留。Plan 必须绑定其 geography query group；
+每个正式地理准入须以同 Entity、已打开、公开且安全来源中的逐字地区 literal 为
+依据，并满足当前 Brief 的 first-party/public 来源关系要求。SearchLog、搜索摘要、
+域名后缀、语言、电话区号、关键词和无关 Claim 都不能替代该 Claim。未指定地区的
+全球任务不得虚构地区合同或“全球” literal。
+
 `scope_decisions` 记录某 Candidate/Entity 对当前合同的可追溯判断。Candidate 未解析为 Entity 时，只能是 `needs_confirmation` 或 `reference_only`。`supported_match` / `supported_conflict` 必须引用同 Entity、可用于 Assessment 的正式 Claim；用户材料、邮件、图片/OCR、搜索摘要、Candidate 与 Hypothesis 不能替代它。
 
 对新客户开发模式的 `重点开发` / `推荐跟进`：必须有当前 Run、当前 Brief、同一 Entity 的 `in_scope` ScopeDecision；每条 `required_for_positive` 规则必须为 `supported_match`；命中的 `block_when_supported` 排除规则、配置为阻断的 `unknown`、或 `provisional` 合同均阻断正向 Assessment 和标准/完整交付。联系方式、网站、国家、关键词相似度不能绕过方向检查。
@@ -995,7 +1032,7 @@ rule 的公开原文命中其 `conflict_markers`，ScopeDecision 必须记录冲
 明确允许相应 Claim type 和 marker。
 
 `task_mode=unknown` 只能形成初筛、方向样本或待确认任务，不能生成标准开发名单、
-完整核查版、重点开发或推荐跟进。除 `single_company_analysis` 和
+重点开发或推荐跟进。除 `single_company_analysis` 和
 `existing_table_enrichment` 外，任何正向正式客户交付都须有实质性当前合同：至少
 一条 selection rule，且至少一条 `required_for_positive=true`。`material_list_extraction`
 若未具备该完整合同，只能形成初筛或材料结果；要产生正向 Assessment 或正式名单，
@@ -1032,11 +1069,13 @@ identity review report；提示不是 Claim、EntityRelationship、合并/拆分
 
 ### 16.4 导出和复核
 
-标准开发名单与完整核查版只导出当前 Run 的正向 `in_scope` Entity 及合格联系方式。`needs_confirmation`、`out_of_scope`、`reference_only` 不得进入客户主表、联系人汇总或开发建议；初筛可分区显示业务化标签“需确认 / 不符合本次方向 / 仅作参考”。不得向用户展示 TargetingContract、ScopeDecision、Claim、规则 ID、Review、Audit 或技术引用字段。
+标准开发名单只导出当前 Run 的正向 `in_scope` Entity 及合格联系方式。`needs_confirmation`、`out_of_scope`、`reference_only` 不得进入客户主表、联系人汇总或开发建议；初筛可分区显示业务化标签“需确认 / 不符合本次方向 / 仅作参考”。不得向用户展示 TargetingContract、ScopeDecision、Claim、规则 ID、Review、Audit 或技术引用字段。当前个人本地部署不提供完整核查版。
 
 独立复核必须检查用户原话与合同是否一致、Plan 是否覆盖正向与排除规则、正向客户是否有同实体公开证据、竞争/品牌/制造商或相近应用对象是否误入客户池，以及未知是否被合理化为符合。
 
 这套门禁不改变用户材料、`mail.read`、`image.inspect`、Inquiry、Claim、Contact、Review、Audit、Manifest、hash 与新鲜度规则。它不绑定 MCP、模型、Agent 或平台，不携带默认 ICP；邮件、图片和用户材料仍只能在各自允许的用途内参与当前方向的线索和核验流程。
+
+不得为了“看起来更安全或完整”而引入服务器、账号体系、签名、密钥、OAuth、环境变量信任根、MCP 或平台依赖。当前环境无法可信验证某项属性时，系统必须明确降级并在适用的交付中披露，不得模拟、伪称或自行补造该信任属性。
 
 原始邮件或完整聊天导出可为 `correspondence_export`，但截图、转述和局部粘贴默认是 `visual_reference` 或 `user_authored_note`。沟通记录只能表述“某人在用户提供沟通记录中这样表述”，不能证明企业资质、采购权、真实需求、商标权属或公司关系，也不能进入 `Assessment.basis_claim_ids`。
 
@@ -1447,7 +1486,7 @@ Audit graph hash 新鲜
 needs_correction 不允许正式交付
 初筛客户名单允许弱证据，但必须标注状态
 标准开发名单必须包含来源链接和联系方式状态
-完整核查版必须包含检查说明
+当前个人本地部署不提供完整核查版
 用户文件显示为业务化文件名与页码/工作表定位，不输出路径或 artifact hash
 ```
 

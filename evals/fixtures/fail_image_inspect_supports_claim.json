@@ -1,1 +1,55 @@
-{"extends":"pass_user_provided_pdf_claim.json","patches":[{"op":"replace","path":"/sources/0/material_role","value":"visual_reference"},{"op":"replace","path":"/sources/0/medium","value":"image"},{"op":"replace","path":"/sources/0/artifact_name","value":"logo.png"},{"op":"replace","path":"/sources/0/artifact_media_type","value":"image/png"},{"op":"replace","path":"/observations/0/capability","value":"image.inspect"},{"op":"replace","path":"/observations/0/raw_excerpt","value":"Example Buyer"},{"op":"replace","path":"/observations/0/snapshot_ref","value":"artifact:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa#image=1"},{"op":"add","path":"/observations/0/observation_content_kind","value":"ocr_text"}]}
+{
+  "extends": "pass_user_provided_pdf_claim.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/sources/0/material_role",
+      "value": "visual_reference"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/medium",
+      "value": "image"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/artifact_name",
+      "value": "logo.png"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/artifact_media_type",
+      "value": "image/png"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/capability",
+      "value": "image.inspect"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/raw_excerpt",
+      "value": "Example Buyer"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/snapshot_ref",
+      "value": "artifact:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa#image=1"
+    },
+    {
+      "op": "add",
+      "path": "/observations/0/observation_content_kind",
+      "value": "ocr_text"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "c30084fad6dfeef8872f50c483d4032f8641fbcd1e85aac4d0930dffe7f7f234"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "c30084fad6dfeef8872f50c483d4032f8641fbcd1e85aac4d0930dffe7f7f234"
+    }
+  ]
+}

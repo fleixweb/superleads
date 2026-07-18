@@ -1,6 +1,6 @@
 ---
 name: reviewing-lead-research
-description: "Independently review Superleads lead research for source support, contact ownership, Hypothesis/Claim separation, Assessment overcertainty, identity mismatch, and preserved conflicts. Use before standard or full delivery, or as self-review fallback when independent review is unavailable."
+description: "Independently review Superleads lead research for source support, contact ownership, Hypothesis/Claim separation, Assessment overcertainty, identity mismatch, and preserved conflicts. Use before standard delivery, or as self-review fallback when independent review is unavailable."
 ---
 
 # Reviewing Lead Research
@@ -16,6 +16,13 @@ Read `../../shared/policies/review-and-remediation-policy.md`, `../../shared/pol
 ## Review modes
 
 Set `review_mode` to `independent`, `self_review_fallback`, or `not_run`.
+For `independent`, create exactly one current passed `ReviewAttestation` for
+the Run/Brief/Plan/review cycle. Use only opaque actor/session IDs; bind every
+formally exported Assessment and its Entity; recompute the canonical
+`reviewed_subject_hash` before signing off. A failed cycle cannot be reused.
+Use `declared_separate_session`. It permits standard output only with the
+required disclosure “本次复核由独立会话声明完成，未获得平台身份验证。”.
+Different JSON IDs are declarations, not identity proof.
 
 ## Checklist
 
@@ -38,6 +45,10 @@ Set `review_mode` to `independent`, `self_review_fallback`, or `not_run`.
   direction decision -> Assessment. Create a blocking finding for irrelevant
   Claim types, absent markers, hidden conflicts, or unresolved competitor/brand
   aliases promoted to customer.
+- For any non-empty target geography, require its geography contract and
+  inspect the same-Entity public source literal for the user-provided
+  geography. Do not accept a search result, TLD, language, phone code, or
+  ranking as location/market proof.
 
 ## Output
 
@@ -45,4 +56,6 @@ Create ReviewFinding records with severity, target artifact, issue, required fix
 
 ## Delivery impact
 
-Independent review plus no blocking findings allows full delivery. Self-review fallback requires disclosure. Not-run review limits output to initial or pending tiers.
+Declared separate-session review and self-review fallback require disclosure.
+This local deployment does not provide `full_review_package`. Not-run review
+limits output to initial or pending tiers.

@@ -1,1 +1,187 @@
-{"extends":"pass_user_provided_pdf_claim.json","patches":[{"op":"replace","path":"/briefs/0/customer_selection_contract/selection_requirements/0/allowed_claim_types","value":["brand_trademark"]},{"op":"replace","path":"/briefs/0/customer_selection_contract/selection_requirements/0/evidence_markers","value":["owns Example Buyer"]},{"op":"replace","path":"/claims/0/claim_type","value":"brand_trademark"},{"op":"replace","path":"/claims/0/predicate","value":"owns"},{"op":"replace","path":"/claims/0/typed_value","value":{"text":"Example Buyer"}},{"op":"replace","path":"/claims/0/claim_id","value":"claim_trademark_001"},{"op":"replace","path":"/claim_evidence/0/claim_id","value":"claim_trademark_001"},{"op":"replace","path":"/claim_evidence/0/observation_id","value":"obs_registry_001"},{"op":"replace","path":"/claim_evidence/0/claim_field_anchors/predicate","value":"owns"},{"op":"replace","path":"/claim_evidence/0/claim_field_anchors/claim_type","value":"Example Buyer owns Example Buyer"},{"op":"replace","path":"/claim_evidence/0/claim_field_anchors/typed_value","value":"Example Buyer"},{"op":"replace","path":"/assessments/0/basis_claim_ids/0","value":"claim_trademark_001"},{"op":"replace","path":"/assessments/0/rationale_structured/basis_claim_ids/0","value":"claim_trademark_001"},{"op":"replace","path":"/scope_decisions/0/rule_evaluations/0/supporting_claim_ids/0","value":"claim_trademark_001"},{"op":"replace","path":"/scope_decisions/0/rule_evaluations/0/claim_classifications/0","value":{"claim_id":"claim_trademark_001","classification":"supports","matched_marker":"owns Example Buyer","reason":"Registry excerpt contains the current trademark marker."}},{"op":"replace","path":"/scope_decisions/0/rule_evaluations/0/reviewed_observation_ids/0","value":"obs_registry_001"},{"op":"append","path":"/sources/-","value":{"source_id":"src_registry_001","publisher_relation":"third_party","provenance":"discovered_public","medium":"registry","access_boundary":"public","owner_hint":"trademark registry","canonical_url":"https://registry.example/trademark","final_url":"https://registry.example/trademark/example-buyer"}},{"op":"append","path":"/observations/-","value":{"observation_id":"obs_registry_001","source_id":"src_registry_001","candidate_id":null,"entity_id":"ent_pdf_001","capability":"trademark.lookup","concrete_tool":"fixture","observed_at":"2026-07-15T00:00:00Z","access_status":"ok","http_status":200,"title":"Trademark registry","raw_excerpt":"Example Buyer owns Example Buyer.","page_or_dom_locator":"record","content_hash":"registry_001","extraction_method":"fixture","tool_version":"fixture","language":"en","translation_status":"original","derived_from_observation_id":null,"snapshot_ref":null}},{"op":"append","path":"/sources/-","value":{"source_id":"src_logo_001","publisher_relation":"unknown","provenance":"user_provided","material_role":"visual_reference","medium":"image","access_boundary":"user_supplied","owner_hint":"logo image","artifact_sha256":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","artifact_name":"logo.png","artifact_media_type":"image/png"}},{"op":"append","path":"/observations/-","value":{"observation_id":"obs_logo_001","source_id":"src_logo_001","candidate_id":null,"entity_id":null,"capability":"image.inspect","concrete_tool":"fixture","observed_at":"2026-07-15T00:00:00Z","access_status":"ok","http_status":null,"title":"logo OCR","raw_excerpt":"Example Buyer","page_or_dom_locator":"image 1","content_hash":"logo_ocr_001","extraction_method":"OCR","tool_version":"fixture","language":"en","translation_status":"not_translated","derived_from_observation_id":null,"snapshot_ref":"artifact:sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc#image=1","observation_content_kind":"ocr_text"}}]}
+{
+  "extends": "pass_user_provided_pdf_claim.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/briefs/0/customer_selection_contract/selection_requirements/0/allowed_claim_types",
+      "value": [
+        "brand_trademark"
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/briefs/0/customer_selection_contract/selection_requirements/0/evidence_markers",
+      "value": [
+        "owns Example Buyer"
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/claims/0/claim_type",
+      "value": "brand_trademark"
+    },
+    {
+      "op": "replace",
+      "path": "/claims/0/predicate",
+      "value": "owns"
+    },
+    {
+      "op": "replace",
+      "path": "/claims/0/typed_value",
+      "value": {
+        "text": "Example Buyer"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/claims/0/claim_id",
+      "value": "claim_trademark_001"
+    },
+    {
+      "op": "replace",
+      "path": "/claim_evidence/0/claim_id",
+      "value": "claim_trademark_001"
+    },
+    {
+      "op": "replace",
+      "path": "/claim_evidence/0/observation_id",
+      "value": "obs_registry_001"
+    },
+    {
+      "op": "replace",
+      "path": "/claim_evidence/0/claim_field_anchors/predicate",
+      "value": "owns"
+    },
+    {
+      "op": "replace",
+      "path": "/claim_evidence/0/claim_field_anchors/claim_type",
+      "value": "Example Buyer owns Example Buyer"
+    },
+    {
+      "op": "replace",
+      "path": "/claim_evidence/0/claim_field_anchors/typed_value",
+      "value": "Example Buyer"
+    },
+    {
+      "op": "replace",
+      "path": "/assessments/0/basis_claim_ids/0",
+      "value": "claim_trademark_001"
+    },
+    {
+      "op": "replace",
+      "path": "/assessments/0/rationale_structured/basis_claim_ids/0",
+      "value": "claim_trademark_001"
+    },
+    {
+      "op": "replace",
+      "path": "/scope_decisions/0/rule_evaluations/0/supporting_claim_ids/0",
+      "value": "claim_trademark_001"
+    },
+    {
+      "op": "replace",
+      "path": "/scope_decisions/0/rule_evaluations/0/claim_classifications/0",
+      "value": {
+        "claim_id": "claim_trademark_001",
+        "classification": "supports",
+        "matched_marker": "owns Example Buyer",
+        "reason": "Registry excerpt contains the current trademark marker."
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/scope_decisions/0/rule_evaluations/0/reviewed_observation_ids/0",
+      "value": "obs_registry_001"
+    },
+    {
+      "op": "append",
+      "path": "/sources/-",
+      "value": {
+        "source_id": "src_registry_001",
+        "publisher_relation": "third_party",
+        "provenance": "discovered_public",
+        "medium": "registry",
+        "access_boundary": "public",
+        "owner_hint": "trademark registry",
+        "canonical_url": "https://registry.example/trademark",
+        "final_url": "https://registry.example/trademark/example-buyer"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/observations/-",
+      "value": {
+        "observation_id": "obs_registry_001",
+        "source_id": "src_registry_001",
+        "candidate_id": null,
+        "entity_id": "ent_pdf_001",
+        "capability": "trademark.lookup",
+        "concrete_tool": "fixture",
+        "observed_at": "2026-07-15T00:00:00Z",
+        "access_status": "ok",
+        "http_status": 200,
+        "title": "Trademark registry",
+        "raw_excerpt": "Example Buyer owns Example Buyer.",
+        "page_or_dom_locator": "record",
+        "content_hash": "registry_001",
+        "extraction_method": "fixture",
+        "tool_version": "fixture",
+        "language": "en",
+        "translation_status": "original",
+        "derived_from_observation_id": null,
+        "snapshot_ref": null
+      }
+    },
+    {
+      "op": "append",
+      "path": "/sources/-",
+      "value": {
+        "source_id": "src_logo_001",
+        "publisher_relation": "unknown",
+        "provenance": "user_provided",
+        "material_role": "visual_reference",
+        "medium": "image",
+        "access_boundary": "user_supplied",
+        "owner_hint": "logo image",
+        "artifact_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "artifact_name": "logo.png",
+        "artifact_media_type": "image/png"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/observations/-",
+      "value": {
+        "observation_id": "obs_logo_001",
+        "source_id": "src_logo_001",
+        "candidate_id": null,
+        "entity_id": null,
+        "capability": "image.inspect",
+        "concrete_tool": "fixture",
+        "observed_at": "2026-07-15T00:00:00Z",
+        "access_status": "ok",
+        "http_status": null,
+        "title": "logo OCR",
+        "raw_excerpt": "Example Buyer",
+        "page_or_dom_locator": "image 1",
+        "content_hash": "logo_ocr_001",
+        "extraction_method": "OCR",
+        "tool_version": "fixture",
+        "language": "en",
+        "translation_status": "not_translated",
+        "derived_from_observation_id": null,
+        "snapshot_ref": "artifact:sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc#image=1",
+        "observation_content_kind": "ocr_text"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "3276a6ab10002a1f746891cb457f4cb59d3617ea1175b030e454689d0c5ebeee"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "3276a6ab10002a1f746891cb457f4cb59d3617ea1175b030e454689d0c5ebeee"
+    }
+  ]
+}

@@ -1,9 +1,35 @@
 {
   "extends": "pass_codex_shell_http_source_open_standard.json",
   "patches": [
-    {"op": "replace", "path": "/sources/0/canonical_url", "value": "http://2130706433/private"},
-    {"op": "replace", "path": "/sources/0/final_url", "value": "http://2130706433/private"},
-    {"op": "replace", "path": "/runs/0/capability_adapter_report/host_tools/shell_http/operations/open_source/original_url", "value": "http://2130706433/private"},
-    {"op": "replace", "path": "/runs/0/capability_adapter_report/host_tools/shell_http/operations/open_source/final_url", "value": "http://2130706433/private"}
+    {
+      "op": "replace",
+      "path": "/sources/0/canonical_url",
+      "value": "http://2130706433/private"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/final_url",
+      "value": "http://2130706433/private"
+    },
+    {
+      "op": "replace",
+      "path": "/runs/0/capability_adapter_report/host_tools/shell_http/operations/open_source/original_url",
+      "value": "http://2130706433/private"
+    },
+    {
+      "op": "replace",
+      "path": "/runs/0/capability_adapter_report/host_tools/shell_http/operations/open_source/final_url",
+      "value": "http://2130706433/private"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "5682c6f9e363ff9999cc1470a09248c84ef93857d464740f09b1b594551da96c"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "5682c6f9e363ff9999cc1470a09248c84ef93857d464740f09b1b594551da96c"
+    }
   ]
 }

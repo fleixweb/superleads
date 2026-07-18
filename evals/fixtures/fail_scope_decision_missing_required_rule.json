@@ -1,6 +1,19 @@
 {
   "extends": "pass_aftermarket_neutral_brand_distributor.json",
   "patches": [
-    {"op":"remove","path":"/scope_decisions/0/rule_evaluations/0"}
+    {
+      "op": "remove",
+      "path": "/scope_decisions/0/rule_evaluations/0"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "606043f5193d551c1d569c948cafcfecda87f94b51beed95c3917a57fa614cff"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "606043f5193d551c1d569c948cafcfecda87f94b51beed95c3917a57fa614cff"
+    }
   ]
 }

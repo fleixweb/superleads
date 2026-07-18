@@ -1,8 +1,32 @@
 {
   "extends": "pass_minimal_graph.json",
   "patches": [
-    {"op": "replace", "path": "/runs/0/platform", "value": "shell_curl"},
-    {"op": "add", "path": "/runs/0/capabilities", "value": {"source.open": "available"}},
-    {"op": "replace", "path": "/observations/0/concrete_tool", "value": "curl"}
+    {
+      "op": "replace",
+      "path": "/runs/0/platform",
+      "value": "shell_curl"
+    },
+    {
+      "op": "add",
+      "path": "/runs/0/capabilities",
+      "value": {
+        "source.open": "available"
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/concrete_tool",
+      "value": "curl"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "be21ed181553fa7548818fc26dad476f5b7d1c454f7976c2288d0f8b026248a0"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "be21ed181553fa7548818fc26dad476f5b7d1c454f7976c2288d0f8b026248a0"
+    }
   ]
 }

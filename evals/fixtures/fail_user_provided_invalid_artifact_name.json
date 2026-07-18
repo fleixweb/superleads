@@ -1,1 +1,20 @@
-{"extends":"pass_user_provided_pdf_claim.json","patches":[{"op":"replace","path":"/sources/0/artifact_name","value":"C:\\private\\catalog.pdf"}]}
+{
+  "extends": "pass_user_provided_pdf_claim.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/sources/0/artifact_name",
+      "value": "C:\\private\\catalog.pdf"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "cd66cc5b4105ce2445f8e9e50ba0a7d6a07e1d865ba76c1ff41c1937d428f7ca"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "cd66cc5b4105ce2445f8e9e50ba0a7d6a07e1d865ba76c1ff41c1937d428f7ca"
+    }
+  ]
+}

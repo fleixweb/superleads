@@ -1,7 +1,25 @@
 {
   "extends": "pass_connected_inbound_contact_with_note.json",
   "patches": [
-    {"op":"replace","path":"/contact_claims/0/export_status","value":"ready"},
-    {"op":"replace","path":"/contact_claims/0/user_status","value":"可直接使用"}
+    {
+      "op": "replace",
+      "path": "/contact_claims/0/export_status",
+      "value": "ready"
+    },
+    {
+      "op": "replace",
+      "path": "/contact_claims/0/user_status",
+      "value": "可直接使用"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "9380cbadf711abf22c964b8ba58aa4431dca38f16a49638e02b5aa57724403b4"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "9380cbadf711abf22c964b8ba58aa4431dca38f16a49638e02b5aa57724403b4"
+    }
   ]
 }

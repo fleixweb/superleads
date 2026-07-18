@@ -1,1 +1,20 @@
-{"extends":"pass_user_provided_pdf_claim.json","patches":[{"op":"replace","path":"/observations/0/snapshot_ref","value":"artifact:sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc#page=3"}]}
+{
+  "extends": "pass_user_provided_pdf_claim.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/observations/0/snapshot_ref",
+      "value": "artifact:sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc#page=3"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "92f4ab00d30d0fc110d7a930028d3a6bfb8896a96e87af08cd582e1a69f8c0a0"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "92f4ab00d30d0fc110d7a930028d3a6bfb8896a96e87af08cd582e1a69f8c0a0"
+    }
+  ]
+}

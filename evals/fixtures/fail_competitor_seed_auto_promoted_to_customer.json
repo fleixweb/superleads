@@ -1,6 +1,22 @@
 {
   "extends": "pass_aftermarket_neutral_brand_distributor.json",
   "patches": [
-    {"op":"add","path":"/briefs/0/competitors_or_brands","value":["Example Buyer"]}
+    {
+      "op": "add",
+      "path": "/briefs/0/competitors_or_brands",
+      "value": [
+        "Example Buyer"
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "1925efb5a289221d8af4c6b491ef707fcf8eebaaaf540885d38ba7b97cceec9a"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "1925efb5a289221d8af4c6b491ef707fcf8eebaaaf540885d38ba7b97cceec9a"
+    }
   ]
 }

@@ -1,1 +1,19 @@
-{"extends":"pass_user_provided_pdf_claim.json","patches":[{"op":"remove","path":"/observations/0/snapshot_ref"}]}
+{
+  "extends": "pass_user_provided_pdf_claim.json",
+  "patches": [
+    {
+      "op": "remove",
+      "path": "/observations/0/snapshot_ref"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "48189239f56b3129ad178af69b34fb512bade3e6cdc8eba9caeafd60570a8ea4"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "48189239f56b3129ad178af69b34fb512bade3e6cdc8eba9caeafd60570a8ea4"
+    }
+  ]
+}
