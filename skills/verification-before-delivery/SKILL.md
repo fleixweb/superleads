@@ -7,7 +7,7 @@ description: "Run deterministic Superleads delivery checks before export: valida
 
 ## Purpose
 
-Perform deterministic checks immediately before user delivery.
+Perform deterministic checks immediately before user delivery. Use the light branch for default discovery and the strict branch for formal delivery.
 
 ## Required scripts and schemas
 
@@ -15,12 +15,10 @@ Use `../../scripts/validate_research_graph.py`, `../../scripts/audit_delivery.py
 
 ## Workflow
 
-1. Validate graph ID closure and artifact boundaries.
-2. Audit contact source and association evidence.
-3. Confirm Claims have ClaimEvidence and blocked/login-wall pages do not support facts.
-4. Confirm every critical/major ReviewFinding is `verified_fixed`. Use `accepted_with_disclosure` only for non-misleading weak evidence or minor limitations.
-5. Compute graph hash and ensure `current_graph_hash == audit_graph_hash` before export.
-6. Set internal delivery status: `needs_correction`, `initial_lead_list`, `standard_development_list`, or `inquiry_followup_queue`.
+1. Always validate graph ID closure, artifact boundaries, guessed-contact blocking, identity mismatch, and other deterministic anti-fabrication rules.
+2. For default discovery, do not require Claim, Assessment, ScopeDecision, ReviewAttestation, or Audit completeness merely to deliver a candidate pool.
+3. For explicit deep-check work, audit contact source and association evidence, formal ClaimEvidence, ReviewFinding closure, and graph-hash freshness.
+4. Set internal delivery status: `needs_correction`, `initial_lead_list`, `standard_development_list`, or `inquiry_followup_queue`.
 
 For independent formal delivery, recompute and match the current canonical
 `reviewed_subject_hash`; require exactly one passed current ReviewAttestation
@@ -68,8 +66,8 @@ result label.
 
 ## User labels
 
-Map statuses to: 需修正后交付, 初筛客户名单, 标准开发名单, 询盘待办.
+Map statuses to: 需修正后交付, 发现候选池, 标准开发名单, 询盘待办.
 
 ## Hard constraints
 
-Do not formally export when status is `needs_correction`. Initial lead list may contain weak evidence only if status notes are visible.
+Do not export when status is `needs_correction`. Discovery candidate pools may contain weak evidence only if statuses, unknowns, and restrictions remain visible.

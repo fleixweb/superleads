@@ -7,7 +7,7 @@ description: "Export Superleads lead research into user-facing XLSX or UTF-8-SIG
 
 ## Purpose
 
-Create user-facing workbook outputs after verification. Prefer XLSX when available and fall back to UTF-8-SIG CSV files.
+Create user-facing workbook outputs after verification. Default output is a discovery candidate pool, not a recommended-customer shortlist. Prefer XLSX when available and fall back to UTF-8-SIG CSV files.
 
 ## Required references and script
 
@@ -15,16 +15,23 @@ Read `../../shared/references/output-schema.md` and `../../shared/references/sta
 
 ## Sheet sets
 
-Default development version: 客户信息总表, 联系方式汇总, 开发建议, 官网与来源链接, 待核查事项, 风险与说明.
+Default discovery version: 发现候选池, 联系方式汇总, 官网与来源链接, 搜索覆盖与收敛, 待核查事项, 已排除客户, 风险与说明.
 
-Full review version: 开发需求, 关键词与搜索思路, 初筛客户名单, 客户信息总表, 联系方式汇总, 开发建议, 官网与来源链接, 待核查事项, 已排除客户, 检查说明.
+Standard development version: 客户信息总表, 联系方式汇总, 开发建议, 官网与来源链接, 待核查事项, 风险与说明.
+
+Full review version: 开发需求, 关键词与搜索思路, 发现候选池, 客户信息总表, 联系方式汇总, 开发建议, 官网与来源链接, 待核查事项, 已排除客户, 检查说明.
 
 Inquiry version: 询盘待办, 来信联系人, 询盘信息摘要, 待补充信息, 来源说明. It is not a standard development list and does not claim buyer verification.
 
 ## Export rules
 
 - `needs_correction` blocks formal standard export.
-- 初筛客户名单 may include weak evidence but must show status.
+- 发现候选池 may include weak evidence but must show relevance status,
+  signal status, unknowns, and restrictions.
+- Candidate discovery and signal links are exported only when they are safe,
+  credential-free public HTTP(S) URLs. Keep an available source label or
+  restriction note when no safe link can be shown; never export or guess a
+  local, private, credential-bearing, or malformed URL.
 - 标准开发名单 must include source links and contact status.
 - This local deployment does not provide `full_review_package`.
 - Do not expose internal artifact names as user-facing sheet names.
@@ -40,6 +47,8 @@ Inquiry version: 询盘待办, 来信联系人, 询盘信息摘要, 待补充信
 - Unknown direction, unresolved direction, and sample-first work export only
   initial direction samples. Never expose internal markers/classifications or
   present those samples as standard customers.
+- Default discovery must not be named or described as 推荐客户, 正式合格名单,
+  高质量客户名单, or purchase-probability output.
 - A formal single-company analysis must export only its user-specified target
   as `单公司分析结果`; a formal existing-table enrichment must export only bound
   spreadsheet rows as `原表补全结果`. Neither may display `符合本次方向` unless a

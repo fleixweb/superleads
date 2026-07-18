@@ -13,12 +13,45 @@ direction check. See `targeting-and-scope-policy.md`.
 
 Treat Superleads as a weak-evidence research workflow. Weak evidence may be delivered only when it is explicitly labeled as weak, provisional, or requiring manual check.
 
+## Default discovery branch
+
+Default discovery does not require every Candidate to become
+Entity → Claim → ClaimEvidence → ScopeDecision → Assessment → Review → Audit.
+It may deliver a large candidate pool with:
+
+- discovery source and de-duplication basis;
+- business relevance status;
+- public signal statuses (`observed`, `not_observed`, `not_searched`, `identity_pending`, `source_restricted`);
+- sourced contacts plus ownership status;
+- unknowns, restrictions, and next verification steps.
+
+Do not silently delete a Candidate only because formal evidence is insufficient.
+Formal Claim/Assessment gates remain mandatory only for standard delivery,
+formal company checks, contactable lists, and explicit deep verification work.
+
+For `directly_related`, `possibly_related`, and
+`explicitly_excluded_or_unrelated`, the Candidate's `business_match` signal
+must be `observed`, contain a non-empty business summary, and retain at least
+one source label or safe public HTTP(S) URL. `business_relevance_basis` explains
+the current-task classification but cannot substitute for that observed signal.
+`identity_pending` and `insufficient_information` may retain identity conflict,
+unknown, or source-gap notes without inventing an observed business signal or
+creating a Claim, ClaimEvidence, Assessment, Review, or Audit.
+
+Candidate `source_url`, `discovery_refs[].url`, and public-signal
+`items[].source_url` are user-facing URL fields. When non-empty they use the
+same runtime credential-free public HTTP(S) validation as Sources; labels,
+user-file names, and restricted-source notes remain usable when no URL is
+available.
+
 ## Artifact boundaries
 
 - `search.web` output may create Candidate clues and formal SearchLog rows only.
 - A SearchLog records the actual query, target geography literals, current
-  contract/rule binding, capability/provider record, and candidate result
-  locators. Its fixed `result_use=candidate_seed_only` means it is never a
+  contract/rule binding when present, capability/provider record, candidate
+  result locators, and coverage traces such as new-vs-duplicate candidates,
+  opened/failed/restricted sources, and dedupe basis. Its fixed
+  `result_use=candidate_seed_only` means it is never a
   Source, Observation, Claim, ClaimEvidence, ScopeDecision, Assessment, or
   ready-contact evidence. Query text, snippets, actor/session IDs, and tool
   internals are never exported to workbooks or user-facing manifests.

@@ -1,0 +1,15 @@
+{
+  "extends": "pass_default_discovery_candidate_pool.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/candidates/2/signal_summary/business_match",
+      "value": {
+        "status": "not_searched",
+        "notes": [
+          "尚未取得排除事实"
+        ]
+      }
+    }
+  ]
+}

@@ -148,19 +148,36 @@ def run_export_assertions(py: str, fixture_path: str, tmp_path: Path, index: int
     if not result["ok"]:
         return result
     haystack = ""
+    sheet_text: dict[str, str] = {}
     for item in sorted(out_dir.glob("*.csv")):
-        haystack += item.name + "\n" + item.read_text(encoding="utf-8-sig") + "\n"
+        content = item.read_text(encoding="utf-8-sig")
+        haystack += item.name + "\n" + content + "\n"
+        sheet_text[item.stem] = content
     if manifest_path.exists():
         haystack += manifest_path.read_text(encoding="utf-8")
     missing = [needle for needle in case.get("export_absent", []) if str(needle) in haystack]
     present_missing = [needle for needle in case.get("export_present", []) if str(needle) not in haystack]
-    ok = not missing and not present_missing
+    sheet_present_failures: list[str] = []
+    for sheet, needles in case.get("export_sheet_present", {}).items() if isinstance(case.get("export_sheet_present"), dict) else []:
+        content = sheet_text.get(str(sheet), "")
+        for needle in needles if isinstance(needles, list) else []:
+            if str(needle) not in content:
+                sheet_present_failures.append(f"{sheet}:{needle}")
+    sheet_absent_failures: list[str] = []
+    for sheet, needles in case.get("export_sheet_absent", {}).items() if isinstance(case.get("export_sheet_absent"), dict) else []:
+        content = sheet_text.get(str(sheet), "")
+        for needle in needles if isinstance(needles, list) else []:
+            if str(needle) in content:
+                sheet_absent_failures.append(f"{sheet}:{needle}")
+    ok = not missing and not present_missing and not sheet_present_failures and not sheet_absent_failures
     result["ok"] = ok
     result["export_absent_failures"] = missing
     result["export_present_failures"] = present_missing
+    result["export_sheet_present_failures"] = sheet_present_failures
+    result["export_sheet_absent_failures"] = sheet_absent_failures
     if not ok:
         result["returncode"] = 1
-        result["output"] += f"\nexport assertion failed absent={missing} present_missing={present_missing}"
+        result["output"] += f"\nexport assertion failed absent={missing} present_missing={present_missing} sheet_present={sheet_present_failures} sheet_absent={sheet_absent_failures}"
     return result
 
 
@@ -298,7 +315,7 @@ def add_case_tests(py: str, tests: list[tuple[str, list[str], int, list[str]]]) 
             if case.get("export_inquiry"):
                 expect = 0 if case["export_inquiry"] == "pass" else 1
                 tests.append((f"case {fixture} export_inquiry {case['export_inquiry']}", ["__EXPORT_INQUIRY__", path], expect, list(case.get("expected_error_codes", []))))
-            if case.get("export_absent") or case.get("export_present"):
+            if case.get("export_absent") or case.get("export_present") or case.get("export_sheet_present") or case.get("export_sheet_absent"):
                 tests.append((f"case {fixture} export assertions", ["__EXPORT_ASSERT__", path, json.dumps(case, ensure_ascii=False)], 0, []))
 
 

@@ -7,7 +7,7 @@ description: "Generate Superleads research plans from a Research Brief: query gr
 
 ## Purpose
 
-Turn a Research Brief into a plan for searching, opening sources, collecting contacts, and evaluating evidence. Do not produce customers, open pages, judge leads, or write final advice.
+Turn a Research Brief into a plan for searching, opening sources, collecting contacts, and evaluating evidence. Default to discovery breadth first. Do not produce customers, open pages, judge commercial value, or write final advice.
 
 ## Required references
 
@@ -18,9 +18,10 @@ Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/c
 1. Query groups tied to the current brief only.
 2. Source categories: website, social visible page, registry, directory, map, document, spreadsheet, search result.
 3. Contact collection targets covering emails, phones, forms, portals, LinkedIn visible pages, names, titles, addresses, PDFs, directories, and maps when relevant.
-4. Lead tiering criteria for 初筛客户, 推荐跟进, 重点开发, 需人工核查, 暂不建议, 排除.
-5. Claim evidence requirements, including which claims need first-party or high-authority sources.
-6. Stop conditions and downgrade strategy when tools or evidence are missing.
+4. Default business-relevance criteria for `directly_related`, `possibly_related`, `explicitly_excluded_or_unrelated`, `identity_pending`, and `insufficient_information`.
+5. Public-signal collection targets and statuses for website/contact, trade record, China relation, and product description/HS.
+6. Claim evidence requirements only for explicit deep-check tasks, including which claims need first-party or high-authority sources.
+7. Stop conditions and downgrade strategy when tools or evidence are missing.
 
 ## Current-direction coverage
 
@@ -60,3 +61,6 @@ public-source check for every geography inclusion decision.
 - Do not lock in any default industry ICP.
 - Similar keywords, a reachable contact, or a well-known company never count
   as current-direction evidence.
+- Do not stop after one page or one source merely because a few matches were
+  found. Plan coverage expansion across product terms, roles, geography, and
+  source categories before calling discovery converged.

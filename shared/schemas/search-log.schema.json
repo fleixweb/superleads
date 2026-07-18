@@ -14,9 +14,6 @@
     "capability",
     "concrete_tool",
     "query_text",
-    "targeted_geography_literals",
-    "customer_selection_contract_id",
-    "selection_rule_id",
     "result_refs",
     "result_use"
   ],
@@ -57,9 +54,12 @@
       "type": "string",
       "minLength": 1
     },
+    "query_language": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
     "targeted_geography_literals": {
       "type": "array",
-      "minItems": 1,
       "uniqueItems": true,
       "items": {
         "type": "string",
@@ -67,16 +67,60 @@
       }
     },
     "customer_selection_contract_id": {
-      "type": "string",
+      "type": ["string", "null"],
       "minLength": 1
     },
     "selection_rule_id": {
-      "type": "string",
+      "type": ["string", "null"],
       "minLength": 1
+    },
+    "source_categories": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "website",
+          "social",
+          "registry",
+          "directory",
+          "map",
+          "document",
+          "spreadsheet",
+          "search_result"
+        ]
+      }
     },
     "result_use": {
       "type": "string",
       "const": "candidate_seed_only"
+    },
+    "new_candidate_ids": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "duplicate_candidate_ids": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "accessed_source_ids": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "failed_source_refs": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "restricted_source_refs": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "dedupe_basis": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "coverage_notes": {
+      "type": "array",
+      "items": {"type": "string"}
     },
     "result_refs": {
       "type": "array",

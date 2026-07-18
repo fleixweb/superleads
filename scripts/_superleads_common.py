@@ -143,6 +143,22 @@ CONTACT_USER_STATUS_BY_EXPORT_STATUS = {
     "hold_inferred": "不可导出",
 }
 
+BUSINESS_RELEVANCE_STATUS_LABELS = {
+    "directly_related": "直接相关",
+    "possibly_related": "可能相关",
+    "explicitly_excluded_or_unrelated": "明确排除/不相关",
+    "identity_pending": "主体待确认",
+    "insufficient_information": "信息不足",
+}
+
+PUBLIC_SIGNAL_STATUS_LABELS = {
+    "observed": "已观察",
+    "not_observed": "已查未见",
+    "not_searched": "未检索",
+    "identity_pending": "主体待确认",
+    "source_restricted": "来源受限",
+}
+
 # Capability reports are supplied by the Agent/host, never discovered by the
 # local scripts.  These are workflow values, not a platform or business ICP.
 CANONICAL_CAPABILITY_STATUSES = {"available", "missing", "unknown"}
@@ -1218,6 +1234,16 @@ def canonical_contact_user_status(export_status: Any) -> str:
     return CONTACT_USER_STATUS_BY_EXPORT_STATUS.get(str(export_status or ""), "待确认归属")
 
 
+def business_relevance_user_label(status: Any) -> str:
+    """Return the only business-facing label for candidate relevance."""
+    return BUSINESS_RELEVANCE_STATUS_LABELS.get(str(status or ""), "信息不足")
+
+
+def public_signal_status_user_label(status: Any) -> str:
+    """Return the only business-facing label for public-signal observation status."""
+    return PUBLIC_SIGNAL_STATUS_LABELS.get(str(status or ""), "未检索")
+
+
 def normalized_contact_derives_from_literal(contact_type: Any, normalized_value: Any, source_literal: Any) -> bool:
     """Check that normalized_value is derivable from the cited source_literal."""
     ctype = str(contact_type or "").casefold()
@@ -1428,7 +1454,7 @@ def review_provenance_disclosure(level: Any) -> str:
     if level == "self_review_fallback":
         return "本次为 self_review_fallback 复核，未运行独立复核；交付时需保留该说明。"
     if level == "not_run":
-        return "本次未运行复核，仅可作为初筛或待核查输出。"
+        return "本次未运行复核，仅可作为发现候选池或待核查输出。"
     return ""
 
 

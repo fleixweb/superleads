@@ -6,6 +6,30 @@ Keep an evidence-correct record from becoming a business-direction error. The
 current Brief owns one free-text customer selection contract. It is not a
 product taxonomy, ICP library, market profile, or cross-Run memory.
 
+## Default discovery relevance
+
+Before formal targeting, default discovery may classify Candidates only by
+business relevance to this task:
+
+- `directly_related`
+- `possibly_related`
+- `explicitly_excluded_or_unrelated`
+- `identity_pending`
+- `insufficient_information`
+
+This classification is about current business-boundary relevance only. It is
+not a purchase-intent, commercial-value, or quality judgment.
+
+`directly_related`, `possibly_related`, and
+`explicitly_excluded_or_unrelated` require an `observed` `business_match`
+signal with a non-empty summary and a traceable source label or safe public
+HTTP(S) URL. The free-text `business_relevance_basis` records why that observed
+signal fits or conflicts with this Brief; it is not evidence by itself.
+`identity_pending` and `insufficient_information` preserve conflicts, unknowns,
+or source gaps without manufacturing a business observation. Neither state is
+a reason to silently delete a discovered Candidate or to require formal
+Claim/ClaimEvidence work.
+
 ## Current-brief contract
 
 For new customer development, `customer_selection_contract` records the

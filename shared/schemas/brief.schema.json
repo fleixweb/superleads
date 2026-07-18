@@ -52,6 +52,7 @@
     "output_mode": {
       "type": "string",
       "enum": [
+        "发现候选池",
         "初筛客户名单",
         "标准开发名单",
         "联系方式优先",
@@ -278,43 +279,6 @@
           "single_company_target": {
             "properties": {"entity_literal": {"type": "string", "minLength": 1}},
             "required": ["entity_literal"]
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "required": ["task_mode", "target_country_or_region"],
-        "properties": {
-          "task_mode": {
-            "enum": [
-              "product_scope_research",
-              "keyword_research",
-              "industry_application_research",
-              "market_customer_type_research",
-              "competitor_seed_research"
-            ]
-          },
-          "target_country_or_region": {
-            "anyOf": [
-              {"type": "string", "pattern": "\\S"},
-              {
-                "type": "array",
-                "contains": {"type": "string", "pattern": "\\S"}
-              }
-            ]
-          }
-        }
-      },
-      "then": {
-        "required": ["customer_selection_contract"],
-        "properties": {
-          "customer_selection_contract": {
-            "type": "object",
-            "required": ["geography_contract"],
-            "properties": {
-              "geography_contract": {"type": "object"}
-            }
           }
         }
       }

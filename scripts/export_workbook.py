@@ -6,11 +6,14 @@ import argparse, csv, json, re
 from pathlib import Path
 from typing import Any
 from _superleads_common import (
+    business_relevance_user_label,
     canonical_contact_user_status,
     connected_source_display,
     contains_local_path,
     ensure_list,
+    public_signal_status_user_label,
     graph_hash,
+    is_safe_public_http_url,
     load_json,
     safe_public_source_url,
     scope_status_user_label,
@@ -27,8 +30,8 @@ from audit_delivery import audit_graph
 
 MODE_TO_STATUS={"initial":"initial_lead_list","standard":"standard_development_list","full":"full_review_package","inquiry":"inquiry_followup_queue"}
 DEFAULT_SHEETS=["客户信息总表","联系方式汇总","开发建议","官网与来源链接","待核查事项","风险与说明"]
-FULL_SHEETS=["开发需求","关键词与搜索思路","初筛客户名单","客户信息总表","联系方式汇总","开发建议","官网与来源链接","待核查事项","已排除客户","检查说明"]
-INITIAL_SHEETS=["初筛客户名单","风险与说明"]
+FULL_SHEETS=["开发需求","关键词与搜索思路","发现候选池","客户信息总表","联系方式汇总","开发建议","官网与来源链接","待核查事项","已排除客户","检查说明"]
+INITIAL_SHEETS=["发现候选池","联系方式汇总","官网与来源链接","搜索覆盖与收敛","待核查事项","已排除客户","风险与说明"]
 INQUIRY_SHEETS=["询盘待办","来信联系人","询盘信息摘要","待补充信息","来源说明"]
 
 def idx(graph:dict[str,Any], key:str, field:str)->dict[str,dict[str,Any]]:
@@ -169,6 +172,335 @@ def source_display(source:dict[str,Any], observation:dict[str,Any]|None=None)->s
     if connected: return connected
     return "公开来源" if safe_public_source_url(source) else "来源信息不可用"
 
+
+def _safe_list(values:Any)->list[Any]:
+    return [item for item in ensure_list({"items": values}, "items")]
+
+
+def _status_and_detail(signal_state:Any)->tuple[str,str]:
+    if not isinstance(signal_state,dict):
+        return public_signal_status_user_label("not_searched"), ""
+    status=public_signal_status_user_label(signal_state.get("status"))
+    details=[]
+    for item in ensure_list(signal_state,"items"):
+        if isinstance(item,dict) and item.get("summary"):
+            provenance=[]
+            if item.get("source_label"):
+                provenance.append(f"来源:{item.get('source_label')}")
+            if is_safe_public_http_url(item.get("source_url")):
+                provenance.append(f"URL:{item.get('source_url')}")
+            period = [str(item.get(field)) for field in ("observed_at", "period") if item.get(field)]
+            if period:
+                provenance.append(f"日期/期间:{' / '.join(period)}")
+            if item.get("locator"):
+                provenance.append(f"定位:{item.get('locator')}")
+            details.append(str(item.get("summary")) + (f"（{'；'.join(provenance)}）" if provenance else ""))
+    if not details:
+        details.extend(str(item) for item in ensure_list(signal_state,"searched_scopes") if item)
+    if not details:
+        details.extend(str(item) for item in ensure_list(signal_state,"notes") if item)
+    return status, "；".join(details[:3])
+
+
+def _candidate_entity(candidate:dict[str,Any], decisions_by_candidate:dict[str,dict[str,Any]], entities:dict[str,dict[str,Any]])->tuple[str|None,dict[str,Any]]:
+    entity_id = candidate.get("entity_id")
+    if not entity_id:
+        decision = decisions_by_candidate.get(str(candidate.get("candidate_id")))
+        if isinstance(decision,dict):
+            entity_id = decision.get("entity_id")
+    entity = entities.get(entity_id,{}) if entity_id else {}
+    return (str(entity_id) if entity_id else None), (entity if isinstance(entity,dict) else {})
+
+
+def _candidate_assessment(entity_id:str|None, brief_id:str|None, run_id:str|None, graph:dict[str,Any])->dict[str,Any]:
+    if not entity_id:
+        return {}
+    return assessment_for_current_brief(graph, entity_id, brief_id, run_id)
+
+
+def _candidate_relevance(candidate:dict[str,Any], entity:dict[str,Any], decision:dict[str,Any], assessment:dict[str,Any])->str:
+    explicit = candidate.get("business_relevance_status")
+    if explicit in {"directly_related","possibly_related","explicitly_excluded_or_unrelated","identity_pending","insufficient_information"}:
+        return str(explicit)
+    identity_status = str(candidate.get("identity_resolution_status") or "")
+    if identity_status in {"pending","conflicted","unresolved"}:
+        return "identity_pending"
+    overall = decision.get("overall_status")
+    if overall == "in_scope":
+        return "directly_related"
+    if overall in {"out_of_scope","reference_only"}:
+        return "explicitly_excluded_or_unrelated"
+    if overall == "needs_confirmation":
+        return "identity_pending" if not entity else "insufficient_information"
+    disposition = assessment.get("disposition")
+    if disposition in {"重点开发","推荐跟进"}:
+        return "directly_related"
+    if disposition == "需人工核查":
+        return "possibly_related"
+    if disposition in {"暂不建议","排除"}:
+        return "explicitly_excluded_or_unrelated"
+    if entity or candidate.get("website") or candidate.get("domain") or candidate.get("source_url"):
+        return "possibly_related"
+    return "insufficient_information"
+
+
+def _candidate_relevance_basis(candidate:dict[str,Any], decision:dict[str,Any], assessment:dict[str,Any])->str:
+    basis=[str(item) for item in ensure_list(candidate,"business_relevance_basis") if item]
+    basis.extend(str(item) for item in ensure_list(candidate,"business_relevance_notes") if item)
+    if not basis and isinstance(decision,dict) and decision.get("decision_summary"):
+        basis.append(str(decision.get("decision_summary")))
+    if not basis and isinstance(assessment,dict) and assessment.get("disposition"):
+        basis.append(f"当前状态：{assessment.get('disposition')}")
+    if not basis and candidate.get("note"):
+        basis.append(str(candidate.get("note")))
+    return "；".join(dict.fromkeys(basis))
+
+
+def _candidate_identity_label(candidate:dict[str,Any], entity:dict[str,Any])->str:
+    explicit = str(candidate.get("identity_resolution_status") or "")
+    mapping = {
+        "matched": "已匹配主体",
+        "pending": "主体待确认",
+        "conflicted": "主体冲突待核",
+        "unresolved": "主体未解析",
+        "not_applicable": "不适用",
+    }
+    if explicit in mapping:
+        return mapping[explicit]
+    if entity:
+        return "已匹配主体"
+    return "主体待确认"
+
+
+def _candidate_refs(candidate:dict[str,Any], search_logs:dict[str,dict[str,Any]])->tuple[str,str]:
+    labels=[]
+    urls=[]
+    for ref in ensure_list(candidate,"discovery_refs"):
+        if not isinstance(ref,dict):
+            continue
+        if ref.get("label"):
+            labels.append(str(ref.get("label")))
+        if is_safe_public_http_url(ref.get("url")):
+            urls.append(str(ref.get("url")))
+    if candidate.get("source_hint"):
+        labels.append(str(candidate.get("source_hint")))
+    if is_safe_public_http_url(candidate.get("source_url")):
+        urls.append(str(candidate.get("source_url")))
+    search_log_ids=[]
+    if candidate.get("search_log_id"):
+        search_log_ids.append(str(candidate.get("search_log_id")))
+    search_log_ids.extend(str(item) for item in ensure_list(candidate,"search_log_ids") if item)
+    for search_log_id in search_log_ids:
+        log=search_logs.get(search_log_id,{})
+        if isinstance(log,dict) and log.get("query_group_id"):
+            labels.append(f"搜索组:{log.get('query_group_id')}")
+        for ref in ensure_list(log,"result_refs"):
+            if isinstance(ref,dict) and str(ref.get("candidate_id"))==str(candidate.get("candidate_id")):
+                if ref.get("result_title"):
+                    labels.append(str(ref.get("result_title")))
+                if is_safe_public_http_url(ref.get("result_url")):
+                    urls.append(str(ref.get("result_url")))
+    return "；".join(dict.fromkeys([item for item in labels if item])), "；".join(dict.fromkeys([item for item in urls if item]))
+
+
+def _candidate_signal_summary(candidate:dict[str,Any], relevance:str)->dict[str,tuple[str,str]]:
+    signal_summary = candidate.get("signal_summary") if isinstance(candidate.get("signal_summary"),dict) else {}
+    result = {
+        "website_contact": _status_and_detail(signal_summary.get("website_contact")),
+        "trade_record": _status_and_detail(signal_summary.get("trade_record")),
+        "china_relation": _status_and_detail(signal_summary.get("china_relation")),
+        "product_description_or_hs": _status_and_detail(signal_summary.get("product_description_or_hs")),
+    }
+    if "business_match" not in signal_summary:
+        fallback_status = "observed" if relevance in {"directly_related","possibly_related"} else "identity_pending" if relevance == "identity_pending" else "not_observed" if relevance == "explicitly_excluded_or_unrelated" else "not_searched"
+        result["business_match"] = (public_signal_status_user_label(fallback_status), "")
+    else:
+        result["business_match"] = _status_and_detail(signal_summary.get("business_match"))
+    return result
+
+
+def initial_contact_rows(graph:dict[str,Any])->list[dict[str,Any]]:
+    entities=idx(graph,"entities","entity_id"); contacts=idx(graph,"contact_points","contact_id"); sources=idx(graph,"sources","source_id"); observations=idx(graph,"observations","observation_id")
+    rows=[]
+    seen:set[tuple[str,str]] = set()
+    for cc in ensure_list(graph,"contact_claims"):
+        if not isinstance(cc,dict) or cc.get("export_status") in {"hold_no_source","hold_inferred"}:
+            continue
+        cp=contacts.get(cc.get("contact_id"),{})
+        source_obs=observations.get(cp.get("source_observation_id")) if isinstance(cp,dict) else {}
+        assoc_obs=observations.get(cc.get("association_observation_id"),{})
+        source_src=sources.get(source_obs.get("source_id"),{}) if isinstance(source_obs,dict) else {}
+        assoc_src=sources.get(assoc_obs.get("source_id"),{}) if isinstance(assoc_obs,dict) else {}
+        export_status = cc.get("export_status")
+        purpose = "contact_ready" if export_status == "ready" else "contact_with_source_note"
+        if not (
+            source_evidence_scope(source_src, source_obs, purpose)[0]
+            and source_evidence_scope(assoc_src, assoc_obs, purpose)[0]
+        ):
+            continue
+        display_obs = assoc_obs if isinstance(assoc_obs,dict) and assoc_obs else source_obs
+        src=assoc_src if display_obs is assoc_obs else source_src
+        contact_value = cp.get("normalized_value") if isinstance(cp,dict) else None
+        key=(str(contact_value), str(cc.get("entity_id") or ""))
+        if key in seen or not contact_value:
+            continue
+        seen.add(key)
+        rows.append({
+            "公司/线索名称": entities.get(cc.get("entity_id"),{}).get("name") or cc.get("entity_id") or "待确认归属线索",
+            "联系方式类型": cp.get("contact_type"),
+            "联系方式": contact_value,
+            "原文": cp.get("source_literal"),
+            "联系人": cc.get("person_name"),
+            "职位/部门": cc.get("job_title") or cc.get("department"),
+            "状态": contact_user_status(cc.get("export_status")),
+            "归属状态说明": cc.get("manual_check_note") or cc.get("source_context"),
+            "来源说明": source_display(src, display_obs if isinstance(display_obs,dict) else {}),
+            "来源链接": safe_public_source_url(src),
+            "归属证据/待确认原因": cc.get("association_evidence_text"),
+        })
+    for lead in ensure_list(graph,"unassigned_contact_leads"):
+        if not isinstance(lead,dict):
+            continue
+        cp=contacts.get(lead.get("contact_id"),{})
+        if not isinstance(cp,dict) or not cp.get("normalized_value"):
+            continue
+        source_obs=observations.get(cp.get("source_observation_id"),{})
+        src=sources.get(source_obs.get("source_id"),{}) if isinstance(source_obs,dict) else {}
+        if not source_evidence_scope(src, source_obs, "candidate_clue")[0]:
+            continue
+        key=(str(cp.get("normalized_value")), "")
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append({
+            "公司/线索名称": "待确认归属线索",
+            "联系方式类型": cp.get("contact_type"),
+            "联系方式": cp.get("normalized_value"),
+            "原文": cp.get("source_literal"),
+            "联系人": None,
+            "职位/部门": None,
+            "状态": "待确认归属",
+            "归属状态说明": lead.get("reason"),
+            "来源说明": source_display(src, source_obs if isinstance(source_obs,dict) else {}),
+            "来源链接": safe_public_source_url(src),
+            "归属证据/待确认原因": lead.get("suggested_manual_check"),
+        })
+    return rows
+
+
+def build_initial_sheets(graph:dict[str,Any], audit:dict[str,Any])->dict[str,list[dict[str,Any]]]:
+    entities=idx(graph,"entities","entity_id"); sources=idx(graph,"sources","source_id"); observations=idx(graph,"observations","observation_id"); search_logs=idx(graph,"search_logs","search_log_id")
+    run=get_current_run(graph); brief_id=current_brief_id(graph); run_id=run.get("run_id")
+    briefs=idx(graph,"briefs","brief_id"); brief=briefs.get(brief_id,{}) if brief_id else {}
+    contract = brief.get("customer_selection_contract") if isinstance(brief,dict) else {}
+    sample_first = isinstance(contract,dict) and (contract.get("sample_first_required") is True or contract.get("scope_state") == "provisional")
+    decisions=[d for d in ensure_list(graph,"scope_decisions") if isinstance(d,dict) and (brief_id is None or d.get("brief_id")==brief_id) and (run_id is None or d.get("run_id")==run_id)]
+    decisions_by_candidate={str(d.get("candidate_id")):d for d in decisions if d.get("candidate_id")}
+    decisions_by_entity={str(d.get("entity_id")):d for d in decisions if d.get("entity_id")}
+    candidate_rows=[]; excluded_rows=[]; source_rows=[]; source_seen:set[tuple[str,str]] = set()
+    for candidate in ensure_list(graph,"candidates"):
+        if not isinstance(candidate,dict):
+            continue
+        entity_id, entity = _candidate_entity(candidate, decisions_by_candidate, entities)
+        decision = decisions_by_candidate.get(str(candidate.get("candidate_id"))) or (decisions_by_entity.get(str(entity_id)) if entity_id else {})
+        assessment = _candidate_assessment(entity_id, brief_id, run_id, graph)
+        relevance = _candidate_relevance(candidate, entity, decision if isinstance(decision,dict) else {}, assessment)
+        relevance_basis = _candidate_relevance_basis(candidate, decision if isinstance(decision,dict) else {}, assessment)
+        signal_info = _candidate_signal_summary(candidate, relevance)
+        source_labels, source_links = _candidate_refs(candidate, search_logs)
+        default_note = "方向样本，等待确认后再扩展。" if sample_first else "发现线索保留待后续补证。"
+        row = {
+            "公司名称": candidate.get("company_name") or candidate.get("name") or entity.get("name") or entity.get("legal_name"),
+            "国家/地区": candidate.get("country_or_region") or entity.get("country_or_region"),
+            "官网/域名": candidate.get("website") or candidate.get("domain") or entity.get("website") or entity.get("domain"),
+            "发现来源": source_labels or candidate.get("source_hint"),
+            "发现链接": source_links,
+            "去重依据": "；".join(str(item) for item in ensure_list(candidate,"dedupe_basis") if item),
+            "方向状态": scope_status_user_label(decision.get("overall_status") if isinstance(decision,dict) else None),
+            "业务相关性": business_relevance_user_label(relevance),
+            "相关性依据": relevance_basis,
+            "业务/产品关联信号状态": signal_info["business_match"][0],
+            "业务/产品关联信号说明": signal_info["business_match"][1],
+            "已观察业务/产品/应用信号": "；".join(str(item) for item in ensure_list(candidate,"observed_business_signals") if item),
+            "官网与联系方式信号状态": signal_info["website_contact"][0],
+            "官网与联系方式信号说明": signal_info["website_contact"][1],
+            "贸易记录状态": signal_info["trade_record"][0],
+            "贸易记录说明": signal_info["trade_record"][1],
+            "China 关联状态": signal_info["china_relation"][0],
+            "China 关联说明": signal_info["china_relation"][1],
+            "货描/HS 状态": signal_info["product_description_or_hs"][0],
+            "货描/HS 说明": signal_info["product_description_or_hs"][1],
+            "主体匹配状态": _candidate_identity_label(candidate, entity),
+            "用户排除项/已观察冲突": "；".join(str(item) for item in ensure_list(candidate,"excluded_or_conflicting_signals") if item) or (decision.get("decision_summary") if isinstance(decision,dict) and relevance=="explicitly_excluded_or_unrelated" else ""),
+            "未知项": "；".join(str(item) for item in ensure_list(candidate,"unknowns") if item),
+            "来源受限": "；".join(str(item) for item in ensure_list(candidate,"source_restrictions") if item),
+            "下一步待验证": "；".join(str(item) for item in ensure_list(candidate,"next_verification_steps") if item),
+            "说明": default_note if sample_first else (candidate.get("note") or (decision.get("decision_summary") if isinstance(decision,dict) and decision.get("decision_summary") else default_note)),
+        }
+        if relevance == "explicitly_excluded_or_unrelated":
+            excluded_rows.append(row)
+        else:
+            candidate_rows.append(row)
+        for label, url in ((source_labels, source_links),):
+            key=(str(row.get("公司名称")), str(url))
+            if key in source_seen:
+                continue
+            source_seen.add(key)
+            source_rows.append({
+                "公司/线索名称": row.get("公司名称"),
+                "来源说明": label or candidate.get("source_hint"),
+                "来源链接": url,
+            })
+    contact_rows = initial_contact_rows(graph)
+    pending=[]
+    for candidate in ensure_list(graph,"candidates"):
+        if not isinstance(candidate,dict):
+            continue
+        name = candidate.get("company_name") or candidate.get("name") or "待确认对象"
+        for field, label in (("unknowns","未知项待核"),("source_restrictions","来源受限"),("next_verification_steps","下一步待验证")):
+            for item in ensure_list(candidate,field):
+                pending.append({"类型":label,"对象":name,"原因":item,"建议动作":item if field=="next_verification_steps" else "补充公开来源核查"})
+    for cc in ensure_list(graph,"contact_claims"):
+        if isinstance(cc,dict) and cc.get("export_status")=="needs_manual_association_review":
+            pending.append({"类型":"联系方式待确认","对象":"待确认联系方式","原因":cc.get("manual_check_note") or "归属仍需人工确认","建议动作":"核查来源页面中的主体归属。"})
+    for lead in ensure_list(graph,"unassigned_contact_leads"):
+        if isinstance(lead,dict):
+            pending.append({"类型":"联系方式待确认","对象":"待确认联系方式","原因":lead.get("reason"),"建议动作":lead.get("suggested_manual_check")})
+    for f in ensure_list(graph,"review_findings"):
+        if isinstance(f,dict) and f.get("status") != "verified_fixed":
+            pending.append({"类型":"待处理问题","对象":"待处理项目","原因":f.get("issue"),"建议动作":f.get("required_fix")})
+    coverage_rows=[]
+    for log in ensure_list(graph,"search_logs"):
+        if not isinstance(log,dict):
+            continue
+        coverage_rows.append({
+            "查询组": log.get("query_group_id"),
+            "语言": log.get("query_language"),
+            "地域": stringify(log.get("targeted_geography_literals")),
+            "来源类别": stringify(log.get("source_categories")),
+            "新增唯一候选数": len([item for item in ensure_list(log,"new_candidate_ids") if item]) or len([item for item in ensure_list(log,"result_refs") if isinstance(item,dict) and item.get("candidate_id")]),
+            "重复候选数": len([item for item in ensure_list(log,"duplicate_candidate_ids") if item]),
+            "已访问来源数": len([item for item in ensure_list(log,"accessed_source_ids") if item]),
+            "失败访问": "；".join(str(item) for item in ensure_list(log,"failed_source_refs") if item),
+            "受限来源": "；".join(str(item) for item in ensure_list(log,"restricted_source_refs") if item),
+            "去重依据": "；".join(str(item) for item in ensure_list(log,"dedupe_basis") if item),
+            "覆盖/收敛说明": "；".join(str(item) for item in ensure_list(log,"coverage_notes") if item),
+        })
+    if not coverage_rows:
+        coverage_rows=[{"查询组":"未记录搜索日志","覆盖/收敛说明":"当前交付未附带 SearchLog；仅交付已整理候选与公开信号。"}]
+    risk_rows=[{"提示级别":i.get("severity"),"说明":i.get("message")} for i in audit.get("issues",[])] or [{"提示级别":"提示","说明":"本轮公开发现可继续扩展；当前输出不宣称已覆盖全部企业。"}]
+    if "not_run" in review_modes(graph):
+        risk_rows.append({"提示级别":"说明","说明":"本次为发现优先交付；严格复核、审计和正式开发名单门禁未启用。"})
+    return {
+        "发现候选池": candidate_rows or [{"说明":"未形成候选记录"}],
+        "联系方式汇总": contact_rows or [{"说明":"未发现可展示的公开联系方式"}],
+        "官网与来源链接": source_rows or [{"说明":"未记录可展示来源"}],
+        "搜索覆盖与收敛": coverage_rows,
+        "待核查事项": pending or [{"说明":"暂无额外待核查事项"}],
+        "已排除客户": excluded_rows or [{"说明":"暂无明确排除记录"}],
+        "风险与说明": risk_rows,
+    }
+
 def build_inquiry_sheets(graph:dict[str,Any])->dict[str,list[dict[str,Any]]]:
     entities=idx(graph,"entities","entity_id"); contacts=idx(graph,"contact_points","contact_id"); sources=idx(graph,"sources","source_id"); observations=idx(graph,"observations","observation_id")
     contact_claims=[cc for cc in ensure_list(graph,"contact_claims") if isinstance(cc,dict)]
@@ -195,6 +527,8 @@ def build_inquiry_sheets(graph:dict[str,Any])->dict[str,list[dict[str,Any]]]:
 def build_sheets(graph:dict[str,Any], audit:dict[str,Any], mode:str)->dict[str,list[dict[str,Any]]]:
     if mode=="inquiry":
         return build_inquiry_sheets(graph)
+    if mode=="initial":
+        return build_initial_sheets(graph,audit)
     entities=idx(graph,"entities","entity_id"); contacts=idx(graph,"contact_points","contact_id"); sources=idx(graph,"sources","source_id"); observations=idx(graph,"observations","observation_id")
     run=get_current_run(graph)
     brief_id=current_brief_id(graph)
@@ -213,7 +547,7 @@ def build_sheets(graph:dict[str,Any], audit:dict[str,Any], mode:str)->dict[str,l
             if not isinstance(q,dict):
                 continue
             sheets["关键词与搜索思路"].append({"核查目的":q.get("query_purpose") or q.get("purpose") or "公开信息核查","搜索思路":"按当前需求与核查规则执行公开信息检索。","来源类别":stringify(p.get("source_categories")),"联系方式目标":stringify(p.get("contact_collection_targets")),"证据不足时":stringify(p.get("downgrade_strategy"))})
-    sheets["初筛客户名单"]=[{"公司/线索名称":c.get("name") or c.get("company_name"),"方向状态":scope_status_user_label(next((d.get("overall_status") for d in ensure_list(graph,"scope_decisions") if isinstance(d,dict) and d.get("candidate_id")==c.get("candidate_id")),"needs_confirmation")),"线索状态":c.get("status") or "初筛线索","来源提示":c.get("source_hint") or c.get("source_url"),"说明":c.get("note") or "方向样本，等待确认后再扩展。"} for c in ensure_list(graph,"candidates") if isinstance(c,dict)]
+    sheets["发现候选池"]=[{"公司/线索名称":c.get("name") or c.get("company_name"),"方向状态":scope_status_user_label(next((d.get("overall_status") for d in ensure_list(graph,"scope_decisions") if isinstance(d,dict) and d.get("candidate_id")==c.get("candidate_id")),"needs_confirmation")),"线索状态":c.get("status") or "发现线索","来源提示":c.get("source_hint") or (c.get("source_url") if is_safe_public_http_url(c.get("source_url")) else None),"说明":c.get("note") or "方向样本，等待确认后再扩展。"} for c in ensure_list(graph,"candidates") if isinstance(c,dict)]
     sheets["客户信息总表"]=[]
     for entity_id,entity in entities.items():
         a=assessment_for_current_brief(graph,entity_id,brief_id,run_id)
@@ -270,7 +604,7 @@ def build_sheets(graph:dict[str,Any], audit:dict[str,Any], mode:str)->dict[str,l
         sheets["风险与说明"].append({"提示级别":"说明","说明":"本次未运行独立复核，建议在使用前进行人工确认。"})
     sheets["官网与来源链接"]=[{"来源说明":source_display(s,observations_by_source.get(s.get("source_id"))),"来源链接":safe_public_source_url(s),"来源关系":s.get("publisher_relation"),"来源类型":s.get("medium")} for s in ensure_list(graph,"sources") if isinstance(s,dict)]
     sheets["已排除客户"]=[{"公司名称":entities.get(d.get("entity_id"),{}).get("name") or d.get("candidate_id") or "待确认对象","方向状态":scope_status_user_label(d.get("overall_status")),"说明":d.get("decision_summary")} for d in ensure_list(graph,"scope_decisions") if isinstance(d,dict) and d.get("brief_id")==brief_id and d.get("run_id")==run_id and d.get("overall_status") in {"out_of_scope","reference_only"}]
-    sheets["检查说明"]=[{"检查时间":audit.get("audited_at"),"交付级别":{"standard_development_list":"标准开发名单","full_review_package":"完整核查版"}.get(audit.get("delivery_status"),"初筛客户名单"),"检查结果":"未发现影响交付的问题" if not audit.get("issues") else "存在待处理问题"}]
+    sheets["检查说明"]=[{"检查时间":audit.get("audited_at"),"交付级别":{"standard_development_list":"标准开发名单","full_review_package":"完整核查版"}.get(audit.get("delivery_status"),"发现候选池"),"检查结果":"未发现影响交付的问题" if not audit.get("issues") else "存在待处理问题"}]
     wanted=INITIAL_SHEETS if mode=="initial" else FULL_SHEETS if mode=="full" else DEFAULT_SHEETS
     return {name:sheets.get(name,[]) for name in wanted}
 
@@ -310,7 +644,7 @@ def main()->int:
     if not isinstance(graph,dict): raise SystemExit("Research graph must be a JSON object")
     requested_status=MODE_TO_STATUS[a.mode]
     audit=audit_graph(graph, requested_delivery_status=requested_status)
-    if a.mode in {"standard","full","inquiry"} and not audit.get("ok"):
+    if not audit.get("ok"):
         print("Refusing export because audit status is needs_correction")
         for item in audit.get("issues",[]): print(f"[{item['severity']}] {item['code']}: {item['message']}")
         return 1
@@ -335,7 +669,7 @@ def main()->int:
             if a.format=="xlsx": raise
             print(f"XLSX export unavailable ({exc}); falling back to UTF-8-SIG CSV"); files=write_csv_sheets(sheets,out); chosen="csv"
     else: files=write_csv_sheets(sheets,out)
-    disclosures=["初筛/弱证据项仅用于销售人工核查，不代表事实核查完成。"] if a.mode=="initial" else (["询盘信息仅记录来信中提及的内容，不代表企业资格或采购权已核验。"] if a.mode=="inquiry" else [])
+    disclosures=["发现候选与弱证据项仅用于销售人工核查，不代表事实核查完成。"] if a.mode=="initial" else (["询盘信息仅记录来信中提及的内容，不代表企业资格或采购权已核验。"] if a.mode=="inquiry" else [])
     if provenance_disclosure and a.mode in {"standard","full"}:
         disclosures.append(provenance_disclosure)
     if provenance.get("review_provenance_level") == "not_run" and a.mode == "initial":

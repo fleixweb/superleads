@@ -8,6 +8,142 @@
       "export_standard": "pass"
     },
     {
+      "fixture": "pass_default_discovery_candidate_pool.json",
+      "validate": "pass",
+      "audit": "pass",
+      "audit_delivery_status": "initial_lead_list",
+      "audit_standard": "fail",
+      "export_initial": "pass",
+      "export_assert_mode": "initial",
+      "export_present": [
+        "发现候选池",
+        "直接相关",
+        "可能相关",
+        "主体待确认",
+        "信息不足",
+        "已查未见",
+        "未检索",
+        "来源受限",
+        "待确认归属",
+        "Gamma Manufacturing",
+        "Epsilon Group"
+      ],
+      "export_absent": [
+        "高质量客户",
+        "低质量客户",
+        "采购概率",
+        "推荐客户"
+      ],
+      "export_sheet_present": {
+        "发现候选池": [
+          "Alpha Distributor",
+          "Beta Industrial Supplies",
+          "Delta Trading",
+          "Epsilon Group",
+          "Alpha 联系页",
+          "https://alpha.example/contact",
+          "2026-07-18"
+        ],
+        "已排除客户": [
+          "Gamma Manufacturing"
+        ],
+        "联系方式汇总": [
+          "sales@alpha.example",
+          "+44 20 7000 1111",
+          "待确认归属"
+        ]
+      },
+      "export_sheet_absent": {
+        "发现候选池": [
+          "Gamma Manufacturing"
+        ]
+      }
+    },
+    {
+      "fixture": "fail_default_discovery_candidate_source_loopback.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "candidate_source_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_candidate_source_credentials.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "candidate_source_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_ref_url_not_public.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "candidate_discovery_ref_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_signal_url_not_public.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "candidate_signal_source_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_direct_business_not_searched.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "default_discovery_business_match_not_observed"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_possible_business_identity_pending.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "default_discovery_business_match_not_observed"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_excluded_business_not_observed.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "default_discovery_business_match_not_observed"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_business_match_item_missing.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "default_discovery_business_match_item_missing"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_business_match_source_missing.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "default_discovery_business_match_source_missing"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_trade_same_name_auto_bound.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "trade_record_identity_pending_auto_bound"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_trade_implies_china_relation.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "candidate_china_relation_requires_explicit_observation"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_missing_dedupe_basis.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "default_discovery_candidate_dedupe_basis_missing"
+      ]
+    },
+    {
       "fixture": "fail_search_summary_claim.json",
       "validate": "fail"
     },

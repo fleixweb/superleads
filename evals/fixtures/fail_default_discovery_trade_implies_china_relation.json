@@ -1,0 +1,37 @@
+{
+  "extends": "pass_default_discovery_candidate_pool.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/candidates/1/signal_summary/trade_record/status",
+      "value": "observed"
+    },
+    {
+      "op": "replace",
+      "path": "/candidates/1/signal_summary/trade_record/notes",
+      "value": []
+    },
+    {
+      "op": "add",
+      "path": "/candidates/1/signal_summary/trade_record/items",
+      "value": [
+        {
+          "summary": "Public trade data lists Beta Industrial Supplies with HS 8481 during 2025; entity matching is recorded separately.",
+          "source_label": "Public trade record",
+          "source_url": "https://trade.example/beta",
+          "observed_at": "2026-07-18"
+        }
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/candidates/1/signal_summary/china_relation/status",
+      "value": "observed"
+    },
+    {
+      "op": "replace",
+      "path": "/candidates/1/signal_summary/china_relation/notes",
+      "value": []
+    }
+  ]
+}

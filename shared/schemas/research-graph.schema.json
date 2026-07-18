@@ -4,6 +4,47 @@
   "title": "Superleads Research Graph",
   "type": "object",
   "additionalProperties": false,
+  "$defs": {
+    "CandidateSignalItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary"],
+      "properties": {
+        "summary": {"type": "string", "minLength": 1},
+        "source_label": {"type": ["string", "null"]},
+        "source_url": {
+          "type": ["string", "null"],
+          "description": "When non-empty, runtime validation requires is_safe_public_http_url()."
+        },
+        "observed_at": {"type": ["string", "null"]},
+        "period": {"type": ["string", "null"]},
+        "locator": {"type": ["string", "null"]}
+      }
+    },
+    "CandidateSignalState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["observed", "not_observed", "not_searched", "identity_pending", "source_restricted"]
+        },
+        "items": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/CandidateSignalItem"}
+        },
+        "searched_scopes": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "notes": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    }
+  },
   "properties": {
     "runs": {
       "type": "array",
@@ -37,21 +78,119 @@
           },
           "name": {"type": ["string", "null"]},
           "company_name": {"type": ["string", "null"]},
+          "entity_id": {"type": ["string", "null"]},
+          "website": {"type": ["string", "null"]},
+          "domain": {"type": ["string", "null"]},
+          "country_or_region": {"type": ["string", "null"]},
           "source_hint": {"type": ["string", "null"]},
-          "source_url": {"type": ["string", "null"]},
+        "source_url": {
+          "type": ["string", "null"],
+          "description": "When non-empty, runtime validation requires is_safe_public_http_url()."
+        },
           "status": {"type": ["string", "null"]},
           "note": {"type": ["string", "null"]},
           "run_id": {"type": ["string", "null"]},
           "brief_id": {"type": ["string", "null"]},
           "plan_id": {"type": ["string", "null"]},
           "discovery_method": {"type": ["string", "null"], "enum": ["search_web", "user_provided", "manual", "other", null]},
-          "search_log_id": {"type": ["string", "null"]}
+          "search_log_id": {"type": ["string", "null"]},
+          "search_log_ids": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "discovery_refs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["label"],
+              "properties": {
+                "label": {"type": "string", "minLength": 1},
+                "url": {
+                  "type": ["string", "null"],
+                  "description": "When non-empty, runtime validation requires is_safe_public_http_url()."
+                },
+                "source_type": {"type": ["string", "null"]},
+                "search_log_id": {"type": ["string", "null"]},
+                "source_id": {"type": ["string", "null"]},
+                "observation_id": {"type": ["string", "null"]}
+              }
+            }
+          },
+          "dedupe_basis": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "business_relevance_status": {
+            "type": ["string", "null"],
+            "enum": [
+              "directly_related",
+              "possibly_related",
+              "explicitly_excluded_or_unrelated",
+              "identity_pending",
+              "insufficient_information",
+              null
+            ]
+          },
+          "business_relevance_basis": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "business_relevance_notes": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "identity_resolution_status": {
+            "type": ["string", "null"],
+            "enum": ["matched", "pending", "conflicted", "unresolved", "not_applicable", null]
+          },
+          "identity_resolution_basis": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "observed_business_signals": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "excluded_or_conflicting_signals": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "unknowns": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "source_restrictions": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "next_verification_steps": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "signal_summary": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "business_match": {"$ref": "#/$defs/CandidateSignalState"},
+              "website_contact": {"$ref": "#/$defs/CandidateSignalState"},
+              "trade_record": {"$ref": "#/$defs/CandidateSignalState"},
+              "china_relation": {"$ref": "#/$defs/CandidateSignalState"},
+              "product_description_or_hs": {"$ref": "#/$defs/CandidateSignalState"}
+            }
+          }
           }
         },
         "allOf": [
           {
             "if": {"properties": {"discovery_method": {"const": "search_web"}}, "required": ["discovery_method"]},
-            "then": {"required": ["run_id", "brief_id", "plan_id", "search_log_id"]}
+            "then": {
+              "required": ["run_id", "brief_id", "plan_id"],
+              "anyOf": [
+                {"required": ["search_log_id"]},
+                {"required": ["search_log_ids"]}
+              ]
+            }
           }
         ]
     },

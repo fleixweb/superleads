@@ -7,7 +7,7 @@ description: "Execute Superleads research plans by producing Candidate, Source, 
 
 ## Purpose
 
-Collect raw research artifacts: Candidate, Source, Observation, Provisional Entity, and Search Log. Do not output formal development lists, final advice, purchasing-intent claims, guessed contacts, or Claims.
+Collect raw research artifacts: Candidate, Source, Observation, Provisional Entity, and Search Log. Default work is discovery plus public-signal enrichment. Do not output formal development lists, final advice, purchasing-intent claims, guessed contacts, or unsupported Claims.
 
 ## Required references
 
@@ -16,8 +16,10 @@ Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/c
 ## Workflow
 
 1. Run planned searches and record strict SearchLog entries: Run/Brief/Plan,
-   query time, `search.web`, concrete provider, query text, current geography
-   literals, contract/rule IDs, and candidate-only result locators.
+   actual query time, `search.web`, concrete provider, query text, language,
+   geography literals when used, contract/rule IDs when present, candidate-only
+   result locators, new-vs-duplicate counts, opened/failed/restricted source
+   traces, and dedupe basis.
 2. Treat search results as Candidate clues only.
 3. Open or render sources before creating Observations.
 4. For every Observation record capability, concrete tool, observed time, access status, title, raw excerpt, locator, hash when possible, language, and translation linkage if applicable.
@@ -25,6 +27,9 @@ Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/c
 6. For each current-direction check, record which opened Observations were
    reviewed. A Candidate without a resolved Entity can only remain a direction
    sample or reference; do not mark it as a confirmed prospect.
+7. For every Candidate, keep discovery source, dedupe basis, business
+   relevance clue, unknowns, restricted paths, and next verification tasks
+   even when formal evidence is insufficient.
 
 ## Codex CLI Native Search
 
@@ -32,6 +37,12 @@ If the current Codex CLI session was started with `codex --search`, native
 `web_search` may be available. Record its verified `search` operation as
 `search.web` and use it only for Search Logs and Candidate clues. Do not
 assume the same tool can read source text.
+
+For default Candidate fields that are exported as links, record only a safe,
+credential-free public HTTP(S) URL in `source_url`, `discovery_refs[].url`,
+or `signal_summary.*.items[].source_url`. When a URL is unavailable or
+restricted, retain a source label, user-file name, or restriction note instead
+of a local, private, credential-bearing, or guessed URL.
 
 Only after the current session actually opens a specific HTTP(S) URL and
 returns the original URL, a title or equivalent source identifier, a non-empty

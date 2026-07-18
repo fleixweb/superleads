@@ -6,6 +6,10 @@
 - `self_review_fallback`: the same agent reviews because independent review is unavailable. Standard delivery may proceed only with disclosure; full-review delivery is not allowed.
 - `not_run`: no review. Only initial or clearly pending outputs may be delivered.
 
+Default discovery may stop before review and still deliver an initial
+candidate pool. Review becomes mandatory only for standard delivery, formal
+background checks, and other explicit deep-verification tasks.
+
 `reviewed_subject_hash` is SHA-256 over the documented canonical semantic
 projection: all research-conclusion inputs, including Run, Brief, Plan,
 Candidates, Entities, Sources, Observations, Claims, ClaimEvidence,

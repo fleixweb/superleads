@@ -7,7 +7,7 @@ description: "Independently review Superleads lead research for source support, 
 
 ## Purpose
 
-Perform semantic review before delivery. Check whether the research graph would mislead a sales user.
+Perform semantic review before formal delivery. Check whether the research graph would mislead a sales user.
 
 ## Required references
 
@@ -58,4 +58,6 @@ Create ReviewFinding records with severity, target artifact, issue, required fix
 
 Declared separate-session review and self-review fallback require disclosure.
 This local deployment does not provide `full_review_package`. Not-run review
-limits output to initial or pending tiers.
+limits output to discovery candidate pools, initial samples, or pending tiers.
+Default discovery does not require review unless the user asks for deep
+verification or a standard development list.

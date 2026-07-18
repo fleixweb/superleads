@@ -1,0 +1,20 @@
+{
+  "extends": "pass_default_discovery_candidate_pool.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/candidates/3/signal_summary/trade_record/status",
+      "value": "observed"
+    },
+    {
+      "op": "add",
+      "path": "/candidates/3/signal_summary/trade_record/items",
+      "value": [
+        {
+          "summary": "Public trade data shows Delta Trading with HS 8481, but the address differs from the directory listing.",
+          "source_label": "Trade summary"
+        }
+      ]
+    }
+  ]
+}

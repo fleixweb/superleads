@@ -1,6 +1,6 @@
 # Superleads 完整开发规范
 
-版本：vFinal-2  
+版本：vFinal-3
 用途：交给 Codex / Claude Code / Hermes / WorkBuddy 等 Agent 实施开发  
 目标：构建一套通用外贸线上客户开发 Skill Suite
 
@@ -24,7 +24,7 @@ Superleads
 
 ```text
 Superleads 是一套通用外贸线上客户开发 Skill Suite。
-它用于从公开互联网、用户提供文件、官网、目录、PDF、展会资料、地图、社媒可见页面等来源中，发现、整理、核查、分层输出海外潜在客户和联系方式。
+它默认从公开互联网、用户提供文件、官网、目录、PDF、展会资料、地图、社媒可见页面等来源中发现、去重、整理海外潜在客户及公开信号；用户明确要求时，才对指定对象做严格核查。
 ```
 
 它以类似通用 Agent Skill 的方式运行于 Codex、Claude Code、Hermes、WorkBuddy 等宿主：Skill 指导 Agent 理解当前任务、调用宿主实际可用工具并组织研究步骤；它不是独立应用界面、客户数据库、工作台或企业合规平台。
@@ -47,7 +47,7 @@ Superleads 是：
 ```text
 跨 Agent 外贸客户开发方法
 联系方式情报与证据约束方法
-客户线索分层交付方法
+发现候选池与按需深查方法
 跨 Agent / 跨平台方法论
 ```
 
@@ -55,13 +55,15 @@ Superleads 是：
 
 ```text
 用户当前 Brief：定义本次产品/能力、目标对象、排除对象、国家或地区语义与交付目标
-Agent 语义研究：理解自由文本商业语境，生成查询策略，判断候选、冲突与待确认事项
+Agent 语义研究：理解自由文本商业语境，生成查询策略，扩展产品词、应用、角色、地域和来源，判断候选相关性、冲突与待确认事项
 宿主工具：按实际可用能力执行搜索、打开公开来源、读取文件或其他受控操作
-轻量脚本门禁：仅阻止可确定的虚构、证据错配、联系方式猜测、实体错配、违反当前 Brief 的正式交付与敏感信息泄漏
+轻量脚本门禁：默认只阻止可确定的虚构、证据错配、联系方式猜测、实体错配、违反当前 Brief 的明确排除边界与敏感信息泄漏；严格图谱、复核和审计门禁仅用于显式深查或正式开发名单
 用户反馈与人工复核：校正本次业务判断，并在后续任务中改进 Brief、查询和核验方法
 ```
 
-外贸客户开发的产品边界、应用边界、客户角色、地区含义、竞争对象处理和商业可行性，主要依赖当前用户语境、Agent 的语义研究和人工复核；不得以静态行业词典、默认 ICP 或脚本规则替代这些判断。脚本是交付安全带，不是商业判断器；不得要求用户直接操作内部图谱、Claim、ScopeDecision、Audit 或规则 ID。
+默认主流程为：`用户自然语言业务语境 -> Brief -> 宿主搜索/网页/文件/贸易数据工具 -> 查询、地域、角色和来源扩展 -> 发现、去重、公开信号补充 -> 轻量脚本防错 -> 发现候选池`。它不是默认深度审计筛选流程，也不是自动挑选高质量客户的软件。
+
+外贸客户开发的产品边界、应用边界、客户角色、地区含义、竞争对象处理和商业可行性，主要依赖当前用户语境、Agent 的语义研究和人工复核；不得以静态行业词典、默认 ICP 或脚本规则替代这些判断。脚本是交付安全带，不是商业判断器：不得裁决采购意向、采购概率、商业价值或客户高低质量；不得要求用户直接操作内部图谱、Claim、ScopeDecision、Audit 或规则 ID。
 
 ### 1.2 平台与公开 HTTP 来源边界
 
@@ -89,15 +91,14 @@ DNS 查询，因此该字符串规则不是 DNS rebinding 防护；实际 Shell 
 通过 / 失败
 ```
 
-来处理，而应使用：
+来处理。默认发现中，应使用与本次业务边界有关、但不等同商业价值的相关性状态：
 
 ```text
-初筛线索
-推荐跟进
-重点开发
-需人工核查
-暂不建议
-排除
+directly_related
+possibly_related
+explicitly_excluded_or_unrelated
+identity_pending
+insufficient_information
 ```
 
 核心不是：
@@ -109,7 +110,7 @@ DNS 查询，因此该字符串规则不是 DNS rebinding 防护；实际 Shell 
 而是：
 
 ```text
-弱证据可以输出，但必须标清楚它是弱证据。
+弱证据可以输出，但必须标清业务相关性、公开信号状态、未知项和来源限制。
 ```
 
 ---
@@ -119,12 +120,12 @@ DNS 查询，因此该字符串规则不是 DNS rebinding 防护；实际 Shell 
 允许：
 
 ```text
-输出初筛客户
-输出待核查客户
+输出发现候选池
+输出待确认和信息不足候选
 输出目录/展会/地图线索
 输出联系方式待确认项
 输出只有 contact form 的客户
-输出弱证据客户
+输出公开可见、带来源和归属状态的联系方式
 ```
 
 禁止：
@@ -138,6 +139,8 @@ DNS 查询，因此该字符串规则不是 DNS rebinding 防护；实际 Shell 
 把弱证据写成强证据
 把待核查客户写成已核查客户
 错配公司和联系方式
+把未观察、未检索或来源受限写成否定性商业结论
+把贸易记录自动写成 China 采购、当前需求或采购意向
 ```
 
 ---
@@ -232,7 +235,7 @@ eval fixture
    我分析单个客户，判断是否值得开发，并尽可能提取联系方式。
 
 2. 发产品名称和目标国家/地区
-   我按产品开发客户，生成关键词、初筛客户、联系方式和开发建议。
+   我按产品发现客户，扩展关键词和来源，整理发现候选池、公开联系方式和待验证项。
 
 3. 发一组关键词
    我扩展关键词，按公开来源发现潜在客户。
@@ -305,11 +308,11 @@ PDF/展会目录整理
 面向中国外贸用户，使用业务化命名。
 
 ```text
-A. 初筛客户名单
-   快速找一批可能客户，不做完整核查。
+A. 发现候选池（默认）
+   扩展公开发现路径，去重并整理业务相关性、联系方式、公开信号、未知和覆盖缺口；不要求完整核查。
 
-B. 标准开发名单
-   打开关键来源，整理联系方式和开发建议。
+B. 标准开发名单（按需深查）
+   对用户指定或已发现候选进行身份、来源、业务边界和联系人归属核验后整理。
 
 C. 联系方式优先
    重点找邮箱、电话、表单、LinkedIn、联系人。
@@ -336,16 +339,8 @@ E. 完整核查版
 推荐用户端 Sheet：
 
 ```text
-客户信息总表
-联系方式汇总
-开发建议
-待核查事项
-风险与说明
-关键词与搜索思路
-初筛客户名单
-官网与来源链接
-已排除客户
-检查说明
+默认发现：发现候选池、联系方式汇总、官网与来源链接、搜索覆盖与收敛、待核查事项、已排除客户、风险与说明
+按需深查：客户信息总表、联系方式汇总、开发建议、官网与来源链接、待核查事项、风险与说明
 ```
 
 ---
@@ -495,10 +490,11 @@ business_context optional
 ```text
 生成查询组
 规划来源类别
+扩展产品同义词、应用词、客户/渠道角色和地域拆分
 规划联系方式收集目标
-定义线索分层标准
-定义 Claim 所需证据
-定义停止条件
+定义业务相关性归类与公开信号补充方式
+记录覆盖范围、失败/受限来源和边际收敛条件
+仅在按需深查时定义 Claim 所需证据和严格门禁
 定义降级策略
 ```
 
@@ -527,14 +523,15 @@ Search Log
 硬规则：
 
 ```text
-search.web 只能进入初筛线索 / 搜索记录。
-已打开来源才能形成来源记录。
+search.web 只能形成发现线索与真实执行的 SearchLog，不能支撑正式 Claim。
+一次 SearchLog 记录一次实际查询，可引用多个候选结果；不得为每个 Candidate 伪造一条查询记录。
+已打开来源才能形成可核验的 Source / Observation；搜索摘要仍可保留为发现定位，不得冒充事实。
 ```
 
 不负责：
 
 ```text
-不输出正式开发名单
+默认不输出正式开发名单
 不写采购意向
 不写最终开发建议
 不猜联系方式
@@ -589,26 +586,22 @@ UnassignedContactLead
 职责：
 
 ```text
-从 Observation 形成 Claim
-建立 ClaimEvidence
-基于 Claim 形成 Hypothesis
-根据 Brief 形成 Assessment
-保留冲突证据
+默认：归类业务相关性，归纳公开信号、边界提示和待验证项，保留排除/冲突记录。
+按需深查：从 Observation 形成 Claim、建立 ClaimEvidence、基于 Claim 形成 Hypothesis、根据 Brief 形成严格 Assessment，并保留冲突证据。
 ```
 
 硬规则：
 
 ```text
-Claim = 来源可支持的事实
-Hypothesis = 商业假设
-Assessment = 本轮开发判断
+默认 Candidate 不要求 Claim、ClaimEvidence、Assessment、Review 或 Audit。
+深查时：Claim = 来源可支持的事实；Hypothesis = 商业假设；Assessment = 严格开发判断。
 ```
 
 重要规则：
 
 ```text
-Assessment 不能用 Hypothesis 作为准入证据。
-Hypothesis 只能影响开发角度、下一步核查动作和人工优先级。
+相关性只能由已观察的产品、服务、应用、角色、渠道、地域或明确排除事实支持；业务匹配不等于采购意向。
+深查时，Assessment 不能用 Hypothesis 作为准入证据；Hypothesis 只能影响开发角度、下一步核查动作和人工优先级。
 ```
 
 ---
@@ -666,7 +659,7 @@ not_run
 ```text
 independent + 检查通过 → 可标准交付并保留独立复核披露
 self_review_fallback → 只能带说明交付
-not_run → 只能输出初筛/待核查
+not_run → 仍可输出发现候选池；不得输出要求严格核验的正式名单
 ```
 
 ---
@@ -676,12 +669,8 @@ not_run → 只能输出初筛/待核查
 职责：
 
 ```text
-交付前确定性检查
-验证 research graph
-验证联系方式来源和归属
-验证 ClaimEvidence
-验证 ReviewFinding closure
-验证 DeliveryManifest 新鲜度
+默认发现交付前：检查候选标识、发现来源、去重依据、相关性状态、公开信号状态、联系方式来源/归属与用户明确排除边界。
+按需深查交付前：验证 research graph、联系方式来源和归属、ClaimEvidence、ReviewFinding closure 与 DeliveryManifest 新鲜度。
 ```
 
 内部状态：
@@ -700,7 +689,7 @@ full_review_package
 
 ```text
 需修正后交付
-初筛客户名单
+发现候选池
 标准开发名单
 完整核查版
 ```
@@ -709,13 +698,15 @@ full_review_package
 
 ### 8.10 `exporting-lead-workbooks`
 
-默认客户开发版：
+默认发现版：
 
 ```text
-客户信息总表
+发现候选池
 联系方式汇总
-开发建议
+官网与来源链接
+搜索覆盖与收敛
 待核查事项
+已排除客户
 风险与说明
 ```
 
@@ -724,7 +715,7 @@ full_review_package
 ```text
 开发需求
 关键词与搜索思路
-初筛客户名单
+发现候选池
 客户信息总表
 联系方式汇总
 开发建议
@@ -801,22 +792,17 @@ Claim 证据
 ## 9. 运行状态机
 
 ```text
-scoped
-→ planned
-→ collecting
-→ assessed
-→ under_review
-→ remediation_required
-→ remediation_submitted
-→ re_reviewed
-→ checked
-→ initial_lead_list / standard_development_list
+默认发现：scoped → planned → collecting → assessed → initial_lead_list
+
+按需深查：scoped → planned → collecting → assessed → under_review
+→ remediation_required → remediation_submitted → re_reviewed → checked
+→ standard_development_list
 ```
 
 注意：
 
 ```text
-弱证据不阻断，只降级。
+弱证据不删除有用 Candidate，只降级为可能相关、主体待确认、信息不足或待核查项。
 误导性错误才阻断。
 ```
 
@@ -841,24 +827,15 @@ Hypothesis 写成 Claim
 Run
 → Brief
 → Plan
-→ Candidate
-→ Source
-→ Observation
-→ Entity
-→ EntityRelationship
-↔ Claim
-↔ ClaimEvidence
-↔ Observation
-→ ContactPoint
-↔ ContactClaim
-↔ ClaimEvidence
-→ UnassignedContactLead
-→ Hypothesis
-→ Assessment
-→ ReviewFinding
-→ Audit
-→ DeliveryManifest
+→ Candidate（发现来源、去重依据、业务相关性、公开信号、未知/受限项）
+→ SearchLog（真实执行查询、覆盖与结果引用）
+→ Source / Observation / ContactPoint / UnassignedContactLead
+
+按需深查附加：Entity / EntityRelationship ↔ Claim ↔ ClaimEvidence ↔ Observation
+→ ContactClaim → Hypothesis → Assessment → ReviewFinding → Audit → DeliveryManifest
 ```
+
+默认 Candidate 至少保留发现来源、候选标识、去重依据、业务相关性状态、公开信号状态以及未知或受限项。公开信号统一为 `observed`、`not_observed`、`not_searched`、`identity_pending` 或 `source_restricted`：`not_observed` 必须说明已查来源/期间，`not_searched` 表示未知，`identity_pending` 禁止跨主体拼接。贸易记录只能描述某公开或用户授权可读来源、期间、名称/地址/交易字段/货描/HS 与主体匹配状态；不得自动推断 China 采购、当前需求或采购意向。
 
 ---
 
@@ -994,11 +971,13 @@ ScopeDecision: in_scope | out_of_scope | needs_confirmation | reference_only
 判断依据将重点看：
 ```
 
-只有回答不同会导致客户方向相反时，才追问一至三个短问题。用户已经明确时不重复问。关键歧义未解决时设为 `provisional`，只交付三至五家“方向样本，等待确认后再扩展为正式开发名单”；不得输出标准开发名单或完整核查版正向客户。
+只有回答不同会导致客户方向相反时，才追问零至三个短问题：市场边界、目标/排除客户角色，或优先补联系方式还是贸易/China 信号。用户已经明确时不重复问。关键歧义未解决时设为 `provisional`，可交付三至五家方向样本等待确认；不得输出标准开发名单或完整核查版正向客户。该样本上限只适用于方向无法确定的临时场景，不限制方向已明确时的默认发现候选池。
 
 ### 16.3 Plan、ScopeDecision 与 Assessment
 
-Plan 必须绑定当前 Brief，分别列出正向和排除规则，并让每条规则至少对应一个查询或核验步骤。查询词和搜索提示仅从当前 Brief 推导；排除查询只用于发现风险，正式排除或纳入均需要公开 Observation -> 同 Entity Claim -> ClaimEvidence。
+Plan 必须绑定当前 Brief，规划产品同义词、应用词、客户/渠道角色、地域拆分、查询组合与来源类别。每轮应记录查询组、语言、地域、已访问来源、失败或受限来源、新增唯一 Candidate 数、重复率、去重依据和未覆盖路径。查询词和搜索提示仅从当前 Brief 推导；默认发现可依据可见材料归类明确排除或不相关项，但必须保留发现/排除记录。只有按需深查的正式排除或正式纳入才需要公开 Observation -> 同 Entity Claim -> ClaimEvidence。
+
+不得承诺“尽可能穷尽全网”或“找到全部客户”。在本次记录的可访问查询、地域和公开来源范围内，系统扩展发现路径并持续去重，尽量提高候选覆盖。除非用户设置数量或时间上限，只有计划的查询表达、地域和来源类别实际执行，连续多轮新增唯一候选明显下降，新增主要为重复、无关或不可访问，并已记录未覆盖路径和访问限制时，才可写“本轮公开发现已收敛”。这是执行覆盖和边际收敛，不是客户质量排序。
 
 只要新客户开发 Brief 的 `target_country_or_region` 含任一非空用户 literal，
 `customer_selection_contract.geography_contract` 即为必填正式合同，不得缺失或为
@@ -1031,16 +1010,16 @@ rule 的公开原文命中其 `conflict_markers`，ScopeDecision 必须记录冲
 注册地等无关事实不能支撑产品、应用、渠道或业务角色 rule，除非该条当前用户规则
 明确允许相应 Claim type 和 marker。
 
-`task_mode=unknown` 只能形成初筛、方向样本或待确认任务，不能生成标准开发名单、
+`task_mode=unknown` 只能形成发现候选、方向样本或待确认任务，不能生成标准开发名单、
 重点开发或推荐跟进。除 `single_company_analysis` 和
 `existing_table_enrichment` 外，任何正向正式客户交付都须有实质性当前合同：至少
 一条 selection rule，且至少一条 `required_for_positive=true`。`material_list_extraction`
-若未具备该完整合同，只能形成初筛或材料结果；要产生正向 Assessment 或正式名单，
+若未具备该完整合同，只能形成发现候选或材料结果；要产生正向 Assessment 或正式名单，
 同样必须通过完整方向门禁。空合同、全部可选的合同和 `scope_state=provisional` 均
 不得绕过此规则。
 
 `sample_first_required=true` 是实际执行的样本门禁：Plan 必须限定一至五家，且只能
-导出初筛方向样本。用户确认后必须明确更新 Brief/合同并重新 Review 后，才可形成
+导出方向样本。用户确认后必须明确更新 Brief/合同并重新 Review 后，才可形成
 正式名单。
 
 `single_company_analysis` 与 `existing_table_enrichment` 不是可自我声明的方向门禁
@@ -1069,7 +1048,7 @@ identity review report；提示不是 Claim、EntityRelationship、合并/拆分
 
 ### 16.4 导出和复核
 
-标准开发名单只导出当前 Run 的正向 `in_scope` Entity 及合格联系方式。`needs_confirmation`、`out_of_scope`、`reference_only` 不得进入客户主表、联系人汇总或开发建议；初筛可分区显示业务化标签“需确认 / 不符合本次方向 / 仅作参考”。不得向用户展示 TargetingContract、ScopeDecision、Claim、规则 ID、Review、Audit 或技术引用字段。当前个人本地部署不提供完整核查版。
+标准开发名单只导出当前 Run 的正向 `in_scope` Entity 及合格联系方式。`needs_confirmation`、`out_of_scope`、`reference_only` 不得进入客户主表、联系人汇总或开发建议；发现候选池可分区显示“直接相关 / 可能相关 / 主体待确认 / 信息不足”，并将明确排除项保留在“已排除客户”。不得向用户展示 TargetingContract、ScopeDecision、Claim、规则 ID、Review、Audit 或技术引用字段。当前个人本地部署不提供完整核查版。
 
 独立复核必须检查用户原话与合同是否一致、Plan 是否覆盖正向与排除规则、正向客户是否有同实体公开证据、竞争/品牌/制造商或相近应用对象是否误入客户池，以及未知是否被合理化为符合。
 
@@ -1290,78 +1269,35 @@ current_graph_hash == audit_graph_hash
 
 ---
 
-## 11. 线索分层规则
+## 11. 默认发现相关性与信号规则
 
-### 初筛客户
+### 业务相关性
 
-允许来源：
-
-```text
-搜索结果
-目录摘要
-展会名单
-地图结果
-未完整打开的公开来源
-```
-
-说明：
+默认 Candidate 必须归入以下一个状态，且只能依据已观察的产品、服务、应用、角色、渠道、地域或明确排除事实：
 
 ```text
-只能作为初筛，不写成事实核查完成。
+directly_related：经营、维修、销售、分销、库存或服务等业务直接符合本次边界
+possibly_related：有行业、目录、地域、渠道或产品线索，但具体业务关系未确认
+explicitly_excluded_or_unrelated：已观察到错误行业、原厂/同行制造商、错误市场或用户明确排除边界
+identity_pending：名称、域名、地址、贸易记录或联系方式不能可靠归属同一主体
+insufficient_information：已发现线索，但当前材料不足
 ```
 
----
+官网信息少不是低相关或低价值证据；来源多也不是高价值证据。相关性仅可安排下一步处理顺序，不能表述为高质量、低质量、采购概率或商业价值。`explicitly_excluded_or_unrelated` 不进入活跃候选池，但必须保留发现来源和排除依据，避免重复发现与错误交付。默认候选池以 `directly_related` 与 `possibly_related` 为主体，同时显示主体待确认和信息不足候选。
 
-### 推荐跟进
+### 公开信号与联系方式
 
-要求：
+对业务/产品关联、官网与联系方式、贸易记录、China 关联、货描/HS 统一记录：
 
 ```text
-至少有一个已打开来源
-产品/客户类型/市场有一定匹配
-有联系方式或可触达入口
+observed：展示来源原文/字段、URL、日期或期间
+not_observed：只表示在已查明示范围内未见，保留已查来源/期间
+not_searched：尚未检索，表示未知
+identity_pending：信号无法可靠归属同一主体，禁止拼接
+source_restricted：登录、付费墙、403、工具限制或可见内容不足
 ```
 
----
-
-### 重点开发
-
-要求：
-
-```text
-官网或高可信来源明确支持匹配
-联系方式归属较清楚
-开发切入点明确
-无严重身份冲突
-```
-
----
-
-### 需人工核查
-
-适用：
-
-```text
-来源冲突
-联系方式归属不清
-客户类型不确定
-官网不可访问但目录/展会线索有价值
-同名公司不确定
-```
-
----
-
-### 暂不建议 / 排除
-
-适用：
-
-```text
-明显不匹配
-同行供应商
-国家/渠道不符
-无开发价值
-错误实体
-```
+默认发现应尽量输出公开可见的企业、部门、销售、采购/供应商入口邮箱，公开商务个人邮箱，电话、手机、WhatsApp、传真、表单、Supplier portal、LinkedIn 可见页、公开姓名/职位、地址、地图电话、展会/PDF/catalog 和第三方目录联系方式。必须保留来源并区分“来源和归属明确”与“可见但待确认归属”；不得猜测邮箱、跨企业绑定或把公开联系人写成拥有采购权。
 
 ---
 
@@ -1413,7 +1349,7 @@ ready 状态但无归属证据的联系方式
 
 | Capability | 最高进入层 | 规则 |
 |---|---|---|
-| search.web | 初筛客户 / 搜索记录 | 不能支撑 Claim |
+| search.web | 发现候选池 / 真实 SearchLog | 不能支撑 Claim |
 | source.open | Observation | 可形成来源记录 |
 | browser.render | Observation | 可形成来源记录 |
 | document.extract | Observation | 可形成文档来源记录 |
@@ -1454,6 +1390,8 @@ ReviewFinding 状态合法
 公开 HTTP(S) 与用户提供文件来源均经同一正式来源资格门禁
 ```
 
+默认发现不要求 Candidate 补齐 Claim、ClaimEvidence、ContactClaim、ScopeDecision、Assessment、ReviewAttestation、Audit 或 ready 联系方式核验。它仍阻止猜测联系方式、无来源联系人、跨主体错配、搜索摘要冒充事实、错误公开信号状态和违反用户明确排除边界。严格图谱检查仅在用户要求指定公司/名单背景调查、贸易或 China 关联主体核验、联系人补全与归属核验、可联系名单、正式开发名单或关系冲突调查时成为交付前置条件。
+
 ---
 
 ### audit_delivery.py
@@ -1484,7 +1422,7 @@ Audit graph hash 新鲜
 
 ```text
 needs_correction 不允许正式交付
-初筛客户名单允许弱证据，但必须标注状态
+发现候选池允许弱证据，但必须标注业务相关性、公开信号状态与未知/受限项
 标准开发名单必须包含来源链接和联系方式状态
 当前个人本地部署不提供完整核查版
 用户文件显示为业务化文件名与页码/工作表定位，不输出路径或 artifact hash
@@ -1506,10 +1444,12 @@ ID 链闭合
 同页多公司不误挂联系方式
 Hypothesis 不写成 Claim
 Assessment 不用 Hypothesis 做资格判断
-Audit hash 失效会阻断交付
+默认发现可输出大量 Candidate，不要求 Claim/Assessment/Audit；严格名单的 Audit hash 失效会阻断交付
 ReviewFinding 未处理会阻断正式交付
 用户提供 PDF / Excel 的合法 hash、定位、Claim 与联系方式链可进入标准交付
 无 hash、错误 hash、路径名、无定位、错误 capability、错误实体归属与 hold 联系方式泄漏均被阻断或脱敏
+明确相关、可能相关、明确排除、主体待确认、信息不足均可正确归类；排除项保留在记录中，证据不足候选不会静默删除
+未观察、未检索、主体待确认、来源受限不被写成否定性商业结论；同名贸易记录不自动绑定，贸易记录不自动推断 China 采购
 ```
 
 ### 行为压力测试
@@ -1580,7 +1520,7 @@ Python 3 + pathlib
 兼容 Windows / macOS / Linux / WSL
 默认 XLSX；不可用时 UTF-8-SIG CSV
 不默认安装全局依赖
-工具缺失时降级为初筛客户名单或研究计划
+工具缺失时降级为发现候选池或研究计划
 ```
 
 ### 跨 Agent
@@ -1602,7 +1542,7 @@ codex --search -C <项目目录>
 根据当前会话实际可见工具和实际操作结果写入的能力报告；本地脚本不自行探测
 模型工具，也不安装、配置或绑定任何外部工具服务。
 
-`web_search` 已实际搜索时，只映射为 `search.web`，因此最多输出初筛客户名单。
+`web_search` 已实际搜索时，只映射为 `search.web`，因此可形成发现候选池和真实 SearchLog，不能单独形成正式 Claim。
 只有当前会话实际打开一个明确 HTTP(S) URL，取得来源标题或等价标识、可定位的
 非空逐字原文摘录，才可记录 `source.open` 已验证。启动参数、模型/Provider 名称、
 工具名称、搜索摘要、链接或引用均不能推导 `source.open`。
@@ -1610,7 +1550,7 @@ codex --search -C <项目目录>
 即使能力报告记录 `source.open`，每条正式事实和联系方式仍必须通过既有来源、
 原文、实体归属、翻译链、哈希、复核、审计、新鲜度和交付门禁。搜索摘要不得成为
 正式事实或联系方式来源。自定义 model provider 若无原生工具、调用失败或只能返回
-摘要，应记录能力缺口并降级为研究计划或初筛客户名单。
+摘要，应记录能力缺口并降级为研究计划或发现候选池。
 
 原生 Web Search 适配器只拥有 `search.web` 与 `source.open`。它有效时只覆盖
 这两个能力；`browser.render`、`document.extract`、`image.inspect`、`mail.read`
@@ -1744,13 +1684,14 @@ entity relationship
 learning-from-feedback
 用户资料质量反馈
 更多 eval
-CRM / outreach 可选扩展
 ```
+
+不引入 CRM、outreach、UI、数据库、服务端、账号体系或 MCP 依赖。
 
 ---
 
 ## 19. 最终一句话
 
 ```text
-Superleads 是一套通用外贸线上客户开发 Skill Suite；它不依赖行业 ICP 或大而全提示词，而是用任务入口引导、Source/Observation/Claim/ContactClaim/Hypothesis/Assessment/Audit 数据图、公开联系方式情报最大化、独立复核、分层交付和交付前检查，把外贸客户开发变成可追溯、可检查、可跨平台运行的客户线索研究系统。
+Superleads 是一套通用外贸线上客户开发 Skill Suite；它不依赖行业 ICP 或默认深度审计，而是以用户语境驱动的发现、扩展、去重、业务相关性归类和公开信号补充为默认路径，并在用户明确要求时叠加 Source/Observation/Claim/ContactClaim/Assessment/Review/Audit 严格核验，输出可追溯、可继续加工、可跨平台运行的海外潜在客户群。
 ```

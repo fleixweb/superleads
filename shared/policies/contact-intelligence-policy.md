@@ -2,6 +2,15 @@
 
 Maximize recall of sourced, attributable, and clearly labeled contact intelligence. Do not hide weak but useful contact leads; label them correctly.
 
+For the default discovery workbook, sourced contacts may appear in three
+business-visible buckets:
+
+- `ready` → 可直接使用
+- `export_with_source_note` → 建议核查后使用
+- `needs_manual_association_review` / `UnassignedContactLead` → 待确认归属
+
+Only guessed, source-less, or inferred contacts remain blocked.
+
 ## Collectable contact types
 
 Collect company emails, department emails, sales emails, purchasing/supplier portal emails, personal business emails, public phones, mobile numbers, WhatsApp, fax, contact forms, supplier portals, inquiry entries, LinkedIn company pages, LinkedIn personal visible pages, visible names, visible titles, visible departments, addresses, map phones, trade fair contacts, PDF/catalog contacts, and third-party directory contacts.
@@ -30,6 +39,12 @@ For a `published_source_copy`, both the ContactPoint source Observation and the 
 
 An inbound `mail.read` contact may be `export_with_source_note` only when its literal appears in the bounded header/body excerpt and both ContactPoint and association evidence resolve to the same Entity. Label it 来信联系人/待核验 or 邮件来信; never call it 已核验联系人、官方联系人、采购负责人, or `ready` without independent qualified evidence.
 
-For standard delivery, only `ready` and `export_with_source_note` ContactClaims may expose a contact value, and both must resolve to an Entity. `needs_manual_association_review` stays as an internal pending reference. `hold_no_source` and `hold_inferred` values must be redacted from every user-visible field, including notes, warnings, disclosures, CSV, XLSX, and Manifest output.
+For standard delivery, only `ready` and `export_with_source_note`
+ContactClaims may expose a contact value, and both must resolve to an Entity.
+In the default discovery workbook, `needs_manual_association_review` and
+`UnassignedContactLead` may be shown only as 待确认归属 with their source and
+pending reason. `hold_no_source` and `hold_inferred` values must be redacted
+from every user-visible field, including notes, warnings, disclosures, CSV,
+XLSX, and Manifest output.
 
 Visible job titles are role clues. They are not proof of purchasing authority, decision power, or current procurement responsibility unless an observed source directly says so.

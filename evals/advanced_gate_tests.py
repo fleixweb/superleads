@@ -24,6 +24,7 @@ CONNECTED_INQUIRY = ROOT / "evals" / "fixtures" / "pass_connected_inbound_inquir
 MAIL_ADAPTER_INPUT = ROOT / "evals" / "fixtures" / "mail_read_normalized_input.json"
 sys.path.insert(0, str(SCRIPTS))
 from _superleads_common import graph_hash, review_subject_hash  # noqa: E402
+from export_workbook import build_initial_sheets  # noqa: E402
 sys.path.insert(0, str(ROOT / "evals"))
 from run_evals import _load_fixture_graph  # noqa: E402
 
@@ -678,6 +679,33 @@ def _assert_platform_and_public_url_pressure_tests(directory: Path) -> list[str]
     return errors
 
 
+def _assert_default_discovery_export_filters_unsafe_urls() -> list[str]:
+    """The workbook builder must filter unsafe links even when validation is bypassed."""
+    graph = _load_fixture_graph(ROOT / "evals" / "fixtures" / "pass_default_discovery_candidate_pool.json")
+    candidates = graph["candidates"]
+    candidates[0]["source_url"] = "file:///home/user/private"
+    candidates[0]["discovery_refs"][0]["url"] = "http://localhost/private"
+    candidates[0]["signal_summary"]["business_match"]["items"][0]["source_url"] = "http://127.0.0.1/business"
+    candidates[1]["source_url"] = "http://192.168.10.2/private"
+    candidates[1]["signal_summary"]["website_contact"]["items"][0]["source_url"] = "https://user:token@example.com/contact"
+    graph["search_logs"][0]["result_refs"][0]["result_url"] = "http://10.0.0.4/result"
+
+    sheets = build_initial_sheets(graph, {"issues": []})
+    rendered = json.dumps(sheets, ensure_ascii=False)
+    unsafe_values = (
+        "file:///home/user/private",
+        "http://localhost/private",
+        "http://127.0.0.1/business",
+        "http://192.168.10.2/private",
+        "https://user:token@example.com/contact",
+        "http://10.0.0.4/result",
+    )
+    errors = [f"default_discovery_export_unsafe_url: leaked {value}" for value in unsafe_values if value in rendered]
+    if "Alpha 官网产品页" not in rendered:
+        errors.append("default_discovery_export_unsafe_url: filtered link removed its safe source label")
+    return errors
+
+
 def _stored_unauthorized_manifest(graph: dict[str, Any]) -> None:
     graph["runs"][0]["review_mode"] = "not_run"
     current_hash = graph_hash(graph)
@@ -842,6 +870,7 @@ def main() -> int:
         errors.extend(_assert_inquiry_export_redaction(directory))
         errors.extend(_assert_mail_adapter_boundary(directory))
         errors.extend(_assert_platform_and_public_url_pressure_tests(directory))
+        errors.extend(_assert_default_discovery_export_filters_unsafe_urls())
         errors.extend(_assert_self_review_disclosure(directory))
         errors.extend(_assert_historical_review_cannot_approve(directory))
         errors.extend(_assert_historical_assessment_cannot_be_reused(directory))
@@ -863,7 +892,7 @@ def main() -> int:
         print("Advanced gate regressions failed:")
         print("\n\n".join(errors))
         return 1
-    print(f"advanced gate regressions passed: {len(tests) + 18}")
+    print(f"advanced gate regressions passed: {len(tests) + 19}")
     return 0
 
 

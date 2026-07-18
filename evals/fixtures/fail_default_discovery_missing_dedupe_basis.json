@@ -1,0 +1,9 @@
+{
+  "extends": "pass_default_discovery_candidate_pool.json",
+  "patches": [
+    {
+      "op": "remove",
+      "path": "/candidates/0/dedupe_basis"
+    }
+  ]
+}

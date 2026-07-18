@@ -2,7 +2,7 @@
 
 | Capability | Highest allowed layer | Rule |
 |---|---|---|
-| `search.web` | 初筛客户 / Search Log | Never supports Claim. |
+| `search.web` | 发现候选池 / SearchLog | Never supports Claim. |
 | `source.open` | Observation | Can create Source and Observation. |
 | `browser.render` | Observation | Can create Source and Observation. |
 | `document.extract` | Observation | Can create document Source and Observation. |
@@ -21,7 +21,7 @@
 | `maps.lookup` | Observation | Can support map address/phone claims. |
 | `memory.recall` | Plan priority | Never enters Claim or Assessment evidence. |
 
-When a tool is missing, degrade output level instead of fabricating evidence. If no source-opening capability exists, provide a research plan or initial lead list only.
+When a tool is missing, degrade output level instead of fabricating evidence. If no source-opening capability exists, provide a research plan or discovery candidate pool only.
 
 ## Codex CLI Native Web Search
 
@@ -55,7 +55,7 @@ capability, a permitted concrete tool, public credential-free HTTP(S) URLs,
 source text, and a locator.
 
 This provider never grants `search.web`; search summaries and links remain
-initial clues. It cannot use POST, cookies, Authorization headers, tokens,
+discovery clues. It cannot use POST, cookies, Authorization headers, tokens,
 passwords, private/loopback/local URLs, login-only pages, or any mechanism to
 avoid access controls. A missing provider report, unverified GET, unlisted
 tool, or conflicting source-opening provider fails closed.
@@ -69,7 +69,7 @@ executor must also enforce global-address checks for each DNS resolution and
 redirect to defend against DNS rebinding.
 
 - `web_search` with a verified `search` operation grants `search.web` only.
-  It may create search records and initial leads, never formal facts or
+  It may create SearchLogs and discovery candidates, never formal facts or
   contact evidence.
 - `source.open` remains missing or unknown unless the same session actually
   opens a specific HTTP(S) URL and records its source identifier, non-empty

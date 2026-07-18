@@ -7,7 +7,7 @@ description: "Use when the user wants to discover, qualify, enrich, organize, au
 
 ## Purpose
 
-Activate Superleads, identify the user's task entry, create Run Context, check tool capability, choose output level, and route to the next skill. Do not search, generate leads, write development advice, or export workbooks here.
+Activate Superleads, identify the user's task entry, create Run Context, decide whether this run is default discovery or explicit deep verification, check tool capability, and route to the next skill. Do not search, generate leads, write development advice, or export workbooks here.
 
 ## Required references
 
@@ -17,9 +17,9 @@ Read `../../shared/references/user-intake.md` for intake modes and minimum resea
 
 1. Identify the entry mode: single company, product plus scope, keywords, application/downstream field, country/customer type, existing table, competitor/seed, or source material list.
 2. Check the minimum research target. For new customer development require product/service plus at least one scope axis. For single-company analysis, retain the current user's explicit company name, URL/domain, or material reference and bind the result to that Entity only. For existing-table enrichment, retain the user-provided spreadsheet and the rows/cells being supplemented. These two routes do not create a direction-matched customer list without the current development contract.
-3. Create a Run Context with `run_id`, timestamp, task entry mode, platform, detected capabilities, requested output mode, and evidence depth.
+3. Create a Run Context with `run_id`, timestamp, task entry mode, platform, detected capabilities, requested output mode, evidence depth, and whether this run defaults to discovery-first or strict deep-check.
 4. Run or emulate `scripts/preflight_capabilities.py` when tools are uncertain. Record gaps and downgrade if source-opening or document extraction is unavailable. In a Codex CLI session started with `codex --search`, inspect only the currently visible native `web_search` capability and write the controlled adapter report from actual operation results; do not assume another integration exists.
-5. Route to `scoping-lead-research` next unless the task is already a pure verification/export task.
+5. Route to `scoping-lead-research` next unless the task is already a pure verification/export task. Default to discovery-first. Use the full strict review/audit route only when the user asks for background check, trade/China identity verification, contact ownership verification, a contactable list, or a standard development list.
 
 ## 本次方向
 
@@ -36,8 +36,9 @@ standard list. Competitors, brands, manufacturers, and other references are
 search or market references by default, not automatic prospects.
 
 Unknown direction and sample-first work produce only initial direction
-samples. Do not silently promote them to a standard list, and do not expose
-internal evidence markers, rule IDs, Claims, or audit terms to the user.
+samples or a discovery candidate pool. Do not silently promote them to a
+standard list, and do not expose internal evidence markers, rule IDs,
+Claims, or audit terms to the user.
 
 ## Material intake
 
@@ -52,8 +53,9 @@ Return a concise Run Context and the next Superleads skill to use. Ask only for 
 ## Hard constraints
 
 - Do not import old industry Skill defaults or assume ICP, country, company size, channel, or platform.
-- Do not treat weak evidence as failure; plan to label it.
+- Do not treat weak evidence as failure; plan to label it and keep the Candidate.
 - Do not allow search snippets to become Claims later.
+- Do not default to “筛剩少量推荐客户”. Default output is a traceable candidate pool with public signals, unknowns, and coverage notes.
 - Native `web_search` grants only initial search capability by default. Record
   source opening only after this session actually obtains an HTTP(S) URL,
   source identifier, verbatim source text, and locator; otherwise offer a

@@ -439,27 +439,25 @@ def _search_log_issues(
             if log.get("brief_id") != run.get("brief_id") or log.get("plan_id") != run.get("plan_id"):
                 issues.append(issue("critical", "search_log_run_binding_mismatch", "SearchLog Brief/Plan must match its Run", path))
             reports = adapter_reports_from_run(run)
-            if not reports:
-                issues.append(issue("critical", "search_log_adapter_missing", "SearchLog requires a verified Run capability adapter for its concrete search tool", f"{path}.concrete_tool"))
-            else:
+            if reports:
                 adapter_result = resolve_capability_adapter_reports(reports)
                 if not codex_adapter_allows_observation(adapter_result, "search.web", log.get("concrete_tool")):
                     issues.append(issue("critical", "search_log_tool_not_allowed_by_adapter", "SearchLog concrete_tool is not authorized by this Run's verified search provider", f"{path}.concrete_tool"))
+            elif run.get("platform") == "codex_cli":
+                issues.append(issue("critical", "search_log_adapter_missing", "Codex CLI SearchLog requires a verified Run capability adapter for its concrete search tool", f"{path}.concrete_tool"))
             capabilities = run.get("capabilities")
-            if not isinstance(capabilities, dict) or capabilities.get("search.web") != "available":
+            if isinstance(capabilities, dict) and capabilities.get("search.web") != "available":
                 issues.append(issue("critical", "search_log_capability_not_available", "SearchLog requires an explicit search.web=available Run capability", f"{path}.capability"))
         contract = customer_selection_contract(brief)
+        selection_rules, _ = targeting_rule_maps(contract) if isinstance(contract, dict) else ({}, {})
         if isinstance(plan, dict):
             allowed_group_ids = _query_group_ids(plan)
             if allowed_group_ids and log.get("query_group_id") not in allowed_group_ids:
                 issues.append(issue("critical", "search_log_query_group_missing", "SearchLog query_group_id must match a query group in its Plan", f"{path}.query_group_id"))
-        if not isinstance(contract, dict):
-            issues.append(issue("critical", "search_log_contract_missing", "SearchLog requires the Brief customer selection contract", path))
-        else:
-            selection_rules, _ = targeting_rule_maps(contract)
-            if log.get("customer_selection_contract_id") != contract.get("targeting_contract_id"):
+        if isinstance(contract, dict):
+            if has_text(log.get("customer_selection_contract_id")) and log.get("customer_selection_contract_id") != contract.get("targeting_contract_id"):
                 issues.append(issue("critical", "search_log_contract_mismatch", "SearchLog customer_selection_contract_id must match its Brief", f"{path}.customer_selection_contract_id"))
-            if log.get("selection_rule_id") not in selection_rules:
+            if has_text(log.get("selection_rule_id")) and selection_rules and log.get("selection_rule_id") not in selection_rules:
                 issues.append(issue("critical", "search_log_selection_rule_missing", "SearchLog selection_rule_id must be a current Brief selection rule", f"{path}.selection_rule_id"))
         if log.get("capability") != "search.web":
             issues.append(issue("critical", "search_log_capability_invalid", "SearchLog capability must be search.web", f"{path}.capability"))
@@ -475,18 +473,17 @@ def _search_log_issues(
             issues.append(issue("critical", "search_log_query_contains_sensitive_data", "SearchLog query_text must not contain secret or credential material", f"{path}.query_text"))
         if log.get("result_use") not in SEARCH_LOG_RESULT_USES:
             issues.append(issue("critical", "search_log_result_use_invalid", "SearchLog result_use is invalid", f"{path}.result_use"))
-        geography = [item for item in as_list(log.get("targeted_geography_literals")) if has_text(item)]
-        if not geography or len(geography) != len(as_list(log.get("targeted_geography_literals"))):
-            issues.append(issue("critical", "search_log_geography_missing", "SearchLog requires explicit non-empty targeted_geography_literals", f"{path}.targeted_geography_literals"))
+        raw_geography_values = as_list(log.get("targeted_geography_literals"))
+        geography = [item for item in raw_geography_values if has_text(item)]
+        if geography and len(geography) != len(raw_geography_values):
+            issues.append(issue("critical", "search_log_geography_missing", "SearchLog targeted_geography_literals must not contain empty items", f"{path}.targeted_geography_literals"))
         if isinstance(contract, dict):
             geography_contract = contract.get("geography_contract")
-            if not isinstance(geography_contract, dict):
-                issues.append(issue("critical", "search_log_geography_contract_missing", "SearchLog requires a current Brief geography contract", path))
-            else:
+            if isinstance(geography_contract, dict) and geography:
                 allowed_geography = normalize_region_values(geography_contract.get("included_geography_literals"))
                 if not normalize_region_values(geography).issubset(allowed_geography):
                     issues.append(issue("critical", "search_log_target_geography_mismatch", "SearchLog targeted geography must be drawn from current Brief literals", f"{path}.targeted_geography_literals"))
-                if log.get("selection_rule_id") not in set(as_list(geography_contract.get("required_selection_rule_ids"))):
+                if has_text(log.get("selection_rule_id")) and log.get("selection_rule_id") not in set(as_list(geography_contract.get("required_selection_rule_ids"))):
                     issues.append(issue("critical", "search_log_geography_rule_mismatch", "SearchLog selection_rule_id must be a Brief geography selection rule", f"{path}.selection_rule_id"))
         for ref_idx, ref in enumerate(as_list(log.get("result_refs"))):
             ref_path = f"{path}.result_refs[{ref_idx}]"
@@ -507,21 +504,85 @@ def _search_log_issues(
                 issues.append(issue("critical", "search_log_candidate_missing", "SearchLog result ref must point to an existing Candidate", f"{ref_path}.candidate_id"))
                 continue
             candidate_refs.setdefault(str(candidate_id), set()).add(str(log.get("search_log_id")))
-            if candidate.get("discovery_method") == "search_web" and candidate.get("search_log_id") != log.get("search_log_id"):
+            candidate_log_ids = {
+                str(raw) for raw in ([candidate.get("search_log_id")] if has_text(candidate.get("search_log_id")) else [])
+            } | {
+                str(raw) for raw in as_list(candidate.get("search_log_ids")) if has_text(raw)
+            }
+            if candidate.get("discovery_method") == "search_web" and str(log.get("search_log_id")) not in candidate_log_ids:
                 issues.append(issue("critical", "search_log_candidate_reverse_link_missing", "SearchLog candidate ref must agree with Candidate.search_log_id", ref_path))
     for idx, candidate in enumerate(ensure_list(graph, "candidates")):
-        if not isinstance(candidate, dict) or candidate.get("discovery_method") != "search_web":
+        if not isinstance(candidate, dict):
             continue
         path = f"candidates[{idx}]"
-        search_log_id = candidate.get("search_log_id")
-        log = logs_by_id.get(search_log_id)
-        if not isinstance(log, dict):
+        source_url = candidate.get("source_url")
+        if source_url is not None and source_url != "" and not is_safe_public_http_url(source_url):
+            issues.append(issue("critical", "candidate_source_url_not_public", "Candidate source_url must be a safe public credential-free HTTP(S) URL when present", f"{path}.source_url"))
+        for ref_idx, discovery_ref in enumerate(as_list(candidate.get("discovery_refs"))):
+            if not isinstance(discovery_ref, dict):
+                continue
+            ref_url = discovery_ref.get("url")
+            if ref_url is not None and ref_url != "" and not is_safe_public_http_url(ref_url):
+                issues.append(issue("critical", "candidate_discovery_ref_url_not_public", "Candidate discovery_refs URL must be a safe public credential-free HTTP(S) URL when present", f"{path}.discovery_refs[{ref_idx}].url"))
+        signal_summary = candidate.get("signal_summary")
+        if isinstance(signal_summary, dict):
+            for signal_key, signal_state in signal_summary.items():
+                if not isinstance(signal_state, dict):
+                    continue
+                signal_path = f"{path}.signal_summary.{signal_key}"
+                for item_idx, signal_item in enumerate(as_list(signal_state.get("items"))):
+                    if not isinstance(signal_item, dict):
+                        continue
+                    signal_url = signal_item.get("source_url")
+                    if signal_url is not None and signal_url != "" and not is_safe_public_http_url(signal_url):
+                        issues.append(issue("critical", "candidate_signal_source_url_not_public", "Candidate public-signal source_url must be a safe public credential-free HTTP(S) URL when present", f"{signal_path}.items[{item_idx}].source_url"))
+                status = signal_state.get("status")
+                items = [
+                    item for item in as_list(signal_state.get("items"))
+                    if isinstance(item, dict) and has_text(item.get("summary"))
+                ]
+                searched_scopes = [item for item in as_list(signal_state.get("searched_scopes")) if has_text(item)]
+                notes = [item for item in as_list(signal_state.get("notes")) if has_text(item)]
+                if status == "observed" and not items:
+                    code = "candidate_china_relation_requires_explicit_observation" if signal_key == "china_relation" else "candidate_signal_observed_without_item"
+                    message = "China relation cannot be inferred from trade data without an explicit observed source note" if signal_key == "china_relation" else "Observed candidate signal requires at least one explicit source-backed summary item"
+                    issues.append(issue("critical", code, message, f"{signal_path}.items"))
+                if status == "not_observed" and not (searched_scopes or notes):
+                    issues.append(issue("critical", "candidate_signal_not_observed_without_scope", "not_observed candidate signal must keep searched scope or notes", signal_path))
+                if status == "source_restricted" and not (searched_scopes or notes):
+                    issues.append(issue("critical", "candidate_signal_source_restricted_without_scope", "source_restricted candidate signal must record the blocked or restricted scope", signal_path))
+                if status == "identity_pending" and not (items or notes):
+                    issues.append(issue("critical", "candidate_signal_identity_pending_without_reason", "identity_pending candidate signal must preserve the matching ambiguity note", signal_path))
+            trade_state = signal_summary.get("trade_record")
+            identity_status = str(candidate.get("identity_resolution_status") or "")
+            relevance_status = str(candidate.get("business_relevance_status") or "")
+            if (
+                isinstance(trade_state, dict)
+                and trade_state.get("status") == "observed"
+                and identity_status in {"pending", "conflicted", "unresolved"}
+            ) or (
+                isinstance(trade_state, dict)
+                and trade_state.get("status") == "observed"
+                and relevance_status == "identity_pending"
+            ):
+                issues.append(issue("critical", "trade_record_identity_pending_auto_bound", "Trade record must remain identity_pending until the company identity is resolved; same-name trade data cannot auto-bind", f"{path}.signal_summary.trade_record.status"))
+        if candidate.get("discovery_method") != "search_web":
+            continue
+        search_log_ids = []
+        if has_text(candidate.get("search_log_id")):
+            search_log_ids.append(str(candidate.get("search_log_id")))
+        search_log_ids.extend(str(raw) for raw in as_list(candidate.get("search_log_ids")) if has_text(raw))
+        if not search_log_ids:
             issues.append(issue("critical", "search_web_candidate_without_search_log", "search_web Candidate requires a formal same-run SearchLog", f"{path}.search_log_id"))
             continue
-        if any(candidate.get(field) != log.get(field) for field in ("run_id", "brief_id", "plan_id")):
-            issues.append(issue("critical", "search_web_candidate_binding_mismatch", "search_web Candidate Run/Brief/Plan must match its SearchLog", path))
-        if str(search_log_id) not in candidate_refs.get(str(candidate.get("candidate_id")), set()):
-            issues.append(issue("critical", "search_log_candidate_result_ref_missing", "search_web Candidate must appear in its SearchLog result_refs", path))
+        matching_logs = [logs_by_id.get(search_log_id) for search_log_id in search_log_ids if isinstance(logs_by_id.get(search_log_id), dict)]
+        if not matching_logs:
+            issues.append(issue("critical", "search_web_candidate_without_search_log", "search_web Candidate requires an existing same-run SearchLog", path))
+            continue
+        if not any(all(candidate.get(field) == log.get(field) for field in ("run_id", "brief_id", "plan_id")) for log in matching_logs):
+            issues.append(issue("critical", "search_web_candidate_binding_mismatch", "search_web Candidate Run/Brief/Plan must match at least one linked SearchLog", path))
+        if not candidate_refs.get(str(candidate.get("candidate_id")), set()) & set(search_log_ids):
+            issues.append(issue("critical", "search_log_candidate_result_ref_missing", "search_web Candidate must appear in at least one linked SearchLog result_refs", path))
     has_search_artifact = any(
         isinstance(item, dict) and item.get("capability") == "search.web"
         for item in ensure_list(graph, "observations")
@@ -534,6 +595,76 @@ def _search_log_issues(
     return issues
 
 
+def _default_discovery_candidate_structure_issues(graph: dict[str, Any]) -> list[dict[str, str]]:
+    """Require the reusable candidate-pool fields without burdening strict runs."""
+    run = current_run(graph)
+    brief = current_brief(graph, run)
+    if not isinstance(brief, dict) or brief.get("output_mode") != "发现候选池":
+        return []
+
+    issues: list[dict[str, str]] = []
+    expected_bindings = {
+        "run_id": run.get("run_id") if isinstance(run, dict) else None,
+        "brief_id": brief.get("brief_id"),
+        "plan_id": run.get("plan_id") if isinstance(run, dict) else None,
+    }
+    signal_keys = {
+        "business_match",
+        "website_contact",
+        "trade_record",
+        "china_relation",
+        "product_description_or_hs",
+    }
+    signal_statuses = {"observed", "not_observed", "not_searched", "identity_pending", "source_restricted"}
+
+    for idx, candidate in enumerate(ensure_list(graph, "candidates")):
+        if not isinstance(candidate, dict):
+            continue
+        path = f"candidates[{idx}]"
+        if not (has_text(candidate.get("name")) or has_text(candidate.get("company_name"))):
+            issues.append(issue("critical", "default_discovery_candidate_identity_missing", "Discovery Candidate requires a company or candidate name", path))
+        for field, expected in expected_bindings.items():
+            if not has_text(candidate.get(field)) or (has_text(expected) and candidate.get(field) != expected):
+                issues.append(issue("critical", "default_discovery_candidate_run_binding_missing", "Discovery Candidate must bind to the current Run, Brief, and Plan", f"{path}.{field}"))
+        refs = [ref for ref in as_list(candidate.get("discovery_refs")) if isinstance(ref, dict) and has_text(ref.get("label"))]
+        if not (has_text(candidate.get("source_hint")) or has_text(candidate.get("source_url")) or refs):
+            issues.append(issue("critical", "default_discovery_candidate_discovery_source_missing", "Discovery Candidate requires a recorded discovery source", path))
+        if not [item for item in as_list(candidate.get("dedupe_basis")) if has_text(item)]:
+            issues.append(issue("critical", "default_discovery_candidate_dedupe_basis_missing", "Discovery Candidate requires a dedupe basis", f"{path}.dedupe_basis"))
+        if candidate.get("business_relevance_status") not in {"directly_related", "possibly_related", "explicitly_excluded_or_unrelated", "identity_pending", "insufficient_information"}:
+            issues.append(issue("critical", "default_discovery_candidate_relevance_missing", "Discovery Candidate requires a business relevance status", f"{path}.business_relevance_status"))
+        if not [item for item in as_list(candidate.get("business_relevance_basis")) if has_text(item)]:
+            issues.append(issue("critical", "default_discovery_candidate_relevance_basis_missing", "Discovery Candidate requires observed relevance basis", f"{path}.business_relevance_basis"))
+        summary = candidate.get("signal_summary")
+        if not isinstance(summary, dict):
+            issues.append(issue("critical", "default_discovery_candidate_signal_summary_missing", "Discovery Candidate requires a public-signal summary", f"{path}.signal_summary"))
+        else:
+            for signal_key in signal_keys:
+                state = summary.get(signal_key)
+                if not isinstance(state, dict) or state.get("status") not in signal_statuses:
+                    issues.append(issue("critical", "default_discovery_candidate_signal_status_missing", f"Discovery Candidate requires a valid {signal_key} signal status", f"{path}.signal_summary.{signal_key}"))
+            if candidate.get("business_relevance_status") in {"directly_related", "possibly_related", "explicitly_excluded_or_unrelated"}:
+                business_match = summary.get("business_match")
+                if not isinstance(business_match, dict) or business_match.get("status") != "observed":
+                    issues.append(issue("critical", "default_discovery_business_match_not_observed", "Material business relevance requires business_match.status=observed", f"{path}.signal_summary.business_match.status"))
+                else:
+                    business_items = [
+                        item for item in as_list(business_match.get("items"))
+                        if isinstance(item, dict) and has_text(item.get("summary"))
+                    ]
+                    if not business_items:
+                        issues.append(issue("critical", "default_discovery_business_match_item_missing", "Material business relevance requires at least one observed business_match summary", f"{path}.signal_summary.business_match.items"))
+                    elif not any(
+                        has_text(item.get("source_label")) or is_safe_public_http_url(item.get("source_url"))
+                        for item in business_items
+                    ):
+                        issues.append(issue("critical", "default_discovery_business_match_source_missing", "Material business relevance requires an observed business signal with a source label or safe public URL", f"{path}.signal_summary.business_match.items"))
+        for field in ("unknowns", "source_restrictions"):
+            if field not in candidate or not isinstance(candidate.get(field), list):
+                issues.append(issue("critical", f"default_discovery_candidate_{field}_missing", f"Discovery Candidate requires a {field} list, which may be empty", f"{path}.{field}"))
+    return issues
+
+
 def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
     issues: list[dict[str, str]] = []
     issues.extend(_schema_validation_issues(graph))
@@ -543,6 +674,7 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
     expected_review_snapshot = review_provenance_snapshot(graph)
     issues.extend(validate_current_review_attestation(graph))
     issues.extend(_search_log_issues(graph, ids))
+    issues.extend(_default_discovery_candidate_structure_issues(graph))
     required_ids = ID_FIELDS
     seen_ids: dict[str, str] = {}
     for key, field in required_ids.items():
@@ -864,6 +996,13 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
     for idx, brief in enumerate(ensure_list(graph, "briefs")):
         if not isinstance(brief, dict): continue
         mode = brief.get("task_mode")
+        brief_id = brief.get("brief_id")
+        formal_positive_attempt = any(
+            isinstance(item, dict)
+            and item.get("brief_id") == brief_id
+            and item.get("disposition") in POSITIVE_DISPOSITIONS
+            for item in ensure_list(graph, "assessments")
+        )
         if mode not in no_product_required_modes and mode != "unknown":
             if not has_text(brief.get("product_or_service")):
                 issues.append(issue("major", "brief_missing_product_or_service", "New customer development Brief lacks product_or_service", f"briefs[{idx}].product_or_service"))
@@ -877,11 +1016,12 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
             targeting_contract_required(brief)
             and target_literals
             and (not isinstance(contract, dict) or not isinstance(contract.get("geography_contract"), dict))
+            and formal_positive_attempt
         ):
             issues.append(issue(
                 "critical",
                 "geography_contract_required_for_target",
-                "A non-empty target_country_or_region requires a geography_contract for new customer development",
+                "A non-empty target_country_or_region requires a geography_contract before positive formal customer qualification",
                 f"briefs[{idx}].customer_selection_contract.geography_contract",
             ))
         if isinstance(contract, dict):

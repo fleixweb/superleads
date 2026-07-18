@@ -1,0 +1,850 @@
+{
+  "runs": [
+    {
+      "run_id": "run_discovery_001",
+      "status": "collecting",
+      "created_at": "2026-07-18T00:00:00Z",
+      "platform": "codex",
+      "brief_id": "brief_discovery_001",
+      "plan_id": "plan_discovery_001",
+      "review_mode": "not_run"
+    }
+  ],
+  "briefs": [
+    {
+      "brief_id": "brief_discovery_001",
+      "task_mode": "product_scope_research",
+      "output_mode": "发现候选池",
+      "contact_detail_level": "standard",
+      "product_or_service": "sample product",
+      "scope_axis": [
+        "target_country_or_region",
+        "target_customer_type"
+      ],
+      "target_country_or_region": [
+        "Region Q",
+        "Region R"
+      ],
+      "target_customer_type": [
+        "distributor",
+        "industrial supplier"
+      ],
+      "keywords": [
+        "sample product distributor",
+        "sample product supplier"
+      ],
+      "evidence_depth": "initial",
+      "target_count": 50,
+      "business_context": "发现优先，后续按需深查。"
+    }
+  ],
+  "plans": [
+    {
+      "plan_id": "plan_discovery_001",
+      "brief_id": "brief_discovery_001",
+      "query_groups": [
+        {
+          "group_id": "region_q_distributor",
+          "query_purpose": "Find distributors in Region Q and record public contact routes.",
+          "queries": [
+            "sample product distributor Region Q",
+            "sample product supplier Region Q"
+          ]
+        },
+        {
+          "group_id": "region_r_directory",
+          "query_purpose": "Expand directory and document leads in Region R.",
+          "queries": [
+            "sample product directory Region R",
+            "sample product pdf catalog Region R"
+          ]
+        }
+      ],
+      "source_categories": [
+        "website",
+        "directory",
+        "document",
+        "search_result"
+      ],
+      "contact_collection_targets": [
+        "email",
+        "phone",
+        "contact_form",
+        "linkedin_company",
+        "person_name"
+      ],
+      "lead_tiering_criteria": {
+        "directly_related": "Observed business signal matches product/channel boundary.",
+        "possibly_related": "Useful clue exists but exact business fit is still unconfirmed.",
+        "explicitly_excluded_or_unrelated": "Opened source shows an excluded role or wrong market.",
+        "identity_pending": "Same-name, address, or trade identity remains unresolved.",
+        "insufficient_information": "Only weak discovery clue is currently available."
+      },
+      "claim_evidence_requirements": {
+        "formal_deep_check_only": "Default discovery does not require Claims."
+      },
+      "stop_conditions": [
+        "Finish planned query groups, source categories, and geography splits before calling the round converged.",
+        "If new unique candidates fall sharply and results are mostly duplicate, unrelated, or restricted, record convergence with uncovered paths."
+      ],
+      "downgrade_strategy": [
+        "Keep insufficient or unresolved candidates with explicit statuses.",
+        "Do not delete a candidate only because formal evidence is missing."
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "cand_alpha_001",
+      "name": "Alpha Distributor",
+      "company_name": "Alpha Distributor",
+      "entity_id": "ent_alpha_001",
+      "website": "https://alpha.example",
+      "country_or_region": "Region Q",
+      "source_hint": "官网与目录交叉发现",
+      "source_url": "https://alpha.example",
+      "status": "初筛线索",
+      "note": "发现后可继续补查 supplier portal。",
+      "run_id": "run_discovery_001",
+      "brief_id": "brief_discovery_001",
+      "plan_id": "plan_discovery_001",
+      "discovery_method": "search_web",
+      "search_log_ids": [
+        "search_001",
+        "search_003"
+      ],
+      "discovery_refs": [
+        {
+          "label": "官网产品页",
+          "url": "https://alpha.example/products",
+          "source_type": "website",
+          "source_id": "src_alpha_001",
+          "observation_id": "obs_alpha_001"
+        }
+      ],
+      "dedupe_basis": [
+        "名称+域名一致",
+        "官网与目录链接归并"
+      ],
+      "business_relevance_status": "directly_related",
+      "business_relevance_basis": [
+        "官网写明 distributes sample product",
+        "公开邮箱与网站主体一致"
+      ],
+      "identity_resolution_status": "matched",
+      "identity_resolution_basis": [
+        "官网域名与公司名称一致"
+      ],
+      "observed_business_signals": [
+        "distributes sample product",
+        "公开销售邮箱"
+      ],
+      "unknowns": [
+        "是否有 supplier portal 待补查"
+      ],
+      "source_restrictions": [],
+      "next_verification_steps": [
+        "补查供应商入口或采购页面"
+      ],
+      "signal_summary": {
+        "business_match": {
+          "status": "observed",
+          "items": [
+            {
+              "summary": "官网写明 distributes sample product",
+              "source_label": "Alpha 官网产品页",
+              "source_url": "https://alpha.example/products",
+              "observed_at": "2026-07-18"
+            }
+          ]
+        },
+        "website_contact": {
+          "status": "observed",
+          "items": [
+            {
+              "summary": "公开邮箱 sales@alpha.example",
+              "source_label": "Alpha 联系页",
+              "source_url": "https://alpha.example/contact",
+              "observed_at": "2026-07-18"
+            }
+          ]
+        },
+        "trade_record": {
+          "status": "not_searched",
+          "notes": [
+            "本轮未检索贸易数据库"
+          ]
+        },
+        "china_relation": {
+          "status": "not_searched",
+          "notes": [
+            "尚未检索 China 关联"
+          ]
+        },
+        "product_description_or_hs": {
+          "status": "not_searched",
+          "notes": [
+            "尚未检索货描/HS"
+          ]
+        }
+      }
+    },
+    {
+      "candidate_id": "cand_beta_001",
+      "name": "Beta Industrial Supplies",
+      "company_name": "Beta Industrial Supplies",
+      "entity_id": "ent_beta_001",
+      "website": "https://beta.example",
+      "country_or_region": "Region R",
+      "source_hint": "公开目录与联系页",
+      "source_url": "https://beta.example/contact",
+      "status": "初筛线索",
+      "run_id": "run_discovery_001",
+      "brief_id": "brief_discovery_001",
+      "plan_id": "plan_discovery_001",
+      "discovery_method": "search_web",
+      "search_log_ids": [
+        "search_002"
+      ],
+      "dedupe_basis": [
+        "名称+官网一致"
+      ],
+      "business_relevance_status": "possibly_related",
+      "business_relevance_basis": [
+        "目录提到 industrial supplies 与相关 accessories",
+        "是否直接经营 sample product 仍待确认"
+      ],
+      "identity_resolution_status": "matched",
+      "observed_business_signals": [
+        "公开联系电话",
+        "存在 contact form"
+      ],
+      "unknowns": [
+        "产品线是否包含 sample product 待确认"
+      ],
+      "source_restrictions": [
+        "部分目录详情页需登录"
+      ],
+      "next_verification_steps": [
+        "补开产品目录页确认 sample product"
+      ],
+      "signal_summary": {
+        "business_match": {
+          "status": "observed",
+          "items": [
+            {
+              "summary": "目录提到 industrial supplies 与 accessories",
+              "source_label": "Beta 目录",
+              "source_url": "https://directory.example/beta",
+              "observed_at": "2026-07-18"
+            }
+          ]
+        },
+        "website_contact": {
+          "status": "observed",
+          "items": [
+            {
+              "summary": "公开电话 +44 20 7000 1111 与 contact form",
+              "source_label": "Beta 联系页",
+              "source_url": "https://beta.example/contact",
+              "observed_at": "2026-07-18"
+            }
+          ]
+        },
+        "trade_record": {
+          "status": "source_restricted",
+          "searched_scopes": [
+            "public trade directory 2024-2026"
+          ],
+          "notes": [
+            "详情页登录受限，暂不能读取交易字段"
+          ]
+        },
+        "china_relation": {
+          "status": "not_searched",
+          "notes": [
+            "未单独检索 China 关联"
+          ]
+        },
+        "product_description_or_hs": {
+          "status": "not_observed",
+          "searched_scopes": [
+            "官网 contact 页",
+            "目录摘要页"
+          ],
+          "notes": [
+            "已查页面未见 HS 或货描"
+          ]
+        }
+      }
+    },
+    {
+      "candidate_id": "cand_gamma_001",
+      "name": "Gamma Manufacturing",
+      "company_name": "Gamma Manufacturing",
+      "entity_id": "ent_gamma_001",
+      "website": "https://gamma.example",
+      "country_or_region": "Region Q",
+      "source_hint": "官网 About 页面",
+      "source_url": "https://gamma.example/about",
+      "status": "初筛线索",
+      "run_id": "run_discovery_001",
+      "brief_id": "brief_discovery_001",
+      "plan_id": "plan_discovery_001",
+      "discovery_method": "search_web",
+      "search_log_ids": [
+        "search_001"
+      ],
+      "dedupe_basis": [
+        "名称+域名一致"
+      ],
+      "business_relevance_status": "explicitly_excluded_or_unrelated",
+      "business_relevance_basis": [
+        "官网写明 manufacturer of competing products"
+      ],
+      "identity_resolution_status": "matched",
+      "excluded_or_conflicting_signals": [
+        "manufacturer of competing products",
+        "命中用户排除边界"
+      ],
+      "unknowns": [],
+      "source_restrictions": [],
+      "signal_summary": {
+        "business_match": {
+          "status": "observed",
+          "items": [
+            {
+              "summary": "官网写明 manufacturer of competing products",
+              "source_label": "Gamma About",
+              "source_url": "https://gamma.example/about",
+              "observed_at": "2026-07-18"
+            }
+          ]
+        },
+        "website_contact": {
+          "status": "not_observed",
+          "searched_scopes": [
+            "官网 About 页"
+          ],
+          "notes": [
+            "已查页面未见联系方式"
+          ]
+        },
+        "trade_record": {
+          "status": "not_searched"
+        },
+        "china_relation": {
+          "status": "not_searched"
+        },
+        "product_description_or_hs": {
+          "status": "not_searched"
+        }
+      }
+    },
+    {
+      "candidate_id": "cand_delta_001",
+      "name": "Delta Trading",
+      "company_name": "Delta Trading",
+      "country_or_region": "Region R",
+      "source_hint": "同名目录与贸易摘要",
+      "source_url": "https://directory.example/delta",
+      "status": "初筛线索",
+      "run_id": "run_discovery_001",
+      "brief_id": "brief_discovery_001",
+      "plan_id": "plan_discovery_001",
+      "discovery_method": "search_web",
+      "search_log_ids": [
+        "search_002"
+      ],
+      "dedupe_basis": [
+        "同名结果暂不合并"
+      ],
+      "business_relevance_status": "identity_pending",
+      "business_relevance_basis": [
+        "同名公开目录与贸易摘要地址不一致"
+      ],
+      "identity_resolution_status": "pending",
+      "identity_resolution_basis": [
+        "同名主体存在多个地址与域名"
+      ],
+      "unknowns": [
+        "贸易记录是否属于该公司待核"
+      ],
+      "source_restrictions": [],
+      "next_verification_steps": [
+        "核对地址、域名与注册主体"
+      ],
+      "signal_summary": {
+        "business_match": {
+          "status": "identity_pending",
+          "notes": [
+            "名称相同但主体未可靠归并"
+          ]
+        },
+        "website_contact": {
+          "status": "identity_pending",
+          "notes": [
+            "目录电话存在但归属待确认"
+          ]
+        },
+        "trade_record": {
+          "status": "identity_pending",
+          "notes": [
+            "出现同名贸易记录，但地址不一致，暂不绑定"
+          ]
+        },
+        "china_relation": {
+          "status": "identity_pending",
+          "notes": [
+            "China 关联依附于未解决贸易主体"
+          ]
+        },
+        "product_description_or_hs": {
+          "status": "identity_pending",
+          "notes": [
+            "货描/HS 依附于未解决贸易主体"
+          ]
+        }
+      }
+    },
+    {
+      "candidate_id": "cand_epsilon_001",
+      "name": "Epsilon Group",
+      "company_name": "Epsilon Group",
+      "source_hint": "展会名单仅有名称",
+      "source_url": "https://fair.example/eps",
+      "status": "初筛线索",
+      "note": "仅发现名称，资料很少。",
+      "run_id": "run_discovery_001",
+      "brief_id": "brief_discovery_001",
+      "plan_id": "plan_discovery_001",
+      "discovery_method": "search_web",
+      "search_log_ids": [
+        "search_003"
+      ],
+      "dedupe_basis": [
+        "仅保留原始名称线索"
+      ],
+      "business_relevance_status": "insufficient_information",
+      "business_relevance_basis": [
+        "展会名单只有公司名，暂无官网与业务描述"
+      ],
+      "identity_resolution_status": "unresolved",
+      "unknowns": [
+        "官网未知",
+        "业务未知",
+        "联系方式未知"
+      ],
+      "source_restrictions": [
+        "无更多公开资料"
+      ],
+      "next_verification_steps": [
+        "补搜官网或目录详情页"
+      ],
+      "signal_summary": {
+        "business_match": {
+          "status": "not_searched",
+          "notes": [
+            "尚未找到可打开官网"
+          ]
+        },
+        "website_contact": {
+          "status": "source_restricted",
+          "notes": [
+            "仅有展会名单摘要页"
+          ]
+        },
+        "trade_record": {
+          "status": "not_searched"
+        },
+        "china_relation": {
+          "status": "not_searched"
+        },
+        "product_description_or_hs": {
+          "status": "not_searched"
+        }
+      }
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "src_alpha_001",
+      "canonical_url": "https://alpha.example",
+      "final_url": "https://alpha.example/contact",
+      "publisher_relation": "first_party",
+      "provenance": "discovered_public",
+      "medium": "website",
+      "access_boundary": "public",
+      "owner_hint": "Alpha Distributor"
+    },
+    {
+      "source_id": "src_beta_001",
+      "canonical_url": "https://beta.example",
+      "final_url": "https://beta.example/contact",
+      "publisher_relation": "first_party",
+      "provenance": "discovered_public",
+      "medium": "website",
+      "access_boundary": "public",
+      "owner_hint": "Beta Industrial Supplies"
+    },
+    {
+      "source_id": "src_delta_001",
+      "canonical_url": "https://directory.example/delta",
+      "final_url": "https://directory.example/delta",
+      "publisher_relation": "third_party",
+      "provenance": "discovered_public",
+      "medium": "directory",
+      "access_boundary": "public",
+      "owner_hint": "Delta Trading"
+    }
+  ],
+  "observations": [
+    {
+      "observation_id": "obs_alpha_001",
+      "run_id": "run_discovery_001",
+      "source_id": "src_alpha_001",
+      "candidate_id": "cand_alpha_001",
+      "entity_id": "ent_alpha_001",
+      "capability": "source.open",
+      "concrete_tool": "fixture",
+      "observed_at": "2026-07-18T00:00:00Z",
+      "access_status": "ok",
+      "raw_excerpt": "Alpha Distributor distributes sample product. Contact sales@alpha.example",
+      "extraction_method": "fixture",
+      "language": "en",
+      "translation_status": "original",
+      "content_hash": "alpha_obs_hash",
+      "title": "Alpha contact page",
+      "page_or_dom_locator": "body"
+    },
+    {
+      "observation_id": "obs_beta_001",
+      "run_id": "run_discovery_001",
+      "source_id": "src_beta_001",
+      "candidate_id": "cand_beta_001",
+      "entity_id": "ent_beta_001",
+      "capability": "source.open",
+      "concrete_tool": "fixture",
+      "observed_at": "2026-07-18T00:00:00Z",
+      "access_status": "ok",
+      "raw_excerpt": "Beta Industrial Supplies contact us at +44 20 7000 1111 via the public contact page.",
+      "extraction_method": "fixture",
+      "language": "en",
+      "translation_status": "original",
+      "content_hash": "beta_obs_hash",
+      "title": "Beta contact page",
+      "page_or_dom_locator": "body"
+    },
+    {
+      "observation_id": "obs_delta_001",
+      "run_id": "run_discovery_001",
+      "source_id": "src_delta_001",
+      "candidate_id": "cand_delta_001",
+      "entity_id": null,
+      "capability": "source.open",
+      "concrete_tool": "fixture",
+      "observed_at": "2026-07-18T00:00:00Z",
+      "access_status": "ok",
+      "raw_excerpt": "Delta Trading Tel: +44 20 7999 8888. Listing does not show a verified legal entity.",
+      "extraction_method": "fixture",
+      "language": "en",
+      "translation_status": "original",
+      "content_hash": "delta_obs_hash",
+      "title": "Delta directory listing",
+      "page_or_dom_locator": "body"
+    }
+  ],
+  "entities": [
+    {
+      "entity_id": "ent_alpha_001",
+      "name": "Alpha Distributor",
+      "website": "https://alpha.example",
+      "domain": "alpha.example",
+      "country_or_region": "Region Q",
+      "customer_type": "distributor"
+    },
+    {
+      "entity_id": "ent_beta_001",
+      "name": "Beta Industrial Supplies",
+      "website": "https://beta.example",
+      "domain": "beta.example",
+      "country_or_region": "Region R",
+      "customer_type": "industrial supplier"
+    },
+    {
+      "entity_id": "ent_gamma_001",
+      "name": "Gamma Manufacturing",
+      "website": "https://gamma.example",
+      "domain": "gamma.example",
+      "country_or_region": "Region Q",
+      "customer_type": "manufacturer"
+    }
+  ],
+  "entity_relationships": [],
+  "claims": [],
+  "claim_evidence": [],
+  "contact_points": [
+    {
+      "contact_id": "contact_alpha_001",
+      "contact_type": "email",
+      "normalized_value": "sales@alpha.example",
+      "source_literal": "sales@alpha.example",
+      "source_observation_id": "obs_alpha_001",
+      "source_type": "website",
+      "visibility_status": "public",
+      "verification_status": "not_verified",
+      "last_seen_at": "2026-07-18T00:00:00Z"
+    },
+    {
+      "contact_id": "contact_beta_001",
+      "contact_type": "phone",
+      "normalized_value": "442070001111",
+      "source_literal": "+44 20 7000 1111",
+      "source_observation_id": "obs_beta_001",
+      "source_type": "website",
+      "visibility_status": "public",
+      "verification_status": "not_verified",
+      "last_seen_at": "2026-07-18T00:00:00Z"
+    },
+    {
+      "contact_id": "contact_delta_001",
+      "contact_type": "phone",
+      "normalized_value": "442079998888",
+      "source_literal": "+44 20 7999 8888",
+      "source_observation_id": "obs_delta_001",
+      "source_type": "directory",
+      "visibility_status": "public",
+      "verification_status": "not_verified",
+      "last_seen_at": "2026-07-18T00:00:00Z"
+    }
+  ],
+  "contact_claims": [
+    {
+      "contact_claim_id": "cc_alpha_001",
+      "contact_id": "contact_alpha_001",
+      "entity_id": "ent_alpha_001",
+      "relationship_type": "company_general",
+      "association_observation_id": "obs_alpha_001",
+      "source_context": "官网联系页",
+      "association_evidence_text": "Alpha Distributor distributes sample product. Contact sales@alpha.example",
+      "association_confidence": "high",
+      "export_status": "ready",
+      "user_status": "可直接使用",
+      "is_role_based": false,
+      "is_personal_business": false
+    },
+    {
+      "contact_claim_id": "cc_beta_001",
+      "contact_id": "contact_beta_001",
+      "entity_id": "ent_beta_001",
+      "relationship_type": "company_general",
+      "association_observation_id": "obs_beta_001",
+      "source_context": "官网公开联系电话",
+      "association_evidence_text": "Beta Industrial Supplies contact us at +44 20 7000 1111",
+      "association_confidence": "medium",
+      "export_status": "export_with_source_note",
+      "user_status": "建议核查后使用",
+      "manual_check_note": "建议进一步确认是否直达相关业务部门",
+      "is_role_based": false,
+      "is_personal_business": false
+    },
+    {
+      "contact_claim_id": "cc_delta_001",
+      "contact_id": "contact_delta_001",
+      "entity_id": null,
+      "relationship_type": "unclear_directory_listing",
+      "association_observation_id": "obs_delta_001",
+      "source_context": "公开目录电话",
+      "association_evidence_text": "+44 20 7999 8888",
+      "association_confidence": "low",
+      "export_status": "needs_manual_association_review",
+      "user_status": "待确认归属",
+      "manual_check_note": "同名主体未确认，电话先保留为待确认归属",
+      "is_role_based": false,
+      "is_personal_business": false
+    }
+  ],
+  "unassigned_contact_leads": [
+    {
+      "unassigned_contact_lead_id": "ucl_delta_001",
+      "contact_id": "contact_delta_001",
+      "reason": "目录电话存在但主体未确认",
+      "suggested_manual_check": "核对地址、域名与注册主体后再决定归属"
+    }
+  ],
+  "hypotheses": [],
+  "assessments": [],
+  "review_findings": [],
+  "audits": [],
+  "delivery_manifests": [],
+  "search_logs": [
+    {
+      "search_log_id": "search_001",
+      "run_id": "run_discovery_001",
+      "brief_id": "brief_discovery_001",
+      "plan_id": "plan_discovery_001",
+      "query_group_id": "region_q_distributor",
+      "queried_at": "2026-07-18T00:00:00Z",
+      "capability": "search.web",
+      "concrete_tool": "fixture_search",
+      "query_text": "sample product distributor Region Q",
+      "query_language": "en",
+      "targeted_geography_literals": [
+        "Region Q"
+      ],
+      "customer_selection_contract_id": null,
+      "selection_rule_id": null,
+      "source_categories": [
+        "website",
+        "directory"
+      ],
+      "result_use": "candidate_seed_only",
+      "new_candidate_ids": [
+        "cand_alpha_001",
+        "cand_gamma_001"
+      ],
+      "duplicate_candidate_ids": [],
+      "accessed_source_ids": [
+        "src_alpha_001"
+      ],
+      "failed_source_refs": [],
+      "restricted_source_refs": [
+        "directory details for Gamma require registration"
+      ],
+      "dedupe_basis": [
+        "域名去重"
+      ],
+      "coverage_notes": [
+        "Region Q 第一轮以官网与目录为主。"
+      ],
+      "result_refs": [
+        {
+          "candidate_id": "cand_alpha_001",
+          "result_url": "https://alpha.example",
+          "result_rank": 1,
+          "result_title": "Alpha Distributor",
+          "result_locator": "rank=1"
+        },
+        {
+          "candidate_id": "cand_gamma_001",
+          "result_url": "https://gamma.example",
+          "result_rank": 2,
+          "result_title": "Gamma Manufacturing",
+          "result_locator": "rank=2"
+        }
+      ]
+    },
+    {
+      "search_log_id": "search_002",
+      "run_id": "run_discovery_001",
+      "brief_id": "brief_discovery_001",
+      "plan_id": "plan_discovery_001",
+      "query_group_id": "region_r_directory",
+      "queried_at": "2026-07-18T00:10:00Z",
+      "capability": "search.web",
+      "concrete_tool": "fixture_search",
+      "query_text": "sample product supplier Region R",
+      "query_language": "en",
+      "targeted_geography_literals": [
+        "Region R"
+      ],
+      "customer_selection_contract_id": null,
+      "selection_rule_id": null,
+      "source_categories": [
+        "website",
+        "directory"
+      ],
+      "result_use": "candidate_seed_only",
+      "new_candidate_ids": [
+        "cand_beta_001",
+        "cand_delta_001"
+      ],
+      "duplicate_candidate_ids": [],
+      "accessed_source_ids": [
+        "src_beta_001",
+        "src_delta_001"
+      ],
+      "failed_source_refs": [],
+      "restricted_source_refs": [
+        "public trade directory details for Beta require login"
+      ],
+      "dedupe_basis": [
+        "名称+国家组合去重"
+      ],
+      "coverage_notes": [
+        "Region R 补了目录与联系页。"
+      ],
+      "result_refs": [
+        {
+          "candidate_id": "cand_beta_001",
+          "result_url": "https://beta.example/contact",
+          "result_rank": 1,
+          "result_title": "Beta Industrial Supplies",
+          "result_locator": "rank=1"
+        },
+        {
+          "candidate_id": "cand_delta_001",
+          "result_url": "https://directory.example/delta",
+          "result_rank": 2,
+          "result_title": "Delta Trading",
+          "result_locator": "rank=2"
+        }
+      ]
+    },
+    {
+      "search_log_id": "search_003",
+      "run_id": "run_discovery_001",
+      "brief_id": "brief_discovery_001",
+      "plan_id": "plan_discovery_001",
+      "query_group_id": "region_r_directory",
+      "queried_at": "2026-07-18T00:20:00Z",
+      "capability": "search.web",
+      "concrete_tool": "fixture_search",
+      "query_text": "sample product pdf catalog Region R",
+      "query_language": "en",
+      "targeted_geography_literals": [
+        "Region R"
+      ],
+      "customer_selection_contract_id": null,
+      "selection_rule_id": null,
+      "source_categories": [
+        "document",
+        "directory"
+      ],
+      "result_use": "candidate_seed_only",
+      "new_candidate_ids": [
+        "cand_epsilon_001"
+      ],
+      "duplicate_candidate_ids": [
+        "cand_alpha_001"
+      ],
+      "accessed_source_ids": [],
+      "failed_source_refs": [
+        "catalog download timeout"
+      ],
+      "restricted_source_refs": [],
+      "dedupe_basis": [
+        "保留原始展会名称线索"
+      ],
+      "coverage_notes": [
+        "第二轮新增明显下降，新增结果以弱线索和重复为主。"
+      ],
+      "result_refs": [
+        {
+          "candidate_id": "cand_epsilon_001",
+          "result_url": "https://fair.example/eps",
+          "result_rank": 1,
+          "result_title": "Epsilon Group",
+          "result_locator": "rank=1"
+        },
+        {
+          "candidate_id": "cand_alpha_001",
+          "result_url": "https://alpha.example",
+          "result_rank": 3,
+          "result_title": "Alpha Distributor",
+          "result_locator": "rank=3"
+        }
+      ]
+    }
+  ]
+}
