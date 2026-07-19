@@ -2,6 +2,8 @@
 
 Default route: `using-superleads` → `scoping-lead-research` → `discovery` → `exporting-lead-workbooks`.
 
+单客户背调入口：`指定一个公司/品牌/域名/地址/邮箱/Candidate/用户材料 → 客户背调报告`，路由为 `using-superleads` → `scoping-lead-research` → `researching-customer-background`。它不产生新客户批量池，不要求预先 Entity 解析，可使用独立轻验证导出背景报告；该报告不进入正式名单 audit 或 manifest。正式标准开发名单仍是独立、明确请求的严格路径。
+
 `discovery` is the default discovery-first working phase, not a new required
 file or formal gate. It internally plans query expansion, records actual
 SearchLogs, discovers and de-duplicates Candidates, supplements public signals

@@ -349,6 +349,75 @@ def _formal_exception_binding_issues(
     return issues
 
 
+def _background_research_target_issues(
+    brief: dict[str, Any],
+    ids: dict[str, dict[str, dict[str, Any]]],
+    path: str,
+) -> list[dict[str, str]]:
+    """Validate the independent single-subject background-research anchor contract."""
+    if brief.get("task_mode") != "customer_background_research":
+        return []
+
+    issues: list[dict[str, str]] = []
+    target = brief.get("background_research_target")
+    target_path = f"{path}.background_research_target"
+    if not isinstance(target, dict):
+        return [issue("critical", "background_research_target_missing", "Customer background research requires a background_research_target", target_path)]
+
+    seen_anchor_ids: set[str] = set()
+    for anchor_idx, anchor in enumerate(as_list(target.get("anchors"))):
+        anchor_path = f"{target_path}.anchors[{anchor_idx}]"
+        if not isinstance(anchor, dict):
+            continue
+        anchor_id = anchor.get("anchor_id")
+        if has_text(anchor_id):
+            if str(anchor_id) in seen_anchor_ids:
+                issues.append(issue("critical", "background_anchor_id_duplicate", "Background research anchor_id values must be unique within one target", f"{anchor_path}.anchor_id"))
+            else:
+                seen_anchor_ids.add(str(anchor_id))
+
+        kind = anchor.get("kind")
+        if kind == "candidate_id" and anchor.get("candidate_id") not in ids["candidates"]:
+            issues.append(issue("critical", "background_candidate_anchor_missing", "Candidate anchor must reference a Candidate in the current Graph", f"{anchor_path}.candidate_id"))
+        elif kind == "user_material":
+            source = ids["sources"].get(anchor.get("source_id"))
+            if not isinstance(source, dict):
+                issues.append(issue("critical", "background_user_material_source_missing", "User-material anchor must reference a Source in the current Graph", f"{anchor_path}.source_id"))
+            elif source.get("provenance") not in {"user_provided", "manual_input"}:
+                issues.append(issue("critical", "background_user_material_source_not_user_provided", "User-material anchor Source must have user_provided or manual_input provenance", f"{anchor_path}.source_id"))
+        elif kind == "website_or_domain" and not is_safe_public_website_or_domain(anchor.get("literal")):
+            issues.append(issue("critical", "background_website_or_domain_not_public", "Website/domain anchor must be a safe public HTTP(S) URL or plain public domain", f"{anchor_path}.literal"))
+
+    if target.get("subject_resolution_status") != "resolved":
+        return issues
+
+    entity_id = target.get("primary_subject_entity_id")
+    if entity_id not in ids["entities"]:
+        issues.append(issue("critical", "background_primary_subject_entity_missing", "Resolved background target must reference an existing Entity", f"{target_path}.primary_subject_entity_id"))
+    for observation_idx, observation_id in enumerate(as_list(target.get("resolution_observation_ids"))):
+        observation_path = f"{target_path}.resolution_observation_ids[{observation_idx}]"
+        observation = ids["observations"].get(observation_id)
+        if not isinstance(observation, dict):
+            issues.append(issue("critical", "background_resolution_observation_missing", "Resolved background target must reference an existing Observation", observation_path))
+            continue
+        if observation.get("entity_id") != entity_id:
+            issues.append(issue("critical", "background_resolution_observation_entity_mismatch", "Resolution Observation must belong to the primary subject Entity", observation_path))
+        if observation.get("capability") not in CLAIM_SUPPORT_ALLOWED_CAPABILITIES:
+            issues.append(issue("critical", "background_resolution_observation_capability_not_checkable", "Resolution Observation must use an actually checkable source capability", observation_path))
+        if not has_text(observation.get("raw_excerpt")):
+            issues.append(issue("critical", "background_resolution_observation_excerpt_missing", "Resolution Observation must contain a non-empty raw_excerpt", observation_path))
+        if observation.get("access_status") in BLOCKED_ACCESS:
+            issues.append(issue("critical", "background_resolution_observation_access_restricted", "Resolution Observation cannot be blocked, login-wall, forbidden, inaccessible, or not_accessed", observation_path))
+        source = ids["sources"].get(observation.get("source_id"))
+        if not isinstance(source, dict):
+            issues.append(issue("critical", "background_resolution_source_missing", "Resolution Observation must reference an existing Source", observation_path))
+        elif source.get("medium") == "search_result":
+            issues.append(issue("critical", "background_resolution_source_search_result", "Search-result Source cannot resolve a background research subject", observation_path))
+        elif not source_evidence_scope(source, observation, "formal_claim")[0]:
+            issues.append(issue("critical", "background_resolution_source_not_checkable", "Resolution Observation must come from an actually checkable Source", observation_path))
+    return issues
+
+
 def _query_group_ids(plan: dict[str, Any] | None) -> set[str]:
     result: set[str] = set()
     if not isinstance(plan, dict):
@@ -1001,9 +1070,9 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
             issues.append(issue("critical", "mail_rule_mutating_action", "MailIntakeRule contains a non-permitted or mutating action", f"mail_intake_rules[{idx}].actions"))
 
     # New customer development requires product/service plus at least one scope axis.
-    # Single-company analysis, existing-table enrichment, and material/list extraction
+    # Single-company analysis, customer background research, existing-table enrichment, and material/list extraction
     # are allowed to proceed without that pair because the material itself is the target.
-    no_product_required_modes = {"single_company_analysis", "existing_table_enrichment", "material_list_extraction"}
+    no_product_required_modes = {"single_company_analysis", "customer_background_research", "existing_table_enrichment", "material_list_extraction"}
     for idx, brief in enumerate(ensure_list(graph, "briefs")):
         if not isinstance(brief, dict): continue
         mode = brief.get("task_mode")
@@ -1021,6 +1090,7 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
                 issues.append(issue("major", "brief_missing_scope_axis", "New customer development Brief lacks scope_axis", f"briefs[{idx}].scope_axis"))
         if formal_exception_mode(brief):
             issues.extend(_formal_exception_binding_issues(brief, ids, ensure_list(graph, "observations"), f"briefs[{idx}]"))
+        issues.extend(_background_research_target_issues(brief, ids, f"briefs[{idx}]"))
         contract = customer_selection_contract(brief)
         target_literals = [str(value) for value in as_list(brief.get("target_country_or_region")) if has_text(value)]
         if (

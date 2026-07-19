@@ -27,7 +27,7 @@ from _superleads_common import (
     user_provided_source_display,
     write_json,
 )
-from audit_delivery import audit_graph
+from background_report import background_contact_values_to_redact, build_background_report_sheets, validate_background_report
 
 MODE_TO_STATUS={"initial":"initial_lead_list","standard":"standard_development_list","full":"full_review_package","inquiry":"inquiry_followup_queue"}
 DEFAULT_SHEETS=["客户信息总表","联系方式汇总","开发建议","官网与来源链接","待核查事项","风险与说明"]
@@ -657,10 +657,35 @@ def write_xlsx_sheets(sheets:dict[str,list[dict[str,Any]]], out:Path, filename:s
     path=out/safe_filename(filename); wb.save(path); return [path.name]
 
 def main()->int:
-    p=argparse.ArgumentParser(); p.add_argument("graph"); p.add_argument("output_path",nargs="?"); p.add_argument("--output-dir"); p.add_argument("--mode",choices=["initial","standard","full","inquiry"],default="standard"); p.add_argument("--format",choices=["auto","xlsx","csv"],default="auto"); p.add_argument("--manifest"); a=p.parse_args()
+    p=argparse.ArgumentParser(); p.add_argument("graph"); p.add_argument("output_path",nargs="?"); p.add_argument("--output-dir"); p.add_argument("--mode",choices=["initial","standard","full","inquiry","background"],default="standard"); p.add_argument("--format",choices=["auto","xlsx","csv"],default="auto"); p.add_argument("--manifest"); a=p.parse_args()
     if bool(a.output_path)==bool(a.output_dir): raise SystemExit("Provide exactly one of output_path or --output-dir")
     graph=load_json(a.graph)
     if not isinstance(graph,dict): raise SystemExit("Research graph must be a JSON object")
+    if a.mode=="background":
+        if a.manifest:
+            raise SystemExit("--manifest is not supported for --mode background; background reports do not create DeliveryManifest records")
+        scope, issues = validate_background_report(graph)
+        if scope is None or issues:
+            print("Refusing background export because background report validation failed")
+            for item in issues:
+                print(f"[{item['severity']}] {item['code']}: {item['message']}")
+            return 1
+        sheets=build_background_report_sheets(scope)
+        hidden_contacts=hold_contact_values(graph) | background_contact_values_to_redact(scope["projection"])
+        sheets=redact_local_paths(redact_delivery_sheets(sheets,hidden_contacts))
+        out=Path(a.output_dir) if a.output_dir else Path(a.output_path).parent; chosen=a.format
+        if a.output_path and Path(a.output_path).suffix.casefold()==".xlsx" and chosen=="auto": chosen="xlsx"
+        if chosen=="auto":
+            try: import openpyxl; chosen="xlsx"  # noqa
+            except Exception: chosen="csv"
+        if chosen=="xlsx":
+            try: files=write_xlsx_sheets(sheets,out,Path(a.output_path).name if a.output_path else "superleads_background_report.xlsx")
+            except Exception as exc:
+                if a.format=="xlsx": raise
+                print(f"XLSX export unavailable ({exc}); falling back to UTF-8-SIG CSV"); files=write_csv_sheets(sheets,out); chosen="csv"
+        else: files=write_csv_sheets(sheets,out)
+        print(json.dumps({"ok":True,"format":chosen,"files":files,"background_validation":{"issue_count":0},"manifest":None},ensure_ascii=False,indent=2)); return 0
+    from audit_delivery import audit_graph
     requested_status=MODE_TO_STATUS[a.mode]
     audit=audit_graph(graph, requested_delivery_status=requested_status)
     if not audit.get("ok"):

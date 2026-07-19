@@ -31,6 +31,7 @@
       "type": "string",
       "enum": [
         "single_company_analysis",
+        "customer_background_research",
         "product_scope_research",
         "keyword_research",
         "industry_application_research",
@@ -57,7 +58,8 @@
         "标准开发名单",
         "联系方式优先",
         "补全已有表格",
-        "完整核查版"
+        "完整核查版",
+        "客户背调报告"
       ]
     },
     "application_context": {
@@ -133,6 +135,116 @@
         "entity_literal": {"type": ["string", "null"]},
         "resolved_entity_id": {"type": ["string", "null"]}
       }
+    },
+    "background_research_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "user_statement",
+        "anchors",
+        "subject_resolution_status",
+        "primary_subject_entity_id",
+        "resolution_observation_ids"
+      ],
+      "properties": {
+        "user_statement": {"type": "string", "minLength": 1},
+        "anchors": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["anchor_id", "kind", "literal", "candidate_id", "source_id"],
+            "properties": {
+              "anchor_id": {"type": "string", "minLength": 1},
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "candidate_id",
+                  "company_name",
+                  "brand_name",
+                  "website_or_domain",
+                  "address",
+                  "phone",
+                  "email",
+                  "user_material"
+                ]
+              },
+              "literal": {"type": ["string", "null"]},
+              "candidate_id": {"type": ["string", "null"]},
+              "source_id": {"type": ["string", "null"]}
+            },
+            "allOf": [
+              {
+                "if": {"properties": {"kind": {"const": "candidate_id"}}, "required": ["kind"]},
+                "then": {
+                  "properties": {
+                    "candidate_id": {"type": "string", "minLength": 1},
+                    "literal": {"type": ["string", "null"]},
+                    "source_id": {"const": null}
+                  }
+                }
+              },
+              {
+                "if": {"properties": {"kind": {"const": "user_material"}}, "required": ["kind"]},
+                "then": {
+                  "properties": {
+                    "literal": {"type": "string", "minLength": 1},
+                    "candidate_id": {"const": null},
+                    "source_id": {"type": "string", "minLength": 1}
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {"kind": {"not": {"enum": ["candidate_id", "user_material"]}}},
+                  "required": ["kind"]
+                },
+                "then": {
+                  "properties": {
+                    "literal": {"type": "string", "minLength": 1},
+                    "candidate_id": {"const": null},
+                    "source_id": {"const": null}
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "subject_resolution_status": {
+          "type": "string",
+          "enum": ["unresolved", "resolved", "multiple_candidates"]
+        },
+        "primary_subject_entity_id": {"type": ["string", "null"]},
+        "resolution_observation_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"subject_resolution_status": {"const": "resolved"}}, "required": ["subject_resolution_status"]},
+          "then": {
+            "properties": {
+              "primary_subject_entity_id": {"type": "string", "minLength": 1},
+              "resolution_observation_ids": {"type": "array", "minItems": 1}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"subject_resolution_status": {"enum": ["unresolved", "multiple_candidates"]}},
+            "required": ["subject_resolution_status"]
+          },
+          "then": {
+            "properties": {
+              "primary_subject_entity_id": {"const": null},
+              "resolution_observation_ids": {"type": "array", "maxItems": 0}
+            }
+          }
+        }
+      ]
     },
     "existing_table_binding": {
       "type": ["object", "null"],
@@ -258,6 +370,10 @@
     {
       "if": {"properties": {"task_mode": {"const": "single_company_analysis"}}, "required": ["task_mode"]},
       "then": {"required": ["single_company_target"]}
+    },
+    {
+      "if": {"properties": {"task_mode": {"const": "customer_background_research"}}, "required": ["task_mode"]},
+      "then": {"required": ["background_research_target"]}
     },
     {
       "if": {"properties": {"task_mode": {"const": "existing_table_enrichment"}}, "required": ["task_mode"]},

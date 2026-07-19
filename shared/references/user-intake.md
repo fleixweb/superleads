@@ -11,6 +11,8 @@ Start from the user's actual task:
 7. Competitor, brand, seed customer, or reference website.
 8. Trade fair directory, PDF, webpage list, screenshot, or search result.
 
+指定一个公司、品牌、域名、地址、邮箱、Candidate 或用户材料并要求客户背调，进入“客户背调报告”入口。它不产生新客户批量池，也不要求预先 Entity 解析；可形成独立的轻验证背景报告文件，不进入正式名单 audit 或 manifest。正式标准开发名单仍是独立、明确请求的严格路径。
+
 New customer development needs product/service plus at least one scope axis: country/region, customer type, channel, application, keyword, seed company, competitor, existing table, trade fair/PDF/web material.
 
 Single-company analysis requires the current user's explicit company name,

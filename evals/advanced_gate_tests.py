@@ -489,6 +489,632 @@ def _assert_identity_literal_bindings(directory: Path) -> list[str]:
     return errors
 
 
+def _background_graph(*, resolved: bool = False) -> dict[str, Any]:
+    target: dict[str, Any] = {
+        "user_statement": "请对 Chilly's 品牌做客户背调。",
+        "anchors": [
+            {
+                "anchor_id": "anchor_chillys_company_001",
+                "kind": "company_name",
+                "literal": "Chilly's",
+                "candidate_id": None,
+                "source_id": None,
+            }
+        ],
+        "subject_resolution_status": "unresolved",
+        "primary_subject_entity_id": None,
+        "resolution_observation_ids": [],
+    }
+    graph: dict[str, Any] = {
+        "runs": [{
+            "run_id": "run_background_chillys_001",
+            "status": "scoped",
+            "created_at": "2026-07-19T00:00:00Z",
+            "platform": "fixture",
+            "brief_id": "brief_background_chillys_001",
+            "review_mode": "not_run",
+        }],
+        "briefs": [{
+            "brief_id": "brief_background_chillys_001",
+            "task_mode": "customer_background_research",
+            "output_mode": "客户背调报告",
+            "contact_detail_level": "standard",
+            "background_research_target": target,
+        }],
+        "plans": [],
+        "candidates": [],
+    }
+    if not resolved:
+        return graph
+
+    target.update({
+        "anchors": [
+            *target["anchors"],
+            {
+                "anchor_id": "anchor_chillys_brand_001",
+                "kind": "brand_name",
+                "literal": "Chilly's",
+                "candidate_id": None,
+                "source_id": None,
+            },
+            {
+                "anchor_id": "anchor_chillys_website_001",
+                "kind": "website_or_domain",
+                "literal": "https://chillys.example",
+                "candidate_id": None,
+                "source_id": None,
+            },
+        ],
+        "subject_resolution_status": "resolved",
+        "primary_subject_entity_id": "ent_chillys_legal_001",
+        "resolution_observation_ids": ["obs_chillys_legal_001"],
+    })
+    graph.update({
+        "entities": [{
+            "entity_id": "ent_chillys_legal_001",
+            "name": "Chilly's Bottles Limited",
+            "legal_name": "Chilly's Bottles Limited",
+            "website": "https://chillys.example",
+        }],
+        "sources": [{
+            "source_id": "src_chillys_legal_001",
+            "canonical_url": "https://chillys.example/legal",
+            "final_url": "https://chillys.example/legal",
+            "publisher_relation": "first_party",
+            "provenance": "discovered_public",
+            "medium": "website",
+            "access_boundary": "public",
+        }],
+        "observations": [{
+            "observation_id": "obs_chillys_legal_001",
+            "source_id": "src_chillys_legal_001",
+            "candidate_id": None,
+            "entity_id": "ent_chillys_legal_001",
+            "capability": "source.open",
+            "concrete_tool": "fixture",
+            "observed_at": "2026-07-19T00:00:00Z",
+            "access_status": "ok",
+            "http_status": 200,
+            "title": "Chilly's legal information",
+            "raw_excerpt": "Chilly's Bottles Limited is the legal entity named on this page.",
+            "page_or_dom_locator": "main",
+            "content_hash": "fixture_chillys_legal_001",
+            "extraction_method": "fixture",
+            "tool_version": "fixture",
+            "language": "en",
+            "translation_status": "original",
+            "derived_from_observation_id": None,
+            "snapshot_ref": None,
+        }],
+    })
+    return graph
+
+
+def _background_validate(graph: dict[str, Any], directory: Path, name: str) -> subprocess.CompletedProcess[str]:
+    graph_path = directory / f"{name}.json"
+    _write_graph(graph_path, graph)
+    return _run([sys.executable, "-B", str(SCRIPTS / "validate_research_graph.py"), str(graph_path), "--format", "json"])
+
+
+def _background_report_graph() -> dict[str, Any]:
+    """A Chilly's-style graph with only the smallest evidence-backed report surface."""
+    graph = _background_graph(resolved=True)
+    target = graph["briefs"][0]["background_research_target"]
+    target["anchors"].append({
+        "anchor_id": "anchor_chillys_material_001",
+        "kind": "user_material",
+        "literal": "用户提供的 Similarweb 摘要",
+        "candidate_id": None,
+        "source_id": "src_chillys_material_001",
+    })
+    graph["entities"].append({
+        "entity_id": "ent_chillys_brand_001",
+        "name": "Chilly Brand IP Holdings",
+        "legal_name": None,
+        "website": "https://chillys.example",
+    })
+    graph["sources"].extend([
+        {
+            "source_id": "src_chillys_business_001",
+            "canonical_url": "https://chillys.example/about",
+            "final_url": "https://chillys.example/about",
+            "publisher_relation": "first_party",
+            "provenance": "discovered_public",
+            "medium": "website",
+            "access_boundary": "public",
+        },
+        {
+            "source_id": "src_chillys_restricted_001",
+            "canonical_url": "https://restricted.example/chillys",
+            "final_url": "https://restricted.example/chillys",
+            "publisher_relation": "third_party",
+            "provenance": "discovered_public",
+            "medium": "website",
+            "access_boundary": "public",
+        },
+        {
+            "source_id": "src_chillys_material_001",
+            "publisher_relation": "unknown",
+            "provenance": "manual_input",
+            "material_role": "user_authored_note",
+            "medium": "document",
+            "access_boundary": "user_supplied",
+        },
+        {
+            "source_id": "src_unrelated_bulk_001",
+            "canonical_url": "https://unrelated.example/about",
+            "final_url": "https://unrelated.example/about",
+            "publisher_relation": "first_party",
+            "provenance": "discovered_public",
+            "medium": "website",
+            "access_boundary": "public",
+        },
+    ])
+    graph["observations"].extend([
+        {
+            "observation_id": "obs_chillys_business_001",
+            "source_id": "src_chillys_business_001",
+            "candidate_id": None,
+            "entity_id": "ent_chillys_legal_001",
+            "capability": "source.open",
+            "concrete_tool": "fixture",
+            "observed_at": "2026-07-19T00:00:00Z",
+            "access_status": "ok",
+            "http_status": 200,
+            "title": "Chilly's about and contact",
+            "raw_excerpt": "Chilly's Bottles Limited offers reusable bottles. Chilly's Bottles Limited operates as a wholesale brand. Chilly's Bottles Limited lists wholesale@chillys.example. Founder Jane Example.",
+            "page_or_dom_locator": "main",
+            "content_hash": "fixture_chillys_business_001",
+            "extraction_method": "fixture",
+            "tool_version": "fixture",
+            "language": "en",
+            "translation_status": "original",
+            "derived_from_observation_id": None,
+            "snapshot_ref": None,
+        },
+        {
+            "observation_id": "obs_chillys_restricted_001",
+            "source_id": "src_chillys_restricted_001",
+            "candidate_id": None,
+            "entity_id": "ent_chillys_legal_001",
+            "capability": "source.open",
+            "concrete_tool": "fixture",
+            "observed_at": "2026-07-19T00:00:00Z",
+            "access_status": "login_wall",
+            "http_status": 403,
+            "title": "Restricted third-party profile",
+            "raw_excerpt": None,
+            "page_or_dom_locator": None,
+            "content_hash": None,
+            "extraction_method": "fixture",
+            "tool_version": "fixture",
+            "language": "en",
+            "translation_status": "original",
+            "derived_from_observation_id": None,
+            "snapshot_ref": None,
+        },
+        {
+            "observation_id": "obs_unrelated_bulk_001",
+            "source_id": "src_unrelated_bulk_001",
+            "candidate_id": "cand_unrelated_bulk_001",
+            "entity_id": "ent_unrelated_bulk_001",
+            "capability": "source.open",
+            "concrete_tool": "fixture",
+            "observed_at": "2026-07-19T00:00:00Z",
+            "access_status": "ok",
+            "http_status": 200,
+            "title": "Unrelated bulk company",
+            "raw_excerpt": "Unrelated Bulk Limited offers unrelated products.",
+            "page_or_dom_locator": "main",
+            "content_hash": "fixture_unrelated_bulk_001",
+            "extraction_method": "fixture",
+            "tool_version": "fixture",
+            "language": "en",
+            "translation_status": "original",
+            "derived_from_observation_id": None,
+            "snapshot_ref": None,
+        },
+    ])
+    graph["claims"] = [
+        {
+            "claim_id": "claim_chillys_identity_001",
+            "entity_id": "ent_chillys_legal_001",
+            "claim_type": "company_identity",
+            "subject": "Chilly's Bottles Limited",
+            "predicate": "is",
+            "typed_value": {"text": "Chilly's Bottles Limited"},
+            "as_of": "2026-07-19",
+            "claim_scope": "current_source",
+            "support_status": "supported",
+            "contradiction_status": "none",
+        },
+        {
+            "claim_id": "claim_chillys_product_001",
+            "entity_id": "ent_chillys_legal_001",
+            "claim_type": "product_match",
+            "subject": "Chilly's Bottles Limited",
+            "predicate": "offers",
+            "typed_value": {"text": "reusable bottles"},
+            "as_of": "2026-07-19",
+            "claim_scope": "current_source",
+            "support_status": "supported",
+            "contradiction_status": "none",
+        },
+        {
+            "claim_id": "claim_chillys_channel_001",
+            "entity_id": "ent_chillys_legal_001",
+            "claim_type": "channel_role",
+            "subject": "Chilly's Bottles Limited",
+            "predicate": "operates_as",
+            "typed_value": {"text": "wholesale brand"},
+            "as_of": "2026-07-19",
+            "claim_scope": "current_source",
+            "support_status": "supported",
+            "contradiction_status": "none",
+        },
+    ]
+    graph["claim_evidence"] = [
+        {
+            "claim_evidence_id": "ce_chillys_identity_001",
+            "claim_id": "claim_chillys_identity_001",
+            "observation_id": "obs_chillys_legal_001",
+            "relation": "supports",
+            "directness": "direct",
+            "source_authority": "first_party",
+            "independence_group": "chillys.example",
+            "freshness": "current",
+            "excerpt_pointer": "main",
+            "claim_field_anchors": {
+                "subject": "Chilly's Bottles Limited",
+                "predicate": "is",
+                "claim_type": "legal entity",
+                "typed_value": "Chilly's Bottles Limited",
+            },
+        },
+        {
+            "claim_evidence_id": "ce_chillys_product_001",
+            "claim_id": "claim_chillys_product_001",
+            "observation_id": "obs_chillys_business_001",
+            "relation": "supports",
+            "directness": "direct",
+            "source_authority": "first_party",
+            "independence_group": "chillys.example",
+            "freshness": "current",
+            "excerpt_pointer": "main",
+            "claim_field_anchors": {
+                "subject": "Chilly's Bottles Limited",
+                "predicate": "offers",
+                "claim_type": "reusable bottles",
+                "typed_value": "reusable bottles",
+            },
+        },
+        {
+            "claim_evidence_id": "ce_chillys_channel_001",
+            "claim_id": "claim_chillys_channel_001",
+            "observation_id": "obs_chillys_business_001",
+            "relation": "supports",
+            "directness": "direct",
+            "source_authority": "first_party",
+            "independence_group": "chillys.example",
+            "freshness": "current",
+            "excerpt_pointer": "main",
+            "claim_field_anchors": {
+                "subject": "Chilly's Bottles Limited",
+                "predicate": "operates as",
+                "claim_type": "wholesale brand",
+                "typed_value": "wholesale brand",
+            },
+        },
+    ]
+    graph["entity_relationships"] = [{
+        "entity_relationship_id": "rel_chillys_legal_brand_001",
+        "source_entity_id": "ent_chillys_legal_001",
+        "target_entity_id": "ent_chillys_brand_001",
+        "relationship_type": "legal_entity_of",
+        "resolution_status": "contextual",
+        "confidence": "high",
+        "rationale": "Legal page identifies the legal entity for the Chilly's brand.",
+        "evidence_claim_ids": ["claim_chillys_identity_001"],
+        "evidence_observation_ids": ["obs_chillys_legal_001"],
+    }]
+    graph["contact_points"] = [
+        {
+            "contact_id": "contact_chillys_ready_001",
+            "contact_type": "department_email",
+            "normalized_value": "wholesale@chillys.example",
+            "source_literal": "wholesale@chillys.example",
+            "source_observation_id": "obs_chillys_business_001",
+            "source_type": "website",
+            "visibility_status": "public",
+            "last_seen_at": "2026-07-19T00:00:00Z",
+            "verification_status": "not_verified",
+        },
+        {
+            "contact_id": "contact_chillys_hold_001",
+            "contact_type": "email",
+            "normalized_value": "hidden@chillys.example",
+            "source_literal": "hidden@chillys.example",
+            "source_observation_id": "obs_chillys_business_001",
+            "source_type": "website",
+            "visibility_status": "public",
+            "last_seen_at": "2026-07-19T00:00:00Z",
+            "verification_status": "not_verified",
+        },
+        {
+            "contact_id": "contact_chillys_unassigned_001",
+            "contact_type": "email",
+            "normalized_value": "unassigned@chillys.example",
+            "source_literal": "unassigned@chillys.example",
+            "source_observation_id": "obs_chillys_business_001",
+            "source_type": "website",
+            "visibility_status": "public",
+            "last_seen_at": "2026-07-19T00:00:00Z",
+            "verification_status": "not_verified",
+        },
+    ]
+    graph["observations"][1]["raw_excerpt"] = "Chilly's Bottles Limited offers reusable bottles. Chilly's Bottles Limited operates as a wholesale brand. Chilly's Bottles Limited lists wholesale@chillys.example, hidden@chillys.example, and unassigned@chillys.example. Founder Jane Example."
+    graph["contact_claims"] = [
+        {
+            "contact_claim_id": "cc_chillys_ready_001",
+            "contact_id": "contact_chillys_ready_001",
+            "entity_id": "ent_chillys_legal_001",
+            "person_id": None,
+            "person_name": "Jane Example",
+            "job_title": "Founder",
+            "department": None,
+            "relationship_type": "company_general",
+            "association_observation_id": "obs_chillys_business_001",
+            "association_claim_evidence_ids": [],
+            "source_context": "first-party wholesale contact",
+            "association_evidence_text": "Chilly's Bottles Limited lists wholesale@chillys.example, hidden@chillys.example, and unassigned@chillys.example. Founder Jane Example.",
+            "association_locator": "main",
+            "association_confidence": "high",
+            "is_role_based": True,
+            "is_personal_business": False,
+            "export_status": "ready",
+            "user_status": "可直接使用",
+            "manual_check_note": None,
+        },
+        {
+            "contact_claim_id": "cc_chillys_hold_001",
+            "contact_id": "contact_chillys_hold_001",
+            "entity_id": "ent_chillys_legal_001",
+            "person_id": None,
+            "person_name": None,
+            "job_title": None,
+            "department": None,
+            "relationship_type": "company_general",
+            "association_observation_id": "obs_chillys_business_001",
+            "association_claim_evidence_ids": [],
+            "source_context": "unverified contact value",
+            "association_evidence_text": "Chilly's Bottles Limited lists wholesale@chillys.example, hidden@chillys.example, and unassigned@chillys.example.",
+            "association_locator": "main",
+            "association_confidence": "low",
+            "is_role_based": False,
+            "is_personal_business": False,
+            "export_status": "hold_inferred",
+            "user_status": "不可导出",
+            "manual_check_note": "Do not expose before public verification.",
+        },
+    ]
+    graph["unassigned_contact_leads"] = [{
+        "unassigned_contact_lead_id": "unassigned_chillys_001",
+        "contact_id": "contact_chillys_unassigned_001",
+        "reason": "Public contact value has no confirmed entity association.",
+        "suggested_manual_check": "Confirm the page owner before use.",
+    }]
+    graph["contact_points"].append({
+        "contact_id": "contact_chillys_manual_person_001",
+        "contact_type": "person_name",
+        "normalized_value": "Manual Person",
+        "source_literal": "Manual Person",
+        "source_observation_id": "obs_chillys_business_001",
+        "source_type": "website",
+        "visibility_status": "public",
+        "last_seen_at": "2026-07-19T00:00:00Z",
+        "verification_status": "not_verified",
+    })
+    graph["contact_claims"].append({
+        "contact_claim_id": "cc_chillys_manual_person_001",
+        "contact_id": "contact_chillys_manual_person_001",
+        "entity_id": "ent_chillys_legal_001",
+        "person_id": None,
+        "person_name": "Manual Person",
+        "job_title": "Owner",
+        "department": None,
+        "relationship_type": "public_person_clue",
+        "association_observation_id": "obs_chillys_business_001",
+        "association_claim_evidence_ids": [],
+        "source_context": "public person clue requiring manual association review",
+        "association_evidence_text": "Manual Person Owner",
+        "association_locator": "main",
+        "association_confidence": "low",
+        "is_role_based": False,
+        "is_personal_business": False,
+        "export_status": "needs_manual_association_review",
+        "user_status": "待确认归属",
+        "manual_check_note": "Manual Person is not confirmed as a purchasing contact.",
+    })
+    graph["observations"][1]["raw_excerpt"] += " Manual Person Owner."
+    graph["hypotheses"] = [{
+        "hypothesis_id": "hyp_chillys_wholesale_001",
+        "entity_id": "ent_chillys_legal_001",
+        "basis_claim_ids": ["claim_chillys_product_001", "claim_chillys_channel_001"],
+        "basis_contact_claim_ids": ["cc_chillys_ready_001"],
+        "hypothesis_text": "可围绕已观察到的可重复使用水瓶与批发品牌角色准备沟通角度。",
+        "unknowns": ["批发入口是否仍面向新的供应商待确认"],
+        "suggested_action": "根据公开业务信息准备初步材料。",
+        "next_verification_action": "确认当前 wholesale 或 vendor 入口。",
+        "expires_at": None,
+        "risk_notes": ["不代表采购需求或采购职责已确认"],
+    }]
+    graph["entities"].append({
+        "entity_id": "ent_unrelated_bulk_001",
+        "name": "Unrelated Bulk Limited",
+        "legal_name": None,
+        "website": "https://unrelated.example",
+    })
+    graph["candidates"].append({
+        "candidate_id": "cand_unrelated_bulk_001",
+        "name": "Unrelated Bulk Limited",
+        "company_name": "Unrelated Bulk Limited",
+        "entity_id": "ent_unrelated_bulk_001",
+    })
+    graph["audits"] = [{"audit_id": "old_audit_unrelated_001", "delivery_status": "standard_development_list"}]
+    graph["delivery_manifests"] = [{"delivery_manifest_id": "old_manifest_unrelated_001", "delivery_status": "standard_development_list"}]
+    return graph
+
+
+def _background_export(graph: dict[str, Any], directory: Path, name: str, output_format: str = "csv", manifest: bool = False) -> tuple[subprocess.CompletedProcess[str], Path]:
+    graph_path = directory / f"{name}.json"
+    output_dir = directory / name
+    _write_graph(graph_path, graph)
+    command = [sys.executable, "-B", str(SCRIPTS / "export_workbook.py"), str(graph_path), "--output-dir", str(output_dir), "--mode", "background", "--format", output_format]
+    if manifest:
+        command.extend(["--manifest", str(output_dir / "manifest.json")])
+    return _run(command), output_dir
+
+
+def _assert_background_report_export(directory: Path) -> list[str]:
+    errors: list[str] = []
+    unresolved, unresolved_dir = _background_export(_background_graph(), directory, "background_report_unresolved")
+    if unresolved.returncode != 0:
+        errors.append(f"background_report_unresolved: no-Entity/no-Plan draft did not export\n{unresolved.stdout}")
+    elif "\"manifest\": null" not in unresolved.stdout:
+        errors.append("background_report_unresolved: background export unexpectedly returned a manifest")
+
+    graph = _background_report_graph()
+    result, output_dir = _background_export(graph, directory, "background_report_chillys")
+    if result.returncode != 0:
+        return errors + [f"background_report_chillys: resolved report did not export\n{result.stdout}"]
+    rendered = "\n".join(path.read_text(encoding="utf-8-sig") for path in output_dir.glob("*.csv"))
+    required_sheets = {"背调报告.csv", "客户与研究锚点.csv", "主体与关系.csv", "产品、渠道与经营信号.csv", "公开联系入口与桥接候选.csv", "开发切入点候选.csv", "谈判前待确认问题.csv", "未确认线索与来源受限.csv", "证据包.csv"}
+    present_sheets = {path.name for path in output_dir.glob("*.csv")}
+    if required_sheets != present_sheets:
+        errors.append(f"background_report_chillys: unexpected CSV sheets {sorted(present_sheets)}")
+    for needle in ("Chilly's Bottles Limited", "Chilly's", "reusable bottles", "wholesale@chillys.example", "来源受限"):
+        if needle not in rendered:
+            errors.append(f"background_report_chillys: missing expected report content {needle}")
+    for forbidden in ("hidden@chillys.example", "unassigned@chillys.example", "Manual Person", "Unrelated Bulk Limited", "old_audit_unrelated_001", "old_manifest_unrelated_001"):
+        if forbidden in rendered:
+            errors.append(f"background_report_chillys: leaked out-of-scope or hidden value {forbidden}")
+    if "[已隐藏联系方式]" not in rendered:
+        errors.append("background_report_chillys: hidden contact evidence was not redacted")
+
+    bad_manifest, _ = _background_export(_background_graph(), directory, "background_report_manifest_rejected", manifest=True)
+    if bad_manifest.returncode == 0 or "--manifest is not supported for --mode background" not in bad_manifest.stdout:
+        errors.append(f"background_report_manifest_rejected: manifest was not rejected\n{bad_manifest.stdout}")
+
+    mismatch = _background_graph()
+    mismatch["briefs"][0]["output_mode"] = "发现候选池"
+    bad_mode, _ = _background_export(mismatch, directory, "background_report_mode_mismatch")
+    if bad_mode.returncode == 0 or "background_export_output_mode_mismatch" not in bad_mode.stdout:
+        errors.append(f"background_report_mode_mismatch: mismatched output mode was not blocked\n{bad_mode.stdout}")
+
+    task_mismatch = _background_graph()
+    task_mismatch["briefs"][0]["task_mode"] = "single_company_analysis"
+    bad_task, _ = _background_export(task_mismatch, directory, "background_report_task_mismatch")
+    if bad_task.returncode == 0 or "background_export_task_mode_mismatch" not in bad_task.stdout:
+        errors.append(f"background_report_task_mismatch: mismatched task mode was not blocked\n{bad_task.stdout}")
+
+    auto, auto_dir = _background_export(_background_graph(), directory, "background_report_auto", output_format="auto")
+    if auto.returncode != 0:
+        errors.append(f"background_report_auto: auto format export failed\n{auto.stdout}")
+    else:
+        try:
+            payload = json.loads(auto.stdout)
+        except json.JSONDecodeError:
+            errors.append("background_report_auto: output was not JSON")
+        else:
+            if payload.get("format") == "xlsx":
+                try:
+                    import openpyxl  # type: ignore
+                    workbook = openpyxl.load_workbook(auto_dir / "superleads_background_report.xlsx", read_only=True, data_only=True)
+                    if set(workbook.sheetnames) != {name[:-4] for name in required_sheets}:
+                        errors.append(f"background_report_auto: unexpected XLSX sheet names {workbook.sheetnames}")
+                except Exception as exc:
+                    errors.append(f"background_report_auto: could not inspect XLSX output: {exc}")
+            elif payload.get("format") == "csv":
+                if {path.name for path in auto_dir.glob("*.csv")} != required_sheets:
+                    errors.append("background_report_auto: CSV fallback lacks expected sheets")
+            else:
+                errors.append(f"background_report_auto: unknown chosen format {payload.get('format')}")
+    return errors
+
+
+def _assert_background_research_contract(directory: Path) -> list[str]:
+    """Keep the Chilly's-derived background-research draft contract isolated from delivery paths."""
+    errors: list[str] = []
+
+    unresolved = _background_validate(_background_graph(), directory, "background_chillys_unresolved")
+    if unresolved.returncode != 0:
+        errors.append(f"background_chillys_unresolved: unresolved no-Plan/no-Entity draft failed\n{unresolved.stdout}")
+
+    resolved = _background_validate(_background_graph(resolved=True), directory, "background_chillys_resolved")
+    if resolved.returncode != 0:
+        errors.append(f"background_chillys_resolved: sourced brand/website-to-legal-Entity draft failed\n{resolved.stdout}")
+
+    variants: list[tuple[str, Callable[[dict[str, Any]], None], tuple[str, ...]]] = []
+
+    def add(name: str, mutate: Callable[[dict[str, Any]], None], *codes: str) -> None:
+        variants.append((name, mutate, codes))
+
+    def missing_candidate(graph: dict[str, Any]) -> None:
+        graph["briefs"][0]["background_research_target"]["anchors"][0] = {
+            "anchor_id": "anchor_missing_candidate_001", "kind": "candidate_id", "literal": None,
+            "candidate_id": "cand_missing_001", "source_id": None,
+        }
+
+    add("background_missing_candidate", missing_candidate, "background_candidate_anchor_missing")
+    add("background_duplicate_anchor_id", lambda graph: graph["briefs"][0]["background_research_target"]["anchors"].append({
+        "anchor_id": "anchor_chillys_company_001", "kind": "email", "literal": "research@chillys.example",
+        "candidate_id": None, "source_id": None,
+    }), "background_anchor_id_duplicate")
+
+    def missing_material_source(graph: dict[str, Any]) -> None:
+        graph["briefs"][0]["background_research_target"]["anchors"][0] = {
+            "anchor_id": "anchor_missing_material_001", "kind": "user_material", "literal": "客户上传的线索",
+            "candidate_id": None, "source_id": "src_missing_001",
+        }
+
+    add("background_missing_material_source", missing_material_source, "background_user_material_source_missing")
+
+    def public_material_source(graph: dict[str, Any]) -> None:
+        graph["sources"] = [{
+            "source_id": "src_public_001", "canonical_url": "https://chillys.example/about", "final_url": "https://chillys.example/about",
+            "publisher_relation": "first_party", "provenance": "discovered_public", "medium": "website", "access_boundary": "public",
+        }]
+        graph["briefs"][0]["background_research_target"]["anchors"][0] = {
+            "anchor_id": "anchor_public_material_001", "kind": "user_material", "literal": "客户提供链接说明",
+            "candidate_id": None, "source_id": "src_public_001",
+        }
+
+    add("background_public_material_source", public_material_source, "background_user_material_source_not_user_provided")
+
+    def missing_entity(graph: dict[str, Any]) -> None:
+        graph["briefs"][0]["background_research_target"]["primary_subject_entity_id"] = "ent_missing_001"
+
+    add("background_missing_entity", missing_entity, "background_primary_subject_entity_missing", "background_resolution_observation_entity_mismatch")
+    add("background_wrong_observation_entity", lambda graph: graph["observations"][0].update({"entity_id": "ent_other_001"}), "background_resolution_observation_entity_mismatch")
+    add("background_empty_resolution_excerpt", lambda graph: graph["observations"][0].update({"raw_excerpt": ""}), "background_resolution_observation_excerpt_missing")
+    add("background_restricted_resolution", lambda graph: graph["observations"][0].update({"access_status": "login_wall"}), "background_resolution_observation_access_restricted")
+    add("background_search_result_resolution", lambda graph: graph["sources"][0].update({"medium": "search_result"}), "background_resolution_source_search_result")
+    add("background_uncheckable_resolution_capability", lambda graph: graph["observations"][0].update({"capability": "company.enrich"}), "background_resolution_observation_capability_not_checkable")
+    add("background_unsafe_website_anchor", lambda graph: graph["briefs"][0]["background_research_target"]["anchors"][0].update({"kind": "website_or_domain", "literal": "http://127.0.0.1/private"}), "background_website_or_domain_not_public")
+
+    for name, mutate, codes in variants:
+        graph = _background_graph(resolved=name.startswith("background_") and name not in {
+            "background_missing_candidate", "background_missing_material_source", "background_public_material_source", "background_unsafe_website_anchor",
+        })
+        mutate(graph)
+        result = _background_validate(graph, directory, name)
+        missing_codes = [code for code in codes if code not in result.stdout]
+        if result.returncode == 0 or missing_codes:
+            errors.append(f"{name}: expected validation failure with {', '.join(codes)}\n{result.stdout}")
+
+    return errors
+
+
 def _assert_hold_free_text_is_redacted(directory: Path) -> list[str]:
     graph = _base()
     graph["contact_claims"][0]["export_status"] = "hold_inferred"
@@ -959,6 +1585,8 @@ def main() -> int:
         errors.extend(_assert_historical_assessment_cannot_be_reused(directory))
         errors.extend(_assert_formal_exception_bindings(directory))
         errors.extend(_assert_identity_literal_bindings(directory))
+        errors.extend(_assert_background_research_contract(directory))
+        errors.extend(_assert_background_report_export(directory))
         errors.extend(_assert_phase2_provenance_and_searchlog(directory))
         errors.extend(_assert_target_geography_contract_required(directory))
         errors.extend(_assert_legacy_review_fields_rejected(directory))
@@ -975,7 +1603,7 @@ def main() -> int:
         print("Advanced gate regressions failed:")
         print("\n\n".join(errors))
         return 1
-    group_count = len(tests) + 19
+    group_count = len(tests) + 21
     if suite == "all":
         default_errors = _assert_default_discovery_export_filters_unsafe_urls()
         if default_errors:
