@@ -1,12 +1,21 @@
 # Route Map
 
-Default route: `using-superleads` → `scoping-lead-research` → `writing-research-plans` → `executing-research-plans` → `collecting-contact-intelligence` → `assessing-research-evidence` → `exporting-lead-workbooks`.
+Default route: `using-superleads` → `scoping-lead-research` → `discovery` → `exporting-lead-workbooks`.
+
+`discovery` is the default discovery-first working phase, not a new required
+file or formal gate. It internally plans query expansion, records actual
+SearchLogs, discovers and de-duplicates Candidates, supplements public signals
+and visible contacts, and assigns business-relevance states. Use
+`writing-research-plans`, `executing-research-plans`,
+`collecting-contact-intelligence`, and `assessing-research-evidence` as
+internal or on-demand guidance; do not route every discovery round through
+them as four mandatory independent stages.
 
 Conditional additions:
 
-- Use `resolving-company-identity` when names, domains, branches, brands, legal entities, resellers, or directory/official sources conflict.
-- Use `reviewing-lead-research` → `verification-before-delivery` only when the user asks for a formal background check, contact ownership verification, trade/China identity verification, a contactable list, or a standard development list.
-- Use `learning-from-feedback` only after user feedback on delivered lead quality or source usefulness.
+- Use `resolving-company-identity` only when identity conflict needs active investigation or a deep-check output requires an Entity decision.
+- Use `reviewing-lead-research` → `verification-before-delivery` only for a formal background check, contact ownership verification, trade/China identity verification, a contactable list, or a standard development list. Default discovery does not expand attestation, hash, Manifest, or full-review work.
+- `learning-from-feedback` is cross-cutting after delivery, not a default discovery-round stage.
 
 State machine:
 

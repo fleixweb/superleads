@@ -1,6 +1,6 @@
 ---
 name: exporting-lead-workbooks
-description: "Export Superleads lead research into user-facing XLSX or UTF-8-SIG CSV workbooks with Chinese business sheet names, contact status labels, source links, development suggestions, pending checks, and risks. Use only after verification gates."
+description: "Use when a Superleads discovery pool, deep check, or standard list needs workbook or CSV export."
 ---
 
 # Exporting Lead Workbooks

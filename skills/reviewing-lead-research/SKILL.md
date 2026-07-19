@@ -1,6 +1,6 @@
 ---
 name: reviewing-lead-research
-description: "Independently review Superleads lead research for source support, contact ownership, Hypothesis/Claim separation, Assessment overcertainty, identity mismatch, and preserved conflicts. Use before standard delivery, or as self-review fallback when independent review is unavailable."
+description: "Use before a Superleads deep-check or standard-list delivery needs semantic research review."
 ---
 
 # Reviewing Lead Research
@@ -8,6 +8,10 @@ description: "Independently review Superleads lead research for source support, 
 ## Purpose
 
 Perform semantic review before formal delivery. Check whether the research graph would mislead a sales user.
+
+Use only for explicit deep-check or standard-list work. Default discovery does
+not require ReviewAttestation, independent actor/session evidence, or review
+hash coverage to export its initial candidate pool.
 
 ## Required references
 

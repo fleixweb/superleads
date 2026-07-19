@@ -1,6 +1,6 @@
 ---
 name: using-superleads
-description: "Use when the user wants to discover, qualify, enrich, organize, audit, or export overseas buyer leads for foreign trade from public or user-provided sources. Trigger for product-based overseas customer development, keyword-based prospecting, country or region lead research, importer/distributor/wholesaler/retailer/brand/OEM/end-user prospecting, public contact collection, customer list enrichment, company website analysis, trade fair/directory/PDF/social visible-source review, and evidence-backed sales lead workbook creation. Also use when the user explicitly says Superleads, superleads, 外贸客户开发, 海外客户开发, 找客户, 开发客户, 潜在客户, 客户名单, 补全客户表, 查联系方式, 找进口商, 找经销商, 找采购联系人, or similar."
+description: "Use when users need overseas B2B customer discovery, public contact collection, lead-list enrichment, or foreign-trade prospect research."
 ---
 
 # Using Superleads
@@ -19,7 +19,7 @@ Read `../../shared/references/user-intake.md` for intake modes and minimum resea
 2. Check the minimum research target. For new customer development require product/service plus at least one scope axis. For single-company analysis, retain the current user's explicit company name, URL/domain, or material reference and bind the result to that Entity only. For existing-table enrichment, retain the user-provided spreadsheet and the rows/cells being supplemented. These two routes do not create a direction-matched customer list without the current development contract.
 3. Create a Run Context with `run_id`, timestamp, task entry mode, platform, detected capabilities, requested output mode, evidence depth, and whether this run defaults to discovery-first or strict deep-check.
 4. Run or emulate `scripts/preflight_capabilities.py` when tools are uncertain. Record gaps and downgrade if source-opening or document extraction is unavailable. In a Codex CLI session started with `codex --search`, inspect only the currently visible native `web_search` capability and write the controlled adapter report from actual operation results; do not assume another integration exists.
-5. Route to `scoping-lead-research` next unless the task is already a pure verification/export task. Default to discovery-first. Use the full strict review/audit route only when the user asks for background check, trade/China identity verification, contact ownership verification, a contactable list, or a standard development list.
+5. Route to `scoping-lead-research` next unless the task is already a pure verification/export task. The default route is `using-superleads` → `scoping-lead-research` → `discovery` → `exporting-lead-workbooks`. Discovery uses the planning, execution, contact, and relevance guides internally as needed; it does not require every Candidate to have an Entity, Observation, ContactClaim, Claim, Assessment, Review, or Audit. Use the strict review/audit route only when the user asks for background check, trade/China identity verification, contact ownership verification, a contactable list, or a standard development list.
 
 ## 本次方向
 

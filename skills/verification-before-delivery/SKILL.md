@@ -1,6 +1,6 @@
 ---
 name: verification-before-delivery
-description: "Run deterministic Superleads delivery checks before export: validate the research graph, audit contact sources and ownership, check ClaimEvidence, close ReviewFindings, verify graph hash freshness, and choose needs_correction, initial_lead_list, standard_development_list, or inquiry_followup_queue."
+description: "Use when a Superleads candidate pool, deep check, or standard list needs deterministic pre-delivery validation."
 ---
 
 # Verification Before Delivery
@@ -8,6 +8,10 @@ description: "Run deterministic Superleads delivery checks before export: valida
 ## Purpose
 
 Perform deterministic checks immediately before user delivery. Use the light branch for default discovery and the strict branch for formal delivery.
+
+Default discovery uses only its initial-candidate-pool validation; strict
+Claim, Assessment, Review, Audit, and Manifest checks belong to explicitly
+requested deep-check or standard-list delivery.
 
 ## Required scripts and schemas
 

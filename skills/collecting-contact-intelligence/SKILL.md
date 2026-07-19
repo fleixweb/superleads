@@ -1,6 +1,6 @@
 ---
 name: collecting-contact-intelligence
-description: "Extract, normalize, source, and classify Superleads contact intelligence as ContactPoint, ContactClaim, or UnassignedContactLead. Use when emails, phones, WhatsApp, forms, portals, LinkedIn visible pages, people, titles, addresses, maps, PDFs, or directories must be collected with source and ownership status."
+description: "Use when public business contacts need collection, source tracking, or ownership-status handling in Superleads."
 ---
 
 # Collecting Contact Intelligence
@@ -8,6 +8,10 @@ description: "Extract, normalize, source, and classify Superleads contact intell
 ## Purpose
 
 Maximize recall of sourced contact intelligence while preventing guessed, source-less, or misassigned contacts from being exported as ready.
+
+For default discovery, use this as an internal/on-demand `discovery` guide
+when public contact material is encountered; it is not a mandatory standalone
+stage or a reason to require ContactPoint or ContactClaim for every Candidate.
 
 ## Required references
 

@@ -1,6 +1,6 @@
 ---
 name: resolving-company-identity
-description: "Resolve Superleads company, brand, legal entity, domain, branch, dealer, platform seller, acquisition, rename, and ownership conflicts. Use when names are similar, domains conflict, email domains mismatch, sources disagree, or entity merge/split decisions need evidence-backed handling."
+description: "Use when Superleads research has company, brand, domain, branch, or legal-entity identity conflicts."
 ---
 
 # Resolving Company Identity
@@ -8,6 +8,9 @@ description: "Resolve Superleads company, brand, legal entity, domain, branch, d
 ## Purpose
 
 Analyze whether company names, brands, legal entities, domains, branches, dealers, and platform sellers refer to the same Entity or require split/manual review.
+
+This is an on-demand identity/deep-check skill. Default discovery may retain
+`identity_pending` Candidates without resolving them into Entity records.
 
 ## Required references
 

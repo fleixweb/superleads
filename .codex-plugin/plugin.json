@@ -1,7 +1,7 @@
 {
   "name": "superleads",
   "version": "0.1.0+codex.20260715204252",
-  "description": "Universal foreign-trade online lead research Skill Suite with source evidence, contact intelligence, review gates, and tiered workbook delivery.",
+  "description": "Foreign-trade customer discovery Skill Suite with public signals and optional deep verification.",
   "author": {
     "name": "Local developer"
   },
@@ -17,8 +17,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Superleads",
-    "shortDescription": "Evidence-backed overseas lead research.",
-    "longDescription": "Superleads is a general-purpose foreign-trade online lead research Skill Suite for discovering, organizing, checking, reviewing, and exporting overseas prospects and sourced contact intelligence without hard-coded industry ICP defaults.",
+    "shortDescription": "Overseas customer discovery and optional verification.",
+    "longDescription": "Superleads is a general-purpose foreign-trade Skill Suite for discovery-first overseas candidate pools, public contact organization, and user-requested deep verification without hard-coded industry ICP defaults.",
     "developerName": "Local developer",
     "category": "Productivity",
     "capabilities": [

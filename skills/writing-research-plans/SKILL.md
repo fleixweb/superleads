@@ -1,6 +1,6 @@
 ---
 name: writing-research-plans
-description: "Generate Superleads research plans from a Research Brief: query groups, source categories, contact collection targets, lead tiering criteria, claim evidence requirements, stop conditions, and downgrade strategy. Use before opening sources or collecting leads."
+description: "Use when a Superleads Research Brief needs a query and coverage plan before discovery or deep research."
 ---
 
 # Writing Research Plans
@@ -8,6 +8,9 @@ description: "Generate Superleads research plans from a Research Brief: query gr
 ## Purpose
 
 Turn a Research Brief into a plan for searching, opening sources, collecting contacts, and evaluating evidence. Default to discovery breadth first. Do not produce customers, open pages, judge commercial value, or write final advice.
+
+For default discovery, this is an internal/on-demand guide within the single
+`discovery` phase, not a mandatory separately routed stage for every round.
 
 ## Required references
 

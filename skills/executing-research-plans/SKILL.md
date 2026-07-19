@@ -1,6 +1,6 @@
 ---
 name: executing-research-plans
-description: "Execute Superleads research plans by producing Candidate, Source, Observation, Provisional Entity, and Search Log records from public or user-provided materials. Use when collecting raw research evidence before assessment; never use search snippets as Claims."
+description: "Use when a Superleads discovery or deep-research plan needs public-source collection and structured research records."
 ---
 
 # Executing Research Plans
@@ -8,6 +8,11 @@ description: "Execute Superleads research plans by producing Candidate, Source, 
 ## Purpose
 
 Collect raw research artifacts: Candidate, Source, Observation, Provisional Entity, and Search Log. Default work is discovery plus public-signal enrichment. Do not output formal development lists, final advice, purchasing-intent claims, guessed contacts, or unsupported Claims.
+
+For default discovery, this is an internal/on-demand guide within the single
+`discovery` phase. Candidate and SearchLog records are sufficient unless an
+opened source, visible contact, or identity conflict actually requires an
+optional Source, Observation, Contact, or Entity record.
 
 ## Required references
 

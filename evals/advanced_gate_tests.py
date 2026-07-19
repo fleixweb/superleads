@@ -2,6 +2,7 @@
 """Regression tests for formal-delivery bypasses found in independent reviews."""
 from __future__ import annotations
 
+import argparse
 import copy
 import json
 import os
@@ -812,7 +813,28 @@ def _stored_unauthorized_manifest(graph: dict[str, Any]) -> None:
     })
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--suite",
+        choices=("default", "deep", "all"),
+        default="all",
+        help="default: discovery export safety; deep: formal-delivery regressions; all: both (default).",
+    )
+    return parser.parse_args()
+
+
 def main() -> int:
+    suite = parse_args().suite
+    if suite == "default":
+        errors = _assert_default_discovery_export_filters_unsafe_urls()
+        if errors:
+            print("Advanced default gate regressions failed:")
+            print("\n\n".join(errors))
+            return 1
+        print("advanced gate regressions passed: suite=default groups=1 failures=0")
+        return 0
+
     tests: list[tuple[str, Callable[[dict[str, Any]], None]]] = []
 
     def add(name: str, mutate: Callable[[dict[str, Any]], None]) -> None:
@@ -931,7 +953,6 @@ def main() -> int:
         errors.extend(_assert_inquiry_export_redaction(directory))
         errors.extend(_assert_mail_adapter_boundary(directory))
         errors.extend(_assert_platform_and_public_url_pressure_tests(directory))
-        errors.extend(_assert_default_discovery_export_filters_unsafe_urls())
         errors.extend(_assert_standard_export_filters_unsafe_entity_websites())
         errors.extend(_assert_self_review_disclosure(directory))
         errors.extend(_assert_historical_review_cannot_approve(directory))
@@ -954,7 +975,15 @@ def main() -> int:
         print("Advanced gate regressions failed:")
         print("\n\n".join(errors))
         return 1
-    print(f"advanced gate regressions passed: {len(tests) + 20}")
+    group_count = len(tests) + 19
+    if suite == "all":
+        default_errors = _assert_default_discovery_export_filters_unsafe_urls()
+        if default_errors:
+            print("Advanced default gate regressions failed:")
+            print("\n\n".join(default_errors))
+            return 1
+        group_count += 1
+    print(f"advanced gate regressions passed: suite={suite} groups={group_count} failures=0")
     return 0
 
 

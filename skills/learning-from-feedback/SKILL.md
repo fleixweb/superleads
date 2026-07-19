@@ -1,6 +1,6 @@
 ---
 name: learning-from-feedback
-description: "Capture Superleads user feedback about lead-material quality, contact validity, source usefulness, duplicates, website ownership, customer-type judgment, product fit, and search terms. Use after delivery to improve re-ranking and search/source/contact extraction, not to prove Claims or purchase intent."
+description: "Use after Superleads delivery when user feedback should improve future discovery or contact collection."
 ---
 
 # Learning From Feedback
@@ -8,6 +8,9 @@ description: "Capture Superleads user feedback about lead-material quality, cont
 ## Purpose
 
 Record user feedback for future ranking, source choice, search-query optimization, and contact extraction quality.
+
+This is cross-cutting after delivery, not a mandatory stage in each default
+discovery round.
 
 ## Required policy
 

@@ -1,6 +1,6 @@
 ---
 name: scoping-lead-research
-description: "Form a Superleads Research Brief, complete the minimum research target, record contact requirements, output mode, evidence depth, target count, and business context without forcing an industry ICP. Use after Superleads intake or when a lead-research request needs structured scoping before planning."
+description: "Use after Superleads intake when a foreign-trade research request needs a concise Brief and scope boundary."
 ---
 
 # Scoping Lead Research

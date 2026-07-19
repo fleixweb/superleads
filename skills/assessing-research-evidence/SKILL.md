@@ -1,6 +1,6 @@
 ---
 name: assessing-research-evidence
-description: "Convert Superleads Observations into Claims and ClaimEvidence, keep Hypotheses separate, and create Assessments whose qualification basis cites Claims only. Use after source and contact collection when leads need tiering into 重点开发, 推荐跟进, 需人工核查, 暂不建议, or 排除."
+description: "Use when Superleads research needs business-relevance classification or an explicitly requested deep evidence assessment."
 ---
 
 # Assessing Research Evidence
@@ -8,6 +8,9 @@ description: "Convert Superleads Observations into Claims and ClaimEvidence, kee
 ## Purpose
 
 Default responsibility: classify business relevance, summarize public signals, and separate facts from inferences. Create evidence-backed Claims and formal Assessments only for explicit deep-check tasks.
+
+For default discovery, this is an internal/on-demand `discovery` guide for
+relevance and signal states, not a mandatory formal Assessment stage.
 
 ## Required references
 

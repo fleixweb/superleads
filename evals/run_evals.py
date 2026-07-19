@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Run minimal Superleads eval suite."""
+"""Run Superleads default-discovery, deep-research, or complete eval suites."""
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import subprocess
@@ -26,6 +27,26 @@ MODE_TO_STATUS = {
     "standard": "standard_development_list",
     "full": "full_review_package",
     "inquiry": "inquiry_followup_queue",
+}
+SUITES = ("default", "deep", "all")
+
+MINIMUM_GATE_CASES = CASES / "minimum_gate_cases.json"
+DEFAULT_CONTACT_SAFETY_FIXTURES = {
+    "fail_guessed_contact_ready.json",
+    "fail_contact_literal_not_in_observation.json",
+    "fail_email_verify_as_contact_source.json",
+    "fail_same_page_contact_misattribution.json",
+    "fail_contact_user_status_bypass.json",
+    "fail_fabricated_person_title.json",
+    "fail_multi_email_normalized.json",
+    "fail_phone_suffix_truncation.json",
+    "fail_nonready_entity_mismatch.json",
+}
+PURE_DEEP_FIXTURES = {
+    "fail_independent_without_attestation.json",
+    "fail_attestation_subject_hash_stale.json",
+    "fail_manifest_review_provenance_mismatch.json",
+    "fail_positive_assessment_no_evidence.json",
 }
 
 
@@ -285,12 +306,110 @@ def add_capability_adapter_tests(tests: list[tuple[str, list[str], int, list[str
         ))
 
 
-def add_case_tests(py: str, tests: list[tuple[str, list[str], int, list[str]]]) -> None:
+def _minimum_gate_suite_membership(payload: dict[str, object]) -> dict[str, set[str]]:
+    """Load and fail closed on the explicit suite map for minimum-gate cases."""
+    raw_membership = payload.get("suite_membership")
+    cases = payload.get("cases")
+    if not isinstance(raw_membership, dict) or not isinstance(cases, list):
+        raise ValueError("minimum_gate_cases.json requires suite_membership and cases")
+    membership: dict[str, set[str]] = {}
+    for suite in ("default", "deep"):
+        fixtures = raw_membership.get(suite)
+        if not isinstance(fixtures, list) or not all(isinstance(item, str) for item in fixtures):
+            raise ValueError(f"minimum_gate_cases.json suite_membership.{suite} must be a fixture list")
+        for fixture in fixtures:
+            membership.setdefault(fixture, set()).add(suite)
+    case_fixtures = {case.get("fixture") for case in cases if isinstance(case, dict) and isinstance(case.get("fixture"), str)}
+    missing = sorted(case_fixtures - set(membership))
+    unknown = sorted(set(membership) - case_fixtures)
+    if missing or unknown:
+        raise ValueError(f"minimum_gate_cases.json suite_membership mismatch: missing={missing}, unknown={unknown}")
+    return membership
+
+
+def _case_suites(case: dict[str, object], membership: dict[str, set[str]] | None) -> set[str]:
+    """Use explicit case labels/map; unlabeled non-minimum legacy cases stay deep."""
+    raw_suites = case.get("suites")
+    if isinstance(raw_suites, list) and all(isinstance(item, str) for item in raw_suites):
+        suites = set(raw_suites)
+    else:
+        fixture = case.get("fixture")
+        suites = membership.get(fixture, set()) if isinstance(fixture, str) and membership is not None else set()
+    if not suites:
+        # Compatibility is deliberately conservative: new non-minimum cases
+        # are deep until their owner assigns a default label. Minimum-gate
+        # cases cannot use this fallback because their map is exhaustively
+        # checked above.
+        return {"deep"}
+    if not suites.issubset({"default", "deep"}):
+        raise ValueError(f"unsupported case suite labels: {sorted(suites)}")
+    return suites
+
+
+def _case_belongs_to_suite(case: dict[str, object], suite: str, membership: dict[str, set[str]] | None) -> bool:
+    if suite == "all":
+        return True
+    return suite in _case_suites(case, membership)
+
+
+def _planned_fixture_names(tests: list[tuple[str, list[str], int, list[str]]]) -> set[str]:
+    """Read fixture identities from structured command arguments, not display text."""
+    fixture_names: set[str] = set()
+    for _, command, _, _ in tests:
+        for argument in command:
+            if isinstance(argument, str):
+                path = Path(argument)
+                if path.parent == FIXTURES and path.suffix == ".json":
+                    fixture_names.add(path.name)
+    return fixture_names
+
+
+def _suite_membership_check(suite: str, selected_fixture_names: set[str]) -> dict[str, object]:
+    """Programmatically prove the explicit map matches the selected test plan."""
+    payload = json.loads(MINIMUM_GATE_CASES.read_text(encoding="utf-8"))
+    membership = _minimum_gate_suite_membership(payload)
+    selected_default = {fixture for fixture, suites in membership.items() if "default" in suites}
+    missing_contacts = sorted(DEFAULT_CONTACT_SAFETY_FIXTURES - selected_default)
+    pure_deep_selected = sorted(PURE_DEEP_FIXTURES & selected_default)
+    missing_contact_tests = sorted(
+        fixture for fixture in DEFAULT_CONTACT_SAFETY_FIXTURES
+        if fixture not in selected_fixture_names
+    ) if suite == "default" else []
+    selected_pure_deep_tests = sorted(
+        fixture for fixture in PURE_DEEP_FIXTURES
+        if fixture in selected_fixture_names
+    ) if suite == "default" else []
+    problems = []
+    if missing_contacts:
+        problems.append(f"default contact fixtures missing: {missing_contacts}")
+    if pure_deep_selected:
+        problems.append(f"pure deep fixtures selected by default: {pure_deep_selected}")
+    if missing_contact_tests:
+        problems.append(f"default test plan missing contact fixtures: {missing_contact_tests}")
+    if selected_pure_deep_tests:
+        problems.append(f"default test plan includes pure deep fixtures: {selected_pure_deep_tests}")
+    return {
+        "cmd": ["__SUITE_MEMBERSHIP_CHECK__", suite],
+        "returncode": 0 if not problems else 1,
+        "expected": 0,
+        "ok": not problems,
+        "output": "suite membership passed" if not problems else "; ".join(problems),
+        "default_contact_fixture_count": len(DEFAULT_CONTACT_SAFETY_FIXTURES & selected_default),
+        "default_pure_deep_fixture_count": len(PURE_DEEP_FIXTURES & selected_default),
+        "selected_default_contact_fixture_count": len(DEFAULT_CONTACT_SAFETY_FIXTURES) - len(missing_contact_tests),
+        "selected_default_pure_deep_fixture_count": len(selected_pure_deep_tests),
+    }
+
+
+def add_case_tests(py: str, tests: list[tuple[str, list[str], int, list[str]]], suite: str) -> None:
     for case_file in sorted(CASES.glob("*.json")):
         payload = json.loads(case_file.read_text(encoding="utf-8"))
+        membership = _minimum_gate_suite_membership(payload) if case_file == MINIMUM_GATE_CASES else None
         for case in payload.get("cases", []):
+            if not isinstance(case, dict):
+                continue
             fixture = case.get("fixture")
-            if not fixture:
+            if not isinstance(fixture, str) or not _case_belongs_to_suite(case, suite, membership):
                 continue
             path = str(FIXTURES / fixture)
             if case.get("validate"):
@@ -301,20 +420,20 @@ def add_case_tests(py: str, tests: list[tuple[str, list[str], int, list[str]]]) 
                 expected_returncode = int(case.get("audit_delivery_returncode", 0))
                 requested = str(case.get("audit_requested_status", ""))
                 tests.append((f"case {fixture} audit_delivery_status {case['audit_delivery_status']}", ["__AUDIT_STATUS__", path, case["audit_delivery_status"], str(expected_returncode), requested], expected_returncode, list(case.get("expected_error_codes", []))))
-            if case.get("audit_standard"):
+            if suite != "default" and case.get("audit_standard"):
                 codes = list(case.get("standard_error_codes", case.get("expected_error_codes", [])))
                 tests.append((f"case {fixture} audit_standard {case['audit_standard']}", [py, str(SCRIPTS / "audit_delivery.py"), path, "--delivery-status", "standard_development_list"], 0 if case["audit_standard"] == "pass" else 1, codes))
-            if case.get("export_standard"):
+            if suite != "default" and case.get("export_standard"):
                 expect = 0 if case["export_standard"] == "pass" else 1
                 codes = list(case.get("standard_error_codes", case.get("expected_error_codes", [])))
                 tests.append((f"case {fixture} export_standard {case['export_standard']}", ["__EXPORT_STANDARD__", path], expect, codes))
             if case.get("export_initial"):
                 expect = 0 if case["export_initial"] == "pass" else 1
                 tests.append((f"case {fixture} export_initial {case['export_initial']}", ["__EXPORT_INITIAL__", path], expect, list(case.get("expected_error_codes", []))))
-            if case.get("audit_inquiry"):
+            if suite != "default" and case.get("audit_inquiry"):
                 expect = 0 if case["audit_inquiry"] == "pass" else 1
                 tests.append((f"case {fixture} audit_inquiry {case['audit_inquiry']}", [py, str(SCRIPTS / "audit_delivery.py"), path, "--delivery-status", "inquiry_followup_queue"], expect, list(case.get("expected_error_codes", []))))
-            if case.get("export_inquiry"):
+            if suite != "default" and case.get("export_inquiry"):
                 expect = 0 if case["export_inquiry"] == "pass" else 1
                 tests.append((f"case {fixture} export_inquiry {case['export_inquiry']}", ["__EXPORT_INQUIRY__", path], expect, list(case.get("expected_error_codes", []))))
             if case.get("export_absent") or case.get("export_present") or case.get("export_sheet_present") or case.get("export_sheet_absent"):
@@ -407,29 +526,57 @@ def static_check(kind: str, path: str) -> dict[str, object]:
         return {"cmd": [kind, path], "returncode": 1, "expected": 0, "ok": False, "output": str(exc)}
 
 
-def main() -> int:
-    py = sys.executable
-    tests: list[tuple[str, list[str], int, list[str]]] = [
-        ("preflight runs", [py, str(SCRIPTS / "preflight_capabilities.py"), "--format", "json"], 0, []),
-        ("advanced delivery gate regressions", [py, str(ROOT / "evals" / "advanced_gate_tests.py")], 0, []),
-        # Both shared runtime references are tested from their real locations:
-        # the minimal skeleton for bulk default discovery and the complete
-        # reference for status/contact/conflict boundaries.
+def _add_default_reference_tests(py: str, tests: list[tuple[str, list[str], int, list[str]]]) -> None:
+    # Both shared runtime references are tested from their real locations:
+    # the minimal skeleton for bulk default discovery and the complete
+    # reference for status/contact/conflict boundaries.
+    tests.extend([
         ("minimal discovery skeleton validate pass", [py, str(SCRIPTS / "validate_research_graph.py"), str(MINIMAL_DISCOVERY_SKELETON)], 0, []),
         ("minimal discovery skeleton audit initial pass", [py, str(SCRIPTS / "audit_delivery.py"), str(MINIMAL_DISCOVERY_SKELETON), "--delivery-status", "initial_lead_list"], 0, []),
         ("minimal discovery skeleton export initial pass", ["__EXPORT_INITIAL__", str(MINIMAL_DISCOVERY_SKELETON)], 0, []),
         ("complete discovery reference validate pass", [py, str(SCRIPTS / "validate_research_graph.py"), str(REFERENCE_SAMPLE)], 0, []),
         ("complete discovery reference audit initial pass", [py, str(SCRIPTS / "audit_delivery.py"), str(REFERENCE_SAMPLE), "--delivery-status", "initial_lead_list"], 0, []),
         ("complete discovery reference export initial pass", ["__EXPORT_INITIAL__", str(REFERENCE_SAMPLE)], 0, []),
+    ])
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--suite",
+        choices=SUITES,
+        default="all",
+        help="default: discovery-only checks; deep: strict research checks; all: complete compatible suite (default).",
+    )
+    return parser.parse_args()
+
+
+def main() -> int:
+    suite = parse_args().suite
+    py = sys.executable
+    tests: list[tuple[str, list[str], int, list[str]]] = [
+        ("preflight runs", [py, str(SCRIPTS / "preflight_capabilities.py"), "--format", "json"], 0, []),
+        (f"advanced {suite} gate regressions", [py, str(ROOT / "evals" / "advanced_gate_tests.py"), "--suite", suite], 0, []),
     ]
-    add_case_tests(py, tests)
-    add_phase2_tests(py, tests)
-    add_capability_adapter_tests(tests)
+    if suite in {"default", "all"}:
+        _add_default_reference_tests(py, tests)
+    add_case_tests(py, tests, suite)
+    if suite in {"deep", "all"}:
+        add_phase2_tests(py, tests)
+        add_capability_adapter_tests(tests)
     add_static_suite_tests(py, tests)
     results = []
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
-        tests.append(("normalize validate audit export chain", ["__NORMALIZE_CHAIN__", str(FIXTURES / "pass_minimal_graph.json")], 0, []))
+        if suite in {"deep", "all"}:
+            tests.append(("normalize validate audit export chain", ["__NORMALIZE_CHAIN__", str(FIXTURES / "pass_minimal_graph.json")], 0, []))
+        planned_fixture_names = sorted(_planned_fixture_names(tests))
+        tests.insert(1, (
+            f"{suite} suite membership metadata",
+            ["__SUITE_MEMBERSHIP_CHECK__", suite, json.dumps(planned_fixture_names, ensure_ascii=False)],
+            0,
+            [],
+        ))
         for index, (name, cmd, expect, expected_codes) in enumerate(tests):
             if cmd and cmd[0] == "__EXPORT_STANDARD__":
                 fixture_path = materialize_fixture(cmd[1], tmp_path, index)
@@ -455,6 +602,8 @@ def main() -> int:
                 result = run_normalize_chain(py, cmd[1], tmp_path, index)
             elif cmd and cmd[0] == "__PREFLIGHT_ASSERT__":
                 result = run_preflight_assertion(py, cmd[1], json.loads(cmd[2]))
+            elif cmd and cmd[0] == "__SUITE_MEMBERSHIP_CHECK__":
+                result = _suite_membership_check(cmd[1], set(json.loads(cmd[2])))
             elif cmd and cmd[0].startswith("__") and cmd[0].endswith("_CHECK__"):
                 result = static_check(cmd[0], cmd[1])
             else:
@@ -465,7 +614,7 @@ def main() -> int:
             results.append(result)
     passed = sum(1 for r in results if r["ok"])
     failed = [r for r in results if not r["ok"]]
-    summary = {"passed": passed, "failed": len(failed), "results": results}
+    summary = {"suite": suite, "total": len(results), "passed": passed, "failed": len(failed), "results": results}
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return 0 if not failed else 1
 
