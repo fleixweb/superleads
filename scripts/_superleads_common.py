@@ -177,6 +177,12 @@ CANONICAL_PLATFORM_ID_RE = re.compile(r"^[a-z][a-z0-9_]{0,127}$")
 DNS_HOST_LABEL_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
 LEGACY_IPV4_PART_RE = re.compile(r"(?:0[xX][0-9A-Fa-f]+|0[0-7]*|[1-9][0-9]*|0)$")
 NUMERIC_IPV4_PART_RE = re.compile(r"(?:0[xX][0-9A-Fa-f]*|[0-9]+)$")
+URL_PARAMETER_NAME_VARIANT_RE = re.compile(r"[^a-z0-9]+")
+SENSITIVE_URL_PARAMETER_NAMES = {
+    "token", "accesstoken", "idtoken", "refreshtoken", "apikey", "key", "secret",
+    "clientsecret", "password", "passwd", "authorization", "bearer", "cookie",
+    "session", "sessionid", "sid", "signature", "sig", "credential", "credentials",
+}
 SHELL_HTTP_SENSITIVE_VALUE_RE = re.compile(
     r"(?i)(?:\b(?:authorization|cookie|token|password)\s*[:=]|\b(?:bearer|basic)\s+[a-z0-9._~+/-]+)"
 )
@@ -257,13 +263,35 @@ def _is_valid_public_dns_hostname(hostname: str) -> bool:
     return all(DNS_HOST_LABEL_RE.fullmatch(label) for label in labels)
 
 
+def _normalized_url_parameter_name(value: str) -> str:
+    """Normalize parsed parameter-name separators without inspecting values."""
+    return URL_PARAMETER_NAME_VARIANT_RE.sub("", value.casefold())
+
+
+def _has_sensitive_url_parameter(component: str) -> bool:
+    """Inspect query, fragment, and fragment-route parameter names.
+
+    A SPA fragment route can carry its own query after ``?`` (for example,
+    ``#/callback?access_token=...``). Split route/query and normal ``&``/``;``
+    parameter boundaries before using the parsed parameter name only.
+    """
+    for field in re.split(r"[&;]", component):
+        for parameter_field in field.split("?"):
+            for parameter_name, _ in parse_qsl(parameter_field, keep_blank_values=True):
+                if _normalized_url_parameter_name(parameter_name) in SENSITIVE_URL_PARAMETER_NAMES:
+                    return True
+    return False
+
+
 def is_safe_public_http_url(value: Any) -> bool:
     """Allow a credential-free public HTTP(S) URL without resolving DNS.
 
-    The graph layer rejects literal global-address failures, including legacy
-    IPv4 spellings such as ``127.1`` and ``0x7f000001``.  It deliberately does
-    not resolve arbitrary DNS names; an HTTP executor must separately pin each
-    connection and redirect target to a global address.
+    This rejects URL userinfo, sensitive query/fragment parameters (including
+    queries embedded in SPA fragment routes), literal local/private/loopback
+    addresses, and non-HTTP(S) schemes. It catches legacy IPv4 spellings such
+    as ``127.1`` and ``0x7f000001`` but does not resolve arbitrary DNS names;
+    an HTTP executor must separately pin each connection and redirect target
+    to a global address.
     """
     if (
         not isinstance(value, str)
@@ -284,6 +312,8 @@ def is_safe_public_http_url(value: Any) -> bool:
         return False
     if parsed.username is not None or parsed.password is not None:
         return False
+    if _has_sensitive_url_parameter(parsed.query) or _has_sensitive_url_parameter(parsed.fragment):
+        return False
     if hostname == "localhost" or hostname.endswith(".localhost") or hostname.endswith(".local"):
         return False
     try:
@@ -296,6 +326,35 @@ def is_safe_public_http_url(value: Any) -> bool:
             return False
         return _is_valid_public_dns_hostname(hostname)
     return address.is_global
+
+
+def is_safe_public_website_or_domain(value: Any) -> bool:
+    """Allow a safe complete public HTTP(S) URL or a plain public DNS domain."""
+    if (
+        not isinstance(value, str)
+        or not value
+        or value != value.strip()
+        or any(ord(char) < 32 or ord(char) == 127 for char in value)
+    ):
+        return False
+    try:
+        parsed = urlsplit(value)
+    except ValueError:
+        return False
+    if parsed.scheme:
+        return is_safe_public_http_url(value)
+    if parsed.netloc or parsed.query or parsed.fragment or parsed.path != value:
+        return False
+    hostname = value.casefold().rstrip(".")
+    if hostname == "localhost" or hostname.endswith(".localhost") or hostname.endswith(".local"):
+        return False
+    try:
+        ipaddress.ip_address(hostname)
+    except ValueError:
+        if _legacy_ipv4_address(hostname) is not None or _looks_like_numeric_ipv4(hostname):
+            return False
+        return _is_valid_public_dns_hostname(hostname)
+    return False
 
 
 def source_has_safe_public_http_urls(source: Any) -> bool:

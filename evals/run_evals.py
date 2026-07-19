@@ -18,6 +18,8 @@ BEHAVIORAL = ROOT / "evals" / "behavioral"
 INTEGRATION = ROOT / "evals" / "integration"
 LEGACY_DERIVED = ROOT / "evals" / "legacy-derived"
 SCHEMAS = ROOT / "shared" / "schemas"
+MINIMAL_DISCOVERY_SKELETON = ROOT / "shared" / "references" / "default-discovery-minimal-skeleton.example.json"
+REFERENCE_SAMPLE = ROOT / "shared" / "references" / "default-discovery-reference.example.json"
 CAPABILITY_CASES = ROOT / "evals" / "cases" / "capability_adapter_cases.json"
 MODE_TO_STATUS = {
     "initial": "initial_lead_list",
@@ -410,6 +412,15 @@ def main() -> int:
     tests: list[tuple[str, list[str], int, list[str]]] = [
         ("preflight runs", [py, str(SCRIPTS / "preflight_capabilities.py"), "--format", "json"], 0, []),
         ("advanced delivery gate regressions", [py, str(ROOT / "evals" / "advanced_gate_tests.py")], 0, []),
+        # Both shared runtime references are tested from their real locations:
+        # the minimal skeleton for bulk default discovery and the complete
+        # reference for status/contact/conflict boundaries.
+        ("minimal discovery skeleton validate pass", [py, str(SCRIPTS / "validate_research_graph.py"), str(MINIMAL_DISCOVERY_SKELETON)], 0, []),
+        ("minimal discovery skeleton audit initial pass", [py, str(SCRIPTS / "audit_delivery.py"), str(MINIMAL_DISCOVERY_SKELETON), "--delivery-status", "initial_lead_list"], 0, []),
+        ("minimal discovery skeleton export initial pass", ["__EXPORT_INITIAL__", str(MINIMAL_DISCOVERY_SKELETON)], 0, []),
+        ("complete discovery reference validate pass", [py, str(SCRIPTS / "validate_research_graph.py"), str(REFERENCE_SAMPLE)], 0, []),
+        ("complete discovery reference audit initial pass", [py, str(SCRIPTS / "audit_delivery.py"), str(REFERENCE_SAMPLE), "--delivery-status", "initial_lead_list"], 0, []),
+        ("complete discovery reference export initial pass", ["__EXPORT_INITIAL__", str(REFERENCE_SAMPLE)], 0, []),
     ]
     add_case_tests(py, tests)
     add_phase2_tests(py, tests)

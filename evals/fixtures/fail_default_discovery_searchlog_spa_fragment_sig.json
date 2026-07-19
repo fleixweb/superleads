@@ -1,0 +1,10 @@
+{
+  "extends": "pass_default_discovery_candidate_pool.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/search_logs/0/result_refs/0/result_url",
+      "value": "https://example.com/#/return?sig=secret"
+    }
+  ]
+}

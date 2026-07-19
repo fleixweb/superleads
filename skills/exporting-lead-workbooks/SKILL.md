@@ -11,7 +11,7 @@ Create user-facing workbook outputs after verification. Default output is a disc
 
 ## Required references and script
 
-Read `../../shared/references/output-schema.md` and `../../shared/references/status-labels.md`. Use `../../scripts/export_workbook.py` for deterministic export.
+Read `../../shared/references/output-schema.md` and `../../shared/references/status-labels.md`. Use `../../scripts/export_workbook.py` for deterministic export. For a default-discovery workbook, `../../shared/references/default-discovery-reference.md` and its minimal skeleton show the base initial sheet set; consult the complete reference only for optional contact-status and conflict presentation.
 
 ## Sheet sets
 
@@ -31,7 +31,10 @@ Inquiry version: 询盘待办, 来信联系人, 询盘信息摘要, 待补充信
 - Candidate discovery and signal links are exported only when they are safe,
   credential-free public HTTP(S) URLs. Keep an available source label or
   restriction note when no safe link can be shown; never export or guess a
-  local, private, credential-bearing, or malformed URL.
+  URL with userinfo or sensitive query/fragment credential parameters
+  (including SPA fragment-route query), a
+  local/private/non-HTTP(S), or malformed URL. The 官网/域名 column may retain a
+  plain public domain but never guesses a protocol or exports an unsafe URL.
 - 标准开发名单 must include source links and contact status.
 - This local deployment does not provide `full_review_package`.
 - Do not expose internal artifact names as user-facing sheet names.

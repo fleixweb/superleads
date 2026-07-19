@@ -1,0 +1,25 @@
+{
+  "extends": "pass_minimal_graph.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/entities/0/website",
+      "value": "https://example.com/path?id=123"
+    },
+    {
+      "op": "add",
+      "path": "/entities/0/domain",
+      "value": "example.com"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/input_graph_hash",
+      "value": "19a68ad74351f6c94521e04325e8aaaae02b046ff9c44773cd8e21167a229c23"
+    },
+    {
+      "op": "replace",
+      "path": "/review_attestations/0/reviewed_subject_hash",
+      "value": "19a68ad74351f6c94521e04325e8aaaae02b046ff9c44773cd8e21167a229c23"
+    }
+  ]
+}

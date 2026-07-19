@@ -23,8 +23,8 @@ VISUAL_CANDIDATE = ROOT / "evals" / "fixtures" / "pass_visual_reference_candidat
 CONNECTED_INQUIRY = ROOT / "evals" / "fixtures" / "pass_connected_inbound_inquiry.json"
 MAIL_ADAPTER_INPUT = ROOT / "evals" / "fixtures" / "mail_read_normalized_input.json"
 sys.path.insert(0, str(SCRIPTS))
-from _superleads_common import graph_hash, review_subject_hash  # noqa: E402
-from export_workbook import build_initial_sheets  # noqa: E402
+from _superleads_common import graph_hash, is_safe_public_http_url, review_subject_hash  # noqa: E402
+from export_workbook import build_initial_sheets, build_sheets  # noqa: E402
 sys.path.insert(0, str(ROOT / "evals"))
 from run_evals import _load_fixture_graph  # noqa: E402
 
@@ -683,26 +683,87 @@ def _assert_default_discovery_export_filters_unsafe_urls() -> list[str]:
     """The workbook builder must filter unsafe links even when validation is bypassed."""
     graph = _load_fixture_graph(ROOT / "evals" / "fixtures" / "pass_default_discovery_candidate_pool.json")
     candidates = graph["candidates"]
-    candidates[0]["source_url"] = "file:///home/user/private"
-    candidates[0]["discovery_refs"][0]["url"] = "http://localhost/private"
-    candidates[0]["signal_summary"]["business_match"]["items"][0]["source_url"] = "http://127.0.0.1/business"
+    candidates[0]["source_url"] = "https://example.com/#/callback?access_token=secret"
+    candidates[0]["discovery_refs"][0]["url"] = "https://example.com/#/auth?TOKEN=secret"
+    candidates[0]["signal_summary"]["business_match"]["items"][0]["source_url"] = "https://example.com/#route?api-key=secret"
+    candidates[0]["website"] = "http://127.0.0.1/private"
     candidates[1]["source_url"] = "http://192.168.10.2/private"
     candidates[1]["signal_summary"]["website_contact"]["items"][0]["source_url"] = "https://user:token@example.com/contact"
-    graph["search_logs"][0]["result_refs"][0]["result_url"] = "http://10.0.0.4/result"
+    candidates[1]["website"] = "file:///home/user/private"
+    candidates[2]["website"] = "https://user:token@example.com/private"
+    candidates[3]["website"] = "https://example.com/#/callback?access_token=secret"
+    candidates[4]["website"] = "https://example.com/#/catalog"
+    plain_domain_candidate = copy.deepcopy(candidates[4])
+    plain_domain_candidate.update({
+        "candidate_id": "cand_plain_domain_export_001",
+        "name": "Plain Domain Discovery",
+        "company_name": "Plain Domain Discovery",
+        "website": "example.com",
+        "domain": None,
+    })
+    candidates.append(plain_domain_candidate)
+    graph["search_logs"][0]["result_refs"][0]["result_url"] = "https://example.com/#/return?sig=secret"
 
     sheets = build_initial_sheets(graph, {"issues": []})
     rendered = json.dumps(sheets, ensure_ascii=False)
     unsafe_values = (
+        "https://example.com/#/callback?access_token=secret",
+        "https://example.com/#/auth?TOKEN=secret",
+        "https://example.com/#route?api-key=secret",
         "file:///home/user/private",
-        "http://localhost/private",
-        "http://127.0.0.1/business",
+        "http://127.0.0.1/private",
         "http://192.168.10.2/private",
         "https://user:token@example.com/contact",
-        "http://10.0.0.4/result",
+        "https://user:token@example.com/private",
+        "https://example.com/#/return?sig=secret",
     )
     errors = [f"default_discovery_export_unsafe_url: leaked {value}" for value in unsafe_values if value in rendered]
     if "Alpha 官网产品页" not in rendered:
         errors.append("default_discovery_export_unsafe_url: filtered link removed its safe source label")
+    if is_safe_public_http_url("https://example.com/#/callback?access_token=secret"):
+        errors.append("default_discovery_export_unsafe_url: SPA fragment token passed shared URL validation")
+    if not is_safe_public_http_url("https://example.com/#/catalog"):
+        errors.append("default_discovery_export_unsafe_url: safe SPA fragment failed shared URL validation")
+    for safe_value in ("https://example.com/#/catalog", "example.com"):
+        if safe_value not in rendered:
+            errors.append(f"default_discovery_export_unsafe_url: safe website/domain missing {safe_value}")
+    return errors
+
+
+def _assert_standard_export_filters_unsafe_entity_websites() -> list[str]:
+    """Standard sheets must not leak Entity website/domain values if validation is bypassed."""
+    errors: list[str] = []
+    unsafe_values = (
+        "http://127.0.0.1/private",
+        "file:///home/user/private",
+        "https://user:token@example.com/path",
+        "https://example.com/?access_token=x",
+        "127.0.0.1",
+    )
+    for index, value in enumerate(unsafe_values):
+        graph = _base()
+        entity = graph["entities"][0]
+        if index == len(unsafe_values) - 1:
+            entity["website"] = None
+            entity["domain"] = value
+        else:
+            entity["website"] = value
+        rendered = json.dumps(build_sheets(graph, {"issues": []}, "standard"), ensure_ascii=False)
+        if value in rendered:
+            errors.append(f"standard_export_unsafe_entity_website: leaked {value}")
+
+    safe_url_graph = _base()
+    safe_url_graph["entities"][0]["website"] = "https://example.com/path?id=123"
+    safe_url_rendered = json.dumps(build_sheets(safe_url_graph, {"issues": []}, "standard"), ensure_ascii=False)
+    if "https://example.com/path?id=123" not in safe_url_rendered:
+        errors.append("standard_export_unsafe_entity_website: safe Entity website missing")
+
+    safe_domain_graph = _base()
+    safe_domain_graph["entities"][0]["website"] = None
+    safe_domain_graph["entities"][0]["domain"] = "example.com"
+    safe_domain_rendered = json.dumps(build_sheets(safe_domain_graph, {"issues": []}, "standard"), ensure_ascii=False)
+    if "example.com" not in safe_domain_rendered:
+        errors.append("standard_export_unsafe_entity_website: safe Entity domain missing")
     return errors
 
 
@@ -871,6 +932,7 @@ def main() -> int:
         errors.extend(_assert_mail_adapter_boundary(directory))
         errors.extend(_assert_platform_and_public_url_pressure_tests(directory))
         errors.extend(_assert_default_discovery_export_filters_unsafe_urls())
+        errors.extend(_assert_standard_export_filters_unsafe_entity_websites())
         errors.extend(_assert_self_review_disclosure(directory))
         errors.extend(_assert_historical_review_cannot_approve(directory))
         errors.extend(_assert_historical_assessment_cannot_be_reused(directory))
@@ -892,7 +954,7 @@ def main() -> int:
         print("Advanced gate regressions failed:")
         print("\n\n".join(errors))
         return 1
-    print(f"advanced gate regressions passed: {len(tests) + 19}")
+    print(f"advanced gate regressions passed: {len(tests) + 20}")
     return 0
 
 

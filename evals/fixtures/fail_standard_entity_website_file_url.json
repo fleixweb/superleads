@@ -1,0 +1,10 @@
+{
+  "extends": "pass_minimal_graph.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/entities/0/website",
+      "value": "file:///home/user/private"
+    }
+  ]
+}

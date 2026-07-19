@@ -56,7 +56,10 @@ Avoid exposing internal artifact names such as Candidate Preview, Research Draft
 地域或明确排除事实的 `business_match` 信号：至少一条非空说明及其来源标签或安全公开
 URL。`identity_pending` 和 `insufficient_information` 可展示主体冲突、未知和来源缺口，
 不能为了填表伪造已观察业务信号，也不能因此静默删除 Candidate。工作簿只展示安全、无
-凭据的公开 HTTP(S) 发现和信号 URL；无安全 URL 时保留来源标签或受限说明而不猜测链接。
+凭据的公开 HTTP(S) 发现和信号 URL：URL userinfo、敏感 query/fragment 参数（含 SPA
+fragment route 内嵌 query）、本地/
+私网/回环地址和非 HTTP(S) scheme 均不导出。官网/域名列可保留纯公开域名文本，但不自动
+补全或猜测协议；无安全 URL 时保留来源标签或受限说明而不猜测链接。
 
 ## Current-direction presentation for standard delivery
 

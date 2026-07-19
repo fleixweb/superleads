@@ -1,0 +1,15 @@
+{
+  "extends": "pass_default_discovery_candidate_pool.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/candidates/0/website",
+      "value": "example.com"
+    },
+    {
+      "op": "replace",
+      "path": "/candidates/1/website",
+      "value": "www.example.com"
+    }
+  ]
+}

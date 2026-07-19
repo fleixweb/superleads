@@ -1,0 +1,10 @@
+{
+  "extends": "pass_minimal_graph.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/sources/0/canonical_url",
+      "value": "https://example.com/?credentials=secret"
+    }
+  ]
+}

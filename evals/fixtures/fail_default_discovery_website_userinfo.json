@@ -1,0 +1,10 @@
+{
+  "extends": "pass_default_discovery_candidate_pool.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/candidates/0/website",
+      "value": "https://user:token@example.com/private"
+    }
+  ]
+}

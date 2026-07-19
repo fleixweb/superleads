@@ -79,7 +79,10 @@
           "name": {"type": ["string", "null"]},
           "company_name": {"type": ["string", "null"]},
           "entity_id": {"type": ["string", "null"]},
-          "website": {"type": ["string", "null"]},
+          "website": {
+            "type": ["string", "null"],
+            "description": "When non-empty, runtime validation requires a safe public HTTP(S) URL or plain public domain."
+          },
           "domain": {"type": ["string", "null"]},
           "country_or_region": {"type": ["string", "null"]},
           "source_hint": {"type": ["string", "null"]},
@@ -222,8 +225,14 @@
             "type": ["string", "null"]
           },
           "legal_name": {"type": ["string", "null"]},
-          "website": {"type": ["string", "null"]},
-          "domain": {"type": ["string", "null"]},
+          "website": {
+            "type": ["string", "null"],
+            "description": "When non-empty, runtime validation requires a safe public HTTP(S) URL or plain public domain."
+          },
+          "domain": {
+            "type": ["string", "null"],
+            "description": "When non-empty, runtime validation requires a safe public HTTP(S) URL or plain public domain."
+          },
           "country_or_region": {"type": ["string", "null"]},
           "customer_type": {"type": ["string", "null"]}
           }
@@ -560,20 +569,6 @@
     "runs",
     "briefs",
     "plans",
-    "candidates",
-    "sources",
-    "observations",
-    "entities",
-    "entity_relationships",
-    "claims",
-    "claim_evidence",
-    "contact_points",
-    "contact_claims",
-    "unassigned_contact_leads",
-    "hypotheses",
-    "assessments",
-    "review_findings",
-    "audits",
-    "delivery_manifests"
+    "candidates"
   ]
 }

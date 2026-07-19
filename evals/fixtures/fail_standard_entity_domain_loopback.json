@@ -1,0 +1,10 @@
+{
+  "extends": "pass_minimal_graph.json",
+  "patches": [
+    {
+      "op": "add",
+      "path": "/entities/0/domain",
+      "value": "127.0.0.1"
+    }
+  ]
+}

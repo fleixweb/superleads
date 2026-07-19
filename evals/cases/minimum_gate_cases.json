@@ -60,6 +60,164 @@
       }
     },
     {
+      "fixture": "pass_default_discovery_safe_url_parameters.json",
+      "validate": "pass"
+    },
+    {
+      "fixture": "pass_default_discovery_plain_website_domains.json",
+      "validate": "pass"
+    },
+    {
+      "fixture": "pass_default_discovery_safe_spa_fragment.json",
+      "validate": "pass"
+    },
+    {
+      "fixture": "fail_default_discovery_candidate_source_spa_fragment_token.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "candidate_source_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_ref_spa_fragment_token.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "candidate_discovery_ref_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_signal_spa_fragment_api_key.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "candidate_signal_source_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_searchlog_spa_fragment_sig.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "search_log_result_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_public_source_spa_fragment_token.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "public_source_url_not_safe"
+      ]
+    },
+    {
+      "fixture": "pass_standard_entity_safe_website_domain.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass"
+    },
+    {
+      "fixture": "fail_standard_entity_website_loopback.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "entity_website_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_standard_entity_website_file_url.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "entity_website_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_standard_entity_website_userinfo.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "entity_website_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_standard_entity_website_query_token.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "entity_website_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_standard_entity_domain_loopback.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "entity_domain_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_candidate_source_query_token.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "candidate_source_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_ref_query_api_key.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "candidate_discovery_ref_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_signal_fragment_token.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "candidate_signal_source_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_searchlog_query_token.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "search_log_result_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_public_source_query_token.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "public_source_url_not_safe"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_website_loopback.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "candidate_website_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_website_file_url.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "candidate_website_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_website_userinfo.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "candidate_website_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_website_query_token.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "candidate_website_url_not_public"
+      ]
+    },
+    {
+      "fixture": "fail_default_discovery_website_non_http_scheme.json",
+      "validate": "fail",
+      "expected_error_codes": [
+        "candidate_website_url_not_public"
+      ]
+    },
+    {
       "fixture": "fail_default_discovery_candidate_source_loopback.json",
       "validate": "fail",
       "expected_error_codes": [

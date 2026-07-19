@@ -1,0 +1,198 @@
+{
+  "runs": [
+    {
+      "run_id": "run_discovery_min_001",
+      "status": "collecting",
+      "created_at": "2026-07-19T00:00:00Z",
+      "platform": "claude",
+      "brief_id": "brief_discovery_min_001",
+      "plan_id": "plan_discovery_min_001",
+      "review_mode": "not_run"
+    }
+  ],
+  "briefs": [
+    {
+      "brief_id": "brief_discovery_min_001",
+      "task_mode": "product_scope_research",
+      "output_mode": "发现候选池",
+      "contact_detail_level": "standard",
+      "product_or_service": "sample reusable drinkware",
+      "scope_axis": [
+        "target_country_or_region",
+        "target_customer_type"
+      ],
+      "target_country_or_region": [
+        "Region Q"
+      ],
+      "target_customer_type": [
+        "distributor"
+      ],
+      "keywords": [
+        "sample reusable drinkware distributor Region Q"
+      ],
+      "evidence_depth": "initial",
+      "target_count": 30,
+      "business_context": "默认发现：先保留候选、来源、信号状态与未知项。"
+    }
+  ],
+  "plans": [
+    {
+      "plan_id": "plan_discovery_min_001",
+      "brief_id": "brief_discovery_min_001",
+      "query_groups": [
+        {
+          "group_id": "region_q_distributor",
+          "query_purpose": "Find distributor clues and record actual search coverage.",
+          "queries": [
+            "sample reusable drinkware distributor Region Q"
+          ]
+        }
+      ],
+      "source_categories": [
+        "website",
+        "directory",
+        "search_result"
+      ],
+      "contact_collection_targets": [
+        "email",
+        "phone",
+        "contact_form"
+      ],
+      "lead_tiering_criteria": {
+        "default_discovery": "Classify only current-task business relevance and preserve unknowns."
+      },
+      "claim_evidence_requirements": {
+        "formal_deep_check_only": "Default discovery does not require Claims."
+      },
+      "stop_conditions": [
+        "Complete planned query groups before describing this round as converged."
+      ],
+      "downgrade_strategy": [
+        "Keep weak or restricted discovery clues as Candidates with explicit signal statuses."
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "cand_discovery_min_001",
+      "name": "Example Fair Exhibitor",
+      "company_name": "Example Fair Exhibitor",
+      "country_or_region": "Region Q",
+      "source_hint": "公开展会参展商名单，仅有公司名称",
+      "status": "初筛线索",
+      "run_id": "run_discovery_min_001",
+      "brief_id": "brief_discovery_min_001",
+      "plan_id": "plan_discovery_min_001",
+      "discovery_method": "search_web",
+      "search_log_ids": [
+        "search_discovery_min_001"
+      ],
+      "discovery_refs": [
+        {
+          "label": "公开展会参展商名单",
+          "url": "https://fair.example/exhibitors/example-fair-exhibitor",
+          "source_type": "directory",
+          "search_log_id": "search_discovery_min_001"
+        }
+      ],
+      "dedupe_basis": [
+        "本轮仅保留原始公司名称；未与同名结果合并"
+      ],
+      "business_relevance_status": "insufficient_information",
+      "business_relevance_basis": [
+        "参展商名单与本次产品词同轮发现，但公开材料只有名称，尚无业务描述"
+      ],
+      "identity_resolution_status": "unresolved",
+      "unknowns": [
+        "官网未知",
+        "产品与渠道角色未知",
+        "公开联系方式未知"
+      ],
+      "source_restrictions": [
+        "参展商详情页仅显示名称，未提供可打开业务正文"
+      ],
+      "next_verification_steps": [
+        "补搜官网、公开目录详情或展会 PDF"
+      ],
+      "signal_summary": {
+        "business_match": {
+          "status": "not_searched",
+          "notes": [
+            "尚未获得可归属的业务页面"
+          ]
+        },
+        "website_contact": {
+          "status": "source_restricted",
+          "notes": [
+            "当前名单页未展示联系方式正文"
+          ]
+        },
+        "trade_record": {
+          "status": "not_searched",
+          "notes": [
+            "本轮未检索贸易数据"
+          ]
+        },
+        "china_relation": {
+          "status": "not_searched",
+          "notes": [
+            "本轮未检索 China 关联"
+          ]
+        },
+        "product_description_or_hs": {
+          "status": "not_searched",
+          "notes": [
+            "本轮未检索货描或 HS"
+          ]
+        }
+      }
+    }
+  ],
+  "search_logs": [
+    {
+      "search_log_id": "search_discovery_min_001",
+      "run_id": "run_discovery_min_001",
+      "brief_id": "brief_discovery_min_001",
+      "plan_id": "plan_discovery_min_001",
+      "query_group_id": "region_q_distributor",
+      "queried_at": "2026-07-19T00:00:00Z",
+      "capability": "search.web",
+      "concrete_tool": "web_search",
+      "query_text": "sample reusable drinkware distributor Region Q",
+      "query_language": "en",
+      "targeted_geography_literals": [
+        "Region Q"
+      ],
+      "customer_selection_contract_id": null,
+      "selection_rule_id": null,
+      "source_categories": [
+        "directory"
+      ],
+      "result_use": "candidate_seed_only",
+      "new_candidate_ids": [
+        "cand_discovery_min_001"
+      ],
+      "duplicate_candidate_ids": [],
+      "accessed_source_ids": [],
+      "failed_source_refs": [],
+      "restricted_source_refs": [
+        "公开展会参展商详情未提供业务正文"
+      ],
+      "dedupe_basis": [
+        "名称去重，未合并同名候选"
+      ],
+      "coverage_notes": [
+        "本轮仅完成 Region Q 的展会名单路径；官网、协会和贸易路径仍待扩展。"
+      ],
+      "result_refs": [
+        {
+          "candidate_id": "cand_discovery_min_001",
+          "result_url": "https://fair.example/exhibitors/example-fair-exhibitor",
+          "result_rank": 1,
+          "result_title": "Example Fair Exhibitor",
+          "result_locator": "rank=1"
+        }
+      ]
+    }
+  ]
+}

@@ -11,7 +11,7 @@ Collect raw research artifacts: Candidate, Source, Observation, Provisional Enti
 
 ## Required references
 
-Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/claim-and-source-policy.md`, and `../../shared/schemas/source-observation.schema.json`.
+Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/claim-and-source-policy.md`, and `../../shared/schemas/source-observation.schema.json`. For default discovery, follow `../../shared/references/default-discovery-reference.md` and start from `default-discovery-minimal-skeleton.example.json` for Candidate and SearchLog shape. Consult the complete reference only when actual sources, contact visibility, or identity conflict require those optional objects.
 
 ## Workflow
 
@@ -42,7 +42,10 @@ For default Candidate fields that are exported as links, record only a safe,
 credential-free public HTTP(S) URL in `source_url`, `discovery_refs[].url`,
 or `signal_summary.*.items[].source_url`. When a URL is unavailable or
 restricted, retain a source label, user-file name, or restriction note instead
-of a local, private, credential-bearing, or guessed URL.
+of a URL with userinfo or sensitive query/fragment credential parameters
+(including SPA fragment-route query), a
+local/private/non-HTTP(S) URL, or a guessed URL. `website` may retain a plain
+public domain only; do not add a protocol automatically.
 
 Only after the current session actually opens a specific HTTP(S) URL and
 returns the original URL, a title or equivalent source identifier, a non-empty

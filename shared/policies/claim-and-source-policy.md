@@ -38,11 +38,16 @@ the current-task classification but cannot substitute for that observed signal.
 unknown, or source-gap notes without inventing an observed business signal or
 creating a Claim, ClaimEvidence, Assessment, Review, or Audit.
 
-Candidate `source_url`, `discovery_refs[].url`, and public-signal
-`items[].source_url` are user-facing URL fields. When non-empty they use the
-same runtime credential-free public HTTP(S) validation as Sources; labels,
-user-file names, and restricted-source notes remain usable when no URL is
-available.
+Candidate `source_url`, `discovery_refs[].url`, public-signal
+`items[].source_url`, SearchLog result URLs, and public Source URLs are
+user-facing URL fields. When non-empty they use the same runtime
+credential-free public HTTP(S) validation: URL userinfo, sensitive
+query/fragment credential parameters, including fragment-route embedded query
+parameters, local/private/loopback hosts, and
+non-HTTP(S) schemes are rejected. Candidate and Entity `website`/`domain`
+fields may instead retain a plain public domain as text, without guessing a
+protocol. Labels, user-file names, and restricted-source notes remain usable
+when no URL is available.
 
 ## Artifact boundaries
 
@@ -78,7 +83,7 @@ available.
 - Every formal `supports` ClaimEvidence must carry source-visible anchors for the Claim subject, predicate, claim type, and typed value. A Claim field without a source anchor is not a formal fact.
 - A translated Observation may support a Claim only when its `derived_from_observation_id` chain terminates at an accessible, same-entity, non-translated original Observation.
 - Formal Claim support must pass one controlled source branch:
-  - public branch: strict credential-free public `http` or `https` Source URLs and a non-empty Observation excerpt; local/private/loopback/link-local/reserved/multicast/unspecified hosts, localhost/local names, and legacy numeric IPv4 spellings are not public sources;
+  - public branch: strict credential-free public `http` or `https` Source URLs and a non-empty Observation excerpt; URL userinfo and sensitive query/fragment credential parameters are forbidden, as are local/private/loopback/link-local/reserved/multicast/unspecified hosts, localhost/local names, legacy numeric IPv4 spellings, and non-HTTP(S) schemes;
   - published-copy branch: `provenance=user_provided`, `material_role=published_source_copy`, `medium=document|spreadsheet`, a lowercase SHA-256 and safe display filename, `document.extract`, non-empty excerpt/content hash, and a same-hash `artifact:sha256:<hash>#...` locator.
 
 ## User-provided file evidence exception

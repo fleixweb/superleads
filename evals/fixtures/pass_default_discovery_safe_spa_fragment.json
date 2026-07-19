@@ -1,0 +1,20 @@
+{
+  "extends": "pass_default_discovery_candidate_pool.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/candidates/0/source_url",
+      "value": "https://example.com/#/catalog"
+    },
+    {
+      "op": "replace",
+      "path": "/candidates/0/discovery_refs/0/url",
+      "value": "https://example.com/#/product/123"
+    },
+    {
+      "op": "replace",
+      "path": "/candidates/0/website",
+      "value": "https://example.com/#section-2"
+    }
+  ]
+}

@@ -14,6 +14,7 @@ from _superleads_common import (
     public_signal_status_user_label,
     graph_hash,
     is_safe_public_http_url,
+    is_safe_public_website_or_domain,
     load_json,
     safe_public_source_url,
     scope_status_user_label,
@@ -303,6 +304,24 @@ def _candidate_refs(candidate:dict[str,Any], search_logs:dict[str,dict[str,Any]]
     return "；".join(dict.fromkeys([item for item in labels if item])), "；".join(dict.fromkeys([item for item in urls if item]))
 
 
+def _safe_website_or_domain_output(record:dict[str,Any])->str:
+    for field in ("website", "domain"):
+        value = record.get(field)
+        if value is not None and value != "":
+            if is_safe_public_website_or_domain(value):
+                return str(value)
+    return ""
+
+
+def _candidate_website_or_domain(candidate:dict[str,Any], entity:dict[str,Any])->str:
+    for record in (candidate, entity):
+        if isinstance(record,dict) and any(record.get(field) is not None and record.get(field) != "" for field in ("website", "domain")):
+            safe_value = _safe_website_or_domain_output(record)
+            if safe_value:
+                return safe_value
+    return ""
+
+
 def _candidate_signal_summary(candidate:dict[str,Any], relevance:str)->dict[str,tuple[str,str]]:
     signal_summary = candidate.get("signal_summary") if isinstance(candidate.get("signal_summary"),dict) else {}
     result = {
@@ -412,7 +431,7 @@ def build_initial_sheets(graph:dict[str,Any], audit:dict[str,Any])->dict[str,lis
         row = {
             "公司名称": candidate.get("company_name") or candidate.get("name") or entity.get("name") or entity.get("legal_name"),
             "国家/地区": candidate.get("country_or_region") or entity.get("country_or_region"),
-            "官网/域名": candidate.get("website") or candidate.get("domain") or entity.get("website") or entity.get("domain"),
+            "官网/域名": _candidate_website_or_domain(candidate, entity),
             "发现来源": source_labels or candidate.get("source_hint"),
             "发现链接": source_links,
             "去重依据": "；".join(str(item) for item in ensure_list(candidate,"dedupe_basis") if item),
@@ -553,7 +572,7 @@ def build_sheets(graph:dict[str,Any], audit:dict[str,Any], mode:str)->dict[str,l
         a=assessment_for_current_brief(graph,entity_id,brief_id,run_id)
         decision=scope_decision_for_current_brief(graph,entity_id,brief_id,run_id)
         if entity_id in allowed_entities:
-            row={"公司名称":entity.get("name") or entity.get("legal_name"),"官网":entity.get("website") or entity.get("domain"),"国家/地区":entity.get("country_or_region"),"客户类型":entity.get("customer_type"),"开发分层":a.get("disposition"),"缺失项":stringify(a.get("missing_requirements")),"需人工核查":stringify(a.get("manual_review_required"))}
+            row={"公司名称":entity.get("name") or entity.get("legal_name"),"官网":_safe_website_or_domain_output(entity),"国家/地区":entity.get("country_or_region"),"客户类型":entity.get("customer_type"),"开发分层":a.get("disposition"),"缺失项":stringify(a.get("missing_requirements")),"需人工核查":stringify(a.get("manual_review_required"))}
             if exception_label:
                 row.update({"结果类型":exception_label,"说明":"仅针对当前用户指定输入完成核查，不表示符合本次开发方向。"})
             else:

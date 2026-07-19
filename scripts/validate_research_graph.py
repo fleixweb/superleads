@@ -52,6 +52,7 @@ from _superleads_common import (
     contains_shell_http_forbidden_data,
     is_canonical_platform_id,
     is_safe_public_http_url,
+    is_safe_public_website_or_domain,
     resolve_capability_adapter_reports,
     source_has_safe_public_http_urls,
     source_evidence_scope,
@@ -515,6 +516,9 @@ def _search_log_issues(
         if not isinstance(candidate, dict):
             continue
         path = f"candidates[{idx}]"
+        website = candidate.get("website")
+        if website is not None and website != "" and not is_safe_public_website_or_domain(website):
+            issues.append(issue("critical", "candidate_website_url_not_public", "Candidate website must be a safe public HTTP(S) URL or a plain public domain when present", f"{path}.website"))
         source_url = candidate.get("source_url")
         if source_url is not None and source_url != "" and not is_safe_public_http_url(source_url):
             issues.append(issue("critical", "candidate_source_url_not_public", "Candidate source_url must be a safe public credential-free HTTP(S) URL when present", f"{path}.source_url"))
@@ -675,6 +679,13 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
     issues.extend(validate_current_review_attestation(graph))
     issues.extend(_search_log_issues(graph, ids))
     issues.extend(_default_discovery_candidate_structure_issues(graph))
+    for idx, entity in enumerate(ensure_list(graph, "entities")):
+        if not isinstance(entity, dict):
+            continue
+        for field, code in (("website", "entity_website_url_not_public"), ("domain", "entity_domain_not_public")):
+            value = entity.get(field)
+            if value is not None and value != "" and not is_safe_public_website_or_domain(value):
+                issues.append(issue("critical", code, f"Entity {field} must be a safe public HTTP(S) URL or a plain public domain when present", f"entities[{idx}].{field}"))
     required_ids = ID_FIELDS
     seen_ids: dict[str, str] = {}
     for key, field in required_ids.items():
