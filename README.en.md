@@ -2,9 +2,9 @@
 
 [中文（GitHub 首页）](README.md) | **English**
 
-> An executable, constrained, and verifiable AI workflow for foreign-trade customer development and customer background research.
+> Help foreign-trade professionals use AI agents for customer development with fewer LLM hallucinations and more reliable results.
 
-Superleads is a workflow for foreign-trade customer development and customer background research. It gives foreign-trade professionals an executable, constrained, and verifiable way to develop customers when they use Claude, Codex, or Hermes for customer search, customer-website reading, and document extraction.
+Superleads is a customer-development and customer due-diligence Skill Suite for traditional foreign-trade and B2B export businesses. It helps foreign-trade professionals use Claude, Codex, the ChatGPT app, and Hermes to find prospects, research customers, organize customer information, and conduct customer due diligence through a controlled workflow, rather than treating information from unclear or unverified sources as sales conclusions.
 
 ## What You Get
 
