@@ -4,7 +4,7 @@
 
 > 让外贸人利用 Agent 做客户开发时，避免 LLM 大模型幻觉，让结果更可靠。
 
-Superleads 是面向传统外贸和 B2B 出口业务的客户开发与客户背调 Skill Suite。它帮助 Claude、Codex、ChatGPT app 和 Hermes 按可控流程完成找客户、查客户、整理客户资料，避免把来源不明或未经核实的信息直接当作销售结论。
+Superleads 是面向传统外贸和 B2B 出口业务的客户开发与客户背调 Skill Suite。它帮助外贸人用 Claude、Codex、ChatGPT app 和 Hermes 按可控流程完成找客户、查客户、整理客户资料、完成客户背调，避免把来源不明或未经核实的信息直接当作销售结论。
 
 ## 你会得到什么
 
