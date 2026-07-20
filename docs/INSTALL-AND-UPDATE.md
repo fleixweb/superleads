@@ -11,7 +11,7 @@
 
 本仓库公开到 GitHub 前，不要把以下 GitHub 命令交给最终用户。发布者应先确认：
 
-1. GitHub 仓库地址为 `fleixweb/superleads`，默认分支为 `main`。
+1. GitHub 仓库地址为 `fleixweb/superleads`，默认分支为 `master`。
 2. Claude Code 和 Codex 的 marketplace 均能从公开仓库读取。
 3. marketplace 安装后的版本与 `.codex-plugin/plugin.json` 及 `.claude-plugin/plugin.json` 一致。
 
@@ -38,7 +38,7 @@ Claude Code 要在重启后应用更新。若启用了可选的版本横幅，ma
 安装：
 
 ```bash
-codex plugin marketplace add fleixweb/superleads
+codex plugin marketplace add fleixweb/superleads --ref master
 codex plugin add superleads@superleads-dev
 codex plugin list --marketplace superleads-dev
 ```
@@ -53,6 +53,14 @@ codex plugin add superleads@superleads-dev
 Codex app 可通过 `/plugins` 添加同一 marketplace，再安装 `superleads@superleads-dev`。安装或更新后，请新开一个对话以加载新的 Skills。
 
 按当前产品分发方式，ChatGPT app 使用同一已安装的 Codex 环境，不设独立的 Superleads 安装入口。
+
+如果初次安装因网络问题改用本地 ZIP 快照或本地目录注册 marketplace，该来源只能用于一次性安装，不能通过 `codex plugin marketplace upgrade` 获得 GitHub 更新。网络恢复后，应移除该本地 marketplace，再使用上面的官方 Git 来源重新添加。
+
+### 可选版本提醒
+
+Superleads 在 Codex 支持插件 hooks 的环境中，启动或恢复会话时会读取本地版本，并对 `master` 分支中的公开 manifest 发起一次匿名 GET。远端版本更高时才显示一行更新提示；3 秒超时、无网络或检查过程中的其他错误都会静默跳过，不会阻塞会话，也不会写入磁盘或发送用户、项目、prompt 数据。
+
+可通过环境变量 `SUPERLEADS_DISABLE_UPDATE_CHECK=1` 或 `DISABLE_TELEMETRY=1` 关闭。删除插件根目录的 `hooks.json` 也可关闭 Codex 版本提醒，不影响 Skills。若当前 Codex host 未执行插件 hooks，GitHub 的 **Watch -> Custom -> Releases** 仍是可靠的发布通知方式。
 
 ## Hermes
 

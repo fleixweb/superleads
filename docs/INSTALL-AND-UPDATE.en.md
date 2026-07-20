@@ -11,7 +11,7 @@ Plugin identifier: `superleads@superleads-dev`
 
 Do not give the GitHub commands below to end users before this repository is public. The publisher should first confirm that:
 
-1. The GitHub repository is `fleixweb/superleads` and its default branch is `main`.
+1. The GitHub repository is `fleixweb/superleads` and its default branch is `master`.
 2. Claude Code and Codex can both read the marketplace from the public repository.
 3. The marketplace-installed version matches `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json`.
 
@@ -38,7 +38,7 @@ Claude Code applies an update after restart. The optional version banner runs di
 Install:
 
 ```bash
-codex plugin marketplace add fleixweb/superleads
+codex plugin marketplace add fleixweb/superleads --ref master
 codex plugin add superleads@superleads-dev
 codex plugin list --marketplace superleads-dev
 ```
@@ -53,6 +53,14 @@ codex plugin add superleads@superleads-dev
 In the Codex app, use `/plugins` to add the same marketplace and install `superleads@superleads-dev`. Start a new chat after installing or updating so the new Skills are loaded.
 
 Under the current distribution design, the ChatGPT app uses the same installed Codex environment and has no separate Superleads installation entry.
+
+If an initial installation uses a local ZIP snapshot or local directory because GitHub is unreachable, that source is one-time only and cannot receive GitHub updates through `codex plugin marketplace upgrade`. Once the network works again, remove the local marketplace and add the official Git source above.
+
+### Optional Version Notice
+
+Where Codex supports plugin hooks, Superleads reads the local version when a session starts or resumes and makes one anonymous GET of the public manifest on the `master` branch. It prints one update line only when a newer remote version is available. A 3-second timeout, no network, or any check failure is silent; it does not block the session, write to disk, or send user, project, or prompt data.
+
+Set `SUPERLEADS_DISABLE_UPDATE_CHECK=1` or `DISABLE_TELEMETRY=1` to disable it. Deleting `hooks.json` from the plugin root also disables the Codex notice without affecting Skills. If the current Codex host does not execute plugin hooks, GitHub **Watch -> Custom -> Releases** remains the reliable release-notification path.
 
 ## Hermes
 

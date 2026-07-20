@@ -8,7 +8,7 @@
     {
       "name": "superleads",
       "description": "Foreign-trade customer discovery Skill Suite with public signals and optional deep verification.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "source": "./",
       "author": {
         "name": "Fleix"

@@ -10,6 +10,16 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 - **MINOR**: adds capabilities without breaking existing research graphs.
 - **PATCH**: fixes bugs or changes copy.
 
+## [0.1.1] - 2026-07-20
+
+### Added
+
+- Optional Codex SessionStart update notice with one anonymous public manifest GET, a 3-second timeout, opt-out environment variables, and silent failure.
+
+### Fixed
+
+- Align marketplace documentation and update checks with the GitHub default `master` branch.
+
 ## [0.1.0] - 2026-07-20
 
 ### Added
