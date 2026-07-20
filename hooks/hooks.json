@@ -1,0 +1,15 @@
+{
+  "description": "Optional, silent Superleads update notice. Remove this directory to disable it.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start\""
+          }
+        ]
+      }
+    ]
+  }
+}

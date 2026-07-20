@@ -1,0 +1,9 @@
+{
+  "name": "superleads",
+  "version": "0.1.0",
+  "description": "Foreign-trade customer discovery Skill Suite with public signals and optional deep verification.",
+  "author": {
+    "name": "Fleix"
+  },
+  "license": "PolyForm-Noncommercial-1.0.0"
+}

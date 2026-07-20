@@ -1,0 +1,20 @@
+{
+  "name": "superleads-dev",
+  "interface": {
+    "displayName": "Superleads"
+  },
+  "plugins": [
+    {
+      "name": "superleads",
+      "source": {
+        "source": "url",
+        "url": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

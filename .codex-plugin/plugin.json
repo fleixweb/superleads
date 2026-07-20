@@ -1,11 +1,11 @@
 {
   "name": "superleads",
-  "version": "0.1.0+codex.20260715204252",
+  "version": "0.1.0",
   "description": "Foreign-trade customer discovery Skill Suite with public signals and optional deep verification.",
   "author": {
-    "name": "Local developer"
+    "name": "Fleix"
   },
-  "license": "UNLICENSED",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "keywords": [
     "foreign-trade",
     "lead-research",
@@ -19,7 +19,7 @@
     "displayName": "Superleads",
     "shortDescription": "Overseas customer discovery and optional verification.",
     "longDescription": "Superleads is a general-purpose foreign-trade Skill Suite for discovery-first overseas candidate pools, public contact organization, and user-requested deep verification without hard-coded industry ICP defaults.",
-    "developerName": "Local developer",
+    "developerName": "Fleix",
     "category": "Productivity",
     "capabilities": [
       "Research",
