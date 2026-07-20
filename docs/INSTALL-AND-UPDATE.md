@@ -5,7 +5,7 @@
 本文给协助部署的技术人员、IT 同事或 Agent 使用。普通外贸用户请直接使用 [README.md](../README.md) 中的自然语言安装请求，不必执行本页命令。
 
 官方仓库：`https://github.com/fleixweb/superleads`  
-插件标识：`superleads@superleads-dev`
+插件标识：`superleads@fleix`
 
 ## 发布前检查
 
@@ -21,14 +21,14 @@
 
 ```bash
 claude plugin marketplace add fleixweb/superleads
-claude plugin install superleads@superleads-dev
+claude plugin install superleads@fleix
 claude plugin list
 ```
 
 更新：
 
 ```bash
-claude plugin update superleads@superleads-dev
+claude plugin update superleads@fleix
 ```
 
 Claude Code 要在重启后应用更新。若启用了可选的版本横幅，macOS 可直接运行；Windows 需要可用的 `bash` 与 `curl`，通常由 Git for Windows 的 Git Bash 提供。横幅不可用不会影响 Superleads；删除仓库中的 `hooks/` 也不会影响其它功能。
@@ -39,20 +39,32 @@ Claude Code 要在重启后应用更新。若启用了可选的版本横幅，ma
 
 ```bash
 codex plugin marketplace add fleixweb/superleads --ref master
-codex plugin add superleads@superleads-dev
-codex plugin list --marketplace superleads-dev
+codex plugin add superleads@fleix
+codex plugin list --marketplace fleix
 ```
 
 更新 marketplace 后重新安装该插件：
 
 ```bash
-codex plugin marketplace upgrade superleads-dev
-codex plugin add superleads@superleads-dev
+codex plugin marketplace upgrade fleix
+codex plugin add superleads@fleix
 ```
 
-Codex app 可通过 `/plugins` 添加同一 marketplace，再安装 `superleads@superleads-dev`。该 GitHub 仓库的默认分支为 `master`；安装或更新后，请新开一个对话以加载新的 Skills。
+Codex app 可通过 `/plugins` 添加同一 marketplace，再安装 `superleads@fleix`。该 GitHub 仓库的默认分支为 `master`；安装或更新后，请新开一个对话以加载新的 Skills。
 
 按当前产品分发方式，ChatGPT app 使用同一已安装的 Codex 环境，不设独立的 Superleads 安装入口。
+
+### 从 0.1.2 或更早版本迁移
+
+`0.1.3` 起，marketplace 名称由 `superleads-dev` 更改为 `fleix`，插件标识随之变为 `superleads@fleix`。已安装旧版本的 Codex 用户执行一次：
+
+```bash
+codex plugin marketplace remove superleads-dev
+codex plugin marketplace add fleixweb/superleads --ref master
+codex plugin add superleads@fleix
+```
+
+Claude Code 用户请在 `/plugin` 中移除旧的 `superleads-dev` marketplace 或插件，再添加官方 marketplace 并安装 `superleads@fleix`。不要假定不同 Claude Code 版本存在相同的命令行移除语法。
 
 如果初次安装因网络问题改用本地 ZIP 快照或本地目录注册 marketplace，该来源只能用于一次性安装，不能通过 `codex plugin marketplace upgrade` 获得 GitHub 更新。网络恢复后，应移除该本地 marketplace，再使用上面的官方 Git 来源重新添加。
 

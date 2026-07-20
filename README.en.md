@@ -38,7 +38,7 @@ You do not need to know Git, terminals, or marketplaces. Open the Agent you use,
 ### Claude Code
 
 ```text
-Please install the official Superleads package for me. Use the official repository https://github.com/fleixweb/superleads to add the Superleads marketplace, then install superleads@superleads-dev. Confirm that Superleads is enabled when complete. If system permission is required, tell me exactly what I need to approve first. Do not modify my project files.
+Please install the official Superleads package for me. Use the official repository https://github.com/fleixweb/superleads to add the Superleads marketplace, then install superleads@fleix. Confirm that Superleads is enabled when complete. If system permission is required, tell me exactly what I need to approve first. Do not modify my project files.
 ```
 
 ### ChatGPT / Codex App And Codex CLI
@@ -46,7 +46,7 @@ Please install the official Superleads package for me. Use the official reposito
 The ChatGPT / Codex app and Codex CLI share one Codex environment installation; no second installation is needed.
 
 ```text
-Please install Superleads in my current Codex environment. Use the official repository https://github.com/fleixweb/superleads to add the Superleads marketplace, then install superleads@superleads-dev. Confirm that it is enabled when complete. If system permission is required, tell me exactly what I need to approve first. Do not modify my project files.
+Please install Superleads in my current Codex environment. Use the official repository https://github.com/fleixweb/superleads to add the Superleads marketplace, then install superleads@fleix. Confirm that it is enabled when complete. If system permission is required, tell me exactly what I need to approve first. Do not modify my project files.
 ```
 
 ### Hermes

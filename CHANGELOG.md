@@ -10,6 +10,16 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 - **MINOR**: adds capabilities without breaking existing research graphs.
 - **PATCH**: fixes bugs or changes copy.
 
+## [0.1.3] - 2026-07-20
+
+### Changed
+
+- Rename the self-hosted marketplace from `superleads-dev` to `fleix`. The installation identifier is now `superleads@fleix`.
+
+### Migration
+
+- Existing users of `superleads@superleads-dev` need a one-time marketplace migration; see the technical installation guides.
+
 ## [0.1.2] - 2026-07-20
 
 ### Fixed

@@ -5,7 +5,7 @@
 This document is for technical staff, IT support, or an Agent performing deployment. Ordinary foreign-trade users should use the natural-language installation request in [README.md](../README.md) and do not need to run these commands.
 
 Official repository: `https://github.com/fleixweb/superleads`  
-Plugin identifier: `superleads@superleads-dev`
+Plugin identifier: `superleads@fleix`
 
 ## Pre-Publication Check
 
@@ -21,14 +21,14 @@ Install:
 
 ```bash
 claude plugin marketplace add fleixweb/superleads
-claude plugin install superleads@superleads-dev
+claude plugin install superleads@fleix
 claude plugin list
 ```
 
 Update:
 
 ```bash
-claude plugin update superleads@superleads-dev
+claude plugin update superleads@fleix
 ```
 
 Claude Code applies an update after restart. The optional version banner runs directly on macOS. On Windows it needs working `bash` and `curl`, normally supplied by Git Bash from Git for Windows. An unavailable banner does not affect Superleads; deleting the repository `hooks/` directory does not affect other functionality.
@@ -39,20 +39,32 @@ Install:
 
 ```bash
 codex plugin marketplace add fleixweb/superleads --ref master
-codex plugin add superleads@superleads-dev
-codex plugin list --marketplace superleads-dev
+codex plugin add superleads@fleix
+codex plugin list --marketplace fleix
 ```
 
 Refresh the marketplace, then reinstall the plugin to update:
 
 ```bash
-codex plugin marketplace upgrade superleads-dev
-codex plugin add superleads@superleads-dev
+codex plugin marketplace upgrade fleix
+codex plugin add superleads@fleix
 ```
 
-In the Codex app, use `/plugins` to add the same marketplace and install `superleads@superleads-dev`. The GitHub repository's default branch is `master`. Start a new chat after installing or updating so the new Skills are loaded.
+In the Codex app, use `/plugins` to add the same marketplace and install `superleads@fleix`. The GitHub repository's default branch is `master`. Start a new chat after installing or updating so the new Skills are loaded.
 
 Under the current distribution design, the ChatGPT app uses the same installed Codex environment and has no separate Superleads installation entry.
+
+### Migrate From 0.1.2 Or Earlier
+
+Starting with `0.1.3`, the marketplace name changes from `superleads-dev` to `fleix`; the plugin identifier is now `superleads@fleix`. Existing Codex users need this one-time migration:
+
+```bash
+codex plugin marketplace remove superleads-dev
+codex plugin marketplace add fleixweb/superleads --ref master
+codex plugin add superleads@fleix
+```
+
+Claude Code users should remove the former `superleads-dev` marketplace or plugin through `/plugin`, then add the official marketplace and install `superleads@fleix`. Do not assume that every Claude Code version has the same command-line removal syntax.
 
 If an initial installation uses a local ZIP snapshot or local directory because GitHub is unreachable, that source is one-time only and cannot receive GitHub updates through `codex plugin marketplace upgrade`. Once the network works again, remove the local marketplace and add the official Git source above.
 
