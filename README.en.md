@@ -2,9 +2,9 @@
 
 [中文（GitHub 首页）](README.md) | **English**
 
-> Customer development with evidence, not a lead list you cannot review.
+> An executable, constrained, and verifiable AI workflow for foreign-trade customer development and customer background research.
 
-Superleads is a customer-development and customer due-diligence Skill Suite for traditional foreign-trade and B2B export businesses. It helps Claude, Codex, the ChatGPT app, and Hermes find, research, and organize prospects through a controlled workflow instead of presenting unsupported information as a sales conclusion.
+Superleads is a workflow for foreign-trade customer development and customer background research. It gives foreign-trade professionals an executable, constrained, and verifiable way to develop customers when they use Claude, Codex, or Hermes for customer search, customer-website reading, and document extraction.
 
 ## What You Get
 
@@ -28,8 +28,7 @@ You can therefore review the research, continue unfinished due diligence, remove
 ## Supported Agents
 
 - **Claude Code**: used as a Claude Code plugin.
-- **Codex CLI and Codex app**: used as a Codex plugin.
-- **ChatGPT app**: uses the installed Codex environment and does not need a second Superleads installation.
+- **ChatGPT / Codex app and Codex CLI**: share one Codex environment installation; no second installation is needed.
 - **Hermes**: used as a complete local Skill package.
 
 ## Get Started
@@ -42,18 +41,12 @@ You do not need to know Git, terminals, or marketplaces. Open the Agent you use,
 Please install the official Superleads package for me. Use the official repository https://github.com/fleixweb/superleads to add the Superleads marketplace, then install superleads@superleads-dev. Confirm that Superleads is enabled when complete. If system permission is required, tell me exactly what I need to approve first. Do not modify my project files.
 ```
 
-### Codex CLI Or Codex App
+### ChatGPT / Codex App And Codex CLI
+
+The ChatGPT / Codex app and Codex CLI share one Codex environment installation; no second installation is needed.
 
 ```text
 Please install Superleads in my current Codex environment. Use the official repository https://github.com/fleixweb/superleads to add the Superleads marketplace, then install superleads@superleads-dev. Confirm that it is enabled when complete. If system permission is required, tell me exactly what I need to approve first. Do not modify my project files.
-```
-
-### ChatGPT App
-
-Install Superleads once through Codex as described above; no separate installation is needed. Then start a new ChatGPT app chat and say:
-
-```text
-Use Superleads to help me develop overseas customers or conduct customer due diligence. Keep the sources, pending checks, and basis for each conclusion.
 ```
 
 ### Hermes
