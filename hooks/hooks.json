@@ -1,5 +1,5 @@
 {
-  "description": "Optional, silent Superleads update notice. Remove this directory to disable it.",
+  "description": "Optional, silent Superleads update notice for Claude Code. Remove this file to disable it.",
   "hooks": {
     "SessionStart": [
       {

@@ -50,7 +50,7 @@ codex plugin marketplace upgrade superleads-dev
 codex plugin add superleads@superleads-dev
 ```
 
-Codex app 可通过 `/plugins` 添加同一 marketplace，再安装 `superleads@superleads-dev`。安装或更新后，请新开一个对话以加载新的 Skills。
+Codex app 可通过 `/plugins` 添加同一 marketplace，再安装 `superleads@superleads-dev`。该 GitHub 仓库的默认分支为 `master`；安装或更新后，请新开一个对话以加载新的 Skills。
 
 按当前产品分发方式，ChatGPT app 使用同一已安装的 Codex 环境，不设独立的 Superleads 安装入口。
 
@@ -60,7 +60,7 @@ Codex app 可通过 `/plugins` 添加同一 marketplace，再安装 `superleads@
 
 Superleads 在 Codex 支持插件 hooks 的环境中，启动或恢复会话时会读取本地版本，并对 `master` 分支中的公开 manifest 发起一次匿名 GET。远端版本更高时才显示一行更新提示；3 秒超时、无网络或检查过程中的其他错误都会静默跳过，不会阻塞会话，也不会写入磁盘或发送用户、项目、prompt 数据。
 
-可通过环境变量 `SUPERLEADS_DISABLE_UPDATE_CHECK=1` 或 `DISABLE_TELEMETRY=1` 关闭。删除插件根目录的 `hooks.json` 也可关闭 Codex 版本提醒，不影响 Skills。若当前 Codex host 未执行插件 hooks，GitHub 的 **Watch -> Custom -> Releases** 仍是可靠的发布通知方式。
+Codex 首次发现此 hook 时会要求用户在 `/hooks` 审核并信任；未信任前不会运行。可通过环境变量 `SUPERLEADS_DISABLE_UPDATE_CHECK=1` 或 `DISABLE_TELEMETRY=1` 关闭，也可在 `/hooks` 中禁用。删除已安装插件内的 `hooks/codex-hooks.json` 也可关闭它，不影响 Skills；下次更新会恢复该可选文件。若当前 Codex host 未执行插件 hooks，GitHub 的 **Watch -> Custom -> Releases** 仍是可靠的发布通知方式。
 
 ## Hermes
 
@@ -97,4 +97,4 @@ git -C "$HOME\.hermes\skills\superleads" pull --ff-only
 ## 版本通知
 
 - 最简单的更新通知：在 GitHub 仓库点 **Watch -> Custom -> Releases**。
-- Claude Code 的可选启动横幅只对公开 manifest 做一次匿名 GET；可设置 `SUPERLEADS_DISABLE_UPDATE_CHECK=1` 或 `DISABLE_TELEMETRY=1` 关闭。
+- Claude Code 和 Codex 的可选启动横幅只对公开 manifest 做一次匿名 GET；可设置 `SUPERLEADS_DISABLE_UPDATE_CHECK=1` 或 `DISABLE_TELEMETRY=1` 关闭。

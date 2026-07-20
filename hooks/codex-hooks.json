@@ -1,0 +1,18 @@
+{
+  "description": "Optional, silent Superleads update notice for Codex. Disable it in /hooks or remove this file from the installed plugin.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${PLUGIN_ROOT}/hooks/session-start\"",
+            "commandWindows": "powershell.exe -NoLogo -NoProfile -NonInteractive -File \"%PLUGIN_ROOT%\\hooks\\codex-session-start.ps1\"",
+            "timeout": 4
+          }
+        ]
+      }
+    ]
+  }
+}

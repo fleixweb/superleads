@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Optional update notice. This file and hooks.json can be deleted without affecting Superleads.
+# Optional update notice for Claude Code. This file and hooks/hooks.json can be deleted without affecting Superleads.
 # It performs one anonymous GET of a public manifest, writes nothing, and fails silently.
 
 case "${SUPERLEADS_DISABLE_UPDATE_CHECK:-}" in
@@ -10,7 +10,7 @@ case "${DISABLE_TELEMETRY:-}" in
   1|true|TRUE|yes|YES|on|ON) exit 0 ;;
 esac
 
-plugin_root="${CLAUDE_PLUGIN_ROOT:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}"
+plugin_root="${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}}"
 local_manifest="$plugin_root/.codex-plugin/plugin.json"
 
 [ -r "$local_manifest" ] || exit 0

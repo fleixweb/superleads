@@ -1,6 +1,6 @@
 {
   "name": "superleads",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Foreign-trade customer discovery Skill Suite with public signals and optional deep verification.",
   "author": {
     "name": "Fleix"
@@ -15,6 +15,7 @@
     "workbooks"
   ],
   "skills": "./skills/",
+  "hooks": "./hooks/codex-hooks.json",
   "interface": {
     "displayName": "Superleads",
     "shortDescription": "Overseas customer discovery and optional verification.",

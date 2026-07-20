@@ -50,7 +50,7 @@ codex plugin marketplace upgrade superleads-dev
 codex plugin add superleads@superleads-dev
 ```
 
-In the Codex app, use `/plugins` to add the same marketplace and install `superleads@superleads-dev`. Start a new chat after installing or updating so the new Skills are loaded.
+In the Codex app, use `/plugins` to add the same marketplace and install `superleads@superleads-dev`. The GitHub repository's default branch is `master`. Start a new chat after installing or updating so the new Skills are loaded.
 
 Under the current distribution design, the ChatGPT app uses the same installed Codex environment and has no separate Superleads installation entry.
 
@@ -60,7 +60,7 @@ If an initial installation uses a local ZIP snapshot or local directory because 
 
 Where Codex supports plugin hooks, Superleads reads the local version when a session starts or resumes and makes one anonymous GET of the public manifest on the `master` branch. It prints one update line only when a newer remote version is available. A 3-second timeout, no network, or any check failure is silent; it does not block the session, write to disk, or send user, project, or prompt data.
 
-Set `SUPERLEADS_DISABLE_UPDATE_CHECK=1` or `DISABLE_TELEMETRY=1` to disable it. Deleting `hooks.json` from the plugin root also disables the Codex notice without affecting Skills. If the current Codex host does not execute plugin hooks, GitHub **Watch -> Custom -> Releases** remains the reliable release-notification path.
+When Codex first discovers this hook, the user must review and trust it through `/hooks`; it does not run before that approval. Set `SUPERLEADS_DISABLE_UPDATE_CHECK=1` or `DISABLE_TELEMETRY=1` to disable it, or disable it in `/hooks`. Deleting `hooks/codex-hooks.json` from the installed plugin also disables the notice without affecting Skills; a later update restores that optional file. If the current Codex host does not execute plugin hooks, GitHub **Watch -> Custom -> Releases** remains the reliable release-notification path.
 
 ## Hermes
 
@@ -97,4 +97,4 @@ Start a new Hermes chat after updating. Do not use `hermes plugins install`: tha
 ## Version Notifications
 
 - The simplest release notification is **Watch -> Custom -> Releases** in the GitHub repository.
-- Claude Code's optional session-start banner makes one anonymous GET to the public manifest. Set `SUPERLEADS_DISABLE_UPDATE_CHECK=1` or `DISABLE_TELEMETRY=1` to disable it.
+- Claude Code's and Codex's optional session-start banners make one anonymous GET to the public manifest. Set `SUPERLEADS_DISABLE_UPDATE_CHECK=1` or `DISABLE_TELEMETRY=1` to disable them.

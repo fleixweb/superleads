@@ -10,6 +10,13 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 - **MINOR**: adds capabilities without breaking existing research graphs.
 - **PATCH**: fixes bugs or changes copy.
 
+## [0.1.2] - 2026-07-20
+
+### Fixed
+
+- Register the optional Codex update notice through the plugin manifest and use plugin-root paths, so it can run from any user project on macOS, Linux, and Windows.
+- Keep technical installation documentation and remote update checks on the GitHub default `master` branch.
+
 ## [0.1.1] - 2026-07-20
 
 ### Added
