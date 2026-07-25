@@ -23,7 +23,7 @@ Full review version: 开发需求, 关键词与搜索思路, 发现候选池, �
 
 Inquiry version: 询盘待办, 来信联系人, 询盘信息摘要, 待补充信息, 来源说明. It is not a standard development list and does not claim buyer verification.
 
-Customer background version: 背调报告, 客户与研究锚点, 主体与关系, 产品、渠道与经营信号, 公开联系入口与桥接候选, 开发切入点候选, 谈判前待确认问题, 未确认线索与来源受限, 证据包. Use `--mode background` only for `customer_background_research` with output mode `客户背调报告`; it uses the current Brief scope projection, never creates a DeliveryManifest, and does not enter the formal audit chain.
+Customer background version: 客户一眼看懂, 客户、品牌与关联方, 我们看到的业务机会, 怎么联系、先找谁, 跟进前要注意什么, 信息从哪里来. Use `--mode background` only for `customer_background_research` with output mode `客户背调报告`; it uses the current Brief scope projection, never creates a DeliveryManifest, and does not enter the formal audit chain.
 
 ## Export rules
 
