@@ -1,0 +1,112 @@
+# 决策记录
+
+## 2026-07-26：设立产品出海市场分析为独立路线
+
+- 决策：新增“产品出海市场分析”，与批量客户开发、单一客户背调并列。
+- 原因：产品市场、准入、税费、物流与出口要求不是客户发现或单客身份核验的子问题。
+- 后果：不得自动产生客户名单、客户范围或市场进入建议。
+
+## 2026-07-26：采用开放式产品属性与监管触发模型
+
+- 决策：不以固定品类或消费品/电商逻辑建模；以可扩展属性矩阵触发条件化研究。
+- 原因：国际贸易涉及普通货、危险品、两用物项、农产品、冷链、散杂货、滚装和重大件等大量不同世界。
+
+## 2026-07-26：贸易地理前提必须拆分
+
+- 决策：卖方/出口申报国、原产国、实际起运国/港、目的国/港分别记录；中国仅为用户可修改的默认出口申报国。
+- 原因：税费、贸易救济、出口控制、路线和申报要求依赖的地理前提不同。
+
+## 2026-07-26：报告只给客观参考
+
+- 决策：报告以表格和信息矩阵呈现事实、来源、日期、条件、限制与待确认项；不输出是否进入市场、价格、客户或运输方式的价值判断。
+- 原因：商业决策由用户承担，系统必须避免把不完整公开信号包装成建议。
+
+## 2026-07-26：首批参数化验收样本
+
+- 决策：以“越南原产锂电产品出口美国”与“中国原产纺织品出口美国”作为首批端到端验收路径。
+- 原因：两条路径分别覆盖危险品/锂电运输与原产地税费、纺织成分/标签/税则细分等高风险差异；同时验证出口申报国、原产国、实际起运国和目的国的拆分。
+- 边界：它们是参数化测试样本，不是越南、中国或美国的硬编码支持范围。缺少电池参数、纺织成分、HS 或起运信息时必须保留待确认状态。
+
+## 2026-07-26：样本 Brief 先行
+
+- 决策：在采集具体市场、法规、税费和物流信息之前，先为两个首批样本建立结构化输入 Brief。
+- 原因：锂电和纺织品均不能只凭产品名称确定危险品路径、HS、税费、标签、出口要求或适用运输方式。
+## 2026-07-26：首批验收样本具体化为 Xing Heng / UNIQLO
+
+- 决策：将两条参数化验收路径落到两个真实公开样本：Xing Heng `48V20Ah` LiFePO4 电池包（Design No. `BAT001.02`）与 UNIQLO Men's Corduroy Overshirt（Product ID `470177`）。
+- 原因：两个样本公开资料足以验证产品属性抽取、原产地证据等级、候选 HTSUS、认证/测试报告边界和表格化缺口展示。
+- 边界：Xing Heng 的 Vietnam Register / QCVN 91 文件不得当作 UN38.3 或 SDS；UNIQLO 网页标签信息不得当作实物标签已核验；两者候选税号均不得当最终归类或最终税率。
+## 2026-07-26：先冻结输出矩阵，再进入代码实现
+
+- 决策：在编写 Skill、脚本或导出器前，先为产品出海市场分析新增 `spec/12-product-outbound-market-analysis-output-matrix-and-acceptance.md`。
+- 原因：该模块风险不在“能不能生成文字”，而在能否把已核实、候选、待确认、未执行和不得输出项清楚分开。
+- 后果：下一步实现应先做静态样本 Markdown / XLSX 矩阵，验证结构和负向断言，再接入真实搜索、法规、趋势和物流来源。
+## 2026-07-26：Slice 1 先用静态样例验证交付形态
+
+- 决策：先用已复核字段生成两份静态 Markdown 样例报告，验证表格化表达和负向断言。
+- 原因：产品出海市场分析的第一风险是表达边界错误，先验证“怎么说”和“不能说什么”，再接入更多数据。
+- 后果：下一步可以进入 XLSX/CSV 表头与状态枚举设计；联网趋势、价格和市场报告采集继续后置。
+## 2026-07-26：Slice 2 冻结 XLSX/CSV 工作簿合同
+
+- 决策：为产品出海市场分析新增 `spec/13-product-outbound-market-analysis-workbook-contract.md` 和 Slice 2 最小样例矩阵。
+- 原因：外贸用户最终会在表格中复核和转交信息，必须先保证未知项不丢失、状态不空白、候选结论不升级。
+- 后果：后续导出器或 Skill 实现必须保留 12 张业务工作表、状态枚举、空值规则和两个样本的关键缺口行。
+## 2026-07-26：Slice 3 冻结证据边界校验规则
+
+- 决策：新增 `spec/14-product-outbound-market-analysis-evidence-boundary-rules.md`，把候选税号、测试报告、网页标签、原产地线索、运输方式、市场信号等证据边界写成可检查规则。
+- 原因：产品出海市场分析最容易出错的地方是把“看到线索”升级为“已合规/最终税率/可运输/值得进入”。
+- 后果：后续 Markdown、CSV、Skill 输出和 evals 都应按这些规则做负向校验；没有新增证据时必须降级到候选、待确认、未执行或来源受限。
+
+## 2026-07-26：Slice 4 冻结 Skill 分工互证流程
+
+- 决策：新增 `spec/15-product-outbound-market-analysis-skill-orchestration.md`，把六个 Skill 的输入、输出、证据卡、互证矩阵、打回规则、状态流转和交付门禁冻结为产品规格。
+- 原因：该功能必须防止搜索黑箱、外部模型摘要和前序 Skill 摘要直接变成事实；不同事实域也必须互相挑错，而不是串行累积幻觉。
+- 后果：后续实现应先落地证据卡和互证门禁，再接入真实市场、法规、税费和物流采集；冲突、缺口、未执行必须保留到最终报告和工作簿。
+
+## 2026-07-26：Slice 5 冻结数据模型与 eval 夹具设计
+
+- 决策：新增 `spec/16-product-outbound-market-analysis-data-model-and-eval-fixtures.md`，将产品出海市场分析建模为独立 `ProductMarketAnalysisGraph`，并冻结 EvidenceCard、状态流转、SkillHandoff、MatrixRow、Gap/Conflict、eval 分层、首批 pass/fail fixture 和错误码草案。
+- 原因：产品市场分析不是客户发现或单客背调，不能强行塞进 Candidate / Claim / Assessment；同时必须在实现前明确哪些错误由 schema、validator、audit、export 或静态文本测试拦截。
+- 后果：后续实现应按 schema、validator、audit/export、eval fixtures 分切片推进；搜索摘要、Skill 摘要、候选税号、网页标签、运输候选和未执行模块的错误升级都必须有回归测试。
+
+## 2026-07-26：Slice 6 冻结实现前执行计划
+
+- 决策：新增 `spec/17-product-outbound-market-analysis-implementation-plan.md`，把后续代码实现拆成 schema、validator、fixtures、audit、export、eval 集成、Skill 接入和真实来源接入八个步骤。
+- 原因：如果直接接真实搜索、Google Trends、税费或物流来源，最容易先生成“看起来完整但边界错误”的报告；第一轮必须先做防错闭环。
+- 后果：开始写代码前需用户再次明确同意；第一轮建议只做 Code Slice A-C 或 A-E，且 market suite 先独立运行，不影响现有客户开发/背调 eval。
+
+## 2026-07-26：Slice 7 冻结 Skill 文案与用户入口设计
+
+- 决策：新增 `spec/18-product-outbound-market-analysis-skill-copy-and-user-entry.md`，冻结产品出海市场分析的用户入口、触发词、非触发词、首轮回应、追问规则、未来 Skill 名称/description 和 `using-superleads` 路由草案。
+- 原因：用户不会用内部 graph、EvidenceCard 或 eval 语言表达需求；入口文案必须符合外贸业务心智，同时避免把市场分析误路由成客户名单或把“值不值得做”写成价值判断。
+- 后果：后续实现入口时应按该文案区分产品市场分析、批量客户开发和单客背调；首轮最多追问 3 个关键问题，缺资料时保留待确认而不是补猜。
+
+## 2026-07-26：Slice 8 冻结真实来源采集策略
+
+- 决策：新增 `spec/19-product-outbound-market-analysis-real-source-collection-strategy.md`，冻结真实来源采集流程、能力门槛、来源优先级、Query Plan、Source/Observation 记录规则、“最新”口径、Source Pack 概念和两个样本来源路径。
+- 原因：产品出海市场分析最终必须依赖可打开、可定位、可复核的公开/用户来源；但如果没有先定义来源策略，就容易把搜索摘要、平台价格、付费报告摘要或物流经验当成确定事实。
+- 后果：后续真实采集必须先做 Brief 和能力预检；搜索只做线索，打开来源才形成 Observation；Source Pack 只能是“去哪里找”的目录，不是事实库。
+
+## 2026-07-26：Slice 9 冻结 Source Pack 字段合同
+
+- 决策：新增 `spec/20-product-outbound-market-analysis-source-pack-contract.md`，将 Source Pack 明确定义为来源入口目录，并冻结 SourcePack、SourceEntry、QueryTemplate、ObservationRequirement、PackRouteRule、状态枚举、产品触发标签和 eval / audit 错误码草案。
+- 原因：Superleads 不能一个国家一个国家硬编码事实，也不能让 Pack 里的入口被误用成法规、税率、认证、物流或价格结论；必须先把“来源目录”和“事实证据”分层。
+- 后果：后续 Source Pack 只能生成 Query Plan 和待打开入口；任何用户可见事实仍必须来自本次打开来源形成的 Observation / EvidenceCard，且 MatrixRow 不得直接引用 SourcePack 或 SourceEntry 作为事实来源。
+
+## 2026-07-26：Slice 10 冻结 Source Pack 种子样例设计
+
+- 决策：新增 `spec/21-product-outbound-market-analysis-source-pack-seed-samples.md`，用美国、中国、越南、跨太平洋物流、美国市场信号、锂电通用规则、纺织服装通用规则和产品原始来源设计第一批 Source Pack 种子样例。
+- 原因：字段合同还比较抽象，需要用 Xing Heng 锂电和 UNIQLO 纺织两个样本验证 Pack 如何被 Brief 和产品标签触发，同时防止样例滑向国家事实库。
+- 后果：种子样例只允许包含入口类型、查询槽位、观察要求、路由和边界；不得包含具体税率、认证结论、固定物流时效、趋势结论、价格区间或市场进入建议。
+
+## 2026-07-26：Slice 11 冻结端到端运行剧本
+
+- 决策：新增 `spec/22-product-outbound-market-analysis-end-to-end-runbook.md`，把 Brief、Source Pack、Query Plan、SearchLog / Source、Observation、EvidenceCard、MatrixRow 和 Markdown / XLSX 交付串成端到端人工运行剧本。
+- 原因：前面已分别冻结输出、证据边界、Skill 分工、数据模型、Source Pack 和种子样例，但仍需要一份剧本验证真实运行时每一步怎么升级、打回、降级和对用户说人话。
+- 后果：后续实现应按剧本中的三道门禁和状态流转落地；没有 Brief 冻结、没有打开来源、没有 EvidenceCard 边界或触发禁止升级时，不得生成确定结论。
+
+## 2026-07-26：Slice 12 冻结 MVP 收口与实现前边界
+
+- 决策：新增 `spec/23-product-outbound-market-analysis-mvp-freeze.md`，把 Slice 1-11 收口为 MVP-0 防错闭环、MVP-1 安全交付骨架、MVP-2 Skill 入口接入、MVP-3 真实来源采集四层，并冻结第一轮优先 Code Slice A-C。
+- 原因：产品出海市场分析的最大风险不是“信息少”，而是把候选、摘要、Pack、网页标签、测试报告、趋势、价格或物流线索升级为事实结论；实现必须先拦错。
+- 后果：下一步只有两条清晰路径：先提交 Slice 1-12 文档，或在用户明确同意后开始 Code Slice A-C；第一轮不接 Google Trends、关税 API、真实法规库或 Source Pack registry。
