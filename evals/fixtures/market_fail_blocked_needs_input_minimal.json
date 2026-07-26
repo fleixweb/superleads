@@ -1,0 +1,103 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/runs/0/delivery_status",
+      "value": "blocked_needs_input"
+    },
+    {
+      "op": "replace",
+      "path": "/runs/0/execution_mode",
+      "value": "planning_only"
+    },
+    {
+      "op": "replace",
+      "path": "/runs/0/not_executed_modules",
+      "value": [
+        "google_trends",
+        "import_tax",
+        "logistics"
+      ]
+    },
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-blocked-google-trends",
+        "sheet_name": "长期需求与搜索趋势",
+        "row_topic": "Google Trends 未执行",
+        "user_visible_cells": {
+          "关键词/Topic": "未执行",
+          "趋势状态": "未执行",
+          "指标口径": "相对搜索兴趣，不是销量",
+          "限制说明": "本轮未采集，不能形成趋势结论"
+        },
+        "status": "not_executed",
+        "evidence_card_ids": [],
+        "gap_ids": [
+          "gap-xh-google-trends"
+        ],
+        "conflict_ids": [],
+        "module_key": "google_trends",
+        "boundary_rule_ids": [
+          "EB-TRENDS-01"
+        ],
+        "internal_refs_hidden": true
+      }
+    },
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-blocked-import-tax",
+        "sheet_name": "进口税费",
+        "row_topic": "进口税费未执行",
+        "user_visible_cells": {
+          "目的国": "美国",
+          "候选 HS/HTS": "8507.60.00",
+          "税率/金额": "待专业确认",
+          "适用条件": "最终税率和税基待确认",
+          "限制说明": "本轮未采集，不写最终税率"
+        },
+        "status": "not_executed",
+        "evidence_card_ids": [],
+        "gap_ids": [
+          "gap-xh-tax"
+        ],
+        "conflict_ids": [],
+        "module_key": "import_tax",
+        "boundary_rule_ids": [
+          "EB-TAX-01"
+        ],
+        "internal_refs_hidden": true
+      }
+    },
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-blocked-logistics",
+        "sheet_name": "运输方式、路线、港口与申报节点",
+        "row_topic": "物流未执行",
+        "user_visible_cells": {
+          "运输方式": "FCL/LCL/空运/快递均需按货量、包装和承运条件确认",
+          "起运节点": "待业务确认",
+          "时间口径": "未执行，本轮不提供时效结论",
+          "缺口/下一步": "订舱单、提单或出口报关单"
+        },
+        "status": "not_executed",
+        "evidence_card_ids": [],
+        "gap_ids": [
+          "gap-xh-departure-node"
+        ],
+        "conflict_ids": [],
+        "module_key": "logistics",
+        "boundary_rule_ids": [
+          "EB-LOG-01"
+        ],
+        "internal_refs_hidden": true
+      }
+    }
+  ]
+}

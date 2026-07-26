@@ -137,3 +137,16 @@
 - Code Slice A-C 已纳入提交边界；无关未跟踪目录 `skillhub-package/`、`social-card-superleads-cover/`、`social-card-superleads-trade-cover/` 仍未处理。
 - 下一步建议：Code Slice D-E，即最小 audit 门禁和 CSV/Markdown 导出。
 
+## 产品出海市场分析 Code Slice D-E 实现状态
+
+- 2026-07-26 已新增 `scripts/audit_product_market_analysis.py` 与 `scripts/export_product_market_workbook.py`，补齐 market 模块的最小审计与安全导出链路。
+- 已新增 `evals/run_product_market_analysis_evals.py`，用于独立跑 market pass / fail / blocked 样本；不会改动现有 `evals/run_evals.py` 主链路。
+- 已新增 `evals/fixtures/market_fail_blocked_needs_input_minimal.json`，用于验证 `blocked_needs_input` 分流。
+- 已新增验证记录：`docs/validation/product-market-analysis-code-slice-d-e-20260726.md`。
+- 已验证：
+  - `python3 scripts/audit_product_market_analysis.py evals/fixtures/market_pass_xingheng_minimum_boundary.json --format json` 通过，`delivery_status=ready_with_limitations`。
+  - `python3 scripts/audit_product_market_analysis.py evals/fixtures/market_fail_blocked_needs_input_minimal.json --format json` 分流为 `blocked_needs_input`。
+  - `python3 scripts/export_product_market_workbook.py evals/fixtures/market_pass_uniqlo_minimum_boundary.json --output-dir ... --format csv --markdown ... --manifest ...` 通过，12 张 CSV + Markdown + manifest 可生成。
+  - `python3 scripts/export_product_market_workbook.py evals/fixtures/market_fail_candidate_htsus_as_final_rate.json --output-dir ... --format csv` 被 audit 阶段阻断。
+  - `python3 evals/run_product_market_analysis_evals.py --suite all` 通过，`21/21`。
+- 现有 `default/deep` 主 eval 未回归：`77/77`、`623/623` 保持通过。

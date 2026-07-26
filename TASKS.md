@@ -102,6 +102,15 @@
 - 已提出 Source Pack 机制，避免国家逐一硬编码；Source Pack 只是来源入口目录，不是事实库。
 - 后续已完成 Slice 9 Source Pack 字段合同。
 
+## 产品出海市场分析：Code Slice D-E
+
+- 已新增 `scripts/audit_product_market_analysis.py`，用于最小 audit 门禁。
+- 已新增 `scripts/export_product_market_workbook.py`，用于 12 张 CSV + 可选 Markdown / manifest 的安全导出。
+- 已新增 `evals/run_product_market_analysis_evals.py`，用于独立 market suite 验收。
+- 已新增 `evals/fixtures/market_fail_blocked_needs_input_minimal.json`，用于验证 `blocked_needs_input` 分流。
+- 已新增验证记录：`docs/validation/product-market-analysis-code-slice-d-e-20260726.md`。
+- 已验证：Xing Heng / UNIQLO pass 样本可通过 audit 并导出；候选税号升级 fail 样本被 audit 阻断；独立 market suite `21/21` 通过；现有 `default/deep` 主 eval 未回归。
+
 ## 产品出海市场分析：Source Pack 字段合同 Slice 9
 
 - 已新增 `spec/20-product-outbound-market-analysis-source-pack-contract.md`。
@@ -153,4 +162,3 @@
   - `python3 evals/run_evals.py --suite deep`：`623/623`。
   - `python3 evals/run_evals.py --suite all`：`663/663`。
 - 当前下一步：继续 Code Slice D-E（audit 最小门禁 + CSV/Markdown 最小导出）。
-
