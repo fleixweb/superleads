@@ -166,3 +166,11 @@
 - Case 文件已扩展到 27 个 market case；独立 market suite 已验证 `27/27`。
 - 新增验证记录：`docs/validation/product-market-analysis-realistic-fixtures-20260726.md`。
 - 已回归：`python3 evals/run_product_market_analysis_evals.py --suite all` = `27/27`；`python3 evals/run_evals.py --suite default` = `77/77`；`deep` = `623/623`；`all` = `663/663`。下一步可提交本轮 fixture 增补；不要处理 `tmp/stage5_chillys/`。
+
+## 产品出海市场分析 Slice 13：目标国原产地证明 / COO 要求判断
+
+- 2026-07-27 已新增 `spec/24-product-outbound-market-analysis-origin-proof-requirements.md` 和 `docs/validation/product-market-analysis-origin-proof-requirements-slice13-checklist-20260727.md`。
+- 已将 Slice 13 语义同步回：`spec/10-product-outbound-market-analysis-contract.md`、`spec/13-product-outbound-market-analysis-workbook-contract.md`、`spec/14-product-outbound-market-analysis-evidence-boundary-rules.md`、`spec/15-product-outbound-market-analysis-skill-orchestration.md`、`spec/19-product-outbound-market-analysis-real-source-collection-strategy.md`、`spec/20-product-outbound-market-analysis-source-pack-contract.md`、`spec/22-product-outbound-market-analysis-end-to-end-runbook.md`。
+- 核心纠偏：COO / proof of origin 必须拆成“目标国规则是否需要”和“用户材料是否已准备”两条线；用户未提供 COO 不等于目标国不需要，Made in / origin marking 不等于 COO 文件，优惠税率 proof of origin 不得泛化为所有普通进口必需，用户 COO 不等于海关最终原产地裁定。
+- 工作簿新增 `origin_proof_requirement` 专门行语义，Source Pack 新增 `destination_origin_proof_pack` / `origin_proof_requirement` 查询组语义。
+- 本轮仍为产品设计文档，不写代码、不联网验证具体国家规则。下一步若进入代码：扩展 schema / validator / fixtures，新增 `market_origin_proof_user_material_conflated`、`market_origin_marking_conflated_with_coo`、`market_origin_preferential_overgeneralized`、`market_user_coo_promoted_to_official_ruling`、`market_origin_requirement_without_authority` 等规则。

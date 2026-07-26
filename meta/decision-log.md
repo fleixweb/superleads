@@ -110,3 +110,9 @@
 - 决策：新增 `spec/23-product-outbound-market-analysis-mvp-freeze.md`，把 Slice 1-11 收口为 MVP-0 防错闭环、MVP-1 安全交付骨架、MVP-2 Skill 入口接入、MVP-3 真实来源采集四层，并冻结第一轮优先 Code Slice A-C。
 - 原因：产品出海市场分析的最大风险不是“信息少”，而是把候选、摘要、Pack、网页标签、测试报告、趋势、价格或物流线索升级为事实结论；实现必须先拦错。
 - 后果：下一步只有两条清晰路径：先提交 Slice 1-12 文档，或在用户明确同意后开始 Code Slice A-C；第一轮不接 Google Trends、关税 API、真实法规库或 Source Pack registry。
+
+## 2026-07-27：Slice 13 冻结目标国原产地证明 / COO 要求判断
+
+- 决策：新增 `spec/24-product-outbound-market-analysis-origin-proof-requirements.md`，并把 COO / proof of origin 从“用户是否提供资料”纠偏为目的国准入、清关、税费、贸易协定和贸易救济中的独立判断项。
+- 原因：真实外贸业务里，用户是否已有 COO 不能决定目标国家/地区是否要求原产地证明；产品出海市场分析必须先按目标国官方/权威来源回答“是否需要、何时需要、接受什么文件”，再单独展示用户材料准备状态。
+- 后果：既有产品合同、工作簿合同、证据边界、Skill 分工、真实来源采集策略、Source Pack 合同和端到端 runbook 已同步 `origin_proof_requirement` 语义；后续代码实现应新增 schema / validator / pass-fail fixture，阻断“用户没给 COO => 不需要 COO”“marking => COO”“优惠 proof => 所有进口都需要”等错误升级。

@@ -171,3 +171,11 @@
 - 已新增验证记录：`docs/validation/product-market-analysis-realistic-fixtures-20260726.md`。
 - 已验证独立 market suite：`python3 evals/run_product_market_analysis_evals.py --suite all` = `27/27`。
 - 已回归通过：`python3 evals/run_product_market_analysis_evals.py --suite all` = `27/27`；`python3 evals/run_evals.py --suite default` = `77/77`；`deep` = `623/623`；`all` = `663/663`。当前下一步可提交本轮 fixture 增补。
+
+## 产品出海市场分析：Slice 13 COO / 原产地证明需求判断
+
+- 已新增 Slice 13 设计文档：`spec/24-product-outbound-market-analysis-origin-proof-requirements.md`。
+- 已新增验收清单：`docs/validation/product-market-analysis-origin-proof-requirements-slice13-checklist-20260727.md`。
+- 已同步更新既有规格：产品合同、工作簿合同、证据边界、Skill 分工、真实来源采集策略、Source Pack 字段合同、端到端 runbook。
+- 已冻结规则：目标国是否需要 COO / proof of origin 必须主动按官方/权威来源判断；用户当前是否有 COO 只是材料准备状态，不能反推法规要求。
+- 下一步代码增量建议：schema / validator / fixtures 增加 `origin_proof_requirement` 行类型、目标国要求状态、用户材料状态和对应 fail 规则。

@@ -55,7 +55,8 @@ Source Pack 不按“国家逐一手工写死”实现，而按“贸易角色 +
 | Pack 类型 | 主要用途 | 由什么触发 | 不得包含 |
 |---|---|---|---|
 | `destination_market_access_pack` | 目的国准入、认证、标签、包装、检疫、产品安全入口 | `target_country_or_region` + 产品属性触发项 | 该产品已经合规、无需认证 |
-| `destination_duty_tax_pack` | 目的国官方税则、裁定、贸易救济、进口税费入口 | `target_country_or_region` + 原产国状态 + HS 候选 | 最终税率、最终归类 |
+| `destination_duty_tax_pack` | 目的国官方税则、裁定、贸易救济、进口税费、优惠原产地 / proof of origin 入口 | `target_country_or_region` + 原产国状态 + HS 候选 | 最终税率、最终归类、COO 要求结论 |
+| `destination_origin_proof_pack` | 目的国 COO / proof of origin / rules of origin / origin marking 入口 | 目标国 + 原产国/出口国状态 + 候选 HS + 贸易优惠/贸易救济/用户询问 COO | 直接判断用户文件有效、海关最终原产地裁定 |
 | `export_country_pack` | 出口申报国海关、商务/贸易、检验检疫、出口管制入口 | `export_declaration_country` | 原产国自动等同出口国、出口许可结论 |
 | `logistics_pack` | 港口、机场、口岸、承运人、预申报、路线和运输限制入口 | 起运国/目的国/运输方式/货物属性 | 最佳路线、承诺时效、货代报价 |
 | `market_signal_pack` | Google Trends、统计、协会、公开报告、平台价格、指数/期货入口 | 目的国 + 产品名称/行业名/规格 | 销量、GMV、目标价、市场进入建议 |
@@ -128,7 +129,7 @@ QueryTemplate 用来生成可审计查询组，避免让模型自由发挥。
 |---|---|---|
 | `query_template_id` | 是 | 稳定 ID |
 | `source_pack_id` | 是 | 所属 Pack |
-| `query_group_id` | 是 | 趋势、价格、准入、税费、出口、物流、外部因素等 |
+| `query_group_id` | 是 | 趋势、价格、准入、税费、`origin_proof_requirement`、出口、物流、外部因素等 |
 | `purpose` | 是 | 为什么查，不得只写“了解市场” |
 | `required_brief_fields` | 是 | 缺这些字段时不得执行 |
 | `required_product_trigger_tags` | 否 | 如锂电、纺织、食品接触、危险品、农产品、散杂等 |
@@ -232,15 +233,29 @@ PackRouteRule 负责把 Brief 和产品属性路由到正确 Pack。
 
 | Brief / 产品条件 | 应触发的 Pack | 必须保留的边界 |
 |---|---|---|
-| 有目标国家/地区 | 目的国准入 Pack、目的国税费 Pack、市场信号 Pack | 目标国家不等于出口申报国或原产国 |
+| 有目标国家/地区 | 目的国准入 Pack、目的国税费 Pack、目的国原产地证明 Pack、市场信号 Pack | 目标国家不等于出口申报国或原产国 |
 | 有出口申报国 | 出口国 Pack | 默认中国也必须可见可改；不能由原产国自动推导 |
 | 有实际起运国/港/机场/口岸 | 物流 Pack | 起运节点未知时只能查候选节点 |
 | 有运输方式偏好或货物属性触发 | 物流 Pack、Common Rule Pack | 运输候选不等于承运可行 |
 | 有锂电、危险品、液体、粉末、磁性 | Common Rule Pack + 目的国/出口国/物流相关入口 | 缺 SDS/UN38.3/包装不得判断可出运 |
-| 有纺织、皮肤接触、儿童、食品接触 | 目的国准入 Pack + 产品原始来源 Pack | 网页成分/洗护不等于实物标签合规 |
-| 有农产品、食品、花卉、茶叶、植物/动物材料 | 目的国准入 Pack + 出口国 Pack + 物流/冷链 Pack | 未见检疫/卫生/处理文件不得写可进口 |
-| 有大宗、散杂、RoRo、超限、矿产、钢材、粮食 | 物流 Pack + 市场信号 Pack + 出口国 Pack | 指数/期货不等于现货出口价或合同价 |
+| 有纺织、皮肤接触、儿童、食品接触 | 目的国准入 Pack + 目的国原产地证明 Pack + 产品原始来源 Pack | 网页成分/洗护不等于实物标签合规；origin marking 不等于 COO |
+| 有农产品、食品、花卉、茶叶、植物/动物材料 | 目的国准入 Pack + 目的国原产地证明 Pack + 出口国 Pack + 物流/冷链 Pack | 未见检疫/卫生/处理文件不得写可进口；COO/植检/卫生证要求需分开查 |
+| 有大宗、散杂、RoRo、超限、矿产、钢材、粮食 | 物流 Pack + 市场信号 Pack + 目的国原产地证明 Pack + 出口国 Pack | 指数/期货不等于现货出口价或合同价；配额/贸易救济/原产地证明需官方核验 |
 | 用户只给产品名，无国家/贸易前提 | 只能形成资料清单和待确认 Brief | 不生成市场/税费/物流结论 |
+
+
+### 12.1 `origin_proof_requirement` 查询组触发
+
+当 Brief 或用户材料出现以下任一情况时，应生成 `origin_proof_requirement` 查询组。该查询组仍只能生成 Query Plan / 待打开来源，不能直接生成事实结论。
+
+| 触发条件 | 需要激活的入口 | 边界 |
+|---|---|---|
+| 用户问是否需要 COO / 原产地证书 | 目的国原产地证明 Pack + 目的国税费 Pack | 先查目标国规则，再展示用户材料状态 |
+| 目标国、原产国、候选 HS 已知或部分已知 | rules of origin / proof of origin 官方入口 | 条件不足时写 `unable_to_verify` 或待确认 |
+| 用户希望计算关税、优惠税率、FTA/GSP | 优惠原产地 / 协定文本 / 官方指南入口 | 申请优惠需要 proof 不等于普通进口都需要 COO |
+| 产品可能触发贸易救济、配额、制裁或敏感品类监管 | 贸易救济/配额/制裁官方入口 | 未核验前不得写适用/不适用 |
+| 用户上传 COO、发票、提单、装箱单 | 产品原始来源 Pack + 用户文件观察要求 | 用户文件只支持材料状态，不替代目标国规则 |
+| 目的国要求 Made in / origin marking | 标签/marking 官方入口 + origin proof 入口 | marking 与 COO 文件必须分开 |
 
 ## 13. Pack 与 EvidenceCard 的硬边界
 
@@ -273,7 +288,7 @@ Source Pack 不应占据用户报告正文事实区，但可以在“信息来�
 
 | 触发条件 | Source Pack 路由 | 保留边界 |
 |---|---|---|
-| 目标国为美国 | 美国目的国准入、税费、市场信号 Pack | 不能直接得出最终税率或可进口结论 |
+| 目标国为美国 | 美国目的国准入、税费、原产地证明、市场信号 Pack | 不能直接得出最终税率、COO 要求结论或可进口结论 |
 | 产品为锂电池包 | Common Rule Pack 中锂电/危险品/运输入口 | 缺 UN38.3/SDS/包装时不得判断可出运 |
 | 越南制造线索 | 若出口申报国未确认，不自动触发越南出口国 Pack 为确定事实 | 不把制造地当出口申报国 |
 | 起运港未知 | 物流 Pack 只能形成候选路线入口 | 不默认海防港、空运口岸或最佳方式 |
@@ -282,7 +297,7 @@ Source Pack 不应占据用户报告正文事实区，但可以在“信息来�
 
 | 触发条件 | Source Pack 路由 | 保留边界 |
 |---|---|---|
-| 目标国为美国 | 美国纺织标签/准入、税费、市场信号 Pack | 候选 HTSUS 不能变最终归类 |
+| 目标国为美国 | 美国纺织标签/准入、税费、原产地证明、市场信号 Pack | 候选 HTSUS 不能变最终归类；marking 不能变 COO 文件要求 |
 | Production: China | 若出口申报国确认为中国，则触发中国出口国 Pack | Production 不等于起运港或出口申报国 |
 | 棉制灯芯绒成衣线索 | 产品原始来源 Pack + 目的国标签入口 | 网页 Body/Trim 不等于全成分或实物标签合规 |
 | 起运港未知 | 物流 Pack 只能列候选路线来源 | 不默认上海、宁波、深圳等港口 |
@@ -293,6 +308,7 @@ Source Pack 不应占据用户报告正文事实区，但可以在“信息来�
 |---|---|
 | 目的国准入 Pack | 至少有一个 P0/P1 官方或主管来源入口；有适用产品触发标签；有不支持字段说明 |
 | 目的国税费 Pack | 至少有官方税则入口和贸易救济/裁定类入口；明确候选归类不等于最终税率 |
+| 目的国原产地证明 Pack | 至少有海关/官方进口指南/rules of origin/协定文本入口；明确目标国要求与用户材料状态分离 |
 | 出口国 Pack | 至少有海关/商务/贸易/检验检疫/出口管制入口中的核心入口；明确出口申报国与原产国分离 |
 | 物流 Pack | 至少区分港口/机场/口岸/承运/预申报入口；明确时效非承诺 |
 | 市场信号 Pack | 至少区分 Google Trends、统计/协会/报告、平台/价格/指数入口；明确趋势和价格口径 |
@@ -307,6 +323,7 @@ Source Pack 不应占据用户报告正文事实区，但可以在“信息来�
 |---|---|---|
 | `final_duty_rate`、`latest_tariff_rate` | 税率必须来自本次打开的官方来源和归类条件 | EvidenceCard / MatrixRow |
 | `certification_required: true/false` | 是否适用要按产品属性和法规条件判断 | EvidenceCard / Gap |
+| `origin_proof_required: true/false`、`coo_required: true/false` | COO / proof of origin 要按本次目标国官方来源、HS、原产地和触发条件判断 | EvidenceCard / MatrixRow |
 | `is_compliant`、`can_import`、`can_export` | 属于结论，不是来源入口 | MatrixRow，经证据与专业确认边界后展示 |
 | `best_route`、`guaranteed_transit_days` | 物流入口不能承诺路线或时效 | 物流 MatrixRow 的常见区间与条件 |
 | `target_price`、`recommended_price` | 产品市场分析不做价格建议 | 价格参考 MatrixRow，只列公开观察值 |
@@ -326,6 +343,11 @@ Source Pack 不应占据用户报告正文事实区，但可以在“信息来�
 | `market_pack_origin_export_confusion` | 原产国被自动当成出口申报国触发确定结论 |
 | `market_pack_stale_without_recheck` | Pack / Entry 标为需复核但仍被用于称“最新” |
 | `market_pack_query_snippet_claim` | QueryTemplate 或搜索摘要被写成已核实事实 |
+| `market_origin_proof_user_material_conflated` | 用户没给 COO 被写成目标国不需要，或目标国规则被写成用户材料缺口 |
+| `market_origin_marking_conflated_with_coo` | Made in / origin marking 被写成 COO 文件要求 |
+| `market_origin_preferential_overgeneralized` | 优惠税率 proof of origin 被泛化为所有普通进口都需要 |
+| `market_user_coo_promoted_to_official_ruling` | 用户 COO 被写成海关最终原产地裁定 |
+| `market_origin_requirement_without_authority` | 没有官方/权威来源却写确定性需要/不需要 COO |
 | `market_pack_no_official_entry` | 准入/税费/出口管制 Pack 没有官方或主管来源入口却标 active |
 | `market_pack_internal_leak` | 用户可见输出泄露本地路径、token、内部 ID 或 hash |
 
@@ -339,4 +361,5 @@ Source Pack 不应占据用户报告正文事实区，但可以在“信息来�
 | C-04 | 已明确 Brief / 产品属性如何路由到 Pack |
 | C-05 | 已明确 Pack 与 EvidenceCard / MatrixRow 的硬边界 |
 | C-06 | 已覆盖 Xing Heng / UNIQLO 两个样本的 Pack 路由边界 |
+| C-06a | 已覆盖 `origin_proof_requirement` 查询组和目标国 COO / proof of origin Pack 边界 |
 | C-07 | 已提出 future eval / audit 错误码，防止 Source Pack 被当事实库 |
