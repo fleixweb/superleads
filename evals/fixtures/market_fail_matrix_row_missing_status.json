@@ -1,0 +1,9 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "remove",
+      "path": "/matrix_rows/0/status"
+    }
+  ]
+}

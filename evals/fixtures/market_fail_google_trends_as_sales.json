@@ -1,0 +1,61 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "append",
+      "path": "/evidence_cards/-",
+      "value": {
+        "evidence_card_id": "card-google-trends-sales",
+        "run_id": "run-xh-us",
+        "brief_version_id": "brief-xh-us-v1",
+        "producer_skill": "Skill B - 市场信号",
+        "reviewer_skill": "Skill F - 交付复核",
+        "field_domain": "长期需求与搜索趋势",
+        "field_name": "Google Trends 趋势",
+        "current_value": "Google Trends 显示销量增长",
+        "status": "preliminary_reference",
+        "source_refs": [],
+        "source_type": "google_trends",
+        "source_locator": "Google Trends fixture export",
+        "source_date": "日期未见",
+        "observed_at": "2026-07-26",
+        "applicability_scope": "仅限本 fixture 中的产品版本和目标市场",
+        "supports": [
+          "Google Trends 显示销量增长"
+        ],
+        "does_not_support": [
+          "没有限制说明"
+        ],
+        "boundary_rule_ids": [
+          "EB-MKT-01"
+        ],
+        "review_status": "passed"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-google-trends-sales",
+        "sheet_name": "长期需求与搜索趋势",
+        "row_topic": "Google Trends 销量结论",
+        "user_visible_cells": {
+          "关键词/Topic": "lithium battery",
+          "趋势状态": "Google Trends 上升说明销量增长",
+          "指标口径": "Google Trends"
+        },
+        "status": "preliminary_reference",
+        "evidence_card_ids": [
+          "card-google-trends-sales"
+        ],
+        "gap_ids": [],
+        "conflict_ids": [],
+        "module_key": null,
+        "boundary_rule_ids": [
+          "EB-MKT-01"
+        ],
+        "internal_refs_hidden": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/evidence_cards/3/field_name",
+      "value": "UN38.3 / SDS 已具备"
+    },
+    {
+      "op": "replace",
+      "path": "/evidence_cards/3/supports",
+      "value": [
+        "支持 UN38.3 合规",
+        "支持 SDS 已具备"
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/3/status",
+      "value": "verified"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/3/user_visible_cells/当前证据",
+      "value": "QCVN/Vietnam Register 文件支持 UN38.3 与 SDS 已具备"
+    }
+  ]
+}

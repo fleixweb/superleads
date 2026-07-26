@@ -1,0 +1,10 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/evidence_cards/0/source_locator",
+      "value": "/home/fleix/superleads/tmp/private/product.pdf"
+    }
+  ]
+}

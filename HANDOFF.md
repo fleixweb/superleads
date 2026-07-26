@@ -1,14 +1,14 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：`7e5b720 Add customer background research export`
-- 当前工作树：有未提交变更（`.gitignore`、`docs/validation/...`、`AGENTS.md`、`README.md`、`TASKS.md`、`HANDOFF.md`）
+- 最新提交：以 `git log --oneline -1` 为准；本文件记录到 Code Slice A-C
+- 当前工作树：Code Slice A-C 已完成并纳入本次提交边界；无关未跟踪目录保留不处理。
 
 ## 已验证
 
-- 默认套件：`76/76`
-- 深度套件：`622/622`
-- 全量套件：`662/662`
+- 默认套件：`77/77`
+- 深度套件：`623/623`
+- 全量套件：`663/663`
 - `source.open` 公开 GET 烟测已恢复（`https://example.com`，`200`）
 - `tmp/stage5_chillys/chillys_stage5_real_graph.json`、`audit_delivery`、`export_workbook` 链路可用
 
@@ -124,3 +124,16 @@
 - 已新增 `docs/validation/product-market-analysis-mvp-freeze-slice12-checklist-20260726.md`，完成人工验收：第一轮优先 Code Slice A-C；需要导出时扩到 A-E；不接 Google Trends、关税 API、真实法规库或真实 Source Pack registry。
 - 已冻结首批 pass/fail fixture、错误码、验收命令顺序和提交边界；实现前建议先确认是否提交 Slice 1-12 文档。
 - 下一步：二选一——先提交 Slice 1-12 文档，或在用户明确后开始 Code Slice A-C。
+
+## 产品出海市场分析 Code Slice A-C 实现状态
+
+- 2026-07-26 已开始并完成第一轮 Code Slice A-C：schema、validator、首批 fixtures。
+- 新增 schema：`shared/schemas/product-market-analysis.schema.json`，定义最小 `ProductMarketAnalysisGraph`，包含 runs / briefs / products / trade_premises / attributes / sources / observations / evidence_cards / matrix_rows / gaps / conflicts / handoffs / state_transitions。
+- 新增 validator：`scripts/validate_product_market_analysis.py`，输出 JSON `{ ok, issue_count, issues }`，支持单文件和多文件输入，支持 fixture `extends` / `patches`。
+- 新增 case 合同：`evals/cases/product_market_analysis_cases.json`。注意：现有 `evals/run_evals.py` 暂不会执行 `market_validate` 字段；market suite 当前用独立 validator 命令验收。
+- 新增 fixtures：6 个 `market_pass_*.json`，14 个 `market_fail_*.json`。覆盖 Xing Heng / UNIQLO 最小边界、搜索摘要候选、未执行模块保留、派生 Wh、冲突保留，以及搜索摘要升级、Skill 摘要当来源、QCVN->UN38.3、候选 HTSUS->最终税率、网页标签->实物标签合规、Google Trends->销量、物流承诺、默认起运港、未执行行丢失、内部路径泄露、缺状态、价值判断、地理角色混写、Brief 过期交付。
+- 验证记录：`docs/validation/product-market-analysis-code-slice-a-c-20260726.md`。
+- 已验证：`python3 scripts/validate_product_market_analysis.py evals/fixtures/market_pass_*.json` 通过；`market_fail_*.json` 按预期 exit 1 并覆盖预期错误码；`python3 evals/run_evals.py --suite default` 为 `77/77`，`deep` 为 `623/623`，`all` 为 `663/663`。数量比上一轮各多 1 是新增 schema self-check 被纳入。
+- Code Slice A-C 已纳入提交边界；无关未跟踪目录 `skillhub-package/`、`social-card-superleads-cover/`、`social-card-superleads-trade-cover/` 仍未处理。
+- 下一步建议：Code Slice D-E，即最小 audit 门禁和 CSV/Markdown 导出。
+

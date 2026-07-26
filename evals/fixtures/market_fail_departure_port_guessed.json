@@ -1,0 +1,20 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/trade_premises/0/departure_node",
+      "value": "Haiphong Port"
+    },
+    {
+      "op": "replace",
+      "path": "/trade_premises/0/departure_node_status",
+      "value": "verified"
+    },
+    {
+      "op": "replace",
+      "path": "/trade_premises/0/departure_node_basis",
+      "value": "按越南常用港口默认海防港"
+    }
+  ]
+}

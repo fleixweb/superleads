@@ -1,0 +1,15 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/status",
+      "value": "verified"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/user_visible_cells/税率~1金额",
+      "value": "最终税率就是 3.4%"
+    }
+  ]
+}

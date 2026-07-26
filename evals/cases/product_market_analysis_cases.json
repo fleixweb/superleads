@@ -1,0 +1,128 @@
+{
+  "description": "Product outbound market analysis Code Slice A-C fixtures. Use scripts/validate_product_market_analysis.py; existing eval runner intentionally ignores market_validate fields until a dedicated suite is added.",
+  "validator": "scripts/validate_product_market_analysis.py",
+  "cases": [
+    {
+      "fixture": "market_pass_xingheng_minimum_boundary.json",
+      "market_validate": "pass"
+    },
+    {
+      "fixture": "market_pass_uniqlo_minimum_boundary.json",
+      "market_validate": "pass"
+    },
+    {
+      "fixture": "market_pass_search_summary_candidate_only.json",
+      "market_validate": "pass"
+    },
+    {
+      "fixture": "market_pass_not_executed_modules_retained.json",
+      "market_validate": "pass"
+    },
+    {
+      "fixture": "market_pass_derived_wh_with_formula.json",
+      "market_validate": "pass"
+    },
+    {
+      "fixture": "market_pass_conflict_preserved.json",
+      "market_validate": "pass"
+    },
+    {
+      "fixture": "market_fail_search_summary_as_verified.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_search_summary_promoted"
+      ]
+    },
+    {
+      "fixture": "market_fail_skill_summary_as_source.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_skill_summary_as_source"
+      ]
+    },
+    {
+      "fixture": "market_fail_qcvn_as_un38_3.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_qcvn_promoted_to_un38_3"
+      ]
+    },
+    {
+      "fixture": "market_fail_candidate_htsus_as_final_rate.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_candidate_hs_promoted_to_final"
+      ]
+    },
+    {
+      "fixture": "market_fail_web_label_as_physical_compliance.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_web_label_promoted_to_physical_compliance"
+      ]
+    },
+    {
+      "fixture": "market_fail_google_trends_as_sales.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_google_trends_sales_claim"
+      ]
+    },
+    {
+      "fixture": "market_fail_logistics_best_or_committed.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_logistics_commitment_or_best"
+      ]
+    },
+    {
+      "fixture": "market_fail_departure_port_guessed.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_guess_departure_port"
+      ]
+    },
+    {
+      "fixture": "market_fail_not_executed_rows_missing.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_not_executed_row_missing"
+      ]
+    },
+    {
+      "fixture": "market_fail_source_local_path_or_hash_leak.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_delivery_internal_leak"
+      ]
+    },
+    {
+      "fixture": "market_fail_matrix_row_missing_status.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_matrix_row_missing_status"
+      ]
+    },
+    {
+      "fixture": "market_fail_value_judgment_in_delivery.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_value_judgment"
+      ]
+    },
+    {
+      "fixture": "market_fail_geo_roles_merged.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_geo_roles_merged"
+      ]
+    },
+    {
+      "fixture": "market_fail_brief_changed_without_rerun.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_brief_stale_result_delivered"
+      ]
+    }
+  ]
+}

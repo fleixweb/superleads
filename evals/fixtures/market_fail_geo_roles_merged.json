@@ -1,0 +1,15 @@
+{
+  "extends": "market_pass_uniqlo_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/trade_premises/0/separation_check/roles_separated",
+      "value": false
+    },
+    {
+      "op": "replace",
+      "path": "/trade_premises/0/separation_check/note",
+      "value": "Production: China 因此出口申报国、原产国、起运国均相同"
+    }
+  ]
+}

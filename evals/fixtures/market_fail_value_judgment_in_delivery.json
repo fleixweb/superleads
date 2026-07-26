@@ -1,0 +1,10 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/matrix_rows/0/user_visible_cells/备注",
+      "value": "建议进入美国市场，市场潜力高，值得开发"
+    }
+  ]
+}

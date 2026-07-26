@@ -1,0 +1,225 @@
+{
+  "graph_type": "ProductMarketAnalysisGraph",
+  "runs": [
+    {
+      "run_id": "run-search-candidate",
+      "route": "product_outbound_market_analysis",
+      "created_at": "2026-07-26",
+      "updated_at": "2026-07-26",
+      "brief_id": "brief-search-candidate",
+      "brief_version_id": "brief-search-candidate-v1",
+      "default_export_declaration_country": "Vietnam",
+      "execution_mode": "sample_static",
+      "delivery_status": "ready_with_limitations",
+      "not_executed_modules": []
+    }
+  ],
+  "briefs": [
+    {
+      "brief_id": "brief-search-candidate",
+      "brief_version_id": "brief-search-candidate-v1",
+      "product_subject_id": "product-xh-48v20ah",
+      "target_country_or_region": "United States",
+      "seller_country_or_region": null,
+      "export_declaration_country": "Vietnam",
+      "origin_country_status": {
+        "country_or_region": "Vietnam",
+        "status": "business_confirmation_required",
+        "evidence_level": "L1",
+        "note": "公开页面可作制造来源线索；正式原产地和出口申报资料仍需业务文件确认。"
+      },
+      "departure_country_or_region": "Vietnam",
+      "departure_node": null,
+      "destination_node": null,
+      "trade_term": null,
+      "analysis_modules_requested": [
+        "product_profile",
+        "destination_compliance",
+        "import_tax",
+        "logistics"
+      ],
+      "business_decision_policy": "只给客观参考，不做是否进入市场或客户推荐判断。"
+    }
+  ],
+  "products": [
+    {
+      "product_subject_id": "product-xh-48v20ah",
+      "display_name": "Xing Heng 48V20Ah LiFePO4 电池包",
+      "version_identifiers": [
+        "48V20Ah",
+        "Design No. BAT001.02"
+      ],
+      "manufacturer_or_brand": "Pin Xing Heng Technology JSC",
+      "product_family": "LiFePO4 lithium-ion battery pack",
+      "components": [
+        {
+          "component_id": "component-xh-battery-pack",
+          "name": "电池包本体",
+          "role": "main_product"
+        }
+      ],
+      "profile_status": "needs_technical_docs",
+      "unknown_key_attributes": [
+        "UN38.3",
+        "SDS",
+        "包装方式",
+        "起运港",
+        "最终 HTSUS"
+      ]
+    }
+  ],
+  "trade_premises": [
+    {
+      "trade_premise_id": "trade-xh-us",
+      "seller_country_or_region": null,
+      "export_declaration_country": "Vietnam",
+      "origin_country_or_region": "Vietnam",
+      "origin_evidence_level": "L1",
+      "departure_country_or_region": "Vietnam",
+      "departure_node": null,
+      "departure_node_status": "business_confirmation_required",
+      "departure_node_basis": "实际起运港需以订舱单、提单或出口报关单确认，不能由工厂地址推断。",
+      "destination_country_or_region": "United States",
+      "destination_node": null,
+      "status": "business_confirmation_required",
+      "separation_check": {
+        "roles_separated": true,
+        "note": "出口申报国、原产国、起运节点、目的国分开记录。"
+      },
+      "evidence_card_ids": [],
+      "gap_ids": []
+    }
+  ],
+  "attributes": [],
+  "sources": [
+    {
+      "source_id": "source-search-result",
+      "canonical_url": "https://www.google.com/search",
+      "final_url": "https://www.google.com/search",
+      "publisher_relation": "first_party",
+      "provenance": "discovered_public",
+      "medium": "search_result",
+      "access_boundary": "public_web"
+    }
+  ],
+  "observations": [
+    {
+      "observation_id": "observation-search-snippet",
+      "run_id": null,
+      "source_id": "source-search-result",
+      "capability": "search.web",
+      "concrete_tool": "fixture.static_search_web",
+      "observed_at": "2026-07-26",
+      "access_status": "opened",
+      "title": "Search result snippet",
+      "raw_excerpt": "Search result snippet mentions lithium battery imports and a possible HTS path; snippet not opened.",
+      "page_or_dom_locator": "fixture-visible-excerpt",
+      "extraction_method": "fixture_static",
+      "language": "en",
+      "translation_status": "original"
+    }
+  ],
+  "evidence_cards": [
+    {
+      "evidence_card_id": "card-search-candidate",
+      "run_id": "run-search-candidate",
+      "brief_version_id": "brief-search-candidate-v1",
+      "producer_skill": "Skill B - 市场信号",
+      "reviewer_skill": "Skill F - 交付复核",
+      "field_domain": "公开市场资料与行业信息",
+      "field_name": "搜索摘要候选线索",
+      "current_value": "搜索摘要提到可能的来源入口",
+      "status": "candidate",
+      "source_refs": [
+        {
+          "source_id": "source-search-result",
+          "observation_id": "observation-search-snippet",
+          "relation": "candidate_lead"
+        }
+      ],
+      "source_type": "search_result",
+      "source_locator": "Google search result snippet",
+      "source_date": "日期未见",
+      "observed_at": "2026-07-26",
+      "applicability_scope": "仅限本 fixture 中的产品版本和目标市场",
+      "supports": [
+        "只能作为待打开线索"
+      ],
+      "does_not_support": [
+        "不能作为已核实事实",
+        "不能支持税率、认证或市场结论"
+      ],
+      "boundary_rule_ids": [
+        "E2E-03"
+      ],
+      "review_status": "passed"
+    }
+  ],
+  "matrix_rows": [
+    {
+      "matrix_row_id": "row-search-candidate",
+      "sheet_name": "公开市场资料与行业信息",
+      "row_topic": "搜索摘要只作候选线索",
+      "user_visible_cells": {
+        "来源类型": "搜索摘要",
+        "可见内容": "仅作为待打开来源入口",
+        "限制说明": "不能写成已核实事实"
+      },
+      "status": "candidate",
+      "evidence_card_ids": [
+        "card-search-candidate"
+      ],
+      "gap_ids": [],
+      "conflict_ids": [],
+      "module_key": null,
+      "boundary_rule_ids": [
+        "E2E-03"
+      ],
+      "internal_refs_hidden": true
+    }
+  ],
+  "gaps": [
+    {
+      "gap_id": "gap-search-open-source",
+      "run_id": "run-search-candidate",
+      "field_domain": "公开市场资料与行业信息",
+      "field_name": "打开原始来源",
+      "status": "source_restricted",
+      "missing_item": "待打开原始来源",
+      "requested_from": "用户/供应商/专业方",
+      "user_visible_note": "需要打开原始来源后才能形成 Observation 和 EvidenceCard。",
+      "evidence_card_ids": []
+    }
+  ],
+  "conflicts": [],
+  "handoffs": [
+    {
+      "handoff_id": "handoff-xh-brief-to-review",
+      "from_skill": "Skill A - Brief 与属性识别",
+      "to_skill": "Skill F - 交付复核",
+      "input_brief_version_id": "brief-search-candidate-v1",
+      "input_card_ids": [],
+      "output_card_ids": [
+        "card-search-candidate"
+      ],
+      "returned_to_skill": null,
+      "return_reason": null,
+      "staleness_status": "current",
+      "handoff_status": "passed"
+    }
+  ],
+  "state_transitions": [
+    {
+      "transition_id": "transition-search-to-candidate",
+      "evidence_card_id": "card-search-candidate",
+      "from_status": "search_candidate",
+      "to_status": "candidate",
+      "transition_reason": "搜索摘要只能作为候选线索。",
+      "gate": "证据来源门",
+      "allowed": true,
+      "blocking_rule_id": null,
+      "reviewed_by_skill": "Skill F - 交付复核",
+      "reviewed_at": "2026-07-26"
+    }
+  ]
+}

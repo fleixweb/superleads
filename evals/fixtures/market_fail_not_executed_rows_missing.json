@@ -1,0 +1,12 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/runs/0/not_executed_modules",
+      "value": [
+        "google_trends"
+      ]
+    }
+  ]
+}

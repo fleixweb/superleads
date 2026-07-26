@@ -1,0 +1,36 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "append",
+      "path": "/evidence_cards/-",
+      "value": {
+        "evidence_card_id": "card-skill-summary-source",
+        "run_id": "run-xh-us",
+        "brief_version_id": "brief-xh-us-v1",
+        "producer_skill": "Skill B - 市场信号",
+        "reviewer_skill": "Skill F - 交付复核",
+        "field_domain": "公开市场资料与行业信息",
+        "field_name": "Skill 摘要来源",
+        "current_value": "前序 Skill 摘要说该字段已核实",
+        "status": "verified",
+        "source_refs": [],
+        "source_type": "skill_summary",
+        "source_locator": "Skill summary from previous module",
+        "source_date": "日期未见",
+        "observed_at": "2026-07-26",
+        "applicability_scope": "仅限本 fixture 中的产品版本和目标市场",
+        "supports": [
+          "模型总结中的说法"
+        ],
+        "does_not_support": [
+          "不能替代原始来源"
+        ],
+        "boundary_rule_ids": [
+          "E2E-02"
+        ],
+        "review_status": "passed"
+      }
+    }
+  ]
+}

@@ -136,3 +136,21 @@
 - 已冻结第一轮优先 Code Slice A-C：schema、validator、首批 fixtures；若需要可扩到 A-E：audit 与 CSV/Markdown 最小导出。
 - 已明确第一轮不接 Google Trends、关税 API、真实法规库、真实 Source Pack registry，不改批量客户开发和单客背调主流程。
 - 下一步二选一：先提交 Slice 1-12 文档；或用户明确后开始 Code Slice A-C。
+
+## 产品出海市场分析：Code Slice A-C schema / validator / fixtures
+
+- 已新增 `shared/schemas/product-market-analysis.schema.json`。
+- 已新增 `scripts/validate_product_market_analysis.py`。
+- 已新增 `evals/cases/product_market_analysis_cases.json`。
+- 已新增首批 market fixtures：
+  - pass：`market_pass_xingheng_minimum_boundary.json`、`market_pass_uniqlo_minimum_boundary.json`、`market_pass_search_summary_candidate_only.json`、`market_pass_not_executed_modules_retained.json`、`market_pass_derived_wh_with_formula.json`、`market_pass_conflict_preserved.json`。
+  - fail：`market_fail_search_summary_as_verified.json`、`market_fail_skill_summary_as_source.json`、`market_fail_qcvn_as_un38_3.json`、`market_fail_candidate_htsus_as_final_rate.json`、`market_fail_web_label_as_physical_compliance.json`、`market_fail_google_trends_as_sales.json`、`market_fail_logistics_best_or_committed.json`、`market_fail_departure_port_guessed.json`、`market_fail_not_executed_rows_missing.json`、`market_fail_source_local_path_or_hash_leak.json`、`market_fail_matrix_row_missing_status.json`、`market_fail_value_judgment_in_delivery.json`、`market_fail_geo_roles_merged.json`、`market_fail_brief_changed_without_rerun.json`。
+- 已新增验证记录：`docs/validation/product-market-analysis-code-slice-a-c-20260726.md`。
+- 已验证：
+  - `python3 scripts/validate_product_market_analysis.py evals/fixtures/market_pass_*.json` 通过。
+  - `python3 scripts/validate_product_market_analysis.py evals/fixtures/market_fail_*.json` 按预期失败并覆盖预期错误码。
+  - `python3 evals/run_evals.py --suite default`：`77/77`。
+  - `python3 evals/run_evals.py --suite deep`：`623/623`。
+  - `python3 evals/run_evals.py --suite all`：`663/663`。
+- 当前下一步：继续 Code Slice D-E（audit 最小门禁 + CSV/Markdown 最小导出）。
+

@@ -1,0 +1,445 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superleads.local/schemas/product-market-analysis.schema.json",
+  "title": "Superleads Product Market Analysis Graph",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "graph_type",
+    "runs",
+    "briefs",
+    "products",
+    "trade_premises",
+    "attributes",
+    "sources",
+    "observations",
+    "evidence_cards",
+    "matrix_rows",
+    "gaps",
+    "conflicts",
+    "handoffs",
+    "state_transitions"
+  ],
+  "$defs": {
+    "Status": {
+      "type": "string",
+      "enum": [
+        "verified",
+        "derived_calculation",
+        "candidate",
+        "preliminary_reference",
+        "business_confirmation_required",
+        "technical_docs_required",
+        "physical_verification_required",
+        "professional_confirmation_required",
+        "source_restricted",
+        "not_executed",
+        "not_applicable",
+        "not_provided",
+        "conflict_pending_review"
+      ]
+    },
+    "ReviewStatus": {
+      "type": "string",
+      "enum": ["not_reviewed", "passed", "returned", "blocked", "downgraded"]
+    },
+    "OriginEvidenceLevel": {
+      "type": "string",
+      "enum": ["L0", "L1", "L2", "L3", "L4", "unknown"]
+    },
+    "StringList": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "VisibleCells": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "number", "integer", "boolean", "null"]
+      }
+    },
+    "IdRefs": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "SourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {"type": ["string", "null"]},
+        "observation_id": {"type": ["string", "null"]},
+        "relation": {
+          "type": "string",
+          "enum": ["supports", "contradicts", "contextual", "candidate_lead", "does_not_support"]
+        },
+        "note": {"type": ["string", "null"]}
+      }
+    },
+    "MarketAnalysisRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_id",
+        "route",
+        "created_at",
+        "updated_at",
+        "brief_id",
+        "brief_version_id",
+        "default_export_declaration_country",
+        "execution_mode",
+        "delivery_status",
+        "not_executed_modules"
+      ],
+      "properties": {
+        "run_id": {"type": "string", "minLength": 1},
+        "route": {"type": "string", "const": "product_outbound_market_analysis"},
+        "created_at": {"type": "string", "minLength": 1},
+        "updated_at": {"type": "string", "minLength": 1},
+        "brief_id": {"type": "string", "minLength": 1},
+        "brief_version_id": {"type": "string", "minLength": 1},
+        "default_export_declaration_country": {"type": "string", "minLength": 1},
+        "execution_mode": {
+          "type": "string",
+          "enum": ["planning_only", "sample_static", "source_opened", "full_research"]
+        },
+        "delivery_status": {
+          "type": "string",
+          "enum": ["planning_only", "draft_matrix", "ready_with_limitations", "blocked_needs_input", "needs_correction"]
+        },
+        "not_executed_modules": {"$ref": "#/$defs/StringList"}
+      }
+    },
+    "MarketAnalysisBrief": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "brief_id",
+        "brief_version_id",
+        "product_subject_id",
+        "target_country_or_region",
+        "export_declaration_country",
+        "origin_country_status",
+        "analysis_modules_requested",
+        "business_decision_policy"
+      ],
+      "properties": {
+        "brief_id": {"type": "string", "minLength": 1},
+        "brief_version_id": {"type": "string", "minLength": 1},
+        "product_subject_id": {"type": "string", "minLength": 1},
+        "target_country_or_region": {"type": "string", "minLength": 1},
+        "seller_country_or_region": {"type": ["string", "null"]},
+        "export_declaration_country": {"type": "string", "minLength": 1},
+        "origin_country_status": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "evidence_level"],
+          "properties": {
+            "country_or_region": {"type": ["string", "null"]},
+            "status": {"$ref": "#/$defs/Status"},
+            "evidence_level": {"$ref": "#/$defs/OriginEvidenceLevel"},
+            "note": {"type": ["string", "null"]}
+          }
+        },
+        "departure_country_or_region": {"type": ["string", "null"]},
+        "departure_node": {"type": ["string", "null"]},
+        "destination_node": {"type": ["string", "null"]},
+        "trade_term": {"type": ["string", "null"]},
+        "analysis_modules_requested": {"$ref": "#/$defs/StringList"},
+        "business_decision_policy": {"type": "string", "minLength": 1}
+      }
+    },
+    "ProductSubject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "product_subject_id",
+        "display_name",
+        "version_identifiers",
+        "components",
+        "profile_status",
+        "unknown_key_attributes"
+      ],
+      "properties": {
+        "product_subject_id": {"type": "string", "minLength": 1},
+        "display_name": {"type": "string", "minLength": 1},
+        "version_identifiers": {"$ref": "#/$defs/StringList"},
+        "manufacturer_or_brand": {"type": ["string", "null"]},
+        "product_family": {"type": ["string", "null"]},
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["component_id", "name"],
+            "properties": {
+              "component_id": {"type": "string", "minLength": 1},
+              "name": {"type": "string", "minLength": 1},
+              "role": {"type": ["string", "null"]}
+            }
+          }
+        },
+        "profile_status": {
+          "type": "string",
+          "enum": ["sufficient_for_planning", "needs_user_clarification", "needs_technical_docs"]
+        },
+        "unknown_key_attributes": {"$ref": "#/$defs/StringList"}
+      }
+    },
+    "TradePremise": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trade_premise_id",
+        "export_declaration_country",
+        "origin_evidence_level",
+        "destination_country_or_region",
+        "status",
+        "separation_check"
+      ],
+      "properties": {
+        "trade_premise_id": {"type": "string", "minLength": 1},
+        "seller_country_or_region": {"type": ["string", "null"]},
+        "export_declaration_country": {"type": "string", "minLength": 1},
+        "origin_country_or_region": {"type": ["string", "null"]},
+        "origin_evidence_level": {"$ref": "#/$defs/OriginEvidenceLevel"},
+        "departure_country_or_region": {"type": ["string", "null"]},
+        "departure_node": {"type": ["string", "null"]},
+        "departure_node_status": {"$ref": "#/$defs/Status"},
+        "departure_node_basis": {"type": ["string", "null"]},
+        "destination_country_or_region": {"type": "string", "minLength": 1},
+        "destination_node": {"type": ["string", "null"]},
+        "status": {"$ref": "#/$defs/Status"},
+        "separation_check": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["roles_separated"],
+          "properties": {
+            "roles_separated": {"type": "boolean"},
+            "note": {"type": ["string", "null"]}
+          }
+        },
+        "evidence_card_ids": {"$ref": "#/$defs/IdRefs"},
+        "gap_ids": {"$ref": "#/$defs/IdRefs"}
+      }
+    },
+    "ProductAttributeRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attribute_id",
+        "product_subject_id",
+        "component_scope",
+        "attribute_family",
+        "attribute_name",
+        "value",
+        "status",
+        "trigger_paths",
+        "evidence_card_ids"
+      ],
+      "properties": {
+        "attribute_id": {"type": "string", "minLength": 1},
+        "product_subject_id": {"type": "string", "minLength": 1},
+        "component_scope": {"type": "string", "minLength": 1},
+        "attribute_family": {"type": "string", "minLength": 1},
+        "attribute_name": {"type": "string", "minLength": 1},
+        "value": {"type": ["string", "number", "integer", "boolean", "null"]},
+        "unit": {"type": ["string", "null"]},
+        "status": {"$ref": "#/$defs/Status"},
+        "trigger_paths": {"$ref": "#/$defs/StringList"},
+        "evidence_card_ids": {"$ref": "#/$defs/IdRefs"},
+        "gap_ids": {"$ref": "#/$defs/IdRefs"}
+      }
+    },
+    "EvidenceCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_card_id",
+        "run_id",
+        "brief_version_id",
+        "producer_skill",
+        "field_domain",
+        "field_name",
+        "current_value",
+        "status",
+        "source_refs",
+        "source_type",
+        "source_locator",
+        "source_date",
+        "observed_at",
+        "applicability_scope",
+        "supports",
+        "does_not_support",
+        "boundary_rule_ids",
+        "review_status"
+      ],
+      "properties": {
+        "evidence_card_id": {"type": "string", "minLength": 1},
+        "run_id": {"type": "string", "minLength": 1},
+        "brief_version_id": {"type": "string", "minLength": 1},
+        "producer_skill": {"type": "string", "minLength": 1},
+        "reviewer_skill": {"type": ["string", "null"]},
+        "field_domain": {"type": "string", "minLength": 1},
+        "field_name": {"type": "string", "minLength": 1},
+        "current_value": {"type": ["string", "number", "integer", "boolean", "null"]},
+        "status": {"$ref": "#/$defs/Status"},
+        "source_refs": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/SourceRef"}
+        },
+        "source_type": {"type": "string", "minLength": 1},
+        "source_locator": {"type": "string", "minLength": 1},
+        "source_date": {"type": "string", "minLength": 1},
+        "observed_at": {"type": "string", "minLength": 1},
+        "applicability_scope": {"type": "string", "minLength": 1},
+        "supports": {"$ref": "#/$defs/StringList"},
+        "does_not_support": {"$ref": "#/$defs/StringList"},
+        "derived_from_card_ids": {"$ref": "#/$defs/IdRefs"},
+        "formula_text": {"type": ["string", "null"]},
+        "gap_ids": {"$ref": "#/$defs/IdRefs"},
+        "boundary_rule_ids": {"$ref": "#/$defs/IdRefs"},
+        "review_status": {"$ref": "#/$defs/ReviewStatus"}
+      }
+    },
+    "MatrixRowRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "matrix_row_id",
+        "sheet_name",
+        "row_topic",
+        "user_visible_cells",
+        "status",
+        "boundary_rule_ids",
+        "internal_refs_hidden"
+      ],
+      "properties": {
+        "matrix_row_id": {"type": "string", "minLength": 1},
+        "sheet_name": {
+          "type": "string",
+          "enum": [
+            "市场事实总览",
+            "产品档案与触发项",
+            "长期需求与搜索趋势",
+            "公开市场资料与行业信息",
+            "线上市场与价格参考",
+            "季节、节日与销售窗口",
+            "产品准入与合规要求",
+            "进口税费",
+            "出口国要求",
+            "运输方式、路线、港口与申报节点",
+            "近期外部因素",
+            "信息来源与待确认事项"
+          ]
+        },
+        "row_topic": {"type": "string", "minLength": 1},
+        "user_visible_cells": {"$ref": "#/$defs/VisibleCells"},
+        "status": {"$ref": "#/$defs/Status"},
+        "evidence_card_ids": {"$ref": "#/$defs/IdRefs"},
+        "gap_ids": {"$ref": "#/$defs/IdRefs"},
+        "conflict_ids": {"$ref": "#/$defs/IdRefs"},
+        "module_key": {"type": ["string", "null"]},
+        "boundary_rule_ids": {"$ref": "#/$defs/IdRefs"},
+        "internal_refs_hidden": {"type": "boolean"}
+      }
+    },
+    "GapRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gap_id", "run_id", "field_domain", "field_name", "status", "missing_item", "user_visible_note"],
+      "properties": {
+        "gap_id": {"type": "string", "minLength": 1},
+        "run_id": {"type": "string", "minLength": 1},
+        "field_domain": {"type": "string", "minLength": 1},
+        "field_name": {"type": "string", "minLength": 1},
+        "status": {"$ref": "#/$defs/Status"},
+        "missing_item": {"type": "string", "minLength": 1},
+        "requested_from": {"type": ["string", "null"]},
+        "user_visible_note": {"type": "string", "minLength": 1},
+        "evidence_card_ids": {"$ref": "#/$defs/IdRefs"}
+      }
+    },
+    "ConflictRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["conflict_id", "run_id", "field_domain", "field_name", "status", "evidence_card_ids", "summary"],
+      "properties": {
+        "conflict_id": {"type": "string", "minLength": 1},
+        "run_id": {"type": "string", "minLength": 1},
+        "field_domain": {"type": "string", "minLength": 1},
+        "field_name": {"type": "string", "minLength": 1},
+        "status": {"$ref": "#/$defs/Status"},
+        "evidence_card_ids": {"$ref": "#/$defs/IdRefs"},
+        "summary": {"type": "string", "minLength": 1}
+      }
+    },
+    "SkillHandoffRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "handoff_id",
+        "from_skill",
+        "to_skill",
+        "input_brief_version_id",
+        "input_card_ids",
+        "output_card_ids",
+        "staleness_status",
+        "handoff_status"
+      ],
+      "properties": {
+        "handoff_id": {"type": "string", "minLength": 1},
+        "from_skill": {"type": "string", "minLength": 1},
+        "to_skill": {"type": "string", "minLength": 1},
+        "input_brief_version_id": {"type": "string", "minLength": 1},
+        "input_card_ids": {"$ref": "#/$defs/IdRefs"},
+        "output_card_ids": {"$ref": "#/$defs/IdRefs"},
+        "returned_to_skill": {"type": ["string", "null"]},
+        "return_reason": {"type": ["string", "null"]},
+        "staleness_status": {"type": "string", "enum": ["current", "stale_due_to_brief_change", "requires_rerun"]},
+        "handoff_status": {"type": "string", "enum": ["passed", "returned", "blocked", "downgraded", "not_executed"]}
+      }
+    },
+    "StateTransitionRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transition_id",
+        "evidence_card_id",
+        "from_status",
+        "to_status",
+        "transition_reason",
+        "gate",
+        "allowed",
+        "reviewed_by_skill",
+        "reviewed_at"
+      ],
+      "properties": {
+        "transition_id": {"type": "string", "minLength": 1},
+        "evidence_card_id": {"type": "string", "minLength": 1},
+        "from_status": {"type": "string", "minLength": 1},
+        "to_status": {"type": "string", "minLength": 1},
+        "transition_reason": {"type": "string", "minLength": 1},
+        "gate": {"type": "string", "minLength": 1},
+        "allowed": {"type": "boolean"},
+        "blocking_rule_id": {"type": ["string", "null"]},
+        "reviewed_by_skill": {"type": "string", "minLength": 1},
+        "reviewed_at": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "properties": {
+    "graph_type": {"type": "string", "const": "ProductMarketAnalysisGraph"},
+    "runs": {"type": "array", "items": {"$ref": "#/$defs/MarketAnalysisRun"}},
+    "briefs": {"type": "array", "items": {"$ref": "#/$defs/MarketAnalysisBrief"}},
+    "products": {"type": "array", "items": {"$ref": "#/$defs/ProductSubject"}},
+    "trade_premises": {"type": "array", "items": {"$ref": "#/$defs/TradePremise"}},
+    "attributes": {"type": "array", "items": {"$ref": "#/$defs/ProductAttributeRecord"}},
+    "sources": {"type": "array", "items": {"$ref": "source-observation.schema.json#/$defs/Source"}},
+    "observations": {"type": "array", "items": {"$ref": "source-observation.schema.json#/$defs/Observation"}},
+    "evidence_cards": {"type": "array", "items": {"$ref": "#/$defs/EvidenceCard"}},
+    "matrix_rows": {"type": "array", "items": {"$ref": "#/$defs/MatrixRowRecord"}},
+    "gaps": {"type": "array", "items": {"$ref": "#/$defs/GapRecord"}},
+    "conflicts": {"type": "array", "items": {"$ref": "#/$defs/ConflictRecord"}},
+    "handoffs": {"type": "array", "items": {"$ref": "#/$defs/SkillHandoffRecord"}},
+    "state_transitions": {"type": "array", "items": {"$ref": "#/$defs/StateTransitionRecord"}}
+  }
+}

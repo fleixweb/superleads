@@ -1,0 +1,20 @@
+{
+  "extends": "market_pass_uniqlo_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/matrix_rows/2/status",
+      "value": "verified"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/2/user_visible_cells/当前证据",
+      "value": "网页标签显示，实物标签已合规"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/2/user_visible_cells/禁止升级",
+      "value": "标签已完全合规"
+    }
+  ]
+}

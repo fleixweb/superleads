@@ -1,0 +1,22 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/evidence_cards/4/brief_version_id",
+      "value": "brief-xh-us-v0"
+    },
+    {
+      "op": "replace",
+      "path": "/handoffs/0/staleness_status",
+      "value": "stale_due_to_brief_change"
+    },
+    {
+      "op": "replace",
+      "path": "/handoffs/0/output_card_ids",
+      "value": [
+        "card-xh-htsus-candidate"
+      ]
+    }
+  ]
+}

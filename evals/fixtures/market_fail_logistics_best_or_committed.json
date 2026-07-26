@@ -1,0 +1,20 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/matrix_rows/6/status",
+      "value": "verified"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/6/user_visible_cells/运输方式",
+      "value": "最佳运输方式为海运拼箱"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/6/user_visible_cells/时间口径",
+      "value": "承诺交期 18 天，保证时效"
+    }
+  ]
+}
