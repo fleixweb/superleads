@@ -1,0 +1,931 @@
+{
+  "graph_type": "ProductMarketAnalysisGraph",
+  "runs": [
+    {
+      "run_id": "run-tn-us",
+      "route": "product_outbound_market_analysis",
+      "created_at": "2026-07-26",
+      "updated_at": "2026-07-26",
+      "brief_id": "brief-tn-us",
+      "brief_version_id": "brief-tn-us-v1",
+      "default_export_declaration_country": "Vietnam",
+      "execution_mode": "sample_static",
+      "delivery_status": "ready_with_limitations",
+      "not_executed_modules": [
+        "google_trends",
+        "online_price",
+        "season_holiday",
+        "external_factors"
+      ]
+    }
+  ],
+  "briefs": [
+    {
+      "brief_id": "brief-tn-us",
+      "brief_version_id": "brief-tn-us-v1",
+      "product_subject_id": "product-tn-tmlin-4810s1",
+      "target_country_or_region": "United States",
+      "seller_country_or_region": null,
+      "export_declaration_country": "Vietnam",
+      "origin_country_status": {
+        "country_or_region": "Vietnam",
+        "status": "business_confirmation_required",
+        "evidence_level": "L1",
+        "note": "官网有越南工厂线索，但未见 TMLiN-4810S1 的 SKU 级原产地证明。"
+      },
+      "departure_country_or_region": "Vietnam",
+      "departure_node": null,
+      "destination_node": null,
+      "trade_term": null,
+      "analysis_modules_requested": [
+        "product_profile",
+        "google_trends",
+        "online_price",
+        "season_holiday",
+        "destination_compliance",
+        "import_tax",
+        "logistics",
+        "external_factors"
+      ],
+      "business_decision_policy": "只给客观参考，不做是否进入市场或客户推荐判断。"
+    }
+  ],
+  "products": [
+    {
+      "product_subject_id": "product-tn-tmlin-4810s1",
+      "display_name": "Tianneng TMLiN-4810S1 NCM motive lithium battery",
+      "version_identifiers": [
+        "TMLiN-4810S1",
+        "48V10Ah"
+      ],
+      "manufacturer_or_brand": "Tianneng",
+      "product_family": "TMLiN Series motive lithium battery",
+      "components": [
+        {
+          "component_id": "component-tn-battery",
+          "name": "动力锂电池本体",
+          "role": "main_product"
+        }
+      ],
+      "profile_status": "needs_technical_docs",
+      "unknown_key_attributes": [
+        "SKU 级原产地",
+        "UN38.3",
+        "SDS/MSDS",
+        "包装方式",
+        "UN 编号运输情形",
+        "实际起运港",
+        "最终 HS/HTS"
+      ]
+    }
+  ],
+  "trade_premises": [
+    {
+      "trade_premise_id": "trade-tn-us",
+      "seller_country_or_region": null,
+      "export_declaration_country": "Vietnam",
+      "origin_country_or_region": "Vietnam",
+      "origin_evidence_level": "L1",
+      "departure_country_or_region": "Vietnam",
+      "departure_node": null,
+      "departure_node_status": "business_confirmation_required",
+      "departure_node_basis": "越南工厂开业新闻只能说明工厂存在，不能推出该 SKU 的原产地、出口申报国或具体起运港。",
+      "destination_country_or_region": "United States",
+      "destination_node": null,
+      "status": "business_confirmation_required",
+      "separation_check": {
+        "roles_separated": true,
+        "note": "出口申报国、原产国线索、实际起运节点和目的国分开记录。"
+      },
+      "evidence_card_ids": [
+        "card-tn-vietnam-factory-boundary"
+      ],
+      "gap_ids": [
+        "gap-tn-origin-doc",
+        "gap-tn-departure-node"
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "attribute_id": "attribute-tn-voltage",
+      "product_subject_id": "product-tn-tmlin-4810s1",
+      "component_scope": "动力锂电池本体",
+      "attribute_family": "电气与运输触发",
+      "attribute_name": "额定电压",
+      "value": "48 V",
+      "unit": "V",
+      "status": "verified",
+      "trigger_paths": [
+        "锂电运输核验",
+        "危险品/电池资料核验"
+      ],
+      "evidence_card_ids": [
+        "card-tn-voltage-capacity"
+      ],
+      "gap_ids": []
+    },
+    {
+      "attribute_id": "attribute-tn-capacity",
+      "product_subject_id": "product-tn-tmlin-4810s1",
+      "component_scope": "动力锂电池本体",
+      "attribute_family": "电气与运输触发",
+      "attribute_name": "额定容量",
+      "value": "10 Ah",
+      "unit": "Ah",
+      "status": "verified",
+      "trigger_paths": [
+        "锂电运输核验",
+        "危险品/电池资料核验"
+      ],
+      "evidence_card_ids": [
+        "card-tn-voltage-capacity"
+      ],
+      "gap_ids": []
+    },
+    {
+      "attribute_id": "attribute-tn-wh",
+      "product_subject_id": "product-tn-tmlin-4810s1",
+      "component_scope": "动力锂电池本体",
+      "attribute_family": "电气与运输触发",
+      "attribute_name": "Wh",
+      "value": "480 Wh",
+      "unit": "Wh",
+      "status": "derived_calculation",
+      "trigger_paths": [
+        "锂电运输核验",
+        "危险品/电池资料核验"
+      ],
+      "evidence_card_ids": [
+        "card-tn-wh"
+      ],
+      "gap_ids": []
+    },
+    {
+      "attribute_id": "attribute-tn-weight",
+      "product_subject_id": "product-tn-tmlin-4810s1",
+      "component_scope": "动力锂电池本体",
+      "attribute_family": "电气与运输触发",
+      "attribute_name": "重量",
+      "value": "4 kg ±5%",
+      "unit": "kg",
+      "status": "verified",
+      "trigger_paths": [
+        "锂电运输核验",
+        "危险品/电池资料核验"
+      ],
+      "evidence_card_ids": [
+        "card-tn-model"
+      ],
+      "gap_ids": []
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "source-tn-brochure",
+      "canonical_url": "https://www.tiannengglobal.com/uploadfile/file/20230404/1680577838359862.pdf",
+      "final_url": "https://www.tiannengglobal.com/uploadfile/file/20230404/1680577838359862.pdf",
+      "publisher_relation": "first_party",
+      "provenance": "user_provided",
+      "medium": "document",
+      "access_boundary": "user_supplied_public_copy",
+      "material_role": "published_source_copy",
+      "artifact_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "artifact_name": "XMT-ENG-vol-36-Catalog-for-Web-sample-material.pdf",
+      "artifact_media_type": "application/pdf"
+    },
+    {
+      "source_id": "source-tn-vietnam-news",
+      "canonical_url": "https://www.tiannengglobal.com/Company_News/91",
+      "final_url": "https://www.tiannengglobal.com/Company_News/91",
+      "publisher_relation": "first_party",
+      "provenance": "discovered_public",
+      "medium": "website",
+      "access_boundary": "public_web"
+    },
+    {
+      "source_id": "source-tn-company-intro",
+      "canonical_url": "https://www.tiannengglobal.com/about/Top_Battery_Company.html",
+      "final_url": "https://www.tiannengglobal.com/about/Top_Battery_Company.html",
+      "publisher_relation": "first_party",
+      "provenance": "discovered_public",
+      "medium": "website",
+      "access_boundary": "public_web"
+    },
+    {
+      "source_id": "source-us-49cfr-173185",
+      "canonical_url": "https://www.ecfr.gov/current/title-49/section-173.185",
+      "final_url": "https://www.ecfr.gov/current/title-49/section-173.185",
+      "publisher_relation": "first_party",
+      "provenance": "discovered_public",
+      "medium": "website",
+      "access_boundary": "public_web"
+    },
+    {
+      "source_id": "source-us-hts",
+      "canonical_url": "https://hts.usitc.gov/",
+      "final_url": "https://hts.usitc.gov/",
+      "publisher_relation": "first_party",
+      "provenance": "discovered_public",
+      "medium": "website",
+      "access_boundary": "public_web"
+    }
+  ],
+  "observations": [
+    {
+      "observation_id": "observation-tn-brochure-spec",
+      "run_id": null,
+      "source_id": "source-tn-brochure",
+      "capability": "document.extract",
+      "concrete_tool": "fixture.static_document_extract",
+      "observed_at": "2026-07-26",
+      "access_status": "opened",
+      "title": "Tianneng lithium-ion battery product brochure",
+      "raw_excerpt": "TMLiN-4810S1; 48 V; 10 Ah; 370 x 110 x 75 mm; 4 kg ±5%; recommended motor power <=350 W; NCM Material Battery for Motive.",
+      "page_or_dom_locator": "fixture-visible-excerpt p.12",
+      "extraction_method": "fixture_static",
+      "language": "en",
+      "translation_status": "original",
+      "content_hash": "fixture_market_pass_tianneng_lithium_realistic_boundary_0"
+    },
+    {
+      "observation_id": "observation-tn-vietnam-factory",
+      "run_id": null,
+      "source_id": "source-tn-vietnam-news",
+      "capability": "source.open",
+      "concrete_tool": "fixture.static_source_open",
+      "observed_at": "2026-07-26",
+      "access_status": "opened",
+      "title": "Tianneng Vietnam Factory Grand Opening",
+      "raw_excerpt": "Tianneng public news describes Vietnam factory opening, but this observation is not SKU-level origin evidence for TMLiN-4810S1.",
+      "page_or_dom_locator": "fixture-visible-excerpt",
+      "extraction_method": "fixture_static",
+      "language": "en",
+      "translation_status": "original",
+      "content_hash": null
+    },
+    {
+      "observation_id": "observation-tn-49cfr-173185",
+      "run_id": null,
+      "source_id": "source-us-49cfr-173185",
+      "capability": "source.open",
+      "concrete_tool": "fixture.static_source_open",
+      "observed_at": "2026-07-26",
+      "access_status": "opened",
+      "title": "49 CFR 173.185 lithium cells and batteries",
+      "raw_excerpt": "Lithium cells and batteries transport requirements depend on UN tests, packaging, state of charge and shipping configuration.",
+      "page_or_dom_locator": "fixture-visible-excerpt",
+      "extraction_method": "fixture_static",
+      "language": "en",
+      "translation_status": "original",
+      "content_hash": null
+    },
+    {
+      "observation_id": "observation-tn-us-hts",
+      "run_id": null,
+      "source_id": "source-us-hts",
+      "capability": "source.open",
+      "concrete_tool": "fixture.static_source_open",
+      "observed_at": "2026-07-26",
+      "access_status": "opened",
+      "title": "HTS candidate path",
+      "raw_excerpt": "HTS heading 8507.60 covers lithium-ion accumulators; final 10-digit statistical suffix and applicable duty require declaration-time confirmation.",
+      "page_or_dom_locator": "fixture-visible-excerpt",
+      "extraction_method": "fixture_static",
+      "language": "en",
+      "translation_status": "original",
+      "content_hash": null
+    }
+  ],
+  "evidence_cards": [
+    {
+      "evidence_card_id": "card-tn-model",
+      "run_id": "run-tn-us",
+      "brief_version_id": "brief-tn-us-v1",
+      "producer_skill": "Skill A - Brief 与属性识别",
+      "reviewer_skill": "Skill F - 交付复核",
+      "field_domain": "产品属性",
+      "field_name": "产品版本",
+      "current_value": "TMLiN-4810S1",
+      "status": "verified",
+      "source_refs": [
+        {
+          "source_id": "source-tn-brochure",
+          "observation_id": "observation-tn-brochure-spec",
+          "relation": "supports"
+        }
+      ],
+      "source_type": "product_brochure",
+      "source_locator": "Tianneng lithium-ion battery brochure p.12",
+      "source_date": "日期未见",
+      "observed_at": "2026-07-26",
+      "applicability_scope": "仅限本 fixture 中的产品版本、公开来源日期和目标市场",
+      "supports": [
+        "支持产品版本与基础技术参数"
+      ],
+      "does_not_support": [
+        "不支持 SKU 级原产地、UN38.3、SDS 或最终 HS/HTS 结论"
+      ],
+      "boundary_rule_ids": [
+        "EB-PROD-01"
+      ],
+      "review_status": "passed"
+    },
+    {
+      "evidence_card_id": "card-tn-voltage-capacity",
+      "run_id": "run-tn-us",
+      "brief_version_id": "brief-tn-us-v1",
+      "producer_skill": "Skill A - Brief 与属性识别",
+      "reviewer_skill": "Skill F - 交付复核",
+      "field_domain": "产品属性",
+      "field_name": "额定电压/容量",
+      "current_value": "48 V / 10 Ah",
+      "status": "verified",
+      "source_refs": [
+        {
+          "source_id": "source-tn-brochure",
+          "observation_id": "observation-tn-brochure-spec",
+          "relation": "supports"
+        }
+      ],
+      "source_type": "product_brochure",
+      "source_locator": "Tianneng lithium-ion battery brochure p.12",
+      "source_date": "日期未见",
+      "observed_at": "2026-07-26",
+      "applicability_scope": "仅限本 fixture 中的产品版本、公开来源日期和目标市场",
+      "supports": [
+        "支持 48 V 与 10 Ah"
+      ],
+      "does_not_support": [
+        "不支持运输认证或危险品包装结论"
+      ],
+      "boundary_rule_ids": [
+        "EB-PROD-01"
+      ],
+      "review_status": "passed"
+    },
+    {
+      "evidence_card_id": "card-tn-wh",
+      "run_id": "run-tn-us",
+      "brief_version_id": "brief-tn-us-v1",
+      "producer_skill": "Skill A - Brief 与属性识别",
+      "reviewer_skill": "Skill F - 交付复核",
+      "field_domain": "产品属性",
+      "field_name": "Wh 派生值",
+      "current_value": "480 Wh",
+      "status": "derived_calculation",
+      "source_refs": [
+        {
+          "source_id": "source-tn-brochure",
+          "observation_id": "observation-tn-brochure-spec",
+          "relation": "supports"
+        }
+      ],
+      "source_type": "derived_calculation",
+      "source_locator": "48 V × 10 Ah fixture formula",
+      "source_date": "日期未见",
+      "observed_at": "2026-07-26",
+      "applicability_scope": "仅限本 fixture 中的产品版本、公开来源日期和目标市场",
+      "supports": [
+        "480 Wh = 48 V × 10 Ah"
+      ],
+      "does_not_support": [
+        "不能替代厂商标注 Wh、UN38.3、SDS 或包装文件"
+      ],
+      "boundary_rule_ids": [
+        "EB-LIB-01"
+      ],
+      "review_status": "passed"
+    },
+    {
+      "evidence_card_id": "card-tn-vietnam-factory-boundary",
+      "run_id": "run-tn-us",
+      "brief_version_id": "brief-tn-us-v1",
+      "producer_skill": "Skill A - Brief 与属性识别",
+      "reviewer_skill": "Skill F - 交付复核",
+      "field_domain": "原产地与贸易前提",
+      "field_name": "越南工厂线索边界",
+      "current_value": "官网新闻显示越南工厂线索，未见 SKU 级原产声明",
+      "status": "business_confirmation_required",
+      "source_refs": [
+        {
+          "source_id": "source-tn-vietnam-news",
+          "observation_id": "observation-tn-vietnam-factory",
+          "relation": "contextual"
+        }
+      ],
+      "source_type": "company_news",
+      "source_locator": "Tianneng Vietnam factory news",
+      "source_date": "日期未见",
+      "observed_at": "2026-07-26",
+      "applicability_scope": "仅限本 fixture 中的产品版本、公开来源日期和目标市场",
+      "supports": [
+        "支持越南生产基地存在性线索"
+      ],
+      "does_not_support": [
+        "不能证明 TMLiN-4810S1 的 SKU 级原产地",
+        "不能推出起运港"
+      ],
+      "boundary_rule_ids": [
+        "EB-ORI-02"
+      ],
+      "review_status": "passed"
+    },
+    {
+      "evidence_card_id": "card-tn-lithium-transport-boundary",
+      "run_id": "run-tn-us",
+      "brief_version_id": "brief-tn-us-v1",
+      "producer_skill": "Skill D - 物流与合规",
+      "reviewer_skill": "Skill F - 交付复核",
+      "field_domain": "运输方式、路线、港口与申报节点",
+      "field_name": "锂电运输资料边界",
+      "current_value": "公开目录未见 UN38.3/SDS/包装资料",
+      "status": "technical_docs_required",
+      "source_refs": [
+        {
+          "source_id": "source-us-49cfr-173185",
+          "observation_id": "observation-tn-49cfr-173185",
+          "relation": "contextual"
+        }
+      ],
+      "source_type": "regulation",
+      "source_locator": "49 CFR 173.185 context",
+      "source_date": "日期未见",
+      "observed_at": "2026-07-26",
+      "applicability_scope": "仅限本 fixture 中的产品版本、公开来源日期和目标市场",
+      "supports": [
+        "支持锂电运输需要按具体电池和包装情形核验"
+      ],
+      "does_not_support": [
+        "不能写普通货运输",
+        "不能写快递/空运一定可走",
+        "不能替代承运审核"
+      ],
+      "boundary_rule_ids": [
+        "EB-LOG-01"
+      ],
+      "review_status": "passed"
+    },
+    {
+      "evidence_card_id": "card-tn-htsus-candidate",
+      "run_id": "run-tn-us",
+      "brief_version_id": "brief-tn-us-v1",
+      "producer_skill": "Skill C - 税费与准入",
+      "reviewer_skill": "Skill F - 交付复核",
+      "field_domain": "进口税费",
+      "field_name": "候选 HTSUS",
+      "current_value": "8507.60.00",
+      "status": "candidate",
+      "source_refs": [
+        {
+          "source_id": "source-us-hts",
+          "observation_id": "observation-tn-us-hts",
+          "relation": "candidate_lead"
+        }
+      ],
+      "source_type": "official_tariff_reference",
+      "source_locator": "USITC HTS candidate lookup",
+      "source_date": "日期未见",
+      "observed_at": "2026-07-26",
+      "applicability_scope": "仅限本 fixture 中的产品版本、公开来源日期和目标市场",
+      "supports": [
+        "支持锂离子蓄电池方向的候选路径"
+      ],
+      "does_not_support": [
+        "不支持最终 10 位统计后缀、最终税率或应缴税额"
+      ],
+      "boundary_rule_ids": [
+        "EB-TAX-01"
+      ],
+      "review_status": "passed"
+    }
+  ],
+  "matrix_rows": [
+    {
+      "matrix_row_id": "row-tn-overview",
+      "sheet_name": "市场事实总览",
+      "row_topic": "Tianneng TMLiN-4810S1 样本总览",
+      "user_visible_cells": {
+        "样本ID": "TN-TMLIN-4810S1-US",
+        "产品名称": "Tianneng TMLiN-4810S1 NCM motive lithium battery",
+        "产品版本/型号": "TMLiN-4810S1；48V10Ah",
+        "目的国/地区": "美国",
+        "原产/制造来源": "越南工厂为公开线索，SKU 级原产地待文件确认",
+        "出口申报国": "越南为本轮默认前提，需业务确认",
+        "实际起运地": "待业务确认",
+        "关键已核实": "型号、48 V、10 Ah、尺寸、重量",
+        "关键缺口": "SKU 级原产地、UN38.3、SDS、包装方式、起运节点、最终 HS/HTS",
+        "总体状态": "可交付但有限制",
+        "备注": "只给客观参考，不做进入建议"
+      },
+      "status": "business_confirmation_required",
+      "evidence_card_ids": [
+        "card-tn-model",
+        "card-tn-voltage-capacity"
+      ],
+      "gap_ids": [
+        "gap-tn-origin-doc",
+        "gap-tn-un38",
+        "gap-tn-sds",
+        "gap-tn-packaging",
+        "gap-tn-departure-node"
+      ],
+      "conflict_ids": [],
+      "module_key": null,
+      "boundary_rule_ids": [
+        "EB-DEL-01",
+        "EB-ORI-02"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-tn-spec",
+      "sheet_name": "产品档案与触发项",
+      "row_topic": "公开目录技术参数",
+      "user_visible_cells": {
+        "样本ID": "TN-TMLIN-4810S1-US",
+        "属性族": "电气与尺寸",
+        "属性": "额定规格/重量/尺寸",
+        "当前值": "48 V；10 Ah；370 × 110 × 75 mm；4 kg ±5%",
+        "状态": "已核实",
+        "触发的核验路径": "锂电运输、危险品、包装、进口归类",
+        "来源/依据": "Tianneng lithium-ion battery brochure p.12",
+        "缺口/下一步": "补 UN38.3、SDS、包装资料"
+      },
+      "status": "verified",
+      "evidence_card_ids": [
+        "card-tn-model",
+        "card-tn-voltage-capacity"
+      ],
+      "gap_ids": [
+        "gap-tn-un38",
+        "gap-tn-sds",
+        "gap-tn-packaging"
+      ],
+      "conflict_ids": [],
+      "module_key": null,
+      "boundary_rule_ids": [
+        "EB-PROD-01"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-tn-wh",
+      "sheet_name": "产品档案与触发项",
+      "row_topic": "Wh 派生计算",
+      "user_visible_cells": {
+        "样本ID": "TN-TMLIN-4810S1-US",
+        "属性族": "电气与运输触发",
+        "属性": "Wh",
+        "当前值": "480 Wh = 48 V × 10 Ah",
+        "状态": "派生计算",
+        "触发的核验路径": "锂电运输核验；小型电池豁免边界核验",
+        "来源/依据": "48 V 与 10 Ah 来自公开目录",
+        "缺口/下一步": "派生值不能替代厂商运输文件"
+      },
+      "status": "derived_calculation",
+      "evidence_card_ids": [
+        "card-tn-wh"
+      ],
+      "gap_ids": [],
+      "conflict_ids": [],
+      "module_key": null,
+      "boundary_rule_ids": [
+        "EB-LIB-01"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-tn-origin",
+      "sheet_name": "市场事实总览",
+      "row_topic": "越南工厂线索不等于 SKU 原产地",
+      "user_visible_cells": {
+        "样本ID": "TN-TMLIN-4810S1-US",
+        "产品名称": "Tianneng TMLiN-4810S1",
+        "原产/制造来源": "官网有越南工厂线索；未见该 SKU 原产证明",
+        "出口申报国": "越南为默认前提，待业务文件确认",
+        "实际起运地": "待业务确认",
+        "总体状态": "待业务确认",
+        "备注": "工厂存在不能推出 SKU 原产地、起运港或税费结论"
+      },
+      "status": "business_confirmation_required",
+      "evidence_card_ids": [
+        "card-tn-vietnam-factory-boundary"
+      ],
+      "gap_ids": [
+        "gap-tn-origin-doc",
+        "gap-tn-departure-node"
+      ],
+      "conflict_ids": [],
+      "module_key": null,
+      "boundary_rule_ids": [
+        "EB-ORI-02",
+        "EB-GEO-01"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-tn-un38",
+      "sheet_name": "产品准入与合规要求",
+      "row_topic": "UN38.3 / SDS / 包装资料",
+      "user_visible_cells": {
+        "样本ID": "TN-TMLIN-4810S1-US",
+        "要求类别": "锂电运输资料",
+        "要求名称": "UN38.3 / SDS / 包装方式",
+        "适用条件": "锂电池单独运输、随设备或装入设备需分别判断",
+        "当前证据": "公开产品目录未见对应文件",
+        "状态": "待技术资料确认",
+        "官方/优先来源": "制造商文件、承运要求、目的国/运输法规",
+        "待补材料": "对应型号 UN38.3、SDS、包装说明",
+        "禁止升级": "不能写普通货运输，也不能写空运/快递一定可走"
+      },
+      "status": "technical_docs_required",
+      "evidence_card_ids": [
+        "card-tn-lithium-transport-boundary"
+      ],
+      "gap_ids": [
+        "gap-tn-un38",
+        "gap-tn-sds",
+        "gap-tn-packaging"
+      ],
+      "conflict_ids": [],
+      "module_key": null,
+      "boundary_rule_ids": [
+        "EB-LIB-02",
+        "EB-LOG-01"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-tn-htsus",
+      "sheet_name": "进口税费",
+      "row_topic": "候选 HTSUS",
+      "user_visible_cells": {
+        "样本ID": "TN-TMLIN-4810S1-US",
+        "目的国": "美国",
+        "候选 HS/HTS": "8507.60.00",
+        "税号描述": "锂离子蓄电池方向的候选路径",
+        "税种": "普通税/附加措施待核验",
+        "税率/金额": "待专业确认",
+        "适用条件": "最终 10 位税号、原产地、报关日、税基和贸易措施待确认",
+        "计算税基": "未执行",
+        "状态": "候选",
+        "来源/依据": "USITC HTS 候选路径",
+        "缺口/下一步": "报关专业确认最终归类和税率"
+      },
+      "status": "candidate",
+      "evidence_card_ids": [
+        "card-tn-htsus-candidate"
+      ],
+      "gap_ids": [
+        "gap-tn-final-htsus"
+      ],
+      "conflict_ids": [],
+      "module_key": null,
+      "boundary_rule_ids": [
+        "EB-TAX-01"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-tn-logistics",
+      "sheet_name": "运输方式、路线、港口与申报节点",
+      "row_topic": "锂电运输方式待承运确认",
+      "user_visible_cells": {
+        "样本ID": "TN-TMLIN-4810S1-US",
+        "运输方式": "整柜/拼箱/空运/国际快递均需按 UN38.3、SDS、包装、Wh、承运政策和货量确认",
+        "起运节点": "待业务确认",
+        "目的节点": "待业务确认",
+        "适用条件": "锂电池单独运输、随设备或装入设备情形不同",
+        "时间口径": "未执行，本轮不提供时效区间",
+        "法定预申报": "需按实际运输方式和目的国规则另行核验",
+        "操作截点": "需与货代/承运人确认",
+        "状态": "待技术资料确认",
+        "来源/依据": "公开目录 + 49 CFR 锂电运输规则口径",
+        "缺口/下一步": "补运输文件、包装和订舱资料"
+      },
+      "status": "technical_docs_required",
+      "evidence_card_ids": [
+        "card-tn-lithium-transport-boundary"
+      ],
+      "gap_ids": [
+        "gap-tn-un38",
+        "gap-tn-sds",
+        "gap-tn-packaging",
+        "gap-tn-departure-node"
+      ],
+      "conflict_ids": [],
+      "module_key": null,
+      "boundary_rule_ids": [
+        "EB-LOG-01"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-tn-trends-not-executed",
+      "sheet_name": "长期需求与搜索趋势",
+      "row_topic": "Google Trends 未执行",
+      "user_visible_cells": {
+        "样本ID": "TN-TMLIN-4810S1-US",
+        "关键词/Topic": "TMLiN-4810S1 / lithium motive battery",
+        "国家/地区": "美国",
+        "时间范围": "2004 至今未执行",
+        "趋势状态": "未执行",
+        "指标口径": "Google Trends 是相对搜索兴趣，不等于销量",
+        "数据日期": "未执行",
+        "状态": "未执行",
+        "来源/依据": "未执行",
+        "限制说明": "不能输出增长/衰减结论"
+      },
+      "status": "not_executed",
+      "evidence_card_ids": [],
+      "gap_ids": [],
+      "conflict_ids": [],
+      "module_key": "google_trends",
+      "boundary_rule_ids": [
+        "EB-MKT-01"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-tn-price-not-executed",
+      "sheet_name": "线上市场与价格参考",
+      "row_topic": "线上价格未执行",
+      "user_visible_cells": {
+        "样本ID": "TN-TMLIN-4810S1-US",
+        "渠道/平台": "B2B/B2C/电商平台未执行",
+        "产品/规格": "TMLiN-4810S1",
+        "价格": "未执行",
+        "币种": "未执行",
+        "税/运费/促销状态": "未执行",
+        "观察日期": "未执行",
+        "状态": "未执行",
+        "来源URL/文件": "未执行",
+        "限制说明": "平台挂牌价也不能直接当成交价或外贸目标价"
+      },
+      "status": "not_executed",
+      "evidence_card_ids": [],
+      "gap_ids": [],
+      "conflict_ids": [],
+      "module_key": "online_price",
+      "boundary_rule_ids": [
+        "EB-PRICE-01"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-tn-season-not-executed",
+      "sheet_name": "季节、节日与销售窗口",
+      "row_topic": "节日与销售窗口未执行",
+      "user_visible_cells": {
+        "样本ID": "TN-TMLIN-4810S1-US",
+        "节点/窗口": "未执行",
+        "日期/周期": "未执行",
+        "国家/地区": "美国",
+        "适用条件": "电池产品是否具备礼品属性待业务判断",
+        "影响口径": "未执行",
+        "状态": "未执行",
+        "来源/依据": "未执行",
+        "限制说明": "不编造淡旺季或节日需求"
+      },
+      "status": "not_executed",
+      "evidence_card_ids": [],
+      "gap_ids": [],
+      "conflict_ids": [],
+      "module_key": "season_holiday",
+      "boundary_rule_ids": [
+        "EB-SEASON-01"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-tn-external-not-executed",
+      "sheet_name": "近期外部因素",
+      "row_topic": "近期外部因素未执行",
+      "user_visible_cells": {
+        "样本ID": "TN-TMLIN-4810S1-US",
+        "因素类型": "未执行",
+        "因素名称": "未执行",
+        "地区": "美国/越南",
+        "时间": "未执行",
+        "可能影响对象": "未执行",
+        "状态": "未执行",
+        "来源/依据": "未执行",
+        "限制说明": "不编造政治、战争、灾害或金融因素"
+      },
+      "status": "not_executed",
+      "evidence_card_ids": [],
+      "gap_ids": [],
+      "conflict_ids": [],
+      "module_key": "external_factors",
+      "boundary_rule_ids": [
+        "EB-EXT-01"
+      ],
+      "internal_refs_hidden": true
+    }
+  ],
+  "gaps": [
+    {
+      "gap_id": "gap-tn-origin-doc",
+      "run_id": "run-tn-us",
+      "field_domain": "原产地与贸易前提",
+      "field_name": "SKU 级原产地",
+      "status": "business_confirmation_required",
+      "missing_item": "COO、发票、装箱单或供应链原产地声明",
+      "requested_from": "用户/供应商/专业方",
+      "user_visible_note": "官网工厂新闻不能替代 TMLiN-4810S1 的原产地文件。",
+      "evidence_card_ids": []
+    },
+    {
+      "gap_id": "gap-tn-un38",
+      "run_id": "run-tn-us",
+      "field_domain": "产品准入与合规要求",
+      "field_name": "UN38.3",
+      "status": "technical_docs_required",
+      "missing_item": "对应型号 UN38.3",
+      "requested_from": "用户/供应商/专业方",
+      "user_visible_note": "公开目录未见 UN38.3，需向制造商索取对应型号、版本和签发日期的文件。",
+      "evidence_card_ids": []
+    },
+    {
+      "gap_id": "gap-tn-sds",
+      "run_id": "run-tn-us",
+      "field_domain": "产品准入与合规要求",
+      "field_name": "SDS/MSDS",
+      "status": "technical_docs_required",
+      "missing_item": "对应型号 SDS/MSDS",
+      "requested_from": "用户/供应商/专业方",
+      "user_visible_note": "公开目录未见 SDS/MSDS，不能写运输资料齐全。",
+      "evidence_card_ids": []
+    },
+    {
+      "gap_id": "gap-tn-packaging",
+      "run_id": "run-tn-us",
+      "field_domain": "运输方式、路线、港口与申报节点",
+      "field_name": "包装方式",
+      "status": "technical_docs_required",
+      "missing_item": "危险品包装说明、净重、外箱资料",
+      "requested_from": "用户/供应商/专业方",
+      "user_visible_note": "锂电运输需补包装方式、外箱和承运接受条件。",
+      "evidence_card_ids": []
+    },
+    {
+      "gap_id": "gap-tn-departure-node",
+      "run_id": "run-tn-us",
+      "field_domain": "运输方式、路线、港口与申报节点",
+      "field_name": "起运节点",
+      "status": "business_confirmation_required",
+      "missing_item": "订舱单、提单或出口报关单",
+      "requested_from": "用户/供应商/专业方",
+      "user_visible_note": "实际起运港/机场待业务文件确认，不能由越南工厂位置推断。",
+      "evidence_card_ids": []
+    },
+    {
+      "gap_id": "gap-tn-final-htsus",
+      "run_id": "run-tn-us",
+      "field_domain": "进口税费",
+      "field_name": "最终 HS/HTS / 最终税率",
+      "status": "professional_confirmation_required",
+      "missing_item": "最终 10 位税号、原产地、报关日、税基",
+      "requested_from": "用户/供应商/专业方",
+      "user_visible_note": "候选 8507.60.00 不能写成最终归类或最终税率。",
+      "evidence_card_ids": []
+    }
+  ],
+  "conflicts": [],
+  "handoffs": [
+    {
+      "handoff_id": "handoff-tn-to-review",
+      "from_skill": "Skill A - Brief 与属性识别",
+      "to_skill": "Skill F - 交付复核",
+      "input_brief_version_id": "brief-tn-us-v1",
+      "input_card_ids": [],
+      "output_card_ids": [
+        "card-tn-model",
+        "card-tn-voltage-capacity",
+        "card-tn-wh",
+        "card-tn-vietnam-factory-boundary",
+        "card-tn-lithium-transport-boundary",
+        "card-tn-htsus-candidate"
+      ],
+      "returned_to_skill": null,
+      "return_reason": null,
+      "staleness_status": "current",
+      "handoff_status": "passed"
+    }
+  ],
+  "state_transitions": [
+    {
+      "transition_id": "transition-tn-delivery",
+      "evidence_card_id": "card-tn-htsus-candidate",
+      "from_status": "candidate",
+      "to_status": "candidate",
+      "transition_reason": "候选税号保持候选，不升级最终税率。",
+      "gate": "税费证据门",
+      "allowed": true,
+      "blocking_rule_id": null,
+      "reviewed_by_skill": "Skill F - 交付复核",
+      "reviewed_at": "2026-07-26"
+    }
+  ]
+}

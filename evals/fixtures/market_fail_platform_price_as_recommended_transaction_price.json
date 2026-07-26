@@ -1,0 +1,32 @@
+{
+  "extends": "market_pass_platform_price_reference_only.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/status",
+      "value": "verified"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/user_visible_cells/限制说明",
+      "value": "零售挂牌价可作为推荐价格和外贸成交价"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/user_visible_cells/价格",
+      "value": "推荐价格 $29.90"
+    },
+    {
+      "op": "replace",
+      "path": "/evidence_cards/5/current_value",
+      "value": "UNIQLO 零售标价就是成交价，推荐价格 $29.90"
+    },
+    {
+      "op": "replace",
+      "path": "/evidence_cards/5/supports",
+      "value": [
+        "支持成交价和推荐价格"
+      ]
+    }
+  ]
+}

@@ -71,6 +71,15 @@ GOOGLE_TRENDS_SALES_PHRASES = (
     "进口量增长", "市场份额", "真实销量", "sales growth", "sales volume", "gmv", "purchase demand",
     "import volume", "market share",
 )
+PLATFORM_PRICE_MARKERS = (
+    "线上价格", "平台", "电商", "retailer", "retail", "online price", "platform price",
+    "挂牌价", "零售标价", "list price", "listing price", "b2c", "b2b",
+)
+PLATFORM_PRICE_PROMOTION_PHRASES = (
+    "成交价", "真实成交", "批发价", "外贸目标价", "目标价格", "推荐价格", "推荐报价",
+    "可按此报价", "可作为报价", "transaction price", "actual transaction", "wholesale price",
+    "target price", "recommended price", "recommended quotation",
+)
 LOGISTICS_PHRASES = (
     "最佳运输方式", "最佳路线", "承诺交期", "保证时效", "一定可以拼箱", "一定可走",
     "可直接空运", "可直接快递", "普通货运输", "best route", "best shipping method",
@@ -464,6 +473,21 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
         text = _row_text(row)
         if _contains_any(text, GOOGLE_TRENDS_MARKERS) and _contains_positive_phrase(text, GOOGLE_TRENDS_SALES_PHRASES):
             _add_issue(issues, "major", "market_google_trends_sales_claim", "Matrix row treats Google Trends as sales or demand", f"matrix_rows[{idx}]")
+
+    # Platform/retail list prices are references, not transaction prices,
+    # wholesale target prices, or recommended quotations.
+    for idx, card in enumerate(ensure_list(graph, "evidence_cards")):
+        if not isinstance(card, dict):
+            continue
+        text = _card_text(card)
+        if _contains_any(text, PLATFORM_PRICE_MARKERS) and _contains_positive_phrase(text, PLATFORM_PRICE_PROMOTION_PHRASES):
+            _add_issue(issues, "critical", "market_platform_price_promoted", "Online/platform/list price was promoted to a transaction price, wholesale target price, or recommended quotation", f"evidence_cards[{idx}]")
+    for idx, row in enumerate(ensure_list(graph, "matrix_rows")):
+        if not isinstance(row, dict):
+            continue
+        text = _row_text(row)
+        if _contains_any(text, PLATFORM_PRICE_MARKERS) and _contains_positive_phrase(text, PLATFORM_PRICE_PROMOTION_PHRASES):
+            _add_issue(issues, "critical", "market_platform_price_promoted", "Matrix row promotes online/platform/list price to a transaction price, wholesale target price, or recommended quotation", f"matrix_rows[{idx}]")
 
     # Logistics rows can describe common ranges, not best routes or commitments.
     for idx, row in enumerate(ensure_list(graph, "matrix_rows")):

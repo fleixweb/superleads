@@ -1,0 +1,45 @@
+{
+  "extends": "market_pass_tianneng_lithium_realistic_boundary.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/evidence_cards/3/current_value",
+      "value": "越南工厂新闻证明 TMLiN-4810S1 原产越南，起运港默认海防"
+    },
+    {
+      "op": "replace",
+      "path": "/evidence_cards/3/status",
+      "value": "verified"
+    },
+    {
+      "op": "replace",
+      "path": "/trade_premises/0/departure_node",
+      "value": "Haiphong"
+    },
+    {
+      "op": "replace",
+      "path": "/trade_premises/0/departure_node_status",
+      "value": "verified"
+    },
+    {
+      "op": "replace",
+      "path": "/trade_premises/0/departure_node_basis",
+      "value": "默认使用越南常用港口海防"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/3/status",
+      "value": "verified"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/3/user_visible_cells/原产~1制造来源",
+      "value": "越南工厂新闻证明该 SKU 原产越南"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/3/user_visible_cells/实际起运地",
+      "value": "默认海防港"
+    }
+  ]
+}

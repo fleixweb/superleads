@@ -1,0 +1,40 @@
+{
+  "extends": "market_pass_xm_canvas_realistic_boundary.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/matrix_rows/3/status",
+      "value": "verified"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/3/user_visible_cells/当前证据",
+      "value": "产品页 Oeko-Tex 100 文字说明 Canvas-270 已认证"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/3/user_visible_cells/禁止升级",
+      "value": "无需再核验证书覆盖范围"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/status",
+      "value": "verified"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/user_visible_cells/候选 HS~1HTS",
+      "value": "最终 HTSUS 为 5514.21.00"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/user_visible_cells/税率~1金额",
+      "value": "最终税率就是 8.1%"
+    },
+    {
+      "op": "replace",
+      "path": "/evidence_cards/6/current_value",
+      "value": "最终 HTSUS 为 5514.21.00，最终税率就是 8.1%"
+    }
+  ]
+}

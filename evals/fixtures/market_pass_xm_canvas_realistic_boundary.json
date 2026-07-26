@@ -1,0 +1,1027 @@
+{
+  "graph_type": "ProductMarketAnalysisGraph",
+  "runs": [
+    {
+      "run_id": "run-xm-us",
+      "route": "product_outbound_market_analysis",
+      "created_at": "2026-07-26",
+      "updated_at": "2026-07-26",
+      "brief_id": "brief-xm-us",
+      "brief_version_id": "brief-xm-us-v1",
+      "default_export_declaration_country": "China",
+      "execution_mode": "sample_static",
+      "delivery_status": "ready_with_limitations",
+      "not_executed_modules": [
+        "google_trends",
+        "online_price",
+        "season_holiday",
+        "external_factors"
+      ]
+    }
+  ],
+  "briefs": [
+    {
+      "brief_id": "brief-xm-us",
+      "brief_version_id": "brief-xm-us-v1",
+      "product_subject_id": "product-xm-canvas-270",
+      "target_country_or_region": "United States",
+      "seller_country_or_region": null,
+      "export_declaration_country": "China",
+      "origin_country_status": {
+        "country_or_region": "China",
+        "status": "business_confirmation_required",
+        "evidence_level": "L1",
+        "note": "官网显示中国生产/采购/出货线索，但未见 Canvas-270 SKU 级中国原产声明。"
+      },
+      "departure_country_or_region": "China",
+      "departure_node": null,
+      "destination_node": null,
+      "trade_term": null,
+      "analysis_modules_requested": [
+        "product_profile",
+        "google_trends",
+        "online_price",
+        "season_holiday",
+        "destination_compliance",
+        "import_tax",
+        "logistics",
+        "external_factors"
+      ],
+      "business_decision_policy": "只给客观参考，不做是否进入市场或客户推荐判断。"
+    }
+  ],
+  "products": [
+    {
+      "product_subject_id": "product-xm-canvas-270",
+      "display_name": "XM Textiles Canvas-270 polycotton workwear fabric",
+      "version_identifiers": [
+        "Canvas-270",
+        "65% Polyester / 35% Cotton",
+        "270 ±5 gsm"
+      ],
+      "manufacturer_or_brand": "XM Textiles",
+      "product_family": "Polycotton workwear fabric",
+      "components": [
+        {
+          "component_id": "component-xm-fabric",
+          "name": "梭织工作服面料",
+          "role": "main_product"
+        }
+      ],
+      "profile_status": "needs_technical_docs",
+      "unknown_key_attributes": [
+        "SKU 级原产地",
+        "染色/印花/漂白状态",
+        "纱线长丝/短纤归类细节",
+        "涂层/整理完整说明",
+        "证书覆盖范围",
+        "实际起运港",
+        "最终 HS/HTS"
+      ]
+    }
+  ],
+  "trade_premises": [
+    {
+      "trade_premise_id": "trade-xm-us",
+      "seller_country_or_region": null,
+      "export_declaration_country": "China",
+      "origin_country_or_region": "China",
+      "origin_evidence_level": "L1",
+      "departure_country_or_region": "China",
+      "departure_node": null,
+      "departure_node_status": "business_confirmation_required",
+      "departure_node_basis": "中国生产/采购/出货线索不能推出该面料 SKU 的原产地或具体起运港。",
+      "destination_country_or_region": "United States",
+      "destination_node": null,
+      "status": "business_confirmation_required",
+      "separation_check": {
+        "roles_separated": true,
+        "note": "Production/procurement、出口申报国、起运节点和目的国分开记录。"
+      },
+      "evidence_card_ids": [
+        "card-xm-origin-boundary"
+      ],
+      "gap_ids": [
+        "gap-xm-origin-doc",
+        "gap-xm-departure-node"
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "attribute_id": "attribute-xm-composition",
+      "product_subject_id": "product-xm-canvas-270",
+      "component_scope": "梭织工作服面料",
+      "attribute_family": "纺织技术参数",
+      "attribute_name": "纤维成分",
+      "value": "65% Polyester / 35% Cotton",
+      "unit": null,
+      "status": "verified",
+      "trigger_paths": [
+        "纺织归类核验",
+        "标签/合规核验",
+        "面料质量参数核验"
+      ],
+      "evidence_card_ids": [
+        "card-xm-composition"
+      ],
+      "gap_ids": []
+    },
+    {
+      "attribute_id": "attribute-xm-gsm",
+      "product_subject_id": "product-xm-canvas-270",
+      "component_scope": "梭织工作服面料",
+      "attribute_family": "纺织技术参数",
+      "attribute_name": "克重",
+      "value": "270 ±5 gsm",
+      "unit": "gsm",
+      "status": "verified",
+      "trigger_paths": [
+        "纺织归类核验",
+        "标签/合规核验",
+        "面料质量参数核验"
+      ],
+      "evidence_card_ids": [
+        "card-xm-weight-width"
+      ],
+      "gap_ids": []
+    },
+    {
+      "attribute_id": "attribute-xm-width",
+      "product_subject_id": "product-xm-canvas-270",
+      "component_scope": "梭织工作服面料",
+      "attribute_family": "纺织技术参数",
+      "attribute_name": "门幅",
+      "value": "150 ±2 cm",
+      "unit": "cm",
+      "status": "verified",
+      "trigger_paths": [
+        "纺织归类核验",
+        "标签/合规核验",
+        "面料质量参数核验"
+      ],
+      "evidence_card_ids": [
+        "card-xm-weight-width"
+      ],
+      "gap_ids": []
+    },
+    {
+      "attribute_id": "attribute-xm-weave",
+      "product_subject_id": "product-xm-canvas-270",
+      "component_scope": "梭织工作服面料",
+      "attribute_family": "纺织技术参数",
+      "attribute_name": "织法",
+      "value": "Canvas",
+      "unit": null,
+      "status": "verified",
+      "trigger_paths": [
+        "纺织归类核验",
+        "标签/合规核验",
+        "面料质量参数核验"
+      ],
+      "evidence_card_ids": [
+        "card-xm-weight-width"
+      ],
+      "gap_ids": []
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "source-xm-catalog",
+      "canonical_url": "https://www.xmtextiles.com/workwear-fabrics/XMT-ENG-vol-36-Catalog-for-Web-sample-material.pdf",
+      "final_url": "https://www.xmtextiles.com/workwear-fabrics/XMT-ENG-vol-36-Catalog-for-Web-sample-material.pdf",
+      "publisher_relation": "first_party",
+      "provenance": "user_provided",
+      "medium": "document",
+      "access_boundary": "user_supplied_public_copy",
+      "material_role": "published_source_copy",
+      "artifact_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "artifact_name": "XMT-ENG-vol-36-Catalog-for-Web-sample-material.pdf",
+      "artifact_media_type": "application/pdf"
+    },
+    {
+      "source_id": "source-xm-product-page",
+      "canonical_url": "https://www.xmtextiles.com/products/xm-textiles/polycotton-fabrics/canvas-270/",
+      "final_url": "https://www.xmtextiles.com/products/xm-textiles/polycotton-fabrics/canvas-270/",
+      "publisher_relation": "first_party",
+      "provenance": "discovered_public",
+      "medium": "website",
+      "access_boundary": "public_web"
+    },
+    {
+      "source_id": "source-xm-tds",
+      "canonical_url": "https://www.xmtextiles.com/workwear-fabrics/Canvas-270-TDS-XMT.pdf",
+      "final_url": "https://www.xmtextiles.com/workwear-fabrics/Canvas-270-TDS-XMT.pdf",
+      "publisher_relation": "first_party",
+      "provenance": "discovered_public",
+      "medium": "document",
+      "access_boundary": "public_web"
+    },
+    {
+      "source_id": "source-xm-how-to-buy",
+      "canonical_url": "https://www.xmtextiles.com/how-to-buy/",
+      "final_url": "https://www.xmtextiles.com/how-to-buy/",
+      "publisher_relation": "first_party",
+      "provenance": "discovered_public",
+      "medium": "website",
+      "access_boundary": "public_web"
+    },
+    {
+      "source_id": "source-us-ftc-textile",
+      "canonical_url": "https://www.ftc.gov/business-guidance/resources/threading-your-way-through-labeling-requirements-under-textile-wool-acts",
+      "final_url": "https://www.ftc.gov/business-guidance/resources/threading-your-way-through-labeling-requirements-under-textile-wool-acts",
+      "publisher_relation": "first_party",
+      "provenance": "discovered_public",
+      "medium": "website",
+      "access_boundary": "public_web"
+    },
+    {
+      "source_id": "source-us-hts",
+      "canonical_url": "https://hts.usitc.gov/",
+      "final_url": "https://hts.usitc.gov/",
+      "publisher_relation": "first_party",
+      "provenance": "discovered_public",
+      "medium": "website",
+      "access_boundary": "public_web"
+    }
+  ],
+  "observations": [
+    {
+      "observation_id": "observation-xm-tds-spec",
+      "run_id": null,
+      "source_id": "source-xm-tds",
+      "capability": "document.extract",
+      "concrete_tool": "fixture.static_document_extract",
+      "observed_at": "2026-07-26",
+      "access_status": "opened",
+      "title": "Canvas-270 technical datasheet",
+      "raw_excerpt": "Canvas-270; composition 65% polyester / 35% cotton; weight 270 +/-5 gsm; width 150 +/-2 cm; weave Canvas; tensile and tear strength values.",
+      "page_or_dom_locator": "fixture-visible-excerpt",
+      "extraction_method": "fixture_static",
+      "language": "en",
+      "translation_status": "original",
+      "content_hash": "fixture_market_pass_xm_canvas_realistic_boundary_0"
+    },
+    {
+      "observation_id": "observation-xm-product-cert-conflict",
+      "run_id": null,
+      "source_id": "source-xm-product-page",
+      "capability": "source.open",
+      "concrete_tool": "fixture.static_source_open",
+      "observed_at": "2026-07-26",
+      "access_status": "opened",
+      "title": "Canvas-270 product page",
+      "raw_excerpt": "Product page describes Canvas-270 for workwear and shows Oeko-Tex 100 text; certificate area also displays 0 Certificates.",
+      "page_or_dom_locator": "fixture-visible-excerpt",
+      "extraction_method": "fixture_static",
+      "language": "en",
+      "translation_status": "original",
+      "content_hash": null
+    },
+    {
+      "observation_id": "observation-xm-how-to-buy-china",
+      "run_id": null,
+      "source_id": "source-xm-how-to-buy",
+      "capability": "source.open",
+      "concrete_tool": "fixture.static_source_open",
+      "observed_at": "2026-07-26",
+      "access_status": "opened",
+      "title": "XM Textiles how to buy",
+      "raw_excerpt": "How to buy page mentions shipment from China by container or air in some purchasing paths; it does not identify Canvas-270 SKU origin or the actual port.",
+      "page_or_dom_locator": "fixture-visible-excerpt",
+      "extraction_method": "fixture_static",
+      "language": "en",
+      "translation_status": "original",
+      "content_hash": null
+    },
+    {
+      "observation_id": "observation-us-ftc-textile",
+      "run_id": null,
+      "source_id": "source-us-ftc-textile",
+      "capability": "source.open",
+      "concrete_tool": "fixture.static_source_open",
+      "observed_at": "2026-07-26",
+      "access_status": "opened",
+      "title": "FTC textile labeling guide",
+      "raw_excerpt": "Textile labeling requirements depend on the product sold and label content; fabric and finished garment scenarios must be checked separately.",
+      "page_or_dom_locator": "fixture-visible-excerpt",
+      "extraction_method": "fixture_static",
+      "language": "en",
+      "translation_status": "original",
+      "content_hash": null
+    },
+    {
+      "observation_id": "observation-xm-us-hts",
+      "run_id": null,
+      "source_id": "source-us-hts",
+      "capability": "source.open",
+      "concrete_tool": "fixture.static_source_open",
+      "observed_at": "2026-07-26",
+      "access_status": "opened",
+      "title": "HTS textile candidate path",
+      "raw_excerpt": "Textile fabric classification depends on fiber, weave, weight, yarn type, coloration, finish or coating and end form; final duty requires declaration-time confirmation.",
+      "page_or_dom_locator": "fixture-visible-excerpt",
+      "extraction_method": "fixture_static",
+      "language": "en",
+      "translation_status": "original",
+      "content_hash": null
+    }
+  ],
+  "evidence_cards": [
+    {
+      "evidence_card_id": "card-xm-composition",
+      "run_id": "run-xm-us",
+      "brief_version_id": "brief-xm-us-v1",
+      "producer_skill": "Skill A - Brief 与属性识别",
+      "reviewer_skill": "Skill F - 交付复核",
+      "field_domain": "产品属性",
+      "field_name": "纤维成分",
+      "current_value": "65% Polyester / 35% Cotton",
+      "status": "verified",
+      "source_refs": [
+        {
+          "source_id": "source-xm-tds",
+          "observation_id": "observation-xm-tds-spec",
+          "relation": "supports"
+        }
+      ],
+      "source_type": "technical_datasheet",
+      "source_locator": "Canvas-270 TDS",
+      "source_date": "日期未见",
+      "observed_at": "2026-07-26",
+      "applicability_scope": "仅限本 fixture 中的产品版本、公开来源日期和目标市场",
+      "supports": [
+        "支持面料成分字段"
+      ],
+      "does_not_support": [
+        "不支持成衣完整 BOM、原产地或最终 HS/HTS"
+      ],
+      "boundary_rule_ids": [
+        "EB-TEX-01"
+      ],
+      "review_status": "passed"
+    },
+    {
+      "evidence_card_id": "card-xm-weight-width",
+      "run_id": "run-xm-us",
+      "brief_version_id": "brief-xm-us-v1",
+      "producer_skill": "Skill A - Brief 与属性识别",
+      "reviewer_skill": "Skill F - 交付复核",
+      "field_domain": "产品属性",
+      "field_name": "克重/门幅/织法",
+      "current_value": "270 ±5 gsm; 150 ±2 cm; Canvas",
+      "status": "verified",
+      "source_refs": [
+        {
+          "source_id": "source-xm-tds",
+          "observation_id": "observation-xm-tds-spec",
+          "relation": "supports"
+        }
+      ],
+      "source_type": "technical_datasheet",
+      "source_locator": "Canvas-270 TDS",
+      "source_date": "日期未见",
+      "observed_at": "2026-07-26",
+      "applicability_scope": "仅限本 fixture 中的产品版本、公开来源日期和目标市场",
+      "supports": [
+        "支持克重、门幅和织法字段"
+      ],
+      "does_not_support": [
+        "不支持染色/印花/漂白状态、涂层或最终归类"
+      ],
+      "boundary_rule_ids": [
+        "EB-TEX-01"
+      ],
+      "review_status": "passed"
+    },
+    {
+      "evidence_card_id": "card-xm-origin-boundary",
+      "run_id": "run-xm-us",
+      "brief_version_id": "brief-xm-us-v1",
+      "producer_skill": "Skill A - Brief 与属性识别",
+      "reviewer_skill": "Skill F - 交付复核",
+      "field_domain": "原产地与贸易前提",
+      "field_name": "中国出货线索边界",
+      "current_value": "How to buy 页面有中国出货线索，未见 SKU 级原产声明",
+      "status": "business_confirmation_required",
+      "source_refs": [
+        {
+          "source_id": "source-xm-how-to-buy",
+          "observation_id": "observation-xm-how-to-buy-china",
+          "relation": "contextual"
+        }
+      ],
+      "source_type": "company_website",
+      "source_locator": "XM Textiles how to buy",
+      "source_date": "日期未见",
+      "observed_at": "2026-07-26",
+      "applicability_scope": "仅限本 fixture 中的产品版本、公开来源日期和目标市场",
+      "supports": [
+        "支持中国出货/采购路径线索"
+      ],
+      "does_not_support": [
+        "不能证明 Canvas-270 SKU 中国原产",
+        "不能推出起运港"
+      ],
+      "boundary_rule_ids": [
+        "EB-ORI-02"
+      ],
+      "review_status": "passed"
+    },
+    {
+      "evidence_card_id": "card-xm-cert-text",
+      "run_id": "run-xm-us",
+      "brief_version_id": "brief-xm-us-v1",
+      "producer_skill": "Skill C - 税费与准入",
+      "reviewer_skill": "Skill F - 交付复核",
+      "field_domain": "产品准入与合规要求",
+      "field_name": "Oeko-Tex 文字线索",
+      "current_value": "产品页可见 Oeko-Tex 100 文字线索",
+      "status": "preliminary_reference",
+      "source_refs": [
+        {
+          "source_id": "source-xm-product-page",
+          "observation_id": "observation-xm-product-cert-conflict",
+          "relation": "contextual"
+        }
+      ],
+      "source_type": "product_page",
+      "source_locator": "Canvas-270 product page",
+      "source_date": "日期未见",
+      "observed_at": "2026-07-26",
+      "applicability_scope": "仅限本 fixture 中的产品版本、公开来源日期和目标市场",
+      "supports": [
+        "支持存在证书文字线索"
+      ],
+      "does_not_support": [
+        "不支持 SKU 已认证或证书覆盖范围"
+      ],
+      "boundary_rule_ids": [
+        "EB-CERT-01"
+      ],
+      "review_status": "passed"
+    },
+    {
+      "evidence_card_id": "card-xm-cert-zero",
+      "run_id": "run-xm-us",
+      "brief_version_id": "brief-xm-us-v1",
+      "producer_skill": "Skill F - 交付复核",
+      "reviewer_skill": "Skill F - 交付复核",
+      "field_domain": "产品准入与合规要求",
+      "field_name": "0 Certificates 冲突线索",
+      "current_value": "同页证书区域显示 0 Certificates",
+      "status": "preliminary_reference",
+      "source_refs": [
+        {
+          "source_id": "source-xm-product-page",
+          "observation_id": "observation-xm-product-cert-conflict",
+          "relation": "contradicts"
+        }
+      ],
+      "source_type": "product_page",
+      "source_locator": "Canvas-270 product page",
+      "source_date": "日期未见",
+      "observed_at": "2026-07-26",
+      "applicability_scope": "仅限本 fixture 中的产品版本、公开来源日期和目标市场",
+      "supports": [
+        "支持证书展示存在冲突"
+      ],
+      "does_not_support": [
+        "不能得出已认证或未认证最终结论"
+      ],
+      "boundary_rule_ids": [
+        "EB-CONFLICT-01"
+      ],
+      "review_status": "passed"
+    },
+    {
+      "evidence_card_id": "card-xm-ftc-label-boundary",
+      "run_id": "run-xm-us",
+      "brief_version_id": "brief-xm-us-v1",
+      "producer_skill": "Skill C - 税费与准入",
+      "reviewer_skill": "Skill F - 交付复核",
+      "field_domain": "产品准入与合规要求",
+      "field_name": "美国纺织标签核验边界",
+      "current_value": "面料/成衣销售形态会影响标签要求",
+      "status": "professional_confirmation_required",
+      "source_refs": [
+        {
+          "source_id": "source-us-ftc-textile",
+          "observation_id": "observation-us-ftc-textile",
+          "relation": "contextual"
+        }
+      ],
+      "source_type": "regulation",
+      "source_locator": "FTC textile labeling guide",
+      "source_date": "日期未见",
+      "observed_at": "2026-07-26",
+      "applicability_scope": "仅限本 fixture 中的产品版本、公开来源日期和目标市场",
+      "supports": [
+        "支持需要按销售形态和标签规则核验"
+      ],
+      "does_not_support": [
+        "不支持该面料或成衣标签已合规"
+      ],
+      "boundary_rule_ids": [
+        "EB-TEX-LABEL-01"
+      ],
+      "review_status": "passed"
+    },
+    {
+      "evidence_card_id": "card-xm-hts-candidate",
+      "run_id": "run-xm-us",
+      "brief_version_id": "brief-xm-us-v1",
+      "producer_skill": "Skill C - 税费与准入",
+      "reviewer_skill": "Skill F - 交付复核",
+      "field_domain": "进口税费",
+      "field_name": "候选 HTS/归类路径",
+      "current_value": "需按纤维、织法、重量、纱线、染整、涂层和形态确认",
+      "status": "professional_confirmation_required",
+      "source_refs": [
+        {
+          "source_id": "source-us-hts",
+          "observation_id": "observation-xm-us-hts",
+          "relation": "contextual"
+        }
+      ],
+      "source_type": "official_tariff_reference",
+      "source_locator": "USITC HTS textile context",
+      "source_date": "日期未见",
+      "observed_at": "2026-07-26",
+      "applicability_scope": "仅限本 fixture 中的产品版本、公开来源日期和目标市场",
+      "supports": [
+        "支持需要专业归类"
+      ],
+      "does_not_support": [
+        "不支持最终税号、最终税率或应缴税额"
+      ],
+      "boundary_rule_ids": [
+        "EB-TAX-01"
+      ],
+      "review_status": "passed"
+    }
+  ],
+  "matrix_rows": [
+    {
+      "matrix_row_id": "row-xm-overview",
+      "sheet_name": "市场事实总览",
+      "row_topic": "XM Canvas-270 样本总览",
+      "user_visible_cells": {
+        "样本ID": "XM-CANVAS-270-US",
+        "产品名称": "XM Textiles Canvas-270 polycotton workwear fabric",
+        "产品版本/型号": "Canvas-270；65% Polyester / 35% Cotton；270 ±5 gsm",
+        "目的国/地区": "美国",
+        "原产/制造来源": "中国生产/采购/出货为公开线索，SKU 级原产地待文件确认",
+        "出口申报国": "中国为本轮默认前提，需业务确认",
+        "实际起运地": "待业务确认",
+        "关键已核实": "成分、克重、门幅、织法、部分质量指标",
+        "关键缺口": "SKU 级原产地、染整/纱线归类细节、证书覆盖范围、起运节点、最终 HS/HTS",
+        "总体状态": "可交付但有限制",
+        "备注": "只给客观参考，不做进入建议"
+      },
+      "status": "business_confirmation_required",
+      "evidence_card_ids": [
+        "card-xm-composition",
+        "card-xm-weight-width"
+      ],
+      "gap_ids": [
+        "gap-xm-origin-doc",
+        "gap-xm-final-hts",
+        "gap-xm-departure-node"
+      ],
+      "conflict_ids": [],
+      "module_key": null,
+      "boundary_rule_ids": [
+        "EB-DEL-01",
+        "EB-ORI-02"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-xm-spec",
+      "sheet_name": "产品档案与触发项",
+      "row_topic": "Canvas-270 TDS 技术参数",
+      "user_visible_cells": {
+        "样本ID": "XM-CANVAS-270-US",
+        "属性族": "纺织技术参数",
+        "属性": "成分/克重/门幅/织法",
+        "当前值": "65% Polyester / 35% Cotton；270 ±5 gsm；150 ±2 cm；Canvas",
+        "状态": "已核实",
+        "触发的核验路径": "纺织归类、标签、质量参数、价格规格对比",
+        "来源/依据": "Canvas-270 TDS / Catalog",
+        "缺口/下一步": "补染色/印花/漂白、纱线长短纤、涂层/整理完整说明"
+      },
+      "status": "verified",
+      "evidence_card_ids": [
+        "card-xm-composition",
+        "card-xm-weight-width"
+      ],
+      "gap_ids": [
+        "gap-xm-classification-details"
+      ],
+      "conflict_ids": [],
+      "module_key": null,
+      "boundary_rule_ids": [
+        "EB-TEX-01"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-xm-origin",
+      "sheet_name": "市场事实总览",
+      "row_topic": "中国出货线索不等于 SKU 原产地",
+      "user_visible_cells": {
+        "样本ID": "XM-CANVAS-270-US",
+        "产品名称": "Canvas-270",
+        "原产/制造来源": "官网有中国生产/采购/出货线索；未见该 SKU 原产证明",
+        "出口申报国": "中国为默认前提，待业务文件确认",
+        "实际起运地": "待业务确认",
+        "总体状态": "待业务确认",
+        "备注": "中国出货线索不能直接推出原产地、起运港或税费结论"
+      },
+      "status": "business_confirmation_required",
+      "evidence_card_ids": [
+        "card-xm-origin-boundary"
+      ],
+      "gap_ids": [
+        "gap-xm-origin-doc",
+        "gap-xm-departure-node"
+      ],
+      "conflict_ids": [],
+      "module_key": null,
+      "boundary_rule_ids": [
+        "EB-ORI-02",
+        "EB-GEO-01"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-xm-cert-conflict",
+      "sheet_name": "产品准入与合规要求",
+      "row_topic": "Oeko-Tex 证书线索冲突保留",
+      "user_visible_cells": {
+        "样本ID": "XM-CANVAS-270-US",
+        "要求类别": "纺织证书/客户准入资料",
+        "要求名称": "Oeko-Tex 100",
+        "适用条件": "需核对证书编号、持证主体、产品范围、有效期",
+        "当前证据": "产品页有 Oeko-Tex 100 文字线索，同页又显示 0 Certificates",
+        "状态": "有冲突待复核",
+        "官方/优先来源": "证书附件或官方证书查询",
+        "待补材料": "证书编号、证书页、有效期和覆盖型号",
+        "禁止升级": "不能写 Canvas-270 已认证"
+      },
+      "status": "conflict_pending_review",
+      "evidence_card_ids": [
+        "card-xm-cert-text",
+        "card-xm-cert-zero"
+      ],
+      "gap_ids": [
+        "gap-xm-cert-proof"
+      ],
+      "conflict_ids": [
+        "conflict-xm-oekotex"
+      ],
+      "module_key": null,
+      "boundary_rule_ids": [
+        "EB-CONFLICT-01",
+        "EB-CERT-01"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-xm-label",
+      "sheet_name": "产品准入与合规要求",
+      "row_topic": "美国纺织标签边界",
+      "user_visible_cells": {
+        "样本ID": "XM-CANVAS-270-US",
+        "要求类别": "美国纺织标签/原产地标识",
+        "要求名称": "纤维成分、原产地、进口商/RN、护理标签等",
+        "适用条件": "取决于最终销售形态是面料、成衣还是其它制成品",
+        "当前证据": "TDS 仅支持面料参数",
+        "状态": "待专业确认",
+        "官方/优先来源": "FTC 指南、CBP/专业归类意见、实物/包装标签",
+        "待补材料": "最终销售形态、标签样稿、BOM/辅料、原产地文件",
+        "禁止升级": "不能把 TDS 成分写成美国标签已合规"
+      },
+      "status": "professional_confirmation_required",
+      "evidence_card_ids": [
+        "card-xm-ftc-label-boundary"
+      ],
+      "gap_ids": [
+        "gap-xm-final-form",
+        "gap-xm-label-sample"
+      ],
+      "conflict_ids": [],
+      "module_key": null,
+      "boundary_rule_ids": [
+        "EB-TEX-LABEL-01"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-xm-hts",
+      "sheet_name": "进口税费",
+      "row_topic": "纺织品候选归类边界",
+      "user_visible_cells": {
+        "样本ID": "XM-CANVAS-270-US",
+        "目的国": "美国",
+        "候选 HS/HTS": "待专业确认",
+        "税号描述": "涤棉梭织面料方向；需确认纱线、染整、涂层、用途和销售形态",
+        "税种": "普通税/附加措施待核验",
+        "税率/金额": "待专业确认",
+        "适用条件": "最终税号、原产地、报关日、税基和贸易措施待确认",
+        "计算税基": "未执行",
+        "状态": "待专业确认",
+        "来源/依据": "USITC HTS 归类口径 + TDS 字段",
+        "缺口/下一步": "报关专业确认最终归类和税率"
+      },
+      "status": "professional_confirmation_required",
+      "evidence_card_ids": [
+        "card-xm-hts-candidate"
+      ],
+      "gap_ids": [
+        "gap-xm-final-hts"
+      ],
+      "conflict_ids": [],
+      "module_key": null,
+      "boundary_rule_ids": [
+        "EB-TAX-01"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-xm-logistics",
+      "sheet_name": "运输方式、路线、港口与申报节点",
+      "row_topic": "面料物流组织待业务确认",
+      "user_visible_cells": {
+        "样本ID": "XM-CANVAS-270-US",
+        "运输方式": "整柜/拼箱/空运/国际快递均需按货量、体积、交期和贸易条款确认",
+        "起运节点": "待业务确认",
+        "目的节点": "待业务确认",
+        "适用条件": "卷装面料、样品、整柜订单的物流组织不同",
+        "时间口径": "未执行，本轮不提供时效区间",
+        "法定预申报": "需按实际运输方式和目的国规则另行核验",
+        "操作截点": "需与货代/承运人确认",
+        "状态": "待业务确认",
+        "来源/依据": "How to buy 页面仅为出货路径线索",
+        "缺口/下一步": "补订单数量、包装、提单/订舱和贸易条款"
+      },
+      "status": "business_confirmation_required",
+      "evidence_card_ids": [
+        "card-xm-origin-boundary"
+      ],
+      "gap_ids": [
+        "gap-xm-departure-node",
+        "gap-xm-packaging"
+      ],
+      "conflict_ids": [],
+      "module_key": null,
+      "boundary_rule_ids": [
+        "EB-LOG-01"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-xm-trends-not-executed",
+      "sheet_name": "长期需求与搜索趋势",
+      "row_topic": "Google Trends 未执行",
+      "user_visible_cells": {
+        "样本ID": "XM-CANVAS-270-US",
+        "关键词/Topic": "Canvas fabric / workwear fabric",
+        "国家/地区": "美国",
+        "时间范围": "2004 至今未执行",
+        "趋势状态": "未执行",
+        "指标口径": "Google Trends 是相对搜索兴趣，不等于销量",
+        "数据日期": "未执行",
+        "状态": "未执行",
+        "来源/依据": "未执行",
+        "限制说明": "不能输出增长/衰减结论"
+      },
+      "status": "not_executed",
+      "evidence_card_ids": [],
+      "gap_ids": [],
+      "conflict_ids": [],
+      "module_key": "google_trends",
+      "boundary_rule_ids": [
+        "EB-MKT-01"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-xm-price-not-executed",
+      "sheet_name": "线上市场与价格参考",
+      "row_topic": "线上价格未执行",
+      "user_visible_cells": {
+        "样本ID": "XM-CANVAS-270-US",
+        "渠道/平台": "B2B/B2C/电商平台未执行",
+        "产品/规格": "Canvas-270 或近似涤棉工作服面料",
+        "价格": "未执行",
+        "币种": "未执行",
+        "税/运费/促销状态": "未执行",
+        "观察日期": "未执行",
+        "状态": "未执行",
+        "来源URL/文件": "未执行",
+        "限制说明": "平台挂牌价不能直接当成交价或外贸目标价"
+      },
+      "status": "not_executed",
+      "evidence_card_ids": [],
+      "gap_ids": [],
+      "conflict_ids": [],
+      "module_key": "online_price",
+      "boundary_rule_ids": [
+        "EB-PRICE-01"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-xm-season-not-executed",
+      "sheet_name": "季节、节日与销售窗口",
+      "row_topic": "节日与销售窗口未执行",
+      "user_visible_cells": {
+        "样本ID": "XM-CANVAS-270-US",
+        "节点/窗口": "未执行",
+        "日期/周期": "未执行",
+        "国家/地区": "美国",
+        "适用条件": "工作服面料是否受采购季影响需另行研究",
+        "影响口径": "未执行",
+        "状态": "未执行",
+        "来源/依据": "未执行",
+        "限制说明": "不编造淡旺季或节日需求"
+      },
+      "status": "not_executed",
+      "evidence_card_ids": [],
+      "gap_ids": [],
+      "conflict_ids": [],
+      "module_key": "season_holiday",
+      "boundary_rule_ids": [
+        "EB-SEASON-01"
+      ],
+      "internal_refs_hidden": true
+    },
+    {
+      "matrix_row_id": "row-xm-external-not-executed",
+      "sheet_name": "近期外部因素",
+      "row_topic": "近期外部因素未执行",
+      "user_visible_cells": {
+        "样本ID": "XM-CANVAS-270-US",
+        "因素类型": "未执行",
+        "因素名称": "未执行",
+        "地区": "美国/中国",
+        "时间": "未执行",
+        "可能影响对象": "未执行",
+        "状态": "未执行",
+        "来源/依据": "未执行",
+        "限制说明": "不编造政治、战争、灾害或金融因素"
+      },
+      "status": "not_executed",
+      "evidence_card_ids": [],
+      "gap_ids": [],
+      "conflict_ids": [],
+      "module_key": "external_factors",
+      "boundary_rule_ids": [
+        "EB-EXT-01"
+      ],
+      "internal_refs_hidden": true
+    }
+  ],
+  "gaps": [
+    {
+      "gap_id": "gap-xm-origin-doc",
+      "run_id": "run-xm-us",
+      "field_domain": "原产地与贸易前提",
+      "field_name": "SKU 级原产地",
+      "status": "business_confirmation_required",
+      "missing_item": "COO、供应商原产地声明、发票/装箱单",
+      "requested_from": "用户/供应商/专业方",
+      "user_visible_note": "中国生产/采购/出货线索不能替代 Canvas-270 的 SKU 级原产地文件。",
+      "evidence_card_ids": []
+    },
+    {
+      "gap_id": "gap-xm-classification-details",
+      "run_id": "run-xm-us",
+      "field_domain": "进口税费",
+      "field_name": "归类技术细节",
+      "status": "professional_confirmation_required",
+      "missing_item": "染色/印花/漂白状态、纱线形态、涂层/整理、最终销售形态",
+      "requested_from": "用户/供应商/专业方",
+      "user_visible_note": "纺织品归类需要更多技术细节，不能只凭面料名称。",
+      "evidence_card_ids": []
+    },
+    {
+      "gap_id": "gap-xm-cert-proof",
+      "run_id": "run-xm-us",
+      "field_domain": "产品准入与合规要求",
+      "field_name": "证书覆盖范围",
+      "status": "professional_confirmation_required",
+      "missing_item": "Oeko-Tex 证书编号、证书页、有效期、覆盖型号",
+      "requested_from": "用户/供应商/专业方",
+      "user_visible_note": "产品页证书信息存在冲突，需证书原件或官方查询复核。",
+      "evidence_card_ids": []
+    },
+    {
+      "gap_id": "gap-xm-final-form",
+      "run_id": "run-xm-us",
+      "field_domain": "产品准入与合规要求",
+      "field_name": "最终销售形态",
+      "status": "business_confirmation_required",
+      "missing_item": "面料/成衣/其它制成品的销售形态",
+      "requested_from": "用户/供应商/专业方",
+      "user_visible_note": "美国标签和归类要求取决于最终销售形态。",
+      "evidence_card_ids": []
+    },
+    {
+      "gap_id": "gap-xm-label-sample",
+      "run_id": "run-xm-us",
+      "field_domain": "产品准入与合规要求",
+      "field_name": "标签样稿/实物标签",
+      "status": "physical_verification_required",
+      "missing_item": "标签样稿、包装标识或实物照片",
+      "requested_from": "用户/供应商/专业方",
+      "user_visible_note": "TDS 成分不能替代标签合规核验。",
+      "evidence_card_ids": []
+    },
+    {
+      "gap_id": "gap-xm-departure-node",
+      "run_id": "run-xm-us",
+      "field_domain": "运输方式、路线、港口与申报节点",
+      "field_name": "起运节点",
+      "status": "business_confirmation_required",
+      "missing_item": "订舱单、提单或出口报关单",
+      "requested_from": "用户/供应商/专业方",
+      "user_visible_note": "实际起运港/机场待业务文件确认，不能由中国出货线索推断。",
+      "evidence_card_ids": []
+    },
+    {
+      "gap_id": "gap-xm-packaging",
+      "run_id": "run-xm-us",
+      "field_domain": "运输方式、路线、港口与申报节点",
+      "field_name": "包装方式",
+      "status": "business_confirmation_required",
+      "missing_item": "卷装/托盘/纸箱包装、体积和重量",
+      "requested_from": "用户/供应商/专业方",
+      "user_visible_note": "面料物流需结合包装和货量判断。",
+      "evidence_card_ids": []
+    },
+    {
+      "gap_id": "gap-xm-final-hts",
+      "run_id": "run-xm-us",
+      "field_domain": "进口税费",
+      "field_name": "最终 HS/HTS / 最终税率",
+      "status": "professional_confirmation_required",
+      "missing_item": "最终税号、原产地、报关日、税基和贸易措施",
+      "requested_from": "用户/供应商/专业方",
+      "user_visible_note": "本轮只保留专业确认缺口，不输出最终税率。",
+      "evidence_card_ids": []
+    }
+  ],
+  "conflicts": [
+    {
+      "conflict_id": "conflict-xm-oekotex",
+      "run_id": "run-xm-us",
+      "field_domain": "产品准入与合规要求",
+      "field_name": "Oeko-Tex 100 证书线索",
+      "status": "conflict_pending_review",
+      "evidence_card_ids": [
+        "card-xm-cert-text",
+        "card-xm-cert-zero"
+      ],
+      "summary": "产品页有 Oeko-Tex 100 文字线索，同时显示 0 Certificates；保留冲突，不能写成 Canvas-270 已认证。"
+    }
+  ],
+  "handoffs": [
+    {
+      "handoff_id": "handoff-xm-to-review",
+      "from_skill": "Skill A - Brief 与属性识别",
+      "to_skill": "Skill F - 交付复核",
+      "input_brief_version_id": "brief-xm-us-v1",
+      "input_card_ids": [],
+      "output_card_ids": [
+        "card-xm-composition",
+        "card-xm-weight-width",
+        "card-xm-origin-boundary",
+        "card-xm-cert-text",
+        "card-xm-cert-zero",
+        "card-xm-ftc-label-boundary",
+        "card-xm-hts-candidate"
+      ],
+      "returned_to_skill": null,
+      "return_reason": null,
+      "staleness_status": "current",
+      "handoff_status": "passed"
+    }
+  ],
+  "state_transitions": [
+    {
+      "transition_id": "transition-xm-conflict-preserved",
+      "evidence_card_id": "card-xm-cert-text",
+      "from_status": "preliminary_reference",
+      "to_status": "conflict_pending_review",
+      "transition_reason": "证书文字与 0 Certificates 显示冲突，交付矩阵保留冲突。",
+      "gate": "冲突复核门",
+      "allowed": true,
+      "blocking_rule_id": null,
+      "reviewed_by_skill": "Skill F - 交付复核",
+      "reviewed_at": "2026-07-26"
+    }
+  ]
+}

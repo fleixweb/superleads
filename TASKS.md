@@ -162,3 +162,12 @@
   - `python3 evals/run_evals.py --suite deep`：`623/623`。
   - `python3 evals/run_evals.py --suite all`：`663/663`。
 - 当前下一步：继续 Code Slice D-E（audit 最小门禁 + CSV/Markdown 最小导出）。
+
+## 产品出海市场分析：真实业务感 fixture 补充
+
+- 已新增 3 个更贴近真实业务的 pass fixture：Tianneng 锂电、XM Canvas-270 面料、平台/零售价格仅参考。
+- 已新增 3 个更贴近真实业务的 fail fixture：工厂新闻升级原产地/默认港口、纺织证书/HTS 过度断言、平台价升级成交价/推荐价。
+- 已新增 validator 错误码 `market_platform_price_promoted`。
+- 已新增验证记录：`docs/validation/product-market-analysis-realistic-fixtures-20260726.md`。
+- 已验证独立 market suite：`python3 evals/run_product_market_analysis_evals.py --suite all` = `27/27`。
+- 已回归通过：`python3 evals/run_product_market_analysis_evals.py --suite all` = `27/27`；`python3 evals/run_evals.py --suite default` = `77/77`；`deep` = `623/623`；`all` = `663/663`。当前下一步可提交本轮 fixture 增补。

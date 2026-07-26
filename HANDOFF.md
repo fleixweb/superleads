@@ -150,3 +150,19 @@
   - `python3 scripts/export_product_market_workbook.py evals/fixtures/market_fail_candidate_htsus_as_final_rate.json --output-dir ... --format csv` 被 audit 阶段阻断。
   - `python3 evals/run_product_market_analysis_evals.py --suite all` 通过，`21/21`。
 - 现有 `default/deep` 主 eval 未回归：`77/77`、`623/623` 保持通过。
+
+## 产品出海市场分析：真实业务感 fixture 补充
+
+- 2026-07-26 已按用户要求补充更贴近真实业务的 market pass/fail fixture。
+- 新增 pass：
+  - `evals/fixtures/market_pass_tianneng_lithium_realistic_boundary.json`：Tianneng `TMLiN-4810S1` 锂电目录字段、480Wh 派生、越南工厂线索边界、UN38.3/SDS/包装/起运节点缺口。
+  - `evals/fixtures/market_pass_xm_canvas_realistic_boundary.json`：XM Textiles `Canvas-270` TDS 字段、纺织归类/标签缺口、Oeko-Tex 与 `0 Certificates` 冲突保留、中国出货线索边界。
+  - `evals/fixtures/market_pass_platform_price_reference_only.json`：零售/平台标价仅作为线上市场参考，不升级成交价、批发价、目标价或推荐报价。
+- 新增 fail：
+  - `evals/fixtures/market_fail_factory_news_as_sku_origin_and_port.json`：工厂新闻升级 SKU 原产地并默认海防港，触发 `market_guess_departure_port`。
+  - `evals/fixtures/market_fail_textile_cert_and_hts_overstated.json`：证书文字与纺织候选归类被升级为最终结论，触发 `market_candidate_hs_promoted_to_final`。
+  - `evals/fixtures/market_fail_platform_price_as_recommended_transaction_price.json`：零售标价升级成交价/推荐价，触发新增 `market_platform_price_promoted`，并由 `market_value_judgment` 兜底。
+- Validator 新增 `market_platform_price_promoted` 规则，用于拦截线上/平台/零售挂牌价升级为成交价、批发价、外贸目标价或推荐报价。
+- Case 文件已扩展到 27 个 market case；独立 market suite 已验证 `27/27`。
+- 新增验证记录：`docs/validation/product-market-analysis-realistic-fixtures-20260726.md`。
+- 已回归：`python3 evals/run_product_market_analysis_evals.py --suite all` = `27/27`；`python3 evals/run_evals.py --suite default` = `77/77`；`deep` = `623/623`；`all` = `663/663`。下一步可提交本轮 fixture 增补；不要处理 `tmp/stage5_chillys/`。
