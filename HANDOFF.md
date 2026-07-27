@@ -195,3 +195,19 @@
   - `python3 evals/run_evals.py --suite all` = `663/663`
 - 边界：本轮 fixture 中的 CBP / USITC 文案仍是静态 eval 样本，不是联网核验真实美国最新规则；导出器仍只搬运已审矩阵，不补法规/税费/COO 事实。
 - 下一步建议：提交 Code Slice F；之后进入 Code Slice G（可选）——把 `origin_proof_requirement` 的用户可见表头进一步固化到导出列/Markdown 展示，或开始 Skill 入口接入前的最小路由设计。
+
+## 产品出海市场分析 Code Slice G：Skill 入口与路由最小闭环
+
+- 2026-07-27 已新增 `skills/analyzing-product-outbound-market/SKILL.md` 和 `agents/openai.yaml`，作为产品出海市场分析的独立 Skill 入口。
+- 已新增 `shared/references/product-outbound-market-intake.md`，固化首轮四行回应、缺产品/缺国家追问、产品触发项提示、默认出口申报国和待确认边界。
+- 已更新 `skills/using-superleads/SKILL.md`、`shared/references/route-map.md`、`shared/references/user-intake.md`：产品出海市场分析与批量客户开发、客户背调并列；“市场分析 + 找客户”拆阶段处理。
+- 已新增 `scripts/route_superleads_intake.py` 和 `evals/cases/superleads_route_cases.json`，用确定性 route eval 覆盖：产品市场分析、纯找客户、纯背调、混合请求拆阶段、缺目标国。
+- 已新增 `evals/behavioral/product-market-route-prompts.json`，覆盖入口行为提示。
+- 已验证：
+  - `python3 /home/fleix/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/analyzing-product-outbound-market` = `Skill is valid!`
+  - `python3 evals/run_product_market_analysis_evals.py --suite all` = `36/36`
+  - `python3 evals/run_evals.py --suite default` = `84/84`
+  - `python3 evals/run_evals.py --suite deep` = `630/630`
+  - `python3 evals/run_evals.py --suite all` = `670/670`
+- 边界：路由脚本只是 guardrail，不生成 Brief/graph/事实；真实报告仍走 ProductMarketAnalysisGraph 和 A-F 防错链路。
+- 下一步建议：Code Slice H，优化产品出海市场分析的导出列和 Markdown 展示，让 `origin_proof_requirement`、默认出口国/原产国/起运地、未执行模块在用户表格里更顺眼。

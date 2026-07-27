@@ -1,0 +1,60 @@
+{
+  "description": "Deterministic Superleads intake routing checks for product outbound market analysis, bulk customer development, and customer background research.",
+  "router": "scripts/route_superleads_intake.py",
+  "cases": [
+    {
+      "name": "direct product outbound market analysis",
+      "text": "做一个产品出海市场分析：48V20Ah LiFePO4 电池包，越南原产，出口美国。",
+      "expected_route": "product_outbound_market_analysis",
+      "expected_next_skill": "analyzing-product-outbound-market",
+      "expected_split_customer_development": false,
+      "expected_missing_fields": [],
+      "response_must_contain": ["产品出海市场分析", "不生成客户名单", "不判断是否值得进入"]
+    },
+    {
+      "name": "textile compliance tax coo logistics",
+      "text": "分析中国原产男式棉制灯芯绒衬衫出口美国的标签要求、关税、COO 和物流。",
+      "expected_route": "product_outbound_market_analysis",
+      "expected_next_skill": "analyzing-product-outbound-market",
+      "expected_split_customer_development": false,
+      "expected_missing_fields": [],
+      "response_must_contain": ["产品出海市场分析", "趋势", "准入", "税费", "物流"]
+    },
+    {
+      "name": "market plus customer split",
+      "text": "这个产品美国市场能不能做？顺便帮我找美国客户。",
+      "expected_route": "product_outbound_market_analysis",
+      "expected_next_skill": "analyzing-product-outbound-market",
+      "expected_split_customer_development": true,
+      "expected_missing_fields": [],
+      "response_must_contain": ["产品出海市场分析", "第二阶段", "批量客户开发"]
+    },
+    {
+      "name": "pure customer development",
+      "text": "帮我找美国锂电池进口商客户。",
+      "expected_route": "bulk_customer_development",
+      "expected_next_skill": "scoping-lead-research",
+      "expected_split_customer_development": false,
+      "expected_missing_fields": [],
+      "response_must_contain": ["批量客户开发"]
+    },
+    {
+      "name": "single domain background research",
+      "text": "背调一下 examplebattery.com 这家公司。",
+      "expected_route": "customer_background_research",
+      "expected_next_skill": "researching-customer-background",
+      "expected_split_customer_development": false,
+      "expected_missing_fields": [],
+      "response_must_contain": ["客户背调报告"]
+    },
+    {
+      "name": "missing target country",
+      "text": "分析这个带电池产品的认证、关税和物流。",
+      "expected_route": "product_outbound_market_analysis",
+      "expected_next_skill": "analyzing-product-outbound-market",
+      "expected_split_customer_development": false,
+      "expected_missing_fields": ["target_country_or_region"],
+      "response_must_contain": ["产品出海市场分析", "待确认"]
+    }
+  ]
+}

@@ -13,7 +13,13 @@ Start from the user's actual task:
 
 指定一个公司、品牌、域名、地址、邮箱、Candidate 或用户材料并要求客户背调，进入“客户背调报告”入口。它不产生新客户批量池，也不要求预先 Entity 解析；可形成独立的轻验证背景报告文件，不进入正式名单 audit 或 manifest。正式标准开发名单仍是独立、明确请求的严格路径。
 
+给出一个产品/型号/产品资料，并要求分析该产品出口或进入某个国家/地区的趋势、公开价格、准入合规、税费、出口要求、运输路线、COO/原产地证明或近期外部因素，进入“产品出海市场分析”入口。它不生成客户名单、不推荐客户类型、不判断是否值得进入，也不把线上渠道或价格参考变成批量客户开发范围。
+
+如果用户同时说“先分析市场再找客户”，先做产品出海市场分析；只有用户看完后明确要找客户，才另启批量客户开发。
+
 New customer development needs product/service plus at least one scope axis: country/region, customer type, channel, application, keyword, seed company, competitor, existing table, trade fair/PDF/web material.
+
+Product outbound market analysis needs product identity plus target country/region. Export declaration country may default visibly to China unless the user sets another country. Origin country, departure node, final HS/HTS, certificates, COO/proof of origin, packaging, and logistics timing stay as待确认 when unsupported.
 
 Single-company analysis requires the current user's explicit company name,
 URL/domain, or material reference and resolves only that specified Entity.

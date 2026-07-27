@@ -209,3 +209,14 @@
   - `python3 evals/run_evals.py --suite deep` = `623/623`
   - `python3 evals/run_evals.py --suite all` = `663/663`
 - 当前下一步：提交 Code Slice F；之后可选 Code Slice G（导出列/Markdown 展示优化）或 Skill 入口接入前的最小路由设计。
+
+## 产品出海市场分析：Code Slice G Skill 入口与路由
+
+- 已新增 `skills/analyzing-product-outbound-market/` 独立 Skill 入口。
+- 已新增 `shared/references/product-outbound-market-intake.md`，包含触发/非触发、首轮回应、追问和产品触发项提示。
+- 已更新 `using-superleads`、`route-map`、`user-intake`，明确产品出海市场分析、批量客户开发、客户背调三条路线并列。
+- 已新增 `scripts/route_superleads_intake.py` 作为轻量路由 guardrail。
+- 已新增 `evals/cases/superleads_route_cases.json` 和 `evals/behavioral/product-market-route-prompts.json`。
+- 已新增验证记录：`docs/validation/product-market-analysis-code-slice-g-skill-entry-routing-20260727.md`。
+- 已验证：market suite `36/36`；主 default `84/84`；deep `630/630`；all `670/670`。
+- 当前下一步：提交 Code Slice G；然后进入 Code Slice H（导出列/Markdown 展示优化）。

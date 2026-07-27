@@ -22,6 +22,7 @@ SCHEMAS = ROOT / "shared" / "schemas"
 MINIMAL_DISCOVERY_SKELETON = ROOT / "shared" / "references" / "default-discovery-minimal-skeleton.example.json"
 REFERENCE_SAMPLE = ROOT / "shared" / "references" / "default-discovery-reference.example.json"
 CAPABILITY_CASES = ROOT / "evals" / "cases" / "capability_adapter_cases.json"
+SUPERLEADS_ROUTE_CASES = ROOT / "evals" / "cases" / "superleads_route_cases.json"
 MODE_TO_STATUS = {
     "initial": "initial_lead_list",
     "standard": "standard_development_list",
@@ -291,6 +292,46 @@ def run_preflight_assertion(py: str, input_path: str, case: dict[str, object]) -
     }
 
 
+def run_route_assertion(py: str, case: dict[str, object]) -> dict[str, object]:
+    text = str(case.get("text", ""))
+    proc = subprocess.run(
+        [py, str(SCRIPTS / "route_superleads_intake.py"), "--text", text, "--format", "json"],
+        cwd=str(ROOT), text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    problems: list[str] = []
+    actual: dict[str, object] | None = None
+    try:
+        parsed = json.loads(proc.stdout)
+        actual = parsed if isinstance(parsed, dict) else None
+    except Exception as exc:
+        problems.append(f"router output is not JSON: {exc}")
+    if isinstance(actual, dict):
+        for key, expected_key in (
+            ("route", "expected_route"),
+            ("next_skill", "expected_next_skill"),
+            ("split_customer_development", "expected_split_customer_development"),
+        ):
+            if expected_key in case and actual.get(key) != case.get(expected_key):
+                problems.append(f"{key} expected {case.get(expected_key)!r} got {actual.get(key)!r}")
+        expected_missing = list(case.get("expected_missing_fields", []))
+        actual_missing = list(actual.get("missing_fields", [])) if isinstance(actual.get("missing_fields"), list) else []
+        if expected_missing != actual_missing:
+            problems.append(f"missing_fields expected {expected_missing!r} got {actual_missing!r}")
+        response = "\n".join(str(item) for item in actual.get("response_lines", []) if item is not None)
+        for needle in case.get("response_must_contain", []) if isinstance(case.get("response_must_contain"), list) else []:
+            if str(needle) not in response:
+                problems.append(f"response missing {needle!r}")
+    ok = proc.returncode == 0 and actual is not None and not problems
+    return {
+        "cmd": [py, str(SCRIPTS / "route_superleads_intake.py"), "--text", text, "--format", "json"],
+        "returncode": 0 if ok else 1,
+        "expected": 0,
+        "ok": ok,
+        "output": proc.stdout if not problems else proc.stdout + "\nroute assertion failed: " + "; ".join(problems),
+    }
+
+
 def add_capability_adapter_tests(tests: list[tuple[str, list[str], int, list[str]]]) -> None:
     if not CAPABILITY_CASES.exists():
         return
@@ -302,6 +343,21 @@ def add_capability_adapter_tests(tests: list[tuple[str, list[str], int, list[str
             f"capability adapter {case.get('name', case['input'])}",
             ["__PREFLIGHT_ASSERT__", str(ROOT / case["input"]), json.dumps(case, ensure_ascii=False)],
             int(case.get("returncode", 0)),
+            [],
+        ))
+
+
+def add_superleads_route_tests(tests: list[tuple[str, list[str], int, list[str]]]) -> None:
+    if not SUPERLEADS_ROUTE_CASES.exists():
+        return
+    payload = json.loads(SUPERLEADS_ROUTE_CASES.read_text(encoding="utf-8"))
+    for case in payload.get("cases", []):
+        if not isinstance(case, dict) or not isinstance(case.get("text"), str):
+            continue
+        tests.append((
+            f"superleads route {case.get('name', case['text'])}",
+            ["__ROUTE_ASSERT__", json.dumps(case, ensure_ascii=False)],
+            0,
             [],
         ))
 
@@ -493,6 +549,7 @@ def add_static_suite_tests(py: str, tests: list[tuple[str, list[str], int, list[
         tests.append((f"integration expectation file {integration_file.name}", ["__INTEGRATION_CHECK__", str(integration_file)], 0, []))
     for legacy_file in sorted(LEGACY_DERIVED.glob("*.json")):
         tests.append((f"legacy anti-pattern file {legacy_file.name}", ["__LEGACY_CHECK__", str(legacy_file)], 0, []))
+    add_superleads_route_tests(tests)
 
 
 def static_check(kind: str, path: str) -> dict[str, object]:
@@ -602,6 +659,8 @@ def main() -> int:
                 result = run_normalize_chain(py, cmd[1], tmp_path, index)
             elif cmd and cmd[0] == "__PREFLIGHT_ASSERT__":
                 result = run_preflight_assertion(py, cmd[1], json.loads(cmd[2]))
+            elif cmd and cmd[0] == "__ROUTE_ASSERT__":
+                result = run_route_assertion(py, json.loads(cmd[1]))
             elif cmd and cmd[0] == "__SUITE_MEMBERSHIP_CHECK__":
                 result = _suite_membership_check(cmd[1], set(json.loads(cmd[2])))
             elif cmd and cmd[0].startswith("__") and cmd[0].endswith("_CHECK__"):

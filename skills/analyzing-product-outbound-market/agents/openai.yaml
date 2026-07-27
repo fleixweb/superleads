@@ -1,0 +1,4 @@
+interface:
+  display_name: "产品出海市场分析"
+  short_description: "按产品和目标国家整理趋势、准入、税费、出口、物流与外部因素"
+  default_prompt: "Use $analyzing-product-outbound-market to analyze a product's outbound market for a target country or region."

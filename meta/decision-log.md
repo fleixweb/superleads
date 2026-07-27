@@ -122,3 +122,9 @@
 - 决策：将 Slice 13 的 COO / proof of origin 规则落入 schema、validator、独立 market suite 和首批 pass/fail fixtures。
 - 原因：真实外贸分析不能把“用户有没有 COO”当成目标国规则结论，也不能把 Made in、优惠原产地证明、用户文件或无来源判断升级为确定性清关结论。
 - 后果：`origin_proof_requirement` 成为产品准入矩阵中的专门行类型；确定性 `required / conditionally_required / normally_not_required` 必须有官方/权威来源引用；无权威来源只能降级到 `unable_to_verify`。
+
+## 2026-07-27：Code Slice G 落地产品出海市场分析 Skill 入口
+
+- 决策：新增 `analyzing-product-outbound-market` Skill，并把 `using-superleads`、`route-map`、`user-intake` 更新为三路线并列入口：产品出海市场分析、批量客户开发、客户背调。
+- 原因：A-F 已具备产品市场分析的数据和防错闭环，但用户真实入口仍可能被误路由成找客户或单客背调；必须先把入口和拆阶段规则固化。
+- 后果：用户要趋势/价格/准入/税费/出口/物流/COO/外部因素时进入产品出海市场分析；用户要客户名单仍走批量开发；用户指定公司/域名背调仍走客户背调；“市场分析 + 找客户”先做市场分析，客户开发需另行确认。

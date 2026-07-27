@@ -1,25 +1,40 @@
 ---
 name: using-superleads
-description: "Use when users need overseas B2B customer discovery, public contact collection, lead-list enrichment, or foreign-trade prospect research."
+description: "Use when users need overseas B2B customer discovery, public contact collection, lead-list enrichment, foreign-trade prospect research, single-customer background research, or product outbound market analysis intake/routing."
 ---
 
 # Using Superleads
 
 ## Purpose
 
-Activate Superleads, identify the user's task entry, create Run Context, decide whether this run is default discovery or explicit deep verification, check tool capability, and route to the next skill. Do not search, generate leads, write development advice, or export workbooks here.
+Activate Superleads, identify the user's task entry, create Run Context, decide whether this run is product outbound market analysis, default discovery, explicit deep verification, or customer background research, check tool capability, and route to the next skill. Do not search, generate leads, write development advice, or export workbooks here.
 
 ## Required references
 
-Read `../../shared/references/user-intake.md` for intake modes and minimum research targets. Read `../../shared/references/route-map.md` for routing. Read `../../shared/policies/tool-capability-policy.md` when tool availability affects deliverable level. For default discovery, read `../../shared/references/default-discovery-reference.md`; begin with `default-discovery-minimal-skeleton.example.json`, and open the complete reference only for status/contact/conflict boundaries.
+Read `../../shared/references/user-intake.md` for intake modes and minimum research targets. Read `../../shared/references/route-map.md` for routing. For product outbound market analysis, read `../../shared/references/product-outbound-market-intake.md`. Read `../../shared/policies/tool-capability-policy.md` when tool availability affects deliverable level. For default discovery, read `../../shared/references/default-discovery-reference.md`; begin with `default-discovery-minimal-skeleton.example.json`, and open the complete reference only for status/contact/conflict boundaries.
 
 ## Workflow
 
-1. Identify the entry mode: a specified background-research subject, single company, product plus scope, keywords, application/downstream field, country/customer type, existing table, competitor/seed, or source material list.
+1. Identify the entry mode: product outbound market analysis, a specified background-research subject, single company, product plus customer-development scope, keywords, application/downstream field, country/customer type, existing table, competitor/seed, or source material list.
+   - If the core request is one product entering/exporting to a target country/region for trends, price references, compliance, import duties/taxes, export requirements, logistics, customs pre-filing, COO/proof of origin, or external factors, route to `analyzing-product-outbound-market`.
+   - If the user asks for customers, buyers, importers, lead lists, or prospect development, keep the bulk customer-development route.
+   - If the user names one company, brand, domain, email, address, Candidate, or user material and asks for background research, route to customer background research.
+   - If the user asks for market analysis and then finding customers, split it into two stages and start with product outbound market analysis only.
 2. Check the minimum research target. For new customer development require product/service plus at least one scope axis. A user who names one company, brand, domain, address, email, Candidate, or user material and asks for customer background research follows `using-superleads` → `scoping-lead-research` → `researching-customer-background`; retain the original anchor without requiring pre-resolved Entity. For single-company analysis, retain the current user's explicit company name, URL/domain, or material reference and bind the result to that Entity only. For existing-table enrichment, retain the user-provided spreadsheet and the rows/cells being supplemented. These routes do not create a direction-matched customer list without the current development contract.
 3. Create a Run Context with `run_id`, timestamp, task entry mode, platform, detected capabilities, requested output mode, evidence depth, and whether this run defaults to discovery-first or strict deep-check.
 4. Run or emulate `scripts/preflight_capabilities.py` when tools are uncertain. Record gaps and downgrade if source-opening or document extraction is unavailable. In a Codex CLI session started with `codex --search`, inspect only the currently visible native `web_search` capability and write the controlled adapter report from actual operation results; do not assume another integration exists.
-5. Route to `scoping-lead-research` next unless the task is already a pure verification/export task. The default route remains `using-superleads` → `scoping-lead-research` → `discovery` → `exporting-lead-workbooks`. A specified-object customer background request is a separate research-draft route, not default bulk discovery and not the current formal review/audit route. Do not route every “background check” into strict Review/Audit. Discovery uses the planning, execution, contact, and relevance guides internally as needed; it does not require every Candidate to have an Entity, Observation, ContactClaim, Claim, Assessment, Review, or Audit. Use the strict review/audit route only for an explicit formal verification, contact ownership verification, a contactable list, or a standard development list.
+5. Route to the next skill unless the task is already a pure verification/export task. Product outbound market analysis routes to `analyzing-product-outbound-market` and uses `ProductMarketAnalysisGraph`, not Candidate/Lead/Claim/Assessment. The default customer-development route remains `using-superleads` → `scoping-lead-research` → `discovery` → `exporting-lead-workbooks`. A specified-object customer background request is a separate research-draft route, not default bulk discovery and not the current formal review/audit route. Do not route every “background check” into strict Review/Audit. Discovery uses the planning, execution, contact, and relevance guides internally as needed; it does not require every Candidate to have an Entity, Observation, ContactClaim, Claim, Assessment, Review, or Audit. Use the strict review/audit route only for an explicit formal verification, contact ownership verification, a contactable list, or a standard development list.
+
+## 产品出海市场分析入口
+
+When routing to product outbound market analysis, respond in user-facing Chinese with four short lines:
+
+`我理解你要做的是：产品出海市场分析。`
+`本轮对象：{产品/型号} → {目的国/地区}。`
+`默认出口申报国：{用户指定/中国默认}；原产国、起运地、最终税号和技术文件不足时会保留待确认。`
+`我会整理趋势、公开价格参考、准入、税费、出口要求、物流和外部因素；不生成客户名单，也不判断是否值得进入。`
+
+Ask at most three short questions only if the product or target country/region is missing or if export/origin assumptions would materially change the analysis.
 
 ## 本次方向
 
