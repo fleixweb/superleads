@@ -22,6 +22,7 @@ Read these only as needed:
 - `../../spec/13-product-outbound-market-analysis-workbook-contract.md` for workbook sheets and user-visible fields.
 - `../../spec/14-product-outbound-market-analysis-evidence-boundary-rules.md` for forbidden evidence upgrades.
 - `../../spec/24-product-outbound-market-analysis-origin-proof-requirements.md` when COO / proof of origin appears.
+- Plan source collection with `../../scripts/plan_product_market_sources.py` before any real search/open step. Its output is `source_plan_only`, not evidence.
 - Validate and audit existing graphs with `../../scripts/validate_product_market_analysis.py` and `../../scripts/audit_product_market_analysis.py`.
 - Export reviewed graphs with `../../scripts/export_product_market_workbook.py`.
 
@@ -45,6 +46,8 @@ Use `ProductMarketAnalysisGraph`, not Candidate / Claim / Assessment. Every user
 Keep these statuses visible instead of filling blanks: `verified`, `derived_calculation`, `candidate`, `preliminary_reference`, `business_confirmation_required`, `technical_docs_required`, `physical_verification_required`, `professional_confirmation_required`, `source_restricted`, `not_executed`, `not_applicable`, `not_provided`, `conflict_pending_review`.
 
 Search summaries, Source Packs, previous Skill summaries, and model summaries are leads for where to look, not facts.
+
+Before collecting live sources, use the Source Pack registry to generate a Query Plan. The plan may list packs, source entries, query strings, required authority levels, and observation requirements; it must not create EvidenceCards, MatrixRows, tax rates, certification conclusions, logistics times, trends, prices, or market-entry judgments.
 
 ## Output shape
 

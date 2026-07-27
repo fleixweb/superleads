@@ -1,0 +1,46 @@
+{
+  "brief_id": "source-brief-uniqlo-textile-us",
+  "brief_version_id": "source-brief-uniqlo-textile-us-v1",
+  "product_name": "UNIQLO Men's Corduroy Overshirt",
+  "manufacturer_or_brand": "UNIQLO",
+  "model_or_sku": "Product ID 470177",
+  "target_country_or_region": "United States",
+  "export_declaration_country": "China",
+  "origin_country_or_region": "China",
+  "departure_country_or_region": "China",
+  "departure_node": null,
+  "destination_node": null,
+  "candidate_hs_hts": "6205.20.20",
+  "product_trigger_tags": [
+    "textile",
+    "apparel",
+    "cotton",
+    "woven",
+    "skin_contact"
+  ],
+  "analysis_modules_requested": [
+    "product_profile",
+    "destination_compliance",
+    "origin_proof_requirement",
+    "import_tax",
+    "export_requirements",
+    "logistics",
+    "google_trends",
+    "online_price",
+    "market_reports",
+    "season_holiday",
+    "external_factors"
+  ],
+  "attributes": {
+    "fiber_content_public_page": "Body 100% Cotton; Trim 100% Cotton",
+    "fabric": "8-wale corduroy",
+    "construction_working_assumption": "woven apparel, pending physical label/BOM verification",
+    "physical_label_status": "not provided",
+    "bom_status": "not provided",
+    "animal_material_status": "not fully verified because buttons/thread/accessories are not publicly confirmed"
+  },
+  "product_source_urls": [
+    "https://www.uniqlo.com/us/"
+  ],
+  "business_decision_policy": "只生成来源计划；不做市场进入建议、客户推荐、最终归类、最终税率或实物标签合规结论。"
+}

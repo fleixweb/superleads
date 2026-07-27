@@ -1,0 +1,31 @@
+{
+  "brief_id": "source-brief-origin-no-export-country",
+  "brief_version_id": "source-brief-origin-no-export-country-v1",
+  "product_name": "Made in India stainless steel insulated bottle",
+  "manufacturer_or_brand": "Example Brand",
+  "model_or_sku": "IB-750",
+  "target_country_or_region": "United States",
+  "export_declaration_country": null,
+  "origin_country_or_region": "India",
+  "departure_country_or_region": null,
+  "departure_node": null,
+  "destination_node": null,
+  "candidate_hs_hts": null,
+  "product_trigger_tags": [
+    "general_goods",
+    "food_contact"
+  ],
+  "analysis_modules_requested": [
+    "product_profile",
+    "destination_compliance",
+    "origin_proof_requirement",
+    "import_tax",
+    "logistics"
+  ],
+  "attributes": {
+    "material": "stainless steel",
+    "food_contact": true,
+    "origin_line_status": "Made in India is only an origin/manufacturing line, not export declaration country"
+  },
+  "business_decision_policy": "只生成来源计划；出口申报国未知时不得自动套用中国或印度出口要求。"
+}

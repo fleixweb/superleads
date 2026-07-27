@@ -1,0 +1,42 @@
+{
+  "brief_id": "source-brief-bulk-roro-us",
+  "brief_version_id": "source-brief-bulk-roro-us-v1",
+  "product_name": "Hot rolled steel coils and oversized machinery shipped as breakbulk / RoRo cargo",
+  "manufacturer_or_brand": "Example Mill and Machinery Works",
+  "model_or_sku": "mixed project shipment",
+  "target_country_or_region": "United States",
+  "export_declaration_country": "China",
+  "origin_country_or_region": "China",
+  "departure_country_or_region": "China",
+  "departure_node": null,
+  "destination_node": null,
+  "candidate_hs_hts": "7208; 8429 candidate families",
+  "product_trigger_tags": [
+    "steel",
+    "bulk_cargo",
+    "breakbulk",
+    "roro",
+    "heavy_lift",
+    "oversize",
+    "project_goods",
+    "commodity_index_reference"
+  ],
+  "analysis_modules_requested": [
+    "product_profile",
+    "destination_compliance",
+    "origin_proof_requirement",
+    "import_tax",
+    "export_requirements",
+    "logistics",
+    "market_reports",
+    "online_price",
+    "external_factors"
+  ],
+  "attributes": {
+    "cargo_form": "bulk steel coils plus oversized machinery",
+    "shipping_modes_to_check": ["breakbulk", "RoRo", "FCL/LCL not assumed", "air not assumed"],
+    "commodity_reference": "may need public exchange/index references as market signal, not transaction price",
+    "piece_weight_dimensions": "unknown; must be requested before logistics execution"
+  },
+  "business_decision_policy": "只生成来源计划；不得承诺船型、舱位、港口可操作、固定时效或最佳路线。"
+}

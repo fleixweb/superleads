@@ -1,0 +1,50 @@
+{
+  "brief_id": "source-brief-xh-lithium-us",
+  "brief_version_id": "source-brief-xh-lithium-us-v1",
+  "product_name": "Xing Heng 48V20Ah LiFePO4 电池包",
+  "manufacturer_or_brand": "Pin Xing Heng Technology JSC",
+  "model_or_sku": "48V20Ah; Design No. BAT001.02",
+  "target_country_or_region": "United States",
+  "export_declaration_country": "Vietnam",
+  "origin_country_or_region": "Vietnam",
+  "departure_country_or_region": "Vietnam",
+  "departure_node": null,
+  "destination_node": null,
+  "candidate_hs_hts": "8507.60.00",
+  "product_trigger_tags": [
+    "lithium_battery",
+    "dangerous_goods",
+    "battery_standalone",
+    "electrical"
+  ],
+  "analysis_modules_requested": [
+    "product_profile",
+    "destination_compliance",
+    "origin_proof_requirement",
+    "import_tax",
+    "export_requirements",
+    "logistics",
+    "google_trends",
+    "online_price",
+    "market_reports",
+    "season_holiday",
+    "external_factors"
+  ],
+  "attributes": {
+    "battery_type": "LiFePO4 lithium-ion battery pack",
+    "rated_voltage": "48 V",
+    "rated_capacity": "20 Ah",
+    "derived_wh": "960 Wh, derived as 48 V x 20 Ah",
+    "max_current": "<=30 A",
+    "weight": "7.5 kg",
+    "dimensions": "183 x 156 x 265 mm",
+    "un38_3_status": "unknown / not publicly verified",
+    "sds_status": "unknown / not publicly provided",
+    "packing_status": "unknown",
+    "shipping_scenario": "battery standalone; UN3480/UN3481 must be checked by actual shipment scenario"
+  },
+  "product_source_urls": [
+    "https://www.xingheng.com.vn/"
+  ],
+  "business_decision_policy": "只生成来源计划；不做市场进入建议、客户推荐、税率结论、认证结论或运输可行结论。"
+}

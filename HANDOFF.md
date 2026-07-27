@@ -220,3 +220,14 @@
 - 已更新 `evals/cases/product_market_analysis_cases.json` 的导出断言，覆盖字段名、COO 展示、地理拆分和未执行简写。
 - 已验证：`python3 evals/run_product_market_analysis_evals.py --suite all` = `36/36`；主 default `84/84`；deep `630/630`；all `670/670`。
 - 边界：本轮只优化展示层，不新增真实来源、税率、趋势、价格、法规或物流结论；底层 graph enum 保持不变。
+
+## 产品出海市场分析：Code Slice I Source Pack registry / Query Plan
+
+- 2026-07-27 已新增 `shared/source_packs/product_market_seed_packs.json`，作为产品出海市场分析第一批 seed Source Pack registry。
+- Registry 覆盖 10 个 Pack：美国准入、美国税费、美国 COO/proof of origin、中国出口、越南出口、跨太平洋物流、美国市场信号、锂电通用规则、纺织服装通用规则、产品原始资料。
+- 已新增 `scripts/plan_product_market_sources.py`：只生成 `source_plan_only` 查询计划；声明 `not_evidence`、`does_not_search_web`、`does_not_open_sources`，每个查询步骤强制 `must_open_source` 与 `reject_if_only_snippet`。
+- 已新增 source-plan fixtures：Xing Heng 越南锂电出口美国、UNIQLO 中国纺织品出口美国、只有原产线索但无出口申报国、散杂/RoRo/大宗项目货、缺目标国阻断样本。
+- 已新增 `evals/cases/product_market_source_plan_cases.json` 和 `evals/run_product_market_source_plan_evals.py`，验证 Pack 路由、QueryTemplate 覆盖和禁止升级断言。
+- 已验证：source-plan suite `6/6`；market suite `36/36`；default `84/84`；deep `630/630`；all `670/670`。
+- 边界：本轮不联网、不打开来源、不生成 EvidenceCard/MatrixRow，不输出税率、认证、物流时效、趋势、价格或市场进入建议。
+- 下一步建议：Code Slice J，把 Source Plan 与真实采集运行记录衔接：Query Plan -> SearchLog / Source / Observation fixture，但仍先用可审计样本，不直接做默认真实发现。

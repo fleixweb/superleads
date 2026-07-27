@@ -1,0 +1,217 @@
+{
+  "description": "Product outbound market analysis Code Slice I Source Pack registry + Query Plan fixtures. These cases assert source_plan_only boundaries and pack/template routing; they must not produce facts.",
+  "runner": "evals/run_product_market_source_plan_evals.py",
+  "planner": "scripts/plan_product_market_sources.py",
+  "registry": "shared/source_packs/product_market_seed_packs.json",
+  "cases": [
+    {
+      "name": "xingheng vietnam lithium to us source plan",
+      "fixture": "source_plan_xingheng_lithium_us_brief.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "must_select_pack_ids": [
+        "seed_us_market_access_general",
+        "seed_us_import_tax_general",
+        "seed_us_origin_proof_general",
+        "seed_vn_export_general",
+        "seed_transpacific_logistics_general",
+        "seed_market_signal_global_to_us",
+        "seed_lithium_battery_common_rules",
+        "seed_product_original_sources"
+      ],
+      "must_include_template_ids": [
+        "qt_us_market_access_by_trigger",
+        "qt_us_duty_by_candidate_hs",
+        "qt_us_origin_proof_requirement",
+        "qt_vn_export_country_requirements",
+        "qt_logistics_route_nodes",
+        "qt_market_signal_terms",
+        "qt_season_holiday_signals",
+        "qt_external_factor_watch",
+        "qt_lithium_battery_transport_docs",
+        "qt_product_original_docs"
+      ],
+      "output_must_contain": [
+        "source_plan_only",
+        "must_open_source",
+        "reject_if_only_snippet",
+        "not_evidence",
+        "Source Pack",
+        "Query Plan",
+        "origin_proof_requirement",
+        "seed_vn_export_general",
+        "market_source_plan_departure_node_unknown"
+      ],
+      "output_must_not_contain": [
+        "UN38.3 已合规",
+        "SDS 已有",
+        "普通货运输",
+        "可出运",
+        "最终税率为",
+        "最终归类为",
+        "默认海防港",
+        "最佳路线",
+        "建议进入",
+        "推荐价格",
+        "推荐客户类型"
+      ]
+    },
+    {
+      "name": "uniqlo china textile to us source plan",
+      "fixture": "source_plan_uniqlo_textile_us_brief.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "must_select_pack_ids": [
+        "seed_us_market_access_general",
+        "seed_us_import_tax_general",
+        "seed_us_origin_proof_general",
+        "seed_cn_export_general",
+        "seed_transpacific_logistics_general",
+        "seed_market_signal_global_to_us",
+        "seed_textile_apparel_common_rules",
+        "seed_product_original_sources"
+      ],
+      "must_include_template_ids": [
+        "qt_us_market_access_by_trigger",
+        "qt_us_duty_by_candidate_hs",
+        "qt_us_origin_proof_requirement",
+        "qt_cn_export_country_requirements",
+        "qt_logistics_route_nodes",
+        "qt_market_signal_terms",
+        "qt_season_holiday_signals",
+        "qt_external_factor_watch",
+        "qt_textile_label_and_classification_docs",
+        "qt_product_original_docs"
+      ],
+      "output_must_contain": [
+        "source_plan_only",
+        "must_open_source",
+        "reject_if_only_snippet",
+        "not_evidence",
+        "roles_separated",
+        "seed_textile_apparel_common_rules",
+        "market_source_plan_departure_node_unknown"
+      ],
+      "output_must_not_contain": [
+        "实物标签已合规",
+        "全成分无动物材料",
+        "最终 HTSUS",
+        "最终税率为",
+        "默认上海港",
+        "默认宁波港",
+        "默认深圳港",
+        "建议进入",
+        "推荐价格",
+        "推荐客户类型"
+      ]
+    },
+    {
+      "name": "origin line without export country must not trigger export conclusion",
+      "fixture": "source_plan_origin_without_export_country_brief.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "must_select_pack_ids": [
+        "seed_us_market_access_general",
+        "seed_us_import_tax_general",
+        "seed_us_origin_proof_general",
+        "seed_market_signal_global_to_us",
+        "seed_product_original_sources"
+      ],
+      "must_not_select_pack_ids": [
+        "seed_cn_export_general",
+        "seed_vn_export_general"
+      ],
+      "must_include_template_ids": [
+        "qt_us_market_access_by_trigger",
+        "qt_us_duty_by_candidate_hs",
+        "qt_us_origin_proof_requirement",
+        "qt_product_original_docs"
+      ],
+      "output_must_contain": [
+        "source_plan_only",
+        "market_source_plan_export_country_visible_default_needed",
+        "不能自动当成出口申报国",
+        "not_evidence"
+      ],
+      "output_must_not_contain": [
+        "按中国出口",
+        "按印度出口",
+        "出口申报国=India",
+        "默认中国出口要求",
+        "默认海防港",
+        "最终税率为",
+        "建议进入"
+      ]
+    },
+    {
+      "name": "bulk roro commodity source plan",
+      "fixture": "source_plan_bulk_roro_brief.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "must_select_pack_ids": [
+        "seed_us_market_access_general",
+        "seed_us_import_tax_general",
+        "seed_us_origin_proof_general",
+        "seed_cn_export_general",
+        "seed_transpacific_logistics_general",
+        "seed_market_signal_global_to_us",
+        "seed_product_original_sources"
+      ],
+      "must_include_template_ids": [
+        "qt_cn_export_country_requirements",
+        "qt_logistics_route_nodes",
+        "qt_market_signal_terms",
+        "qt_external_factor_watch",
+        "qt_product_original_docs"
+      ],
+      "output_must_contain": [
+        "breakbulk",
+        "roro",
+        "commodity_index_reference",
+        "entry_exchange_index",
+        "source_plan_only",
+        "not_evidence"
+      ],
+      "output_must_not_contain": [
+        "最佳路线",
+        "承诺交期为",
+        "固定时效",
+        "推荐船型",
+        "港口可操作",
+        "最终税率为",
+        "推荐价格",
+        "建议进入"
+      ]
+    },
+    {
+      "name": "missing target country blocks destination facts",
+      "fixture": "source_plan_missing_target_brief.json",
+      "expected_returncode": 1,
+      "expected_ok": false,
+      "must_select_pack_ids": [
+        "seed_cn_export_general",
+        "seed_lithium_battery_common_rules",
+        "seed_product_original_sources"
+      ],
+      "must_include_template_ids": [
+        "qt_cn_export_country_requirements",
+        "qt_lithium_battery_transport_docs",
+        "qt_product_original_docs"
+      ],
+      "output_must_contain": [
+        "source_plan_only",
+        "missing_required_fields",
+        "target_country_or_region",
+        "market_source_plan_missing_target_country",
+        "not_evidence"
+      ],
+      "output_must_not_contain": [
+        "最终税率为",
+        "已合规",
+        "可出运",
+        "建议进入",
+        "推荐价格"
+      ]
+    }
+  ]
+}

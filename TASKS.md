@@ -229,3 +229,14 @@
 - 已更新导出回归断言并新增验证记录：`docs/validation/product-market-analysis-code-slice-h-export-display-20260727.md`。
 - 已验证：market suite `36/36`；主 default `84/84`；deep `630/630`；all `670/670`。
 - 下一步建议：Code Slice I，做真实 Source Pack registry / Query Plan 读取骨架，仍只生成来源计划，不自动生成事实。
+
+## 产品出海市场分析：Code Slice I Source Pack / Query Plan
+
+- 已新增 seed Source Pack registry：`shared/source_packs/product_market_seed_packs.json`。
+- 已新增 Query Plan generator：`scripts/plan_product_market_sources.py`。
+- 已新增 source-plan fixtures / cases / runner：
+  - `evals/fixtures/source_plan_*_brief.json`
+  - `evals/cases/product_market_source_plan_cases.json`
+  - `evals/run_product_market_source_plan_evals.py`
+- 已验证：source-plan `6/6`、market `36/36`、default `84/84`、deep `630/630`、all `670/670`。
+- 当前下一步：Code Slice J，设计 Query Plan 执行记录与真实来源采集衔接的最小 SearchLog / Source / Observation 夹具；继续保持“搜索摘要不成事实、未打开来源不成证据”。

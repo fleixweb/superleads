@@ -1,0 +1,11 @@
+{
+  "brief_id": "source-brief-missing-target",
+  "brief_version_id": "source-brief-missing-target-v1",
+  "product_name": "48V lithium battery pack",
+  "target_country_or_region": null,
+  "export_declaration_country": "China",
+  "origin_country_or_region": "China",
+  "product_trigger_tags": ["lithium_battery", "dangerous_goods"],
+  "analysis_modules_requested": ["destination_compliance", "import_tax", "logistics"],
+  "business_decision_policy": "缺目标国时只能停在计划缺口。"
+}
