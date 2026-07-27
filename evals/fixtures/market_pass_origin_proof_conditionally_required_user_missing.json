@@ -1,0 +1,140 @@
+{
+  "extends": "market_pass_uniqlo_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "append",
+      "path": "/sources/-",
+      "value": {
+        "source_id": "source-us-cbp-origin-preference",
+        "canonical_url": "https://www.cbp.gov/trade/free-trade-agreements",
+        "final_url": "https://www.cbp.gov/trade/free-trade-agreements",
+        "publisher_relation": "first_party",
+        "provenance": "discovered_public",
+        "medium": "website",
+        "access_boundary": "public_web",
+        "owner_hint": "U.S. Customs and Border Protection official guidance"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/observations/-",
+      "value": {
+        "observation_id": "observation-us-cbp-origin-preference",
+        "run_id": null,
+        "source_id": "source-us-cbp-origin-preference",
+        "capability": "source.open",
+        "concrete_tool": "fixture.static_source_open",
+        "observed_at": "2026-07-27",
+        "access_status": "opened",
+        "title": "CBP origin and trade preference guidance",
+        "raw_excerpt": "CBP official guidance describes that importers claiming preferential tariff treatment under a trade agreement must have proof of origin or origin certification; ordinary import and marking requirements are separate.",
+        "page_or_dom_locator": "fixture-visible-excerpt",
+        "extraction_method": "fixture_static",
+        "language": "en",
+        "translation_status": "original"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/evidence_cards/-",
+      "value": {
+        "evidence_card_id": "card-us-cbp-origin-preference",
+        "run_id": "run-uq-us",
+        "brief_version_id": "brief-uq-us-v1",
+        "producer_skill": "Skill C - 目的国准入与税费",
+        "reviewer_skill": "Skill F - 交付复核",
+        "field_domain": "目标国原产地证明要求",
+        "field_name": "优惠税率 proof of origin 条件",
+        "current_value": "申请优惠税率/贸易协定待遇时需要 proof of origin；普通进口是否需要单独 COO 不由该条直接推出",
+        "status": "verified",
+        "source_refs": [
+          {
+            "source_id": "source-us-cbp-origin-preference",
+            "observation_id": "observation-us-cbp-origin-preference",
+            "relation": "supports"
+          }
+        ],
+        "source_type": "official_customs_guidance",
+        "source_locator": "CBP official trade agreement / origin guidance",
+        "source_date": "日期未见",
+        "observed_at": "2026-07-27",
+        "applicability_scope": "仅支持优惠税率/贸易协定场景下 proof of origin 的条件性要求；普通进口规则需另行核验",
+        "supports": [
+          "官方来源支持优惠待遇场景需要 proof of origin / origin certification"
+        ],
+        "does_not_support": [
+          "不能推出所有普通进口都需要 COO",
+          "不能替代海关最终原产地裁定"
+        ],
+        "boundary_rule_ids": [
+          "EB-ORI-08",
+          "EB-ORI-10"
+        ],
+        "review_status": "passed"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-uq-origin-proof-conditional",
+        "sheet_name": "产品准入与合规要求",
+        "row_topic": "原产地证明 / COO 要求（目标国规则与用户材料分列）",
+        "user_visible_cells": {
+          "样本ID": "UQ-470177-US",
+          "要求类别": "原产地证明 / COO",
+          "要求名称": "目标国原产地证明要求",
+          "目的国/地区": "美国",
+          "原产国/制造来源": "China（网页 Production 线索，正式原产按文件确认）",
+          "候选 HS/HTS": "6205.20.20（候选）",
+          "原产地证明要求结论": "conditionally_required",
+          "触发条件": "申请优惠税率/贸易协定待遇、海关要求证明原产地、贸易救济/配额/敏感监管时",
+          "可接受文件": "proof of origin / origin certification / COO 等，按目标国官方规则和具体协定确认",
+          "用户材料状态": "user_not_provided_but_required（若业务计划触发上述场景）",
+          "当前证据": "CBP 官方来源说明优惠待遇场景需要 origin proof；未把该规则泛化到普通进口",
+          "官方/优先来源": "CBP official trade agreement / origin guidance",
+          "待补材料": "如计划申请优惠或被要求证明原产地，应准备对应 proof of origin、COO 或声明，并由报关专业方确认",
+          "禁止升级": "不把用户未提供写成目标国不需要；不把优惠 proof 泛化为普通进口必需"
+        },
+        "status": "professional_confirmation_required",
+        "evidence_card_ids": [
+          "card-us-cbp-origin-preference"
+        ],
+        "gap_ids": [],
+        "conflict_ids": [],
+        "module_key": "origin_proof_requirement",
+        "boundary_rule_ids": [
+          "EB-ORI-06",
+          "EB-ORI-08",
+          "EB-ORI-10"
+        ],
+        "internal_refs_hidden": true,
+        "row_type": "origin_proof_requirement",
+        "origin_proof_requirement": {
+          "sample_id": "UQ-470177-US",
+          "target_country_or_region": "United States",
+          "origin_or_export_country": "China",
+          "candidate_hs_hts": "6205.20.20 candidate",
+          "requirement_status": "conditionally_required",
+          "trigger_conditions": [
+            "申请优惠税率/贸易协定待遇",
+            "海关要求证明原产地",
+            "贸易救济/配额/敏感监管场景"
+          ],
+          "acceptable_documents": [
+            "proof of origin",
+            "origin certification",
+            "COO",
+            "origin declaration"
+          ],
+          "user_material_status": "user_not_provided_but_required",
+          "authority_source_refs": [
+            "source-us-cbp-origin-preference"
+          ],
+          "user_material_refs": [],
+          "limitation_note": "目标国规则状态和用户材料状态分列；是否正式适用仍需报关/主管机关确认。"
+        }
+      }
+    }
+  ]
+}

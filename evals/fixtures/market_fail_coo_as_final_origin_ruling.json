@@ -1,0 +1,27 @@
+{
+  "extends": "market_pass_origin_proof_user_coo_scope_limited.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/user_visible_cells/当前证据",
+      "value": "用户提供 COO，因此海关最终原产地裁定已经完成"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/user_visible_cells/禁止升级",
+      "value": "用户 COO 可直接作为官方最终裁定"
+    },
+    {
+      "op": "replace",
+      "path": "/evidence_cards/6/current_value",
+      "value": "用户提供 COO，因此海关最终原产地裁定已经完成"
+    },
+    {
+      "op": "replace",
+      "path": "/evidence_cards/6/supports",
+      "value": [
+        "支持海关最终原产地裁定"
+      ]
+    }
+  ]
+}

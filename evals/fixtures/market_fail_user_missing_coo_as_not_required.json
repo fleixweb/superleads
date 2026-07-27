@@ -1,0 +1,20 @@
+{
+  "extends": "market_pass_origin_proof_conditionally_required_user_missing.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/origin_proof_requirement/requirement_status",
+      "value": "normally_not_required"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/user_visible_cells/原产地证明要求结论",
+      "value": "normally_not_required"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/user_visible_cells/当前证据",
+      "value": "用户没提供 COO，所以目标国不需要 COO"
+    }
+  ]
+}

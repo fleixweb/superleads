@@ -174,3 +174,24 @@
 - 核心纠偏：COO / proof of origin 必须拆成“目标国规则是否需要”和“用户材料是否已准备”两条线；用户未提供 COO 不等于目标国不需要，Made in / origin marking 不等于 COO 文件，优惠税率 proof of origin 不得泛化为所有普通进口必需，用户 COO 不等于海关最终原产地裁定。
 - 工作簿新增 `origin_proof_requirement` 专门行语义，Source Pack 新增 `destination_origin_proof_pack` / `origin_proof_requirement` 查询组语义。
 - 本轮仍为产品设计文档，不写代码、不联网验证具体国家规则。下一步若进入代码：扩展 schema / validator / fixtures，新增 `market_origin_proof_user_material_conflated`、`market_origin_marking_conflated_with_coo`、`market_origin_preferential_overgeneralized`、`market_user_coo_promoted_to_official_ruling`、`market_origin_requirement_without_authority` 等规则。
+
+## 产品出海市场分析 Code Slice F：COO / 原产地证明防错闭环
+
+- 2026-07-27 已把 Slice 13 落到代码层：`shared/schemas/product-market-analysis.schema.json` 新增 `OriginProofRequirementStatus`、`OriginProofUserMaterialStatus`、`MatrixRowType` 和 `OriginProofRequirementRecord`，`MatrixRowRecord` 允许 `row_type=origin_proof_requirement` 与 `origin_proof_requirement` 专门结构。
+- `scripts/validate_product_market_analysis.py` 新增 5 个 COO / proof of origin 边界错误码：
+  - `market_origin_proof_user_material_conflated`
+  - `market_origin_marking_conflated_with_coo`
+  - `market_origin_preferential_overgeneralized`
+  - `market_user_coo_promoted_to_official_ruling`
+  - `market_origin_requirement_without_authority`
+- 新增 4 个 pass fixture：条件性需要但用户未提供、普通进口通常不要求但 marking 另列、用户 COO 仅限订单/批次范围、无权威来源时 `unable_to_verify`。
+- 新增 5 个 fail fixture：用户没给 COO 被写成不需要、marking 当 COO、优惠 proof 泛化所有普通进口、用户 COO 当海关最终裁定、确定性 COO 状态无官方/权威来源。
+- `evals/run_product_market_analysis_evals.py` 已增强：market fail case 现在会校验 `expected_error_codes`，避免“失败但不是预期原因”。
+- 新增验证记录：`docs/validation/product-market-analysis-code-slice-f-origin-proof-20260727.md`。
+- 已验证：
+  - `python3 evals/run_product_market_analysis_evals.py --suite all` = `36/36`
+  - `python3 evals/run_evals.py --suite default` = `77/77`
+  - `python3 evals/run_evals.py --suite deep` = `623/623`
+  - `python3 evals/run_evals.py --suite all` = `663/663`
+- 边界：本轮 fixture 中的 CBP / USITC 文案仍是静态 eval 样本，不是联网核验真实美国最新规则；导出器仍只搬运已审矩阵，不补法规/税费/COO 事实。
+- 下一步建议：提交 Code Slice F；之后进入 Code Slice G（可选）——把 `origin_proof_requirement` 的用户可见表头进一步固化到导出列/Markdown 展示，或开始 Skill 入口接入前的最小路由设计。

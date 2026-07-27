@@ -57,10 +57,24 @@ def _assert_absent(text: str, needles: list[str]) -> list[str]:
     return hits
 
 
-def _validate_case(py: str, fixture: str, expected: str, tmp_path: Path, index: int) -> dict[str, object]:
+def _assert_expected_error_codes(result: dict[str, object], expected_codes: list[str]) -> dict[str, object]:
+    if not expected_codes:
+        return result
+    output = str(result.get("output", ""))
+    missing = [code for code in expected_codes if code not in output]
+    result["expected_error_codes"] = expected_codes
+    result["missing_error_codes"] = missing
+    if missing:
+        result["ok"] = False
+        result["returncode"] = 1
+        result["output"] = output + f"\nmissing expected error codes: {', '.join(missing)}"
+    return result
+
+
+def _validate_case(py: str, fixture: str, expected: str, tmp_path: Path, index: int, case: dict[str, object]) -> dict[str, object]:
     path = _materialize_fixture(FIXTURES / fixture, tmp_path, index)
     result = run([py, str(SCRIPTS / "validate_product_market_analysis.py"), path], 0 if expected == "pass" else 1)
-    return result
+    return _assert_expected_error_codes(result, list(case.get("expected_error_codes", [])))
 
 
 def _audit_case(py: str, fixture: str, expected: str, tmp_path: Path, index: int) -> dict[str, object]:
@@ -136,7 +150,7 @@ def main() -> int:
         tmp_path = Path(tmp)
         for index, (fixture, case) in enumerate(tests):
             expected = str(case.get("market_validate", "pass"))
-            validate = _validate_case(py, fixture, expected, tmp_path, index)
+            validate = _validate_case(py, fixture, expected, tmp_path, index, case)
             audit = _audit_case(py, fixture, str(case.get("market_audit", expected)), tmp_path, index)
             export = _export_case(py, fixture, str(case.get("market_export_csv", expected)), tmp_path, index, case)
             result = {

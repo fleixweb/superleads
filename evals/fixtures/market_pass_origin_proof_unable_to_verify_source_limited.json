@@ -1,0 +1,91 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "append",
+      "path": "/sources/-",
+      "value": {
+        "source_id": "source-us-origin-proof-not-opened",
+        "canonical_url": "https://www.cbp.gov/trade/rules-origin",
+        "final_url": "https://www.cbp.gov/trade/rules-origin",
+        "publisher_relation": "first_party",
+        "provenance": "discovered_public",
+        "medium": "website",
+        "access_boundary": "public_web",
+        "owner_hint": "U.S. Customs official rules of origin entry"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/observations/-",
+      "value": {
+        "observation_id": "observation-us-origin-proof-not-opened",
+        "run_id": null,
+        "source_id": "source-us-origin-proof-not-opened",
+        "capability": "source.open",
+        "concrete_tool": "fixture.static_source_open",
+        "observed_at": "2026-07-27",
+        "access_status": "not_accessed",
+        "title": "CBP rules of origin entry not opened",
+        "raw_excerpt": null,
+        "page_or_dom_locator": null,
+        "extraction_method": "fixture_static",
+        "language": "en",
+        "translation_status": "original"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-xh-origin-proof-unable-to-verify",
+        "sheet_name": "产品准入与合规要求",
+        "row_topic": "原产地证明 / COO 要求未能核实",
+        "user_visible_cells": {
+          "样本ID": "XH-48V20AH-US",
+          "要求类别": "原产地证明 / COO",
+          "要求名称": "目标国原产地证明要求",
+          "目的国/地区": "美国",
+          "原产国/制造来源": "Vietnam（公开制造线索，正式原产按文件确认）",
+          "候选 HS/HTS": "8507.60.00（候选）",
+          "原产地证明要求结论": "unable_to_verify",
+          "触发条件": "普通进口、优惠税率、贸易救济、海关要求证明原产地等场景均未完成官方核验",
+          "可接受文件": "未能核实；需打开目标国官方来源后再列 COO / origin declaration / invoice statement 等",
+          "用户材料状态": "user_material_status_unknown",
+          "当前证据": "本轮未打开足够权威来源，不能写需要或不需要 COO",
+          "官方/优先来源": "来源入口已记录但未打开核验",
+          "待补材料": "目标国官方规则来源、用户是否有 COO/原产地声明、报关专业方确认",
+          "禁止升级": "无官方/权威来源时不能写确定性需要或不需要"
+        },
+        "status": "source_restricted",
+        "evidence_card_ids": [],
+        "gap_ids": [],
+        "conflict_ids": [],
+        "module_key": "origin_proof_requirement",
+        "boundary_rule_ids": [
+          "EB-ORI-10"
+        ],
+        "internal_refs_hidden": true,
+        "row_type": "origin_proof_requirement",
+        "origin_proof_requirement": {
+          "sample_id": "XH-48V20AH-US",
+          "target_country_or_region": "United States",
+          "origin_or_export_country": "Vietnam",
+          "candidate_hs_hts": "8507.60.00 candidate",
+          "requirement_status": "unable_to_verify",
+          "trigger_conditions": [
+            "普通进口",
+            "优惠税率",
+            "贸易救济",
+            "海关要求证明原产地"
+          ],
+          "acceptable_documents": [],
+          "user_material_status": "user_material_status_unknown",
+          "authority_source_refs": [],
+          "user_material_refs": [],
+          "limitation_note": "没有打开权威来源，不能写需要或不需要 COO。"
+        }
+      }
+    }
+  ]
+}

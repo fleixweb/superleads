@@ -116,3 +116,9 @@
 - 决策：新增 `spec/24-product-outbound-market-analysis-origin-proof-requirements.md`，并把 COO / proof of origin 从“用户是否提供资料”纠偏为目的国准入、清关、税费、贸易协定和贸易救济中的独立判断项。
 - 原因：真实外贸业务里，用户是否已有 COO 不能决定目标国家/地区是否要求原产地证明；产品出海市场分析必须先按目标国官方/权威来源回答“是否需要、何时需要、接受什么文件”，再单独展示用户材料准备状态。
 - 后果：既有产品合同、工作簿合同、证据边界、Skill 分工、真实来源采集策略、Source Pack 合同和端到端 runbook 已同步 `origin_proof_requirement` 语义；后续代码实现应新增 schema / validator / pass-fail fixture，阻断“用户没给 COO => 不需要 COO”“marking => COO”“优惠 proof => 所有进口都需要”等错误升级。
+
+## 2026-07-27：Code Slice F 落地 COO / 原产地证明防错规则
+
+- 决策：将 Slice 13 的 COO / proof of origin 规则落入 schema、validator、独立 market suite 和首批 pass/fail fixtures。
+- 原因：真实外贸分析不能把“用户有没有 COO”当成目标国规则结论，也不能把 Made in、优惠原产地证明、用户文件或无来源判断升级为确定性清关结论。
+- 后果：`origin_proof_requirement` 成为产品准入矩阵中的专门行类型；确定性 `required / conditionally_required / normally_not_required` 必须有官方/权威来源引用；无权威来源只能降级到 `unable_to_verify`。

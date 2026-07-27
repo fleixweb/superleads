@@ -1,0 +1,10 @@
+{
+  "extends": "market_pass_origin_proof_conditionally_required_user_missing.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/origin_proof_requirement/authority_source_refs",
+      "value": []
+    }
+  ]
+}

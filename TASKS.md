@@ -179,3 +179,33 @@
 - 已同步更新既有规格：产品合同、工作簿合同、证据边界、Skill 分工、真实来源采集策略、Source Pack 字段合同、端到端 runbook。
 - 已冻结规则：目标国是否需要 COO / proof of origin 必须主动按官方/权威来源判断；用户当前是否有 COO 只是材料准备状态，不能反推法规要求。
 - 下一步代码增量建议：schema / validator / fixtures 增加 `origin_proof_requirement` 行类型、目标国要求状态、用户材料状态和对应 fail 规则。
+
+## 产品出海市场分析：Code Slice F COO / 原产地证明防错规则
+
+- 已更新 schema：新增 `OriginProofRequirementStatus`、`OriginProofUserMaterialStatus`、`MatrixRowType`、`OriginProofRequirementRecord`，并允许矩阵行挂载 `origin_proof_requirement`。
+- 已更新 validator，新增错误码：
+  - `market_origin_proof_user_material_conflated`
+  - `market_origin_marking_conflated_with_coo`
+  - `market_origin_preferential_overgeneralized`
+  - `market_user_coo_promoted_to_official_ruling`
+  - `market_origin_requirement_without_authority`
+- 已新增 4 个 pass fixture：
+  - `market_pass_origin_proof_conditionally_required_user_missing.json`
+  - `market_pass_origin_proof_normally_not_required_marking_required.json`
+  - `market_pass_origin_proof_user_coo_scope_limited.json`
+  - `market_pass_origin_proof_unable_to_verify_source_limited.json`
+- 已新增 5 个 fail fixture：
+  - `market_fail_user_missing_coo_as_not_required.json`
+  - `market_fail_marking_as_coo_required.json`
+  - `market_fail_preferential_origin_as_all_imports.json`
+  - `market_fail_coo_as_final_origin_ruling.json`
+  - `market_fail_origin_requirement_without_official_source.json`
+- 已更新 `evals/cases/product_market_analysis_cases.json`，market case 总数为 36。
+- 已增强 `evals/run_product_market_analysis_evals.py`：fail case 会检查 `expected_error_codes`。
+- 已新增验证记录：`docs/validation/product-market-analysis-code-slice-f-origin-proof-20260727.md`。
+- 已验证：
+  - `python3 evals/run_product_market_analysis_evals.py --suite all` = `36/36`
+  - `python3 evals/run_evals.py --suite default` = `77/77`
+  - `python3 evals/run_evals.py --suite deep` = `623/623`
+  - `python3 evals/run_evals.py --suite all` = `663/663`
+- 当前下一步：提交 Code Slice F；之后可选 Code Slice G（导出列/Markdown 展示优化）或 Skill 入口接入前的最小路由设计。

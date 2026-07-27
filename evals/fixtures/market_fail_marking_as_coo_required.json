@@ -1,0 +1,30 @@
+{
+  "extends": "market_pass_origin_proof_normally_not_required_marking_required.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/origin_proof_requirement/requirement_status",
+      "value": "required"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/user_visible_cells/原产地证明要求结论",
+      "value": "required"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/user_visible_cells/触发条件",
+      "value": "Made in / origin marking"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/user_visible_cells/当前证据",
+      "value": "美国要求原产国标识/Made in，所以等同 COO，必须提供原产地证书"
+    },
+    {
+      "op": "replace",
+      "path": "/evidence_cards/5/current_value",
+      "value": "Made in / origin marking 要求等同 COO 文件要求"
+    }
+  ]
+}

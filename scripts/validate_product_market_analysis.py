@@ -95,6 +95,76 @@ GEO_MERGE_PHRASES = (
     "原产国就是起运国", "原产国=起运国", "production: china 因此出口申报国",
     "production china therefore export", "origin equals departure", "export origin departure are the same",
 )
+ORIGIN_PROOF_MARKERS = (
+    "coo", "certificate of origin", "proof of origin", "origin declaration",
+    "statement on origin", "invoice declaration", "preferential origin",
+    "原产地证书", "原产地证明", "原产地声明", "原产证明", "优惠原产地",
+)
+ORIGIN_PROOF_REQUIREMENT_COLUMN_MARKERS = (
+    "原产地证明要求结论", "目标国规则", "目标国要求", "是否需要原产地证明",
+    "是否需要 coo", "requirement status", "destination rule",
+)
+ORIGIN_PROOF_USER_MATERIAL_COLUMN_MARKERS = (
+    "用户材料状态", "用户当前材料状态", "用户当前材料", "用户是否已提供",
+    "user material", "material status",
+)
+USER_COO_MISSING_MARKERS = (
+    "用户未提供", "用户没有提供", "用户没提供", "未提供 coo", "未提供原产地证书",
+    "未提供原产地证明", "user not provided", "user has not provided", "no coo provided",
+)
+COO_NOT_REQUIRED_PHRASES = (
+    "不需要 coo", "无需 coo", "不要求 coo", "不需要原产地证书", "无需原产地证书",
+    "不要求原产地证书", "不需要原产地证明", "无需原产地证明", "不要求原产地证明",
+    "coo not required", "certificate of origin not required", "proof of origin not required",
+    "no certificate of origin required",
+)
+USER_MATERIAL_RULE_CONFLATION_PHRASES = (
+    "是否需要 coo 待用户提供", "是否需要原产地证书待用户提供", "是否需要原产地证明待用户提供",
+    "待用户提供后判断是否需要 coo", "待用户提供后判断是否需要原产地证书",
+    "用户没给所以待确认是否需要", "用户未提供所以待确认是否需要",
+)
+CAUSAL_MARKERS = ("所以", "因此", "由此", "据此", "从而", "because", "therefore", "so ")
+MARKING_MARKERS = (
+    "made in", "country of origin marking", "origin marking", "marking", "production:",
+    "production china", "production: china", "原产国标识", "原产地标识", "产地标识",
+    "原产地标签", "产地标签", "标签", "网页 production",
+)
+MARKING_COO_CONFLATION_PHRASES = (
+    "等同 coo", "就是 coo", "视为 coo", "满足 coo", "替代 coo", "作为 coo",
+    "等同原产地证书", "就是原产地证书", "视为原产地证书", "满足原产地证书", "替代原产地证书",
+    "等同原产地证明", "就是原产地证明", "视为原产地证明", "满足原产地证明", "替代原产地证明",
+    "equivalent to coo", "satisfies coo", "satisfies certificate of origin",
+)
+MARKING_COO_REQUIREMENT_PHRASES = (
+    "需要 coo", "必须提供 coo", "需要原产地证书", "必须提供原产地证书",
+    "需要原产地证明", "必须提供原产地证明", "coo required",
+    "certificate of origin required", "proof of origin required",
+)
+PREFERENTIAL_ORIGIN_MARKERS = (
+    "preferential", "fta", "gsp", "trade agreement", "tariff preference",
+    "preferential tariff", "free trade agreement", "优惠税率", "优惠关税",
+    "优惠原产地", "贸易协定", "自贸协定", "协定税率", "普惠制",
+)
+PREFERENTIAL_OVERGENERALIZED_PHRASES = (
+    "所有进口都需要", "普通进口都需要", "所有普通进口都需要", "一律需要", "全部进口必须",
+    "all imports require", "all ordinary imports require", "always required",
+    "ordinary imports require", "普通清关都需要",
+)
+USER_COO_FILE_MARKERS = (
+    "用户提供", "用户文件", "用户上传", "user provided", "user-provided", "uploaded coo",
+    "用户原产地证书", "用户 coo",
+)
+OFFICIAL_ORIGIN_RULING_PHRASES = (
+    "海关最终原产地裁定", "最终原产地已裁定", "最终原产地裁定", "主管机关最终裁定",
+    "官方最终裁定", "海关已经最终认定", "customs final ruling", "final origin determination",
+    "official origin ruling", "final customs determination",
+)
+ORIGIN_PROOF_DETERMINATE_STATUSES = {"required", "conditionally_required", "normally_not_required"}
+ORIGIN_PROOF_AUTHORITY_MARKERS = (
+    ".gov", "gov.", "government", "customs", "cbp", "usitc", "trade.gov", "ustr",
+    "europa.eu", "eur-lex", "access2markets", "gov.uk", "税务海关", "海关",
+    "主管部门", "官方", "official", "regulation", "rules of origin",
+)
 INTERNAL_ID_RE = re.compile(r"\b(?:run|brief|obs|observation|evidence|card|matrix|gap|conflict|handoff|transition|src)_[A-Za-z0-9][A-Za-z0-9_-]*\b", re.I)
 HEX_HASH_RE = re.compile(r"\b(?:sha256:)?[a-f0-9]{32,64}\b", re.I)
 URL_RE = re.compile(r"https?://[^\s\]）)>\"']+", re.I)
@@ -382,10 +452,112 @@ def _looks_like_internal_leak(value: Any) -> bool:
     return False
 
 
+def _is_origin_proof_row(row: dict[str, Any]) -> bool:
+    if row.get("row_type") == "origin_proof_requirement":
+        return True
+    if isinstance(row.get("origin_proof_requirement"), dict):
+        return True
+    text = _row_text(row)
+    return _contains_any(text, ORIGIN_PROOF_MARKERS) and (
+        row.get("sheet_name") in {"产品准入与合规要求", "进口税费", "出口国要求", "信息来源与待确认事项"}
+        or _contains_any(text, ("coo", "原产地证书", "原产地证明"))
+    )
+
+
+def _origin_requirement_record(row: dict[str, Any]) -> dict[str, Any]:
+    record = row.get("origin_proof_requirement")
+    return record if isinstance(record, dict) else {}
+
+
+def _origin_requirement_status(row: dict[str, Any]) -> str:
+    record = _origin_requirement_record(row)
+    status = record.get("requirement_status")
+    if has_text(status):
+        return str(status)
+    cells = row.get("user_visible_cells")
+    if isinstance(cells, dict):
+        for key, value in cells.items():
+            if _contains_any(key, ("原产地证明要求结论", "要求结论", "目标国规则状态", "requirement status")) and has_text(value):
+                return str(value)
+    return ""
+
+
+def _origin_user_material_status(row: dict[str, Any]) -> str:
+    record = _origin_requirement_record(row)
+    status = record.get("user_material_status")
+    if has_text(status):
+        return str(status)
+    cells = row.get("user_visible_cells")
+    if isinstance(cells, dict):
+        for key, value in cells.items():
+            if _contains_any(key, ("用户材料状态", "用户当前材料状态", "用户当前材料", "user material")) and has_text(value):
+                return str(value)
+    return ""
+
+
+def _origin_row_has_split_fields(row: dict[str, Any]) -> bool:
+    record = _origin_requirement_record(row)
+    if has_text(record.get("requirement_status")) and has_text(record.get("user_material_status")):
+        return True
+    cells = row.get("user_visible_cells")
+    if not isinstance(cells, dict):
+        return False
+    keys = list(cells)
+    has_rule = any(_contains_any(key, ORIGIN_PROOF_REQUIREMENT_COLUMN_MARKERS) for key in keys)
+    has_user = any(_contains_any(key, ORIGIN_PROOF_USER_MATERIAL_COLUMN_MARKERS) for key in keys)
+    return has_rule and has_user
+
+
+def _origin_record_authority_source_ids(record: dict[str, Any]) -> list[str]:
+    return [str(item) for item in as_list(record.get("authority_source_refs")) if has_text(item)]
+
+
+def _source_looks_authoritative(source: dict[str, Any] | None, observations: list[dict[str, Any]]) -> bool:
+    if not isinstance(source, dict):
+        return False
+    source_text = text_of([
+        source.get("publisher_relation"),
+        source.get("provenance"),
+        source.get("medium"),
+        source.get("canonical_url"),
+        source.get("final_url"),
+        source.get("owner_hint"),
+    ])
+    observation_text = text_of([
+        obs.get("title") if isinstance(obs, dict) else None
+        for obs in observations
+    ] + [
+        obs.get("raw_excerpt") if isinstance(obs, dict) else None
+        for obs in observations
+    ])
+    if source.get("publisher_relation") == "first_party" and _contains_any([source_text, observation_text], ORIGIN_PROOF_AUTHORITY_MARKERS):
+        return True
+    return _contains_any([source_text, observation_text], ORIGIN_PROOF_AUTHORITY_MARKERS)
+
+
+def _origin_record_has_authority(
+    record: dict[str, Any],
+    ids: dict[str, dict[str, dict[str, Any]]],
+    observations_by_source: dict[str, list[dict[str, Any]]],
+) -> bool:
+    source_ids = _origin_record_authority_source_ids(record)
+    if not source_ids:
+        return False
+    for source_id in source_ids:
+        source = ids["sources"].get(source_id)
+        if _source_looks_authoritative(source, observations_by_source.get(source_id, [])):
+            return True
+    return False
+
+
 def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
     issues: list[dict[str, str]] = []
     issues.extend(_schema_validation_issues(graph))
     ids = _id_maps(graph)
+    observations_by_source: dict[str, list[dict[str, Any]]] = {}
+    for obs in ensure_list(graph, "observations"):
+        if isinstance(obs, dict) and has_text(obs.get("source_id")):
+            observations_by_source.setdefault(str(obs["source_id"]), []).append(obs)
 
     # Every matrix row needs an explicit status in business language.
     for idx, row in enumerate(ensure_list(graph, "matrix_rows")):
@@ -563,6 +735,61 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
     for idx, row in enumerate(ensure_list(graph, "matrix_rows")):
         if isinstance(row, dict) and _contains_any(_row_text(row), GEO_MERGE_PHRASES):
             _add_issue(issues, "critical", "market_geo_roles_merged", "Matrix row merges export declaration, origin, departure, or destination roles", f"matrix_rows[{idx}]")
+
+    # COO / proof-of-origin requirements must be destination-rule facts first,
+    # and user material readiness second.  One cannot be inferred from the
+    # other.
+    for idx, row in enumerate(ensure_list(graph, "matrix_rows")):
+        if not isinstance(row, dict) or not _is_origin_proof_row(row):
+            continue
+        text = _row_text(row)
+        record = _origin_requirement_record(row)
+        requirement_status = _origin_requirement_status(row)
+        user_material_status = _origin_user_material_status(row)
+
+        if not _origin_row_has_split_fields(row):
+            _add_issue(issues, "critical", "market_origin_proof_user_material_conflated", "COO/proof-of-origin row must split destination requirement status from user material status", f"matrix_rows[{idx}]")
+
+        user_missing = user_material_status in {"user_not_provided_but_required", "user_material_status_unknown"} or _contains_any(text, USER_COO_MISSING_MARKERS)
+        written_not_required = requirement_status == "normally_not_required" or _contains_positive_phrase(text, COO_NOT_REQUIRED_PHRASES)
+        if user_missing and written_not_required and any(marker in norm(text) for marker in CAUSAL_MARKERS):
+            _add_issue(issues, "critical", "market_origin_proof_user_material_conflated", "User missing COO/proof-of-origin material was used to infer destination rule is not required", f"matrix_rows[{idx}]")
+        if _contains_any(text, USER_MATERIAL_RULE_CONFLATION_PHRASES):
+            _add_issue(issues, "critical", "market_origin_proof_user_material_conflated", "Destination COO/proof-of-origin requirement was made dependent on whether the user provided a file", f"matrix_rows[{idx}]")
+
+        if _contains_any(text, MARKING_MARKERS) and (
+            _contains_positive_phrase(text, MARKING_COO_CONFLATION_PHRASES)
+            or ("所以" in norm(text) and _contains_positive_phrase(text, MARKING_COO_REQUIREMENT_PHRASES))
+            or ("therefore" in norm(text) and _contains_positive_phrase(text, MARKING_COO_REQUIREMENT_PHRASES))
+        ):
+            _add_issue(issues, "critical", "market_origin_marking_conflated_with_coo", "Country-of-origin marking / Made in / Production was conflated with a COO/proof-of-origin document requirement", f"matrix_rows[{idx}]")
+
+        if _contains_any(text, PREFERENTIAL_ORIGIN_MARKERS) and _contains_positive_phrase(text, PREFERENTIAL_OVERGENERALIZED_PHRASES):
+            _add_issue(issues, "critical", "market_origin_preferential_overgeneralized", "Preferential-origin proof was generalized to all ordinary imports", f"matrix_rows[{idx}]")
+
+        if _contains_any(text, USER_COO_FILE_MARKERS) and _contains_positive_phrase(text, OFFICIAL_ORIGIN_RULING_PHRASES):
+            _add_issue(issues, "critical", "market_user_coo_promoted_to_official_ruling", "User-provided COO/proof-of-origin was promoted to a final customs or authority ruling", f"matrix_rows[{idx}]")
+
+        if requirement_status in ORIGIN_PROOF_DETERMINATE_STATUSES and not _origin_record_has_authority(record, ids, observations_by_source):
+            _add_issue(issues, "critical", "market_origin_requirement_without_authority", "Determinate COO/proof-of-origin requirement status needs official or authoritative destination-rule source refs", f"matrix_rows[{idx}].origin_proof_requirement.authority_source_refs")
+
+    for idx, card in enumerate(ensure_list(graph, "evidence_cards")):
+        if not isinstance(card, dict):
+            continue
+        text = _card_text(card)
+        is_origin_proof_card = _contains_any(text, ORIGIN_PROOF_MARKERS) or _contains_any([card.get("field_domain"), card.get("field_name")], ("原产地证明", "coo", "proof of origin"))
+        if not is_origin_proof_card:
+            continue
+        if _contains_any(text, MARKING_MARKERS) and (
+            _contains_positive_phrase(text, MARKING_COO_CONFLATION_PHRASES)
+            or ("所以" in norm(text) and _contains_positive_phrase(text, MARKING_COO_REQUIREMENT_PHRASES))
+            or ("therefore" in norm(text) and _contains_positive_phrase(text, MARKING_COO_REQUIREMENT_PHRASES))
+        ):
+            _add_issue(issues, "critical", "market_origin_marking_conflated_with_coo", "Evidence card conflates country-of-origin marking / Made in / Production with a COO/proof-of-origin document requirement", f"evidence_cards[{idx}]")
+        if _contains_any(text, PREFERENTIAL_ORIGIN_MARKERS) and _contains_positive_phrase(text, PREFERENTIAL_OVERGENERALIZED_PHRASES):
+            _add_issue(issues, "critical", "market_origin_preferential_overgeneralized", "Evidence card generalizes preferential-origin proof to all ordinary imports", f"evidence_cards[{idx}]")
+        if _contains_any(text, USER_COO_FILE_MARKERS) and _contains_positive_phrase(text, OFFICIAL_ORIGIN_RULING_PHRASES):
+            _add_issue(issues, "critical", "market_user_coo_promoted_to_official_ruling", "Evidence card promotes user-provided COO/proof-of-origin to a final customs or authority ruling", f"evidence_cards[{idx}]")
 
     # Brief-version changes must not leave stale downstream cards in delivery rows.
     run_version = {str(run.get("run_id")): run.get("brief_version_id") for run in ensure_list(graph, "runs") if isinstance(run, dict) and has_text(run.get("run_id"))}

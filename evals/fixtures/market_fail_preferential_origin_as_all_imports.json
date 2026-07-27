@@ -1,0 +1,25 @@
+{
+  "extends": "market_pass_origin_proof_conditionally_required_user_missing.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/origin_proof_requirement/requirement_status",
+      "value": "required"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/user_visible_cells/原产地证明要求结论",
+      "value": "required"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/user_visible_cells/触发条件",
+      "value": "优惠税率 proof of origin，因此所有普通进口都需要 COO"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/user_visible_cells/当前证据",
+      "value": "FTA / preferential origin proof requirement is overgeneralized as all ordinary imports require COO"
+    }
+  ]
+}

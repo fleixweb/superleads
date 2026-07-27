@@ -1,0 +1,138 @@
+{
+  "extends": "market_pass_uniqlo_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "append",
+      "path": "/sources/-",
+      "value": {
+        "source_id": "source-us-cbp-origin-marking",
+        "canonical_url": "https://www.cbp.gov/trade/rulings/informed-compliance-publications/marking-country-origin-us-imports",
+        "final_url": "https://www.cbp.gov/trade/rulings/informed-compliance-publications/marking-country-origin-us-imports",
+        "publisher_relation": "first_party",
+        "provenance": "discovered_public",
+        "medium": "document",
+        "access_boundary": "public_web",
+        "owner_hint": "U.S. Customs and Border Protection official marking guidance"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/observations/-",
+      "value": {
+        "observation_id": "observation-us-cbp-origin-marking",
+        "run_id": null,
+        "source_id": "source-us-cbp-origin-marking",
+        "capability": "source.open",
+        "concrete_tool": "fixture.static_source_open",
+        "observed_at": "2026-07-27",
+        "access_status": "opened",
+        "title": "CBP country of origin marking guidance",
+        "raw_excerpt": "CBP official marking guidance addresses country of origin marking such as Made in; marking rules are separate from certificates of origin used for tariff preference or other proof scenarios.",
+        "page_or_dom_locator": "fixture-visible-excerpt",
+        "extraction_method": "fixture_static",
+        "language": "en",
+        "translation_status": "original"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/evidence_cards/-",
+      "value": {
+        "evidence_card_id": "card-us-cbp-origin-marking-boundary",
+        "run_id": "run-uq-us",
+        "brief_version_id": "brief-uq-us-v1",
+        "producer_skill": "Skill C - 目的国准入与税费",
+        "reviewer_skill": "Skill F - 交付复核",
+        "field_domain": "目标国原产地证明要求",
+        "field_name": "marking 与 COO 边界",
+        "current_value": "普通进口场景下先区分原产国标识/Made in 与单独 COO 文件；本行只支持 normally_not_required 的假设性状态",
+        "status": "verified",
+        "source_refs": [
+          {
+            "source_id": "source-us-cbp-origin-marking",
+            "observation_id": "observation-us-cbp-origin-marking",
+            "relation": "supports"
+          }
+        ],
+        "source_type": "official_customs_guidance",
+        "source_locator": "CBP official country of origin marking guidance",
+        "source_date": "日期未见",
+        "observed_at": "2026-07-27",
+        "applicability_scope": "普通进口示范场景；优惠税率、贸易救济或合同要求需另行核验",
+        "supports": [
+          "官方 marking 规则可作为标识要求来源"
+        ],
+        "does_not_support": [
+          "marking 不等同 COO 文件",
+          "不能推出已满足 proof of origin 要求"
+        ],
+        "boundary_rule_ids": [
+          "EB-ORI-07",
+          "EB-ORI-10"
+        ],
+        "review_status": "passed"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-uq-origin-proof-normally-not-required",
+        "sheet_name": "产品准入与合规要求",
+        "row_topic": "普通进口 COO 与原产国标识边界",
+        "user_visible_cells": {
+          "样本ID": "UQ-470177-US",
+          "要求类别": "原产地证明 / COO",
+          "要求名称": "普通进口原产地证明要求",
+          "目的国/地区": "美国",
+          "原产国/制造来源": "China（网页 Production 线索，正式原产按文件确认）",
+          "候选 HS/HTS": "6205.20.20（候选）",
+          "原产地证明要求结论": "normally_not_required",
+          "触发条件": "普通进口示范场景；不含优惠税率、贸易救济、合同/信用证额外要求",
+          "可接受文件": "本场景通常不要求单独 COO；若触发其它场景再按官方规则确认 proof of origin",
+          "用户材料状态": "user_not_provided_and_not_required_for_current_scenario",
+          "当前证据": "CBP marking 来源支持原产国标识规则；COO 文件要求另列，不与 marking 混同",
+          "官方/优先来源": "CBP official country of origin marking guidance",
+          "待补材料": "若申请优惠税率或进口商/信用证要求 COO，应另行准备并复核",
+          "禁止升级": "Made in / Production / origin marking 不等同 COO，也不代表海关最终原产地裁定"
+        },
+        "status": "professional_confirmation_required",
+        "evidence_card_ids": [
+          "card-us-cbp-origin-marking-boundary"
+        ],
+        "gap_ids": [],
+        "conflict_ids": [],
+        "module_key": "origin_proof_requirement",
+        "boundary_rule_ids": [
+          "EB-ORI-07",
+          "EB-ORI-10"
+        ],
+        "internal_refs_hidden": true,
+        "row_type": "origin_proof_requirement",
+        "origin_proof_requirement": {
+          "sample_id": "UQ-470177-US",
+          "target_country_or_region": "United States",
+          "origin_or_export_country": "China",
+          "candidate_hs_hts": "6205.20.20 candidate",
+          "requirement_status": "normally_not_required",
+          "trigger_conditions": [
+            "普通进口示范场景",
+            "不含优惠税率",
+            "不含贸易救济",
+            "不含合同/信用证额外要求"
+          ],
+          "acceptable_documents": [
+            "not separately required for current ordinary-import scenario",
+            "origin marking handled separately"
+          ],
+          "user_material_status": "user_not_provided_and_not_required_for_current_scenario",
+          "authority_source_refs": [
+            "source-us-cbp-origin-marking"
+          ],
+          "user_material_refs": [],
+          "limitation_note": "普通进口通常不要求单独 COO 的状态不排除 marking、海关核验、优惠税率或商业文件要求。"
+        }
+      }
+    }
+  ]
+}
