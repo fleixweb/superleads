@@ -32,7 +32,7 @@ If the user asks for market analysis and customer discovery together, split the 
 我理解你要做的是：产品出海市场分析。
 本轮对象：{产品版本} → {目的国/地区}。
 默认出口申报国：{默认/用户指定出口国}；原产国/起运地如果资料不足，会保留待确认。
-我会按趋势、公开价格参考、准入合规、进口税费、出口要求、运输路线和近期外部因素整理成表格；不输出是否值得进入，也不生成客户名单。
+我会按趋势、公开价格参考、准入合规、进口税费、出口要求、运输路线和近期外部因素整理成表格；认证会先查目标市场可能要求什么，再单独看你有没有对应材料；不输出是否值得进入，也不生成客户名单。
 ```
 
 ## First response, missing target country/region
@@ -49,6 +49,15 @@ If the user asks for market analysis and customer discovery together, split the 
 请尽量给产品型号、材质/成分、用途、规格，或者直接给产品页/PDF；否则只能先做“待确认项清单”，不能给准入、税费和物流的确定路径。
 ```
 
+## Certification / compliance reminder
+
+Use this when the user asks about certification but has not provided
+certificates:
+
+```text
+可以。认证这块我会先按目标国家/地区和产品属性查“可能需要哪些认证、测试、注册、标签或文件”，不是等你先提供证书。你有现成证书可以发来，我会另外核对它是否覆盖本型号、目标市场和适用标准；如果没有，我会把需要向供应商/认证机构/报关行确认的材料列成清单。
+```
+
 ## Product trigger reminder
 
 Use this short reminder when product details are thin:
@@ -60,5 +69,6 @@ Use this short reminder when product details are thin:
 ## Default assumptions
 
 - Default export declaration country can be China, but the user may set any country/region.
-- Origin country, departure node, final HS/HTS, COO/proof-of-origin applicability, certification status, packaging, logistics time, and customs pre-filing nodes remain conditional unless supported by opened sources or user documents.
+- Origin country, departure node, final HS/HTS, COO/proof-of-origin applicability, certification requirement applicability, user certification-material status, packaging, logistics time, and customs pre-filing nodes remain conditional unless supported by opened sources or user documents.
+- Certification analysis starts with destination-market requirements. User certificates, test reports, SDS, UN38.3, labels, BOM, registrations, or declarations are optional materials for scope matching, not prerequisites for analyzing what the target market may require.
 - Online B2B/B2C channels and platform prices are market references only; they do not define traditional B2B customer scope.

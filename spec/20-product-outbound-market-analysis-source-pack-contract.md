@@ -55,6 +55,7 @@ Source Pack 不按“国家逐一手工写死”实现，而按“贸易角色 +
 | Pack 类型 | 主要用途 | 由什么触发 | 不得包含 |
 |---|---|---|---|
 | `destination_market_access_pack` | 目的国准入、认证、标签、包装、检疫、产品安全入口 | `target_country_or_region` + 产品属性触发项 | 该产品已经合规、无需认证 |
+| `destination_certification_requirement_pack` | 目的国认证、测试、注册、标签、包装、进口许可、渠道准入要求入口 | 目标国 + 产品属性触发项 + 用途/销售路径/候选 HS | 需要/不需要某认证的结论、用户证书有效性、产品已合规 |
 | `destination_duty_tax_pack` | 目的国官方税则、裁定、贸易救济、进口税费、优惠原产地 / proof of origin 入口 | `target_country_or_region` + 原产国状态 + HS 候选 | 最终税率、最终归类、COO 要求结论 |
 | `destination_origin_proof_pack` | 目的国 COO / proof of origin / rules of origin / origin marking 入口 | 目标国 + 原产国/出口国状态 + 候选 HS + 贸易优惠/贸易救济/用户询问 COO | 直接判断用户文件有效、海关最终原产地裁定 |
 | `export_country_pack` | 出口申报国海关、商务/贸易、检验检疫、出口管制入口 | `export_declaration_country` | 原产国自动等同出口国、出口许可结论 |
@@ -129,7 +130,7 @@ QueryTemplate 用来生成可审计查询组，避免让模型自由发挥。
 |---|---|---|
 | `query_template_id` | 是 | 稳定 ID |
 | `source_pack_id` | 是 | 所属 Pack |
-| `query_group_id` | 是 | 趋势、价格、准入、税费、`origin_proof_requirement`、出口、物流、外部因素等 |
+| `query_group_id` | 是 | 趋势、价格、准入、`certification_requirement`、税费、`origin_proof_requirement`、出口、物流、外部因素等 |
 | `purpose` | 是 | 为什么查，不得只写“了解市场” |
 | `required_brief_fields` | 是 | 缺这些字段时不得执行 |
 | `required_product_trigger_tags` | 否 | 如锂电、纺织、食品接触、危险品、农产品、散杂等 |

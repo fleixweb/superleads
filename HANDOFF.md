@@ -1,8 +1,8 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：`43f2ef7 Add Superleads Markdown delivery exporter`
-- 当前工作树：Code Slice V（README / Skill 使用说明 / 常用命令示例）已完成并通过轻量验证，待用户确认后提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：`8ea336a Document Superleads Markdown delivery usage`
+- 当前工作树：Slice W（目的国认证 / 准入要求判断纠偏）已完成文档与 Skill 说明更新，待用户确认后提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已验证
 
@@ -14,6 +14,7 @@
 - 用户可见输出静态套件：`6/6`
 - 三路线 Markdown 交付器套件：`4/4`
 - Code Slice V Skill 快速校验：4 个 Skill 均 valid
+- Slice W Skill 快速校验：`analyzing-product-outbound-market`、`using-superleads` valid
 - 默认套件：`91/91`
 - 深度套件：`637/637`
 - 全量套件：`677/677`
@@ -22,12 +23,12 @@
 
 ## 当前结论
 
-Code Slice A-M 的产品出海市场分析底层链路稳定；Slice R/S/T 已把 Superleads 校准回批量客户开发、单一客户背调、产品出海市场分析三条外贸业务路线；Code Slice U 已把三条路线接成统一 Markdown 交付器；Code Slice V 已把 Markdown 交付器写入 README、Skill 使用说明和常用命令文档。当前真实默认发现仍需要可记录的搜索/打开来源能力；没有时停在计划、样本池或已审核投影渲染层。
+Code Slice A-M 的产品出海市场分析底层链路稳定；Slice R/S/T 已把 Superleads 校准回批量客户开发、单一客户背调、产品出海市场分析三条外贸业务路线；Code Slice U 已把三条路线接成统一 Markdown 交付器；Code Slice V 已把 Markdown 交付器写入 README、Skill 使用说明和常用命令文档；Slice W 已把“认证”纠偏为目标市场准入要求判断，而不是等用户提供证书。当前真实默认发现仍需要可记录的搜索/打开来源能力；没有时停在计划、样本池或已审核投影渲染层。
 
 ## 下一步
 
-1. 优先提交 Code Slice V 当前文档变更。
-2. 提交后建议进入下一条用户可见收益明确的 Code Slice，例如安装后 quickstart smoke / 示例输入输出包 / README 命令自动校验三选一。
+1. 优先提交 Slice W 当前文档变更。
+2. 提交后建议进入 Code Slice X：schema / validator / fixtures 增加 `certification_requirement` / `destination_requirement` 防错规则。
 3. 暂缓 Code Slice N（EvidenceCard 草稿前人工复核队列），除非它能绑定明确用户可见收益。
 4. 保留 `tmp/stage5_chillys/`，不要清理。
 
@@ -332,3 +333,12 @@ Code Slice A-M 的产品出海市场分析底层链路稳定；Slice R/S/T 已�
 - 已验证：py_compile 通过、Markdown delivery `4/4`、用户可见输出 `6/6`、market `42/42`、default `91/91`、4 个 Skill quick_validate 均通过、`git diff --check` 通过。
 - 边界：本轮只改文档和 Skill 说明，不改执行逻辑、不联网、不搜索、不新增事实、不引入客户推荐、采购概率、是否值得进入、推荐报价或最终税率表达。
 - 当前下一步：提交 Code Slice V；提交后再决定下一条用户可见收益明确的 Code Slice。
+
+## 产品出海市场分析 Slice W：目的国认证 / 准入要求判断纠偏
+
+- 2026-07-28 已新增 `spec/29-product-outbound-market-analysis-certification-requirement-calibration.md`。
+- 核心纠偏：认证分析的第一任务不是等用户提供证书，而是根据产品属性和目标国家/地区，查清该产品进入目标市场可能需要哪些认证、测试、注册、标签、包装或准入文件；用户有没有证书只是第二层材料匹配状态。
+- 已同步更新：`spec/10`、`spec/12`、`spec/13`、`spec/14`、`spec/15`、`spec/16`、`spec/19`、`spec/20`、`shared/references/product-outbound-market-intake.md`、`shared/references/output-schema.md`、`shared/references/route-map.md`、`skills/analyzing-product-outbound-market/SKILL.md`、`skills/using-superleads/SKILL.md`、README 中文/英文与 `docs/superleads-common-commands.md`。
+- 已新增验证记录：`docs/validation/product-market-analysis-certification-requirement-slice-w-20260728.md`。
+- 关键规则：用户没给证书不能推出目标国不需要认证；用户给了证书不能推出目标国认可或产品已合规；产品页证书入口不能升级为已具备认证；渠道/客户要求必须和法律/海关强制要求分开。
+- 当前下一步：提交 Slice W；之后建议 Code Slice X，把 `certification_requirement` / `destination_requirement` 行类型和禁止升级规则落入 schema / validator / fixtures。

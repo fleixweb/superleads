@@ -4,7 +4,7 @@ Default route: `using-superleads` → `scoping-lead-research` → `discovery` �
 
 单客户背调入口：`指定一个公司/品牌/域名/地址/邮箱/Candidate/用户材料 → 客户背调报告`，路由为 `using-superleads` → `scoping-lead-research` → `researching-customer-background`。它不产生新客户批量池，不要求预先 Entity 解析，可使用独立轻验证导出背景报告；该报告不进入正式名单 audit 或 manifest。正式标准开发名单仍是独立、明确请求的严格路径。
 
-产品出海市场分析入口：`产品/型号/产品资料 + 目标国家/地区 + 市场/准入/税费/出口/物流/COO/外部因素问题 → 产品出海市场分析`，路由为 `using-superleads` → `analyzing-product-outbound-market`。它使用 `ProductMarketAnalysisGraph`，不产生 Candidate、Lead、客户名单、推荐客户类型或市场进入建议；用户同时要求“分析市场再找客户”时拆成两步，先做产品出海市场分析，待用户确认后再另启批量客户开发。
+产品出海市场分析入口：`产品/型号/产品资料 + 目标国家/地区 + 市场/准入/认证/测试/注册/标签/税费/出口/物流/COO/外部因素问题 → 产品出海市场分析`，路由为 `using-superleads` → `analyzing-product-outbound-market`。它使用 `ProductMarketAnalysisGraph`，不产生 Candidate、Lead、客户名单、推荐客户类型或市场进入建议；用户同时要求“分析市场再找客户”时拆成两步，先做产品出海市场分析，待用户确认后再另启批量客户开发。认证类问题先查目标市场要求，再单独核对用户是否已有匹配材料。
 
 `discovery` is the default discovery-first working phase, not a new required
 file or formal gate. It internally plans query expansion, records actual

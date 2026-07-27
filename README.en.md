@@ -10,7 +10,7 @@ Superleads is a foreign-trade intelligence Skill Suite for traditional export an
 
 - **Bulk customer development**: find importers, distributors, wholesalers, retailers, brands, project buyers, OEM buyers, and other traditional B2B prospect types by product, country, channel, and customer type.
 - **Single-customer background research**: check one company, brand, website, business activity, product fit, public contacts, and contact routes; identify same-name companies, mismatched websites, competitors, and risk items.
-- **Product outbound market analysis**: for one product entering or exporting to a target country/region, organize Google Trends search-interest signals, public market information, online price references, seasonality and holidays, destination compliance, proof-of-origin requirements, import duties/taxes, export-country requirements, logistics routes, and recent external factors.
+- **Product outbound market analysis**: for one product entering or exporting to a target country/region, organize Google Trends search-interest signals, public market information, online price references, seasonality and holidays, destination compliance, certification / testing / registration / labeling requirements, proof-of-origin requirements, import duties/taxes, export-country requirements, logistics routes, and recent external factors.
 - **Deliverable tables**: export Markdown, CSV, or Excel. Markdown is easier to read directly in Codex / ChatGPT app conversations; CSV / XLSX is better for sales review, filtering, and handoff.
 - **Existing-material enrichment**: use your existing customer lists, websites, product manuals, catalogs, trade-fair lists, or public materials while preserving the original information, then deduplicate, complete, and review it.
 
@@ -33,7 +33,7 @@ Superleads is a foreign-trade intelligence Skill Suite for traditional export an
 
 Superleads requires the Agent to distinguish verified information from leads that still need checking. It retains public-source references, contact ownership, and the basis for business judgment. When evidence is insufficient, the result is marked as candidate, pending check, source restricted, or not executed instead of presenting an assumption as fact.
 
-You can therefore review the research, continue unfinished due diligence, remove unreliable companies, and hand usable information to sales for follow-up. In product outbound market analysis, Superleads also separates default export-declaration country, origin/manufacturing source, and actual departure node/port. Destination proof-of-origin requirements are checked against public authoritative sources; whether the user already has a certificate is only a material-readiness status and does not decide the regulation.
+You can therefore review the research, continue unfinished due diligence, remove unreliable companies, and hand usable information to sales for follow-up. In product outbound market analysis, Superleads also separates default export-declaration country, origin/manufacturing source, and actual departure node/port. Destination proof-of-origin, certification, testing, registration, labeling, and packaging-file requirements are checked against public authoritative sources; whether the user already has a certificate is only a material-readiness status and does not decide the regulation.
 
 ## Supported Agents
 
@@ -84,7 +84,7 @@ Research this customer for me: [company name / website / brand / email / address
 ### 3. Product outbound market analysis
 
 ```text
-Analyze outbound market conditions for [product/model] entering [target country/region]. The default export-declaration country is [China / another country], the origin country is [if known], and the departure node is [if known]. Use tables for Google Trends, public market and price references, compliance, COO/proof of origin, import duties/taxes, export-country requirements, logistics routes/pre-filing, and recent external factors. Provide objective references only; do not decide whether the market is worth entering.
+Analyze outbound market conditions for [product/model] entering [target country/region]. The default export-declaration country is [China / another country], the origin country is [if known], and the departure node is [if known]. Use tables for Google Trends, public market and price references, compliance, destination certification/testing/registration/labeling requirements, COO/proof of origin, import duties/taxes, export-country requirements, logistics routes/pre-filing, and recent external factors. I do not know which certificates are needed; first check target-market requirements. Provide objective references only; do not decide whether the market is worth entering.
 ```
 
 ## Output And Export

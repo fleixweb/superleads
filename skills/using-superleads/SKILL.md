@@ -32,7 +32,7 @@ When routing to product outbound market analysis, respond in user-facing Chinese
 `我理解你要做的是：产品出海市场分析。`
 `本轮对象：{产品/型号} → {目的国/地区}。`
 `默认出口申报国：{用户指定/中国默认}；原产国、起运地、最终税号和技术文件不足时会保留待确认。`
-`我会整理趋势、公开价格参考、准入、税费、出口要求、物流和外部因素；不生成客户名单，也不判断是否值得进入。`
+`我会整理趋势、公开价格参考、准入/认证要求、税费、出口要求、物流和外部因素；不生成客户名单，也不判断是否值得进入。`
 
 Ask at most three short questions only if the product or target country/region is missing or if export/origin assumptions would materially change the analysis.
 

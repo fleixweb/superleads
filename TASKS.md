@@ -13,12 +13,13 @@
 - `tmp/stage5_chillys/` 的 Chilly's 真实背调样本已验证可导出
 - `docs/validation/default-discovery-us-generator-aftermarket-run.md` 已记录当前默认发现受限状态
 - Code Slice U 三路线用户可见 Markdown 交付器已提交：`43f2ef7 Add Superleads Markdown delivery exporter`
-- Code Slice V README / Skill 使用说明 / 常用命令示例已完成并通过轻量验证，待提交
+- Code Slice V README / Skill 使用说明 / 常用命令示例已提交：`8ea336a Document Superleads Markdown delivery usage`
+- Slice W 目的国认证 / 准入要求判断纠偏已完成文档与 Skill 说明更新，待提交
 
 ## 当前下一步
 
-1. 先提交 Code Slice V 当前文档变更。
-2. 提交后再选择下一条 Code Slice；新 Slice 必须说明改善哪条路线的哪张用户可见表。
+1. 先提交 Slice W 当前文档变更。
+2. 提交后建议进入 Code Slice X：schema / validator / fixtures 增加 `certification_requirement` / `destination_requirement` 防错规则。
 3. Code Slice N 暂缓，除非先证明它能改善用户可见交付。
 
 ## 当前阻塞
@@ -336,3 +337,11 @@
 - 已新增验证记录：`docs/validation/superleads-markdown-delivery-docs-code-slice-v-20260728.md`。
 - 已验证：py_compile、Markdown delivery `4/4`、用户可见输出 `6/6`、market `42/42`、default `91/91`、4 个 Skill quick_validate、`git diff --check`。
 - 下一步：提交本 Slice；提交后再决定是否做 quickstart smoke / 示例输入输出包 / README 命令自动校验。
+
+## 产品出海市场分析 Slice W：目的国认证 / 准入要求判断纠偏
+
+- 已新增 `spec/29-product-outbound-market-analysis-certification-requirement-calibration.md`。
+- 已同步产品合同、输出矩阵、工作簿合同、证据边界、Skill 分工、数据模型设计、真实来源采集、Source Pack 合同、入口参考、Skill 文案、README 和常用命令文档。
+- 已新增验证记录：`docs/validation/product-market-analysis-certification-requirement-slice-w-20260728.md`。
+- 已冻结规则：认证分析先查目标国要求，再看用户材料状态；用户没给证书不能推出不需要认证，用户给了证书不能推出目标国认可或产品已合规。
+- 下一步建议：Code Slice X，把认证/准入要求状态、用户材料状态和禁止升级断言落入 schema / validator / fixtures。

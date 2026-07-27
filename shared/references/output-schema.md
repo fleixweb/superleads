@@ -46,13 +46,20 @@ the route has already produced a reviewed graph / workbook projection:
 - `--route customer_background_research`: shows one specified object's
   background report in six business tables.
 - `--route product_outbound_market_analysis`: shows the product market/access
-  matrix, trade premise, COO/proof-of-origin section, logistics section, not
-  executed modules, and missing materials.
+  matrix, trade premise, COO/proof-of-origin section, destination
+  certification/compliance requirements, user material status, logistics
+  section, not executed modules, and missing materials.
 
 The Markdown delivery layer must not create facts, invent sources, rank
 customers as guaranteed buyers, recommend quotations, decide market entry, or
 turn candidate HS/HTS / duty / compliance / logistics lines into final
 conclusions.
+
+For product outbound market analysis, certification/compliance output must
+separate `目标市场可能要求什么` from `用户现在有没有对应材料`. Missing user
+certificates do not prove the destination market has no certification
+requirement; provided certificates do not prove the destination market accepts
+them or that the product is fully compliant.
 
 ## Default discovery presentation
 

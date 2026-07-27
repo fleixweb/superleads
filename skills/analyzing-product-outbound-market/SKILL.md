@@ -22,6 +22,7 @@ Read these only as needed:
 - `../../spec/13-product-outbound-market-analysis-workbook-contract.md` for workbook sheets and user-visible fields.
 - `../../spec/14-product-outbound-market-analysis-evidence-boundary-rules.md` for forbidden evidence upgrades.
 - `../../spec/24-product-outbound-market-analysis-origin-proof-requirements.md` when COO / proof of origin appears.
+- `../../spec/29-product-outbound-market-analysis-certification-requirement-calibration.md` when certification, test, registration, labeling, packaging, SDS, UN38.3, or compliance-file requirements appear.
 - Plan source collection with `../../scripts/plan_product_market_sources.py` before any real search/open step. Its output is `source_plan_only`, not evidence.
 - Validate and audit existing graphs with `../../scripts/validate_product_market_analysis.py` and `../../scripts/audit_product_market_analysis.py`.
 - Export reviewed graphs with `../../scripts/export_product_market_workbook.py`.
@@ -35,9 +36,11 @@ Read these only as needed:
    - export declaration country, defaulting visibly to China only when the user did not set another country;
    - origin country, departure node, destination node, and trade term if known;
    - product triggers: battery, powered, magnetic, liquid, powder, chemical, dangerous goods, skin contact, food contact, child use, textile, animal/plant material, agricultural/cold-chain, bulk/breakbulk/RoRo/oversized, dual-use/export-control sensitivity.
+   - optional user materials: certificates, test reports, SDS, UN38.3, labels, BOM, registration files, invoices, packing lists, or COO. These help scope matching; they are not prerequisites for analyzing destination requirements.
 3. Ask at most three short questions only when missing information changes the route or blocks useful analysis. Target country and product identity are the first two blocking questions.
 4. If the user also asks to find customers, split the job into two stages: do product market analysis first; only start customer development after the user separately confirms.
 5. If the user asks whether the market is worth entering, translate it into objective analysis and state that the business decision is theirs.
+6. If the user asks about certification without having certificates, do not block on the missing certificates. First analyze what the destination market may require, then list which user/supplier/professional materials are needed to verify applicability.
 
 ## Evidence workflow
 
@@ -48,6 +51,15 @@ Keep these statuses visible instead of filling blanks: `verified`, `derived_calc
 Search summaries, Source Packs, previous Skill summaries, and model summaries are leads for where to look, not facts.
 
 Before collecting live sources, use the Source Pack registry to generate a Query Plan. The plan may list packs, source entries, query strings, required authority levels, and observation requirements; it must not create EvidenceCards, MatrixRows, tax rates, certification conclusions, logistics times, trends, prices, or market-entry judgments.
+
+Certification/compliance rows must split two objects:
+
+- destination requirement: what the target market may require and under what
+  conditions;
+- user material status: whether the user has matching certificates, test
+  reports, SDS, UN38.3, labels, BOM, registrations, or declarations.
+
+Do not infer either object from the other.
 
 ## Output shape
 
@@ -92,6 +104,10 @@ recommend quotations, or finalize classification / duties / compliance.
 - Do not turn Google Trends into sales, GMV, import volume, or purchasing demand.
 - Do not turn platform/list prices into transaction prices, wholesale target prices, or recommended quotations.
 - Do not turn candidate HS/HTS into final classification, final duty rate, or payable tax.
+- Do not treat missing user certificates as proof that destination certification is not required.
+- Do not treat user-provided certificates, test reports, SDS, UN38.3, labels, BOM, or registrations as proof that the target country accepts them or that the product is fully compliant.
+- Do not treat a product-page certificate download link as a verified certification without opening and scope-checking the file.
+- Do not treat marketplace, retailer, or customer certification requirements as destination-country legal requirements unless an authoritative source supports that.
 - Do not turn Made in / Production / origin marking into COO / proof-of-origin documents.
 - Do not turn preferential proof-of-origin requirements into all-import COO requirements.
 - Do not turn user-provided COO, invoice, packing list, or bill of lading into customs final origin rulings.
