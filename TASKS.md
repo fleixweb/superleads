@@ -5,21 +5,25 @@
 - `python3 evals/run_evals.py --suite default` 通过
 - `python3 evals/run_evals.py --suite deep` 通过
 - `python3 evals/run_evals.py --suite all` 通过
+- 产品出海市场分析 Code Slice A-M 已完成，最新验证记录为 collection pipeline `7/7`、collection merge `7/7`、source collection `6/6`、source-plan `6/6`、market `42/42`
+- Slice R 产品内核复盘已完成，确认 Superleads 是外贸业务情报产品，不是通用工作流框架
+- Slice S 三路线真实外贸样本已完成，确认批量客户开发、单一客户背调、产品出海市场分析三条用户可见交付能分清
+- Slice T 用户可见输出合同与静态 eval 已完成，用户可见输出 `6/6`，主套件 default `90/90`、deep `636/636`、all `676/676`
 - `source.open` 公开 GET 烟测已恢复（`https://example.com`，`200`）
 - `tmp/stage5_chillys/` 的 Chilly's 真实背调样本已验证可导出
 - `docs/validation/default-discovery-us-generator-aftermarket-run.md` 已记录当前默认发现受限状态
 
 ## 当前下一步
 
-1. 继续争取 `search.web`，否则只能依赖用户给定 URL 列表或目录材料。
-2. 按 `docs/validation/default-discovery-us-generator-aftermarket-run.md` 再跑至少 2 轮查询。
-3. 完成至少 20 个去重 Candidate 的真实执行验证。
-4. 记录 SearchLog / Source / Observation / Contact / 导出结果。
+1. 先提交 Slice R / Slice S / Slice T 当前变更。
+2. 提交后再选择下一条 Code Slice；新 Slice 必须说明改善哪条路线的哪张用户可见表。
+3. Code Slice N 暂缓，除非先证明它能改善用户可见交付。
 
 ## 当前阻塞
 
-- 本次会话的能力预检为 `search.web=unknown`、`source.open=available`。
-- `max_output_without_manual_sources=standard_development_list`，但缺少搜索仍不足以自然扩成默认发现候选池。
+- 真实默认发现仍受能力限制：`search.web=unknown`、`source.open=available`。
+- 没有可记录的真实搜索/打开来源能力时，默认发现只能停在计划或样本池层；不能伪造 SearchLog / Source / Observation。
+
 ## 产品出海市场分析
 
 - 已完成一次公开来源补齐试跑：`docs/validation/product-market-analysis-public-source-fill-20260726.md`。
@@ -277,3 +281,34 @@
 - 已新增 `evals/fixtures/source_collection_fail_scope_mismatch_input.json`，覆盖 collect 成功但 merge 因 brief version mismatch 阻断。
 - 已验证：collection pipeline `7/7`、collection merge `7/7`、source collection `6/6`、source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。
 - 当前下一步：提交 Code Slice M；之后进入 Code Slice N（建议：EvidenceCard 草稿前人工复核队列 / 用户材料包导入清单 / 运行文档三选一）。
+
+## Superleads 产品内核复盘：Slice R
+
+- 已新增 `spec/25-superleads-product-kernel-and-de-superpowers-calibration.md`，冻结结论：Superleads 是外贸业务情报产品，不是通用工作流框架；Superpowers 只提供计划、切片、验证、交接、eval 等执行纪律参考。
+- 已新增 `docs/validation/superleads-product-kernel-de-superpowers-slice-r-checklist-20260727.md`，完成人工验收：三条路线、A-M 价值与风险、去 Superpowers 化校准规则、弱证据哲学、用户可见语言均已覆盖。
+- 已重新明确三条产品路线：批量客户开发、单一客户背调、产品出海市场分析。所有 schema、Skill、eval、导出和后续 Slice 都必须服务其中一条真实外贸业务动作。
+- 已调整下一步判断：Code Slice N（EvidenceCard 草稿前人工复核队列）暂缓，避免继续围绕内部对象过度工程化。
+- 当前下一步建议：Slice S，用真实外贸任务各跑一份用户可见样本——批量客户开发样表、单一客户背调表格化报告、产品出海市场分析矩阵——检查 Superleads 是否像外贸产品，而不是像工作流框架。
+
+## Superleads 三路线真实样本跑通：Slice S
+
+- 已新增 `spec/26-superleads-three-route-real-sample-run-slice-s.md`。
+- 已新增 `docs/validation/superleads-three-route-real-sample-run-slice-s-20260727.md`。
+- 已用三个样本验收三条路线：美国柴油发电机后市场配件批量开发、Chilly's 单客背调、Xing Heng 48V20Ah LiFePO4 电池出口美国的产品出海市场分析。
+- 结论：三条路线能分清；用户看到的是候选客户池、客户背调表、市场与准入矩阵，而不是内部 graph / EvidenceCard / SearchLog / eval 语言。
+- 下一步建议：Slice T，把三条用户可见样本固化为输出合同 / 静态 eval。
+
+## Superleads 用户可见输出合同：Slice T
+
+- 已新增 `spec/27-superleads-user-visible-output-contract-slice-t.md`，冻结三条路线的用户交付标准。
+- 已新增 `scripts/validate_superleads_user_visible_output.py`，静态检查 Markdown 用户可见输出是否表格化、说人话、不串线、不外露内部对象、不输出价值判断、不做证据升级。
+- 已新增 `evals/run_superleads_user_visible_output_evals.py`、`evals/cases/superleads_user_visible_output_cases.json`、`evals/user_visible_outputs/` 下 3 个 pass / 3 个 fail 样本。
+- 已接入 `evals/run_evals.py` 主套件。
+- 已验证：
+  - `python3 -m py_compile scripts/validate_superleads_user_visible_output.py evals/run_superleads_user_visible_output_evals.py evals/run_evals.py` 通过。
+  - `python3 evals/run_superleads_user_visible_output_evals.py --suite all` = `6/6`。
+  - `python3 evals/run_product_market_analysis_evals.py --suite all` = `42/42`。
+  - `python3 evals/run_evals.py --suite default` = `90/90`。
+  - `python3 evals/run_evals.py --suite deep` = `636/636`。
+  - `python3 evals/run_evals.py --suite all` = `676/676`。
+- 当前下一步建议：先提交 Slice R / S / T；再决定下一条真正改善用户可见交付的 Code Slice。

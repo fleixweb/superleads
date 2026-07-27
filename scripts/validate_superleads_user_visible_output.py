@@ -1,0 +1,234 @@
+#!/usr/bin/env python3
+"""Validate Superleads user-visible Markdown output samples.
+
+This is a static guardrail for the three product routes. It checks the words
+users see, not live source freshness or graph-level evidence.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+from typing import Any
+
+
+ROUTE_REQUIRED: dict[str, list[str]] = {
+    "bulk_customer_development": [
+        "我理解你卖的是",
+        "本次优先找",
+        "本次不纳入",
+        "判断依据将重点看",
+        "候选客户",
+        "当前看到的业务信号",
+        "相关性状态",
+        "可用联系入口",
+        "还要确认什么",
+        "来源 / 来源状态",
+        "候选池",
+        "待确认",
+    ],
+    "customer_background_research": [
+        "一句话先说清",
+        "客户一眼看懂",
+        "客户、品牌与关联方",
+        "怎么联系、先找谁",
+        "跟进前要注意什么",
+        "信息从哪里来",
+        "采购需求",
+        "采购负责人",
+        "待确认",
+        "来源受限",
+    ],
+    "product_outbound_market_analysis": [
+        "先看贸易前提",
+        "目标销售国家/地区",
+        "出口申报国",
+        "原产国 / 制造来源",
+        "实际起运地 / 起运港",
+        "产品档案与触发项",
+        "Google Trends",
+        "未执行",
+        "候选 HTSUS",
+        "COO / 原产地证明",
+        "海运拼箱",
+        "国际快递",
+        "待补材料清单",
+        "不能",
+    ],
+}
+
+ROUTE_FORBIDDEN: dict[str, list[str]] = {
+    "bulk_customer_development": [
+        "产品出海市场分析",
+        "市场与准入信息矩阵",
+        "客户背调报告",
+        "推荐客户",
+        "最佳客户",
+        "采购概率",
+    ],
+    "customer_background_research": [
+        "候选客户池",
+        "批量客户开发",
+        "产品出海市场分析",
+        "推荐客户",
+        "采购概率",
+    ],
+    "product_outbound_market_analysis": [
+        "候选客户池",
+        "客户背调报告",
+        "推荐客户",
+        "目标客户群",
+        "客户名单",
+    ],
+}
+
+GENERIC_INTERNAL_LANGUAGE = [
+    "EvidenceCard",
+    "SearchLog",
+    "MatrixRow",
+    "ClaimEvidence",
+    "Claim",
+    "rule id",
+    "run_id",
+    "brief_id",
+    "source_id",
+    "observation_id",
+    "claim_id",
+    "graph",
+    "eval",
+    "card-",
+    "gap-",
+    "conflict-",
+    "file://",
+    "/home/",
+    "/tmp/",
+]
+
+GENERIC_VALUE_JUDGMENTS = [
+    "推荐客户",
+    "推荐市场",
+    "最佳客户",
+    "采购概率",
+    "值得进入",
+    "建议进入",
+    "值得开发",
+    "建议开发",
+    "市场潜力高",
+    "必然成交",
+    "最佳路线",
+    "最佳运输方式",
+    "推荐报价",
+    "推荐价格",
+    "最终税率就是",
+    "承诺交期",
+]
+
+GENERIC_EVIDENCE_UPGRADES = [
+    "搜索摘要已核实",
+    "搜索摘要就是事实",
+    "搜索结果证明",
+    "Google Trends 证明销量",
+    "Google Trends 显示销量",
+    "Google Trends 等于销量",
+    "平台价就是成交价",
+    "平台价就是批发价",
+    "平台价就是推荐报价",
+    "候选 HTSUS 就是最终归类",
+    "候选税号就是最终税率",
+    "证书入口证明已具备 UN38.3",
+    "证书入口证明已具备 SDS",
+    "网页标签已完全合规",
+    "Production 等于 COO",
+    "Production China 等于 COO",
+    "Production Vietnam 等于 COO",
+    "Made in 等于 COO",
+    "董事是采购负责人",
+    "公开联系入口说明有采购意愿",
+    "wholesale 入口说明正在采购",
+]
+
+
+def _count_markdown_tables(text: str) -> int:
+    lines = text.splitlines()
+    count = 0
+    for index in range(len(lines) - 1):
+        line = lines[index].strip()
+        next_line = lines[index + 1].strip()
+        if line.startswith("|") and line.endswith("|") and re.match(r"^\|[\s:\-|]+\|$", next_line):
+            count += 1
+    return count
+
+
+def _issue(code: str, message: str, value: str | None = None) -> dict[str, str]:
+    payload = {"code": code, "message": message}
+    if value is not None:
+        payload["value"] = value
+    return payload
+
+
+def validate(text: str, route: str, *, min_tables: int = 3, extra_required: list[str] | None = None) -> list[dict[str, str]]:
+    issues: list[dict[str, str]] = []
+    required = ROUTE_REQUIRED.get(route)
+    if required is None:
+        return [_issue("user_visible_unknown_route", f"unknown route: {route}", route)]
+
+    table_count = _count_markdown_tables(text)
+    if table_count < min_tables:
+        issues.append(_issue("user_visible_not_markdown_table", f"expected at least {min_tables} markdown tables, got {table_count}", str(table_count)))
+
+    for phrase in required + list(extra_required or []):
+        if phrase not in text:
+            issues.append(_issue("user_visible_missing_required_text", f"missing required phrase: {phrase}", phrase))
+
+    for phrase in ROUTE_FORBIDDEN.get(route, []):
+        if phrase in text:
+            issues.append(_issue("user_visible_route_crossed", f"route-forbidden phrase present: {phrase}", phrase))
+
+    for phrase in GENERIC_INTERNAL_LANGUAGE:
+        if phrase in text:
+            issues.append(_issue("user_visible_internal_language", f"internal language leaked: {phrase}", phrase))
+
+    for phrase in GENERIC_VALUE_JUDGMENTS:
+        if phrase in text:
+            issues.append(_issue("user_visible_value_judgment", f"value judgment present: {phrase}", phrase))
+
+    for phrase in GENERIC_EVIDENCE_UPGRADES:
+        if phrase in text:
+            issues.append(_issue("user_visible_evidence_upgrade", f"evidence boundary upgrade present: {phrase}", phrase))
+
+    return issues
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("markdown", type=Path)
+    parser.add_argument("--route", required=True, choices=sorted(ROUTE_REQUIRED))
+    parser.add_argument("--min-tables", type=int, default=3)
+    parser.add_argument("--must-contain", action="append", default=[])
+    parser.add_argument("--format", choices=["json", "text"], default="json")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    text = args.markdown.read_text(encoding="utf-8")
+    issues = validate(text, args.route, min_tables=args.min_tables, extra_required=list(args.must_contain))
+    payload: dict[str, Any] = {
+        "ok": not issues,
+        "issue_count": len(issues),
+        "issues": issues,
+        "route": args.route,
+        "markdown": str(args.markdown),
+        "table_count": _count_markdown_tables(text),
+    }
+    if args.format == "json":
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        print("ok" if payload["ok"] else "\n".join(f"{item['code']}: {item['message']}" for item in issues))
+    return 0 if not issues else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

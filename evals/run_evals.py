@@ -23,6 +23,7 @@ MINIMAL_DISCOVERY_SKELETON = ROOT / "shared" / "references" / "default-discovery
 REFERENCE_SAMPLE = ROOT / "shared" / "references" / "default-discovery-reference.example.json"
 CAPABILITY_CASES = ROOT / "evals" / "cases" / "capability_adapter_cases.json"
 SUPERLEADS_ROUTE_CASES = ROOT / "evals" / "cases" / "superleads_route_cases.json"
+USER_VISIBLE_OUTPUT_CASES = ROOT / "evals" / "cases" / "superleads_user_visible_output_cases.json"
 MODE_TO_STATUS = {
     "initial": "initial_lead_list",
     "standard": "standard_development_list",
@@ -332,6 +333,51 @@ def run_route_assertion(py: str, case: dict[str, object]) -> dict[str, object]:
     }
 
 
+def run_user_visible_output_assertion(py: str, case: dict[str, object]) -> dict[str, object]:
+    fixture = ROOT / str(case.get("fixture", ""))
+    cmd = [
+        py,
+        str(SCRIPTS / "validate_superleads_user_visible_output.py"),
+        str(fixture),
+        "--route",
+        str(case.get("route")),
+        "--min-tables",
+        str(case.get("min_tables", 3)),
+        "--format",
+        "json",
+    ]
+    for phrase in case.get("must_contain", []) if isinstance(case.get("must_contain"), list) else []:
+        cmd.extend(["--must-contain", str(phrase)])
+    expect = 0 if case.get("expected", "pass") == "pass" else 1
+    proc = subprocess.run(
+        cmd,
+        cwd=str(ROOT),
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    problems: list[str] = []
+    text = fixture.read_text(encoding="utf-8") if fixture.exists() else ""
+    if proc.returncode != expect:
+        problems.append(f"returncode expected {expect} got {proc.returncode}")
+    if case.get("expected_error_codes"):
+        for code in case.get("expected_error_codes", []) if isinstance(case.get("expected_error_codes"), list) else []:
+            if str(code) not in proc.stdout:
+                problems.append(f"missing expected error code {code}")
+    for phrase in case.get("must_not_contain", []) if isinstance(case.get("must_not_contain"), list) and expect == 0 else []:
+        if str(phrase) in text:
+            problems.append(f"forbidden visible phrase present {phrase!r}")
+    ok = not problems
+    return {
+        "cmd": cmd,
+        "returncode": proc.returncode,
+        "expected": expect,
+        "ok": ok,
+        "output": proc.stdout if not problems else proc.stdout + "\nuser visible output assertion failed: " + "; ".join(problems),
+    }
+
+
 def add_capability_adapter_tests(tests: list[tuple[str, list[str], int, list[str]]]) -> None:
     if not CAPABILITY_CASES.exists():
         return
@@ -357,6 +403,21 @@ def add_superleads_route_tests(tests: list[tuple[str, list[str], int, list[str]]
         tests.append((
             f"superleads route {case.get('name', case['text'])}",
             ["__ROUTE_ASSERT__", json.dumps(case, ensure_ascii=False)],
+            0,
+            [],
+        ))
+
+
+def add_user_visible_output_tests(tests: list[tuple[str, list[str], int, list[str]]]) -> None:
+    if not USER_VISIBLE_OUTPUT_CASES.exists():
+        return
+    payload = json.loads(USER_VISIBLE_OUTPUT_CASES.read_text(encoding="utf-8"))
+    for case in payload.get("cases", []):
+        if not isinstance(case, dict) or not isinstance(case.get("fixture"), str):
+            continue
+        tests.append((
+            f"user visible output {case.get('name', case['fixture'])}",
+            ["__USER_VISIBLE_OUTPUT_ASSERT__", json.dumps(case, ensure_ascii=False)],
             0,
             [],
         ))
@@ -550,6 +611,7 @@ def add_static_suite_tests(py: str, tests: list[tuple[str, list[str], int, list[
     for legacy_file in sorted(LEGACY_DERIVED.glob("*.json")):
         tests.append((f"legacy anti-pattern file {legacy_file.name}", ["__LEGACY_CHECK__", str(legacy_file)], 0, []))
     add_superleads_route_tests(tests)
+    add_user_visible_output_tests(tests)
 
 
 def static_check(kind: str, path: str) -> dict[str, object]:
@@ -661,6 +723,8 @@ def main() -> int:
                 result = run_preflight_assertion(py, cmd[1], json.loads(cmd[2]))
             elif cmd and cmd[0] == "__ROUTE_ASSERT__":
                 result = run_route_assertion(py, json.loads(cmd[1]))
+            elif cmd and cmd[0] == "__USER_VISIBLE_OUTPUT_ASSERT__":
+                result = run_user_visible_output_assertion(py, json.loads(cmd[1]))
             elif cmd and cmd[0] == "__SUITE_MEMBERSHIP_CHECK__":
                 result = _suite_membership_check(cmd[1], set(json.loads(cmd[2])))
             elif cmd and cmd[0].startswith("__") and cmd[0].endswith("_CHECK__"):

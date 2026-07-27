@@ -1,0 +1,126 @@
+{
+  "description": "Static user-visible output contract checks for the three Superleads business routes. These cases validate wording and route boundaries, not live source freshness.",
+  "validator": "scripts/validate_superleads_user_visible_output.py",
+  "cases": [
+    {
+      "name": "bulk customer development candidate pool sample",
+      "fixture": "evals/user_visible_outputs/bulk_customer_development_us_generator_aftermarket.md",
+      "route": "bulk_customer_development",
+      "expected": "pass",
+      "min_tables": 3,
+      "must_contain": [
+        "我理解你卖的是",
+        "本次优先找",
+        "本次不纳入",
+        "发现候选池样表",
+        "候选池不是正式开发名单",
+        "联系入口不等于采购意愿"
+      ],
+      "must_not_contain": [
+        "推荐客户",
+        "采购概率",
+        "产品出海市场分析",
+        "客户背调报告"
+      ]
+    },
+    {
+      "name": "customer background Chilly's sample",
+      "fixture": "evals/user_visible_outputs/customer_background_chillys.md",
+      "route": "customer_background_research",
+      "expected": "pass",
+      "min_tables": 6,
+      "must_contain": [
+        "一句话先说清",
+        "客户一眼看懂",
+        "客户、品牌与关联方",
+        "怎么联系、先找谁",
+        "信息从哪里来",
+        "董事不等于采购负责人",
+        "公开信息不能证明当前采购需求"
+      ],
+      "must_not_contain": [
+        "候选客户池",
+        "产品出海市场分析",
+        "采购概率",
+        "推荐客户"
+      ]
+    },
+    {
+      "name": "product outbound market Xing Heng sample",
+      "fixture": "evals/user_visible_outputs/product_market_xingheng_lifepo4_us.md",
+      "route": "product_outbound_market_analysis",
+      "expected": "pass",
+      "min_tables": 7,
+      "must_contain": [
+        "先看贸易前提",
+        "目标销售国家/地区",
+        "出口申报国",
+        "原产国 / 制造来源",
+        "实际起运地 / 起运港",
+        "Google Trends",
+        "未执行",
+        "候选 HTSUS",
+        "COO / 原产地证明",
+        "海运拼箱",
+        "国际快递",
+        "不能因用户未提供 COO 就写“不需要”"
+      ],
+      "must_not_contain": [
+        "候选客户池",
+        "客户背调报告",
+        "推荐客户",
+        "目标客户群",
+        "值得进入",
+        "推荐报价"
+      ]
+    },
+    {
+      "name": "fail bulk customer recommendation and internal terms",
+      "fixture": "evals/user_visible_outputs/fail_bulk_customer_recommendation_and_internal_terms.md",
+      "route": "bulk_customer_development",
+      "expected": "fail",
+      "min_tables": 2,
+      "expected_error_codes": [
+        "user_visible_route_crossed",
+        "user_visible_internal_language",
+        "user_visible_value_judgment"
+      ],
+      "must_contain": [
+        "我理解你卖的是",
+        "候选客户"
+      ]
+    },
+    {
+      "name": "fail customer background procurement claim",
+      "fixture": "evals/user_visible_outputs/fail_customer_background_procurement_claim.md",
+      "route": "customer_background_research",
+      "expected": "fail",
+      "min_tables": 6,
+      "expected_error_codes": [
+        "user_visible_route_crossed",
+        "user_visible_internal_language",
+        "user_visible_evidence_upgrade"
+      ],
+      "must_contain": [
+        "一句话先说清",
+        "客户一眼看懂"
+      ]
+    },
+    {
+      "name": "fail product market value and final rate",
+      "fixture": "evals/user_visible_outputs/fail_product_market_value_and_final_rate.md",
+      "route": "product_outbound_market_analysis",
+      "expected": "fail",
+      "min_tables": 6,
+      "expected_error_codes": [
+        "user_visible_value_judgment",
+        "user_visible_evidence_upgrade"
+      ],
+      "must_contain": [
+        "先看贸易前提",
+        "目标销售国家/地区",
+        "候选 HTSUS"
+      ]
+    }
+  ]
+}

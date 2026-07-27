@@ -1,26 +1,34 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：以 `git log --oneline -1` 为准；本文件记录到 Code Slice A-C
-- 当前工作树：Code Slice A-C 已完成并纳入本次提交边界；无关未跟踪目录保留不处理。
+- 最新提交：`ef2bb2e Add product market collection pipeline`
+- 当前工作树：Slice R / Slice S / Slice T 产品复盘、三路线样本与用户可见输出静态 eval 待提交；无关未跟踪目录保留不处理。
 
 ## 已验证
 
-- 默认套件：`77/77`
-- 深度套件：`623/623`
-- 全量套件：`663/663`
+- collection pipeline：`7/7`
+- collection merge：`7/7`
+- source collection：`6/6`
+- source-plan：`6/6`
+- market：`42/42`
+- 用户可见输出静态套件：`6/6`
+- 默认套件：`90/90`
+- 深度套件：`636/636`
+- 全量套件：`676/676`
 - `source.open` 公开 GET 烟测已恢复（`https://example.com`，`200`）
 - `tmp/stage5_chillys/chillys_stage5_real_graph.json`、`audit_delivery`、`export_workbook` 链路可用
 
 ## 当前结论
 
-仓库核心图谱/导出/审计链路稳定。当前已恢复 `source.open`，但 `search.web` 仍未知，因此下一步是争取搜索能力，或接受用户给定 URL/目录材料继续做公开来源读取。
+Code Slice A-M 的产品出海市场分析底层链路稳定；Slice R 已完成产品内核复盘，结论是 Superleads 不能继续围绕内部证据层空转，必须回到批量客户开发、单一客户背调、产品出海市场分析三条外贸业务路线。当前真实默认发现仍需要可记录的搜索/打开来源能力；没有时停在计划或样本池层。
 
 ## 下一步
 
-1. 争取 `search.web` 或用户给定 URL 列表。
-2. 再按默认发现文档完成 20+ Candidate 验证。
-3. 处理 `tmp/stage5_chillys/` 的长期归档方式。
+1. 优先提交 Slice R / Slice S / Slice T 当前变更。
+2. 提交后再选择下一条真正改善用户可见交付的 Code Slice。
+3. 暂缓 Code Slice N（EvidenceCard 草稿前人工复核队列），除非它能绑定明确用户可见收益。
+4. 保留 `tmp/stage5_chillys/`，不要清理。
+
 ## 产品出海市场分析补充状态
 
 - 2026-07-26 已按公开来源试填两个样本，见 `docs/validation/product-market-analysis-public-source-fill-20260726.md`。
@@ -270,3 +278,32 @@
 - 新增验证记录：`docs/validation/product-market-analysis-code-slice-m-collection-pipeline-20260727.md`。
 - 已验证：collection pipeline `7/7`、collection merge `7/7`、source collection `6/6`、source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。
 - 当前下一步：提交 Code Slice M；之后可进入 Code Slice N，做 EvidenceCard 草稿生成前的人工复核队列，或先补用户材料包导入清单/运行文档。
+
+## Superleads 产品内核复盘 Slice R
+
+- 2026-07-27 已新增 `spec/25-superleads-product-kernel-and-de-superpowers-calibration.md`。
+- 2026-07-27 已新增 `docs/validation/superleads-product-kernel-de-superpowers-slice-r-checklist-20260727.md`。
+- 核心结论：Superleads 是外贸业务情报产品，不是通用工作流框架。Superpowers 只能作为执行纪律参考，不能成为 Superleads 的产品本体、用户语言或业务世界模型。
+- 三条产品路线重新冻结：批量客户开发、单一客户背调、产品出海市场分析。所有流程、schema、Skill、eval 和导出必须服务这三类真实外贸动作。
+- A-M 当前判断：多数仍服务外贸风险控制，没有整体跑偏；但 Source Pack、SearchLog、EvidenceCard 等内部层不能继续成为下一阶段主线。
+- 调整下一步：Code Slice N（EvidenceCard 草稿前人工复核队列）暂缓；优先做 Slice S，用真实外贸任务跑三条路线的用户可见样本，校验产品是否仍然“像外贸工具”。
+- 本轮没有改功能代码，没有运行全量 eval；只做产品复盘文档、验收清单和连续性记录。
+
+## Superleads 三路线真实样本跑通 Slice S
+
+- 2026-07-27 已新增 `spec/26-superleads-three-route-real-sample-run-slice-s.md`。
+- 2026-07-27 已新增 `docs/validation/superleads-three-route-real-sample-run-slice-s-20260727.md`。
+- 样本覆盖：批量客户开发、单一客户背调、产品出海市场分析。
+- 三个用户可见样本分别为：美国柴油发电机后市场配件候选客户池、Chilly's 表格化客户背调、Xing Heng 48V20Ah LiFePO4 电池出口美国产品出海市场分析矩阵。
+- 结论：Superleads 当前没有整体跑偏；三条路线能分清，弱证据能降级展示，用户可见语言基本符合外贸业务心智。
+- 下一步优先 Slice T：把三条用户可见样本固化为输出合同 / 静态 eval；Code Slice N 继续暂缓。
+
+## Superleads 用户可见输出合同 Slice T
+
+- 2026-07-27 已新增 `spec/27-superleads-user-visible-output-contract-slice-t.md`。
+- 2026-07-27 已新增 `scripts/validate_superleads_user_visible_output.py` 和 `evals/run_superleads_user_visible_output_evals.py`。
+- 已新增 `evals/cases/superleads_user_visible_output_cases.json` 与 `evals/user_visible_outputs/` 下 3 个 pass、3 个 fail Markdown 样本。
+- 已将用户可见输出静态 eval 接入 `evals/run_evals.py` 主套件。
+- 验收覆盖：三路线不串线、人话字段、Markdown 表格、内部语言不外露、价值判断不外露、搜索摘要/Google Trends/平台价/候选税号/董事/公开入口/Production->COO 等不得升级。
+- 已验证：用户可见输出 `6/6`、market `42/42`、default `90/90`、deep `636/636`、all `676/676`。
+- 下一步建议：先提交 Slice R / S / T；之后再选下一个 Code Slice，但必须能说明改善哪条路线的哪张用户可见表。
