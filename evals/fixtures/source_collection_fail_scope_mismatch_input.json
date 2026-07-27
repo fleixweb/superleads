@@ -1,0 +1,24 @@
+{
+  "collection_run_id": "collection-run-scope-mismatch-input",
+  "run_id": "run-xh-us",
+  "brief_id": "brief-xh-us",
+  "brief_version_id": "brief-xh-us-v999",
+  "source_plan_route": "product_outbound_market_analysis_source_plan",
+  "query_plan_id": "qp_010_qt_product_original_sources",
+  "query_group_id": "product_original_sources",
+  "collected_at": "2026-07-27T00:00:00Z",
+  "sources": [
+    {
+      "url": "https://www.xingheng.com.vn/products/48v20ah-lifepo4-battery",
+      "publisher_relation": "first_party",
+      "medium": "website",
+      "source_entry_id": "entry_product_manufacturer_page_scope_mismatch",
+      "title": "Xing Heng 48V20Ah product page scope mismatch",
+      "opened": true,
+      "access_status": "opened",
+      "raw_excerpt": "48V20Ah LiFePO4 battery pack; Design No. BAT001.02; 48 V; 20 Ah.",
+      "language": "en",
+      "translation_status": "original"
+    }
+  ]
+}

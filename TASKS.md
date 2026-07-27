@@ -269,3 +269,11 @@
 - 已新增 7 个 collection output fixtures：3 个 pass 输出，4 个 fail 输出。
 - 已验证：collection merge `7/7`、source collection `6/6`、source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。
 - 当前下一步：提交 Code Slice L；之后进入 Code Slice M，封装 `collect -> merge -> validate/audit/export` 的单命令入口或用户给 URL/PDF 后的半自动运行剧本。
+
+## 产品出海市场分析：Code Slice M collection pipeline
+
+- 已新增 `scripts/run_product_market_collection_pipeline.py`：单命令串联手工 collection、merge、validate/audit、可选 export。
+- 已新增 `evals/run_product_market_collection_pipeline_evals.py` 与 `evals/cases/product_market_collection_pipeline_cases.json`。
+- 已新增 `evals/fixtures/source_collection_fail_scope_mismatch_input.json`，覆盖 collect 成功但 merge 因 brief version mismatch 阻断。
+- 已验证：collection pipeline `7/7`、collection merge `7/7`、source collection `6/6`、source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。
+- 当前下一步：提交 Code Slice M；之后进入 Code Slice N（建议：EvidenceCard 草稿前人工复核队列 / 用户材料包导入清单 / 运行文档三选一）。

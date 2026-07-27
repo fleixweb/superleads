@@ -1,0 +1,181 @@
+{
+  "description": "Product outbound market analysis Code Slice M pipeline fixtures. These cases assert that manual URL collection can run through collect -> merge -> validate/audit/export in one command without search, source opening, SearchLogs, EvidenceCards, MatrixRows, or fact upgrades.",
+  "runner": "evals/run_product_market_collection_pipeline_evals.py",
+  "pipeline": "scripts/run_product_market_collection_pipeline.py",
+  "cases": [
+    {
+      "name": "pipeline official product page full export",
+      "graph": "market_pass_xingheng_minimum_boundary.json",
+      "collection_input": "source_collection_official_product_page_input.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "expected_stage": "done",
+      "expected_collection_ok": true,
+      "expected_merge_ok": true,
+      "expected_source_delta": 1,
+      "expected_observation_delta": 1,
+      "expect_export": true,
+      "output_must_contain": [
+        "product_outbound_market_analysis_collection_pipeline",
+        "collection_merge_validate_audit_optional_export_only",
+        "does_not_fetch_or_download_sources",
+        "does_not_create_search_logs",
+        "source-entry_product_manufacturer_page-001"
+      ],
+      "export_must_contain": [
+        "Xing Heng 48V20Ah product page",
+        "来源本身仅作可追溯入口",
+        "信息来源与待确认事项"
+      ],
+      "export_must_not_contain": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳路线",
+        "最终税率为",
+        "UN38.3 已合规"
+      ]
+    },
+    {
+      "name": "pipeline pdf shell remains source only",
+      "graph": "market_pass_xingheng_minimum_boundary.json",
+      "collection_input": "source_collection_pdf_url_shell_input.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "expected_stage": "done",
+      "expected_collection_ok": true,
+      "expected_merge_ok": true,
+      "expected_source_delta": 1,
+      "expected_observation_delta": 1,
+      "expect_export": true,
+      "output_must_contain": [
+        "collection-run-tianneng-pdf-shell",
+        "does_not_open_sources",
+        "does_not_create_evidence_cards",
+        "does_not_create_matrix_rows"
+      ],
+      "export_must_contain": [
+        "Tianneng public PDF URL shell",
+        "来源受限",
+        "需打开或复核原始来源"
+      ],
+      "export_must_not_contain": [
+        "TMLiN",
+        "UN38.3 已合规",
+        "SDS 已有",
+        "最终税率为",
+        "推荐价格"
+      ]
+    },
+    {
+      "name": "pipeline restricted source remains limitation only",
+      "graph": "market_pass_xingheng_minimum_boundary.json",
+      "collection_input": "source_collection_restricted_input.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "expected_stage": "done",
+      "expected_collection_ok": true,
+      "expected_merge_ok": true,
+      "expected_source_delta": 1,
+      "expected_observation_delta": 1,
+      "expect_export": true,
+      "export_must_contain": [
+        "Restricted market report landing page",
+        "来源受限",
+        "需打开或复核原始来源"
+      ],
+      "export_must_not_contain": [
+        "销量增长",
+        "真实销量",
+        "推荐价格",
+        "建议进入"
+      ]
+    },
+    {
+      "name": "pipeline rejects token urls at collect stage",
+      "graph": "market_pass_xingheng_minimum_boundary.json",
+      "collection_input": "source_collection_fail_token_url_input.json",
+      "expected_returncode": 1,
+      "expected_ok": false,
+      "expected_stage": "collect",
+      "expected_collection_ok": false,
+      "expected_merge_ok": false,
+      "expected_issue_codes": [
+        "market_source_collection_url_not_public"
+      ],
+      "output_must_contain": [
+        "market_source_collection_url_not_public",
+        "does_not_search_web",
+        "does_not_create_evidence_cards"
+      ],
+      "output_must_not_contain": [
+        "\"evidence_cards\": [",
+        "\"matrix_rows\": ["
+      ]
+    },
+    {
+      "name": "pipeline rejects local paths at collect stage",
+      "graph": "market_pass_xingheng_minimum_boundary.json",
+      "collection_input": "source_collection_fail_local_path_input.json",
+      "expected_returncode": 1,
+      "expected_ok": false,
+      "expected_stage": "collect",
+      "expected_collection_ok": false,
+      "expected_merge_ok": false,
+      "expected_issue_codes": [
+        "market_source_collection_url_not_public"
+      ],
+      "output_must_contain": [
+        "market_source_collection_url_not_public",
+        "does_not_fetch_or_download_sources"
+      ],
+      "output_must_not_contain": [
+        "\"evidence_cards\": [",
+        "\"matrix_rows\": ["
+      ]
+    },
+    {
+      "name": "pipeline rejects unopened factual excerpt at collect stage",
+      "graph": "market_pass_xingheng_minimum_boundary.json",
+      "collection_input": "source_collection_fail_unopened_with_excerpt_input.json",
+      "expected_returncode": 1,
+      "expected_ok": false,
+      "expected_stage": "collect",
+      "expected_collection_ok": false,
+      "expected_merge_ok": false,
+      "expected_issue_codes": [
+        "market_source_collection_unopened_excerpt"
+      ],
+      "output_must_contain": [
+        "market_source_collection_unopened_excerpt",
+        "not_evidence"
+      ],
+      "output_must_not_contain": [
+        "does_not_create_evidence_cards\": false",
+        "does_not_create_matrix_rows\": false"
+      ]
+    },
+    {
+      "name": "pipeline rejects brief version mismatch at merge stage",
+      "graph": "market_pass_xingheng_minimum_boundary.json",
+      "collection_input": "source_collection_fail_scope_mismatch_input.json",
+      "expected_returncode": 1,
+      "expected_ok": false,
+      "expected_stage": "pre_merge",
+      "expected_collection_ok": true,
+      "expected_merge_ok": false,
+      "expected_issue_codes": [
+        "market_collection_graph_scope_mismatch"
+      ],
+      "output_must_contain": [
+        "market_collection_graph_scope_mismatch",
+        "collection-run-scope-mismatch-input",
+        "does_not_create_evidence_cards"
+      ],
+      "output_must_not_contain": [
+        "\"evidence_cards\": [",
+        "\"matrix_rows\": ["
+      ]
+    }
+  ]
+}

@@ -261,3 +261,12 @@
 - 已验证：collection merge `7/7`、source collection `6/6`、source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。
 - 边界：新增来源只进入“信息来源与待确认事项”导出内容；不会自动升级 UN38.3/SDS、最终税率、物流路线、趋势、价格或市场进入判断。
 - 当前下一步：提交 Code Slice L；之后可进入 Code Slice M，把 `collect -> merge -> validate/audit/export` 串成单个用户入口命令或半自动运行剧本。
+
+## 产品出海市场分析 Code Slice M：collection 一键 pipeline
+
+- 2026-07-27 已新增 `scripts/run_product_market_collection_pipeline.py`，把 `collect_product_market_sources -> merge_product_market_collection -> validate/audit/export` 串成一个单命令入口。
+- Pipeline 固定声明并执行边界：不搜索、不打开来源、不抓取/下载/抽取 PDF、不创建 SearchLog、不创建 EvidenceCard、不创建 MatrixRow、不改变事实矩阵。
+- 已新增 pipeline eval runner / cases / fixture：官方产品页、PDF URL shell、来源受限 3 个 pass；token URL、本地路径、未打开来源携带摘录、Brief version mismatch 4 个 fail。
+- 新增验证记录：`docs/validation/product-market-analysis-code-slice-m-collection-pipeline-20260727.md`。
+- 已验证：collection pipeline `7/7`、collection merge `7/7`、source collection `6/6`、source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。
+- 当前下一步：提交 Code Slice M；之后可进入 Code Slice N，做 EvidenceCard 草稿生成前的人工复核队列，或先补用户材料包导入清单/运行文档。
