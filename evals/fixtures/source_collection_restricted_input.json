@@ -1,0 +1,22 @@
+{
+  "collection_run_id": "collection-run-market-report-restricted",
+  "run_id": "run-xh-us",
+  "brief_id": "brief-xh-us",
+  "brief_version_id": "brief-xh-us-v1",
+  "source_plan_route": "product_outbound_market_analysis_source_plan",
+  "query_plan_id": "qp_020_qt_market_signal_terms",
+  "query_group_id": "market_signal",
+  "collected_at": "2026-07-27T00:00:00Z",
+  "sources": [
+    {
+      "url": "https://www.example.com/login-required-market-report",
+      "publisher_relation": "third_party",
+      "medium": "website",
+      "source_entry_id": "entry_market_report_restricted",
+      "title": "Restricted market report landing page",
+      "opened": false,
+      "access_status": "login_wall",
+      "language": "en"
+    }
+  ]
+}

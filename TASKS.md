@@ -250,3 +250,14 @@
 - 已新增验证记录：`docs/validation/product-market-analysis-code-slice-j-collection-records-20260727.md`。
 - 已验证：source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。
 - 当前下一步：Code Slice K，可做真实来源采集执行器的“手工 URL 输入 / 打开来源记录”最小桥接；继续保持没有打开来源就不能形成 EvidenceCard。
+
+## 产品出海市场分析：Code Slice K 手工 URL / 已知来源采集桥接
+
+- 已新增 `scripts/collect_product_market_sources.py`：只接收用户明确给定的公开 URL / 已知来源状态，输出 `Source` / `Observation` / `collection_manifest`。
+- 脚本声明并执行边界：不自动搜索、不自动打开来源、不创建 EvidenceCard、不创建 MatrixRow、不输出税率/认证/物流/趋势/价格/市场判断。
+- 已新增 source collection eval：`evals/run_product_market_source_collection_evals.py` 与 `evals/cases/product_market_source_collection_cases.json`。
+- 已新增 3 个 pass 输入 fixture：官方产品页已打开、PDF URL shell 未访问、登录墙/来源受限。
+- 已新增 3 个 fail 输入 fixture：本地路径 / file URI、token/API key URL、未打开来源携带事实摘录。
+- 已新增验证记录：`docs/validation/product-market-analysis-code-slice-k-manual-source-collection-20260727.md`。
+- 已验证：source collection `6/6`、source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。
+- 当前下一步：提交 Code Slice K；之后可进入 Code Slice L，把手工 collection 输出并入正式图谱/导出链路的最小命令封装。

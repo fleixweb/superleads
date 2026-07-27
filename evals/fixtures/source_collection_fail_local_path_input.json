@@ -1,0 +1,27 @@
+{
+  "collection_run_id": "collection-run-bad-local-path",
+  "run_id": "run-xh-us",
+  "brief_id": "brief-xh-us",
+  "brief_version_id": "brief-xh-us-v1",
+  "source_plan_route": "product_outbound_market_analysis_source_plan",
+  "query_plan_id": "qp_bad_local_path",
+  "query_group_id": "product_original_sources",
+  "sources": [
+    {
+      "url": "/home/fleix/secret.pdf",
+      "publisher_relation": "first_party",
+      "medium": "document",
+      "source_entry_id": "entry_bad_local_path",
+      "opened": false,
+      "access_status": "not_accessed"
+    },
+    {
+      "url": "file:///tmp/a.pdf",
+      "publisher_relation": "first_party",
+      "medium": "document",
+      "source_entry_id": "entry_bad_file_uri",
+      "opened": false,
+      "access_status": "not_accessed"
+    }
+  ]
+}

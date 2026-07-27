@@ -1,0 +1,158 @@
+{
+  "description": "Product outbound market analysis Code Slice K manual URL/source collection fixtures. These cases assert that manual public URLs can become Source/Observation records without search, fetching, EvidenceCards, MatrixRows, or fact conclusions.",
+  "runner": "evals/run_product_market_source_collection_evals.py",
+  "collector": "scripts/collect_product_market_sources.py",
+  "cases": [
+    {
+      "name": "official product page opened observation",
+      "fixture": "source_collection_official_product_page_input.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "expected_source_count": 1,
+      "expected_observation_count": 1,
+      "expected_opened_observation_count": 1,
+      "must_have_access_statuses": [
+        "opened"
+      ],
+      "must_have_media": [
+        "website"
+      ],
+      "merge_market_fixture": "market_pass_xingheng_minimum_boundary.json",
+      "output_must_contain": [
+        "manual_source_collection_records_only",
+        "does_not_search_web",
+        "does_not_open_sources",
+        "does_not_create_evidence_cards",
+        "does_not_create_matrix_rows",
+        "manual_user_supplied_excerpt",
+        "Source / Observation 只是 EvidenceCard 的输入"
+      ],
+      "output_must_not_contain": [
+        "UN38.3 已合规",
+        "SDS 已有",
+        "普通货运输",
+        "最终税率为",
+        "建议进入",
+        "推荐价格",
+        "最佳路线",
+        "token=",
+        "api_key=",
+        "file://",
+        "/home/",
+        "/tmp/"
+      ]
+    },
+    {
+      "name": "pdf url shell not accessed",
+      "fixture": "source_collection_pdf_url_shell_input.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "expected_source_count": 1,
+      "expected_observation_count": 1,
+      "expected_restricted_or_not_accessed_count": 1,
+      "must_have_access_statuses": [
+        "not_accessed"
+      ],
+      "must_have_media": [
+        "document"
+      ],
+      "merge_market_fixture": "market_pass_xingheng_minimum_boundary.json",
+      "output_must_contain": [
+        "manual_source_collection_records_only",
+        "document",
+        "not_accessed",
+        "manual_url_access_status_only",
+        "未打开、未访问或来源受限时，不能携带事实 raw_excerpt"
+      ],
+      "output_must_not_contain": [
+        "UN38.3 已合规",
+        "SDS 已有",
+        "最终税率为",
+        "建议进入",
+        "推荐价格",
+        "raw_excerpt\": \"48V"
+      ]
+    },
+    {
+      "name": "restricted login wall source no observation facts",
+      "fixture": "source_collection_restricted_input.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "expected_source_count": 1,
+      "expected_observation_count": 1,
+      "expected_restricted_or_not_accessed_count": 1,
+      "must_have_access_statuses": [
+        "login_wall"
+      ],
+      "must_have_media": [
+        "website"
+      ],
+      "merge_market_fixture": "market_pass_xingheng_minimum_boundary.json",
+      "output_must_contain": [
+        "login_wall",
+        "manual_public_url_no_auto_fetch",
+        "does_not_create_evidence_cards",
+        "not_evidence"
+      ],
+      "output_must_not_contain": [
+        "raw_excerpt\": \"",
+        "销量增长",
+        "最终税率为",
+        "建议进入",
+        "推荐价格"
+      ]
+    },
+    {
+      "name": "reject local path and file uri",
+      "fixture": "source_collection_fail_local_path_input.json",
+      "expected_returncode": 1,
+      "expected_ok": false,
+      "expected_issue_codes": [
+        "market_source_collection_url_not_public"
+      ],
+      "output_must_contain": [
+        "market_source_collection_url_not_public",
+        "does_not_search_web",
+        "does_not_create_evidence_cards"
+      ],
+      "output_must_not_contain": [
+        "\"evidence_cards\": [",
+        "\"matrix_rows\": ["
+      ]
+    },
+    {
+      "name": "reject tokenized urls",
+      "fixture": "source_collection_fail_token_url_input.json",
+      "expected_returncode": 1,
+      "expected_ok": false,
+      "expected_issue_codes": [
+        "market_source_collection_url_not_public"
+      ],
+      "output_must_contain": [
+        "market_source_collection_url_not_public",
+        "does_not_open_sources"
+      ],
+      "output_must_not_contain": [
+        "\"evidence_cards\": [",
+        "\"matrix_rows\": ["
+      ]
+    },
+    {
+      "name": "reject unopened source with factual excerpt",
+      "fixture": "source_collection_fail_unopened_with_excerpt_input.json",
+      "expected_returncode": 1,
+      "expected_ok": false,
+      "expected_issue_codes": [
+        "market_source_collection_unopened_excerpt"
+      ],
+      "output_must_contain": [
+        "market_source_collection_unopened_excerpt",
+        "not_evidence"
+      ],
+      "output_must_not_contain": [
+        "does_not_create_evidence_cards\": false",
+        "does_not_create_matrix_rows\": false"
+      ]
+    }
+  ]
+}

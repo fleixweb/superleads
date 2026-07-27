@@ -1,0 +1,27 @@
+{
+  "collection_run_id": "collection-run-bad-token-url",
+  "run_id": "run-xh-us",
+  "brief_id": "brief-xh-us",
+  "brief_version_id": "brief-xh-us-v1",
+  "source_plan_route": "product_outbound_market_analysis_source_plan",
+  "query_plan_id": "qp_bad_token_url",
+  "query_group_id": "product_original_sources",
+  "sources": [
+    {
+      "url": "https://example.com/file.pdf?token=abc",
+      "publisher_relation": "third_party",
+      "medium": "document",
+      "source_entry_id": "entry_bad_token_url",
+      "opened": false,
+      "access_status": "not_accessed"
+    },
+    {
+      "url": "https://example.com/file.pdf#download?api_key=abc",
+      "publisher_relation": "third_party",
+      "medium": "document",
+      "source_entry_id": "entry_bad_api_key_fragment",
+      "opened": false,
+      "access_status": "not_accessed"
+    }
+  ]
+}

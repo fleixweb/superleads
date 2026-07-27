@@ -1,0 +1,22 @@
+{
+  "collection_run_id": "collection-run-tianneng-pdf-shell",
+  "run_id": "run-xh-us",
+  "brief_id": "brief-xh-us",
+  "brief_version_id": "brief-xh-us-v1",
+  "source_plan_route": "product_outbound_market_analysis_source_plan",
+  "query_plan_id": "qp_010_qt_product_original_sources",
+  "query_group_id": "product_original_sources",
+  "collected_at": "2026-07-27T00:00:00Z",
+  "sources": [
+    {
+      "url": "https://www.tiannengglobal.com/uploadfile/file/20230404/1680577838359862.pdf",
+      "publisher_relation": "first_party",
+      "medium": "document",
+      "source_entry_id": "entry_product_datasheet_pdf",
+      "title": "Tianneng public PDF URL shell",
+      "opened": false,
+      "access_status": "not_accessed",
+      "language": "en"
+    }
+  ]
+}

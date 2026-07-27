@@ -241,3 +241,13 @@
 - 已新增验证记录：`docs/validation/product-market-analysis-code-slice-j-collection-records-20260727.md`。
 - 已验证：source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。
 - 当前下一步：Code Slice K，可做真实来源采集执行器的“手工 URL 输入 / 打开来源记录”最小桥接；继续保持没有打开来源就不能形成 EvidenceCard。
+
+## 产品出海市场分析 Code Slice K：手工 URL / 已知来源采集桥接
+
+- 已新增 `scripts/collect_product_market_sources.py`，作为手工 URL / 已知来源 -> `Source` / `Observation` 的最小桥接脚本。
+- 该脚本只搬运用户明确给定的公开 URL 和已知打开状态，不搜索、不抓取、不下载、不自动打开来源。
+- 输出固定声明：`not_evidence=true`、`does_not_search_web=true`、`does_not_open_sources=true`、`does_not_create_evidence_cards=true`、`does_not_create_matrix_rows=true`。
+- 已阻断：本地路径 / `file://`、token/API key/signature URL、未打开或受限来源携带事实 `raw_excerpt`、`search.web` 伪装 Observation。
+- 已新增 source collection eval runner / cases / fixtures：官方产品页已打开、PDF URL shell、来源受限，以及 3 个失败夹具。
+- 验证记录：`docs/validation/product-market-analysis-code-slice-k-manual-source-collection-20260727.md`。
+- 已验证：source collection `6/6`、source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。下一步可提交 Code Slice K；之后进入 Code Slice L。
