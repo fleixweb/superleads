@@ -1,0 +1,105 @@
+{
+  "description": "Generated Markdown delivery checks for the three Superleads business routes. These cases prove the delivery command can render audited graph/workbook projections into user-visible Markdown and then pass the Slice T wording contract.",
+  "generator": "scripts/export_superleads_markdown.py",
+  "validator": "scripts/validate_superleads_user_visible_output.py",
+  "cases": [
+    {
+      "name": "bulk customer development generated Markdown",
+      "fixture": "evals/fixtures/pass_default_discovery_candidate_pool.json",
+      "route": "auto",
+      "expected_route": "bulk_customer_development",
+      "expected": "pass",
+      "min_tables": 3,
+      "must_contain": [
+        "我理解你卖的是",
+        "本次优先找",
+        "本次不纳入",
+        "判断依据将重点看",
+        "发现候选池样表",
+        "候选池不是正式开发名单",
+        "联系入口不等于采购意愿",
+        "来源 / 来源状态"
+      ],
+      "must_not_contain": [
+        "推荐客户",
+        "采购概率",
+        "客户背调报告",
+        "产品出海市场分析",
+        "EvidenceCard",
+        "SearchLog"
+      ]
+    },
+    {
+      "name": "customer background generated Markdown",
+      "fixture": "evals/fixtures/pass_customer_background_chillys_markdown.json",
+      "route": "auto",
+      "expected_route": "customer_background_research",
+      "expected": "pass",
+      "min_tables": 6,
+      "must_contain": [
+        "一句话先说清",
+        "客户一眼看懂",
+        "客户、品牌与关联方",
+        "公开信息不能证明当前采购需求或采购负责人",
+        "董事、Founder 或 Owner 线索不等于采购负责人",
+        "怎么联系、先找谁",
+        "跟进前要注意什么",
+        "信息从哪里来",
+        "来源受限"
+      ],
+      "must_not_contain": [
+        "候选客户池",
+        "产品出海市场分析",
+        "采购概率",
+        "推荐客户",
+        "EvidenceCard",
+        "SearchLog"
+      ]
+    },
+    {
+      "name": "product outbound market generated Markdown",
+      "fixture": "evals/fixtures/market_pass_xingheng_minimum_boundary.json",
+      "route": "auto",
+      "expected_route": "product_outbound_market_analysis",
+      "expected": "pass",
+      "min_tables": 7,
+      "must_contain": [
+        "先看贸易前提",
+        "目标销售国家/地区",
+        "出口申报国",
+        "原产国 / 制造来源",
+        "实际起运地 / 起运港",
+        "Google Trends",
+        "未执行",
+        "候选 HTSUS",
+        "COO / 原产地证明",
+        "海运拼箱",
+        "国际快递",
+        "待补材料清单",
+        "不能因用户未提供 COO 就写“不需要”"
+      ],
+      "must_not_contain": [
+        "候选客户池",
+        "客户背调报告",
+        "推荐客户",
+        "目标客户群",
+        "值得进入",
+        "推荐报价",
+        "最佳路线",
+        "承诺交期",
+        "EvidenceCard",
+        "SearchLog"
+      ]
+    },
+    {
+      "name": "fail product market unsafe graph blocked before Markdown",
+      "fixture": "evals/fixtures/market_fail_candidate_htsus_as_final_rate.json",
+      "route": "auto",
+      "expected_route": "product_outbound_market_analysis",
+      "expected": "fail",
+      "expected_error_codes": [
+        "market_candidate_hs_promoted_to_final"
+      ]
+    }
+  ]
+}

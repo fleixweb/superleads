@@ -1,8 +1,8 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：`ef2bb2e Add product market collection pipeline`
-- 当前工作树：Slice R / Slice S / Slice T 产品复盘、三路线样本与用户可见输出静态 eval 待提交；无关未跟踪目录保留不处理。
+- 最新提交：`d1d9990 Freeze Superleads user-visible output contract`
+- 当前工作树：Code Slice U 三路线用户可见 Markdown 交付器已实现并通过验证，待用户确认后提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已验证
 
@@ -12,20 +12,21 @@
 - source-plan：`6/6`
 - market：`42/42`
 - 用户可见输出静态套件：`6/6`
-- 默认套件：`90/90`
-- 深度套件：`636/636`
-- 全量套件：`676/676`
+- 三路线 Markdown 交付器套件：`4/4`
+- 默认套件：`91/91`
+- 深度套件：`637/637`
+- 全量套件：`677/677`
 - `source.open` 公开 GET 烟测已恢复（`https://example.com`，`200`）
 - `tmp/stage5_chillys/chillys_stage5_real_graph.json`、`audit_delivery`、`export_workbook` 链路可用
 
 ## 当前结论
 
-Code Slice A-M 的产品出海市场分析底层链路稳定；Slice R 已完成产品内核复盘，结论是 Superleads 不能继续围绕内部证据层空转，必须回到批量客户开发、单一客户背调、产品出海市场分析三条外贸业务路线。当前真实默认发现仍需要可记录的搜索/打开来源能力；没有时停在计划或样本池层。
+Code Slice A-M 的产品出海市场分析底层链路稳定；Slice R/S/T 已把 Superleads 校准回批量客户开发、单一客户背调、产品出海市场分析三条外贸业务路线；Code Slice U 已把三条路线接成统一 Markdown 交付器。当前真实默认发现仍需要可记录的搜索/打开来源能力；没有时停在计划、样本池或已审核投影渲染层。
 
 ## 下一步
 
-1. 优先提交 Slice R / Slice S / Slice T 当前变更。
-2. 提交后再选择下一条真正改善用户可见交付的 Code Slice。
+1. 优先提交 Code Slice U 当前变更。
+2. 提交后建议进入 Code Slice V：把 Markdown 交付器接到 README / Skill 使用说明 / 常用命令示例，让用户知道三条路线怎么导出。
 3. 暂缓 Code Slice N（EvidenceCard 草稿前人工复核队列），除非它能绑定明确用户可见收益。
 4. 保留 `tmp/stage5_chillys/`，不要清理。
 
@@ -307,3 +308,15 @@ Code Slice A-M 的产品出海市场分析底层链路稳定；Slice R 已完成
 - 验收覆盖：三路线不串线、人话字段、Markdown 表格、内部语言不外露、价值判断不外露、搜索摘要/Google Trends/平台价/候选税号/董事/公开入口/Production->COO 等不得升级。
 - 已验证：用户可见输出 `6/6`、market `42/42`、default `90/90`、deep `636/636`、all `676/676`。
 - 下一步建议：先提交 Slice R / S / T；之后再选下一个 Code Slice，但必须能说明改善哪条路线的哪张用户可见表。
+
+## Superleads Code Slice U：三路线用户可见 Markdown 交付器
+
+- 2026-07-28 已新增 `scripts/export_superleads_markdown.py`，统一支持批量客户开发、单一客户背调、产品出海市场分析三条路线输出 Markdown。
+- 交付器复用既有安全链路：批量开发走 `audit_delivery` + initial sheets；单客背调走 `background_report` 投影；产品市场走 `audit_product_market_analysis` + market sheets。
+- 交付器默认 `--route auto` 自动识别，也可显式指定三条路线；写出前会调用 `validate_superleads_user_visible_output.py`，不通过则不写 Markdown。
+- 已新增生成型 eval：`evals/run_superleads_markdown_delivery_evals.py`、`evals/cases/superleads_markdown_delivery_cases.json`，覆盖 3 pass + 1 fail。
+- 已新增 Chilly's 背调交付 fixture：`evals/fixtures/pass_customer_background_chillys_markdown.json`，复制自保留的 `tmp/stage5_chillys/chillys_stage5_real_graph.json`。
+- 已新增规格与验证记录：`spec/28-superleads-markdown-delivery-code-slice-u.md`、`docs/validation/superleads-markdown-delivery-code-slice-u-20260728.md`。
+- 已验证：Markdown delivery `4/4`、用户可见输出 `6/6`、market `42/42`、source-plan `6/6`、source collection `6/6`、collection merge `7/7`、collection pipeline `7/7`、default `91/91`、deep `637/637`、all `677/677`、`git diff --check` 通过。
+- 边界：本轮不联网、不搜索、不打开来源、不新增事实、不生成客户推荐/采购概率/市场进入建议/推荐报价/最终税率。
+- 下一步建议：先提交 Code Slice U；之后做 Code Slice V，把三路线 Markdown 导出命令写入 README / Skill 使用说明 / 常用命令示例。

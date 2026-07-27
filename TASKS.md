@@ -312,3 +312,16 @@
   - `python3 evals/run_evals.py --suite deep` = `636/636`。
   - `python3 evals/run_evals.py --suite all` = `676/676`。
 - 当前下一步建议：先提交 Slice R / S / T；再决定下一条真正改善用户可见交付的 Code Slice。
+
+## Superleads Code Slice U：三路线用户可见 Markdown 交付器
+
+- 已新增统一命令：`scripts/export_superleads_markdown.py`。
+- 支持 `--route auto` 识别三条路线：批量客户开发、单一客户背调、产品出海市场分析。
+- 批量客户开发输出：开发方向四行、发现候选池样表、待确认事项、来源 / 来源状态。
+- 单一客户背调输出：一句话先说清、客户一眼看懂、客户/品牌/关联方、公开业务信号、怎么联系、注意事项、来源。
+- 产品出海市场分析输出：先看贸易前提、Google Trends 未执行兜底、COO / 原产地证明、海运拼箱 / 国际快递、待补材料清单、市场矩阵。
+- 已新增 eval：`evals/run_superleads_markdown_delivery_evals.py`、`evals/cases/superleads_markdown_delivery_cases.json`。
+- 已新增 fixture：`evals/fixtures/pass_customer_background_chillys_markdown.json`。
+- 已新增规格/验证文档：`spec/28-superleads-markdown-delivery-code-slice-u.md`、`docs/validation/superleads-markdown-delivery-code-slice-u-20260728.md`。
+- 已验证：Markdown delivery `4/4`、用户可见输出 `6/6`、market `42/42`、source-plan `6/6`、source collection `6/6`、collection merge `7/7`、collection pipeline `7/7`、default `91/91`、deep `637/637`、all `677/677`、`git diff --check` 通过。
+- 当前下一步：提交 Code Slice U；之后建议进入 Code Slice V（README / Skill 使用说明 / 常用命令示例）。
