@@ -1,0 +1,118 @@
+{
+  "description": "Product outbound market analysis Code Slice L collection merge fixtures. These cases assert that Slice K manual Source/Observation collection outputs can be appended to a ProductMarketAnalysisGraph and exported without creating EvidenceCards, MatrixRows, SearchLogs, or fact conclusions.",
+  "runner": "evals/run_product_market_collection_merge_evals.py",
+  "merger": "scripts/merge_product_market_collection.py",
+  "cases": [
+    {
+      "name": "merge official product page collection and export",
+      "graph": "market_pass_xingheng_minimum_boundary.json",
+      "collection": "source_collection_official_product_page_output.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "expected_source_delta": 1,
+      "expected_observation_delta": 1,
+      "expect_export": true,
+      "output_must_contain": [
+        "product_outbound_market_analysis_collection_merge",
+        "does_not_create_evidence_cards",
+        "does_not_create_matrix_rows",
+        "source-entry_product_manufacturer_page-001"
+      ],
+      "export_must_contain": [
+        "Xing Heng 48V20Ah product page",
+        "来源本身仅作可追溯入口",
+        "信息来源与待确认事项"
+      ],
+      "export_must_not_contain": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳路线",
+        "最终税率为",
+        "UN38.3 已合规"
+      ]
+    },
+    {
+      "name": "merge pdf shell without fact upgrade",
+      "graph": "market_pass_xingheng_minimum_boundary.json",
+      "collection": "source_collection_pdf_url_shell_output.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "expected_source_delta": 1,
+      "expected_observation_delta": 1,
+      "expect_export": true,
+      "export_must_contain": [
+        "Tianneng public PDF URL shell",
+        "来源受限",
+        "需打开或复核原始来源"
+      ],
+      "export_must_not_contain": [
+        "TMLiN",
+        "UN38.3 已合规",
+        "SDS 已有",
+        "最终税率为"
+      ]
+    },
+    {
+      "name": "merge restricted source without facts",
+      "graph": "market_pass_xingheng_minimum_boundary.json",
+      "collection": "source_collection_restricted_output.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "expected_source_delta": 1,
+      "expected_observation_delta": 1,
+      "expect_export": true,
+      "export_must_contain": [
+        "Restricted market report landing page",
+        "来源受限",
+        "需打开或复核原始来源"
+      ],
+      "export_must_not_contain": [
+        "销量增长",
+        "真实销量",
+        "推荐价格",
+        "建议进入"
+      ]
+    },
+    {
+      "name": "reject duplicate source id",
+      "graph": "market_pass_xingheng_minimum_boundary.json",
+      "collection": "source_collection_output_fail_duplicate_source_id.json",
+      "expected_returncode": 1,
+      "expected_ok": false,
+      "expected_issue_codes": [
+        "market_collection_duplicate_source_id"
+      ]
+    },
+    {
+      "name": "reject fact objects in collection",
+      "graph": "market_pass_xingheng_minimum_boundary.json",
+      "collection": "source_collection_output_fail_fact_objects.json",
+      "expected_returncode": 1,
+      "expected_ok": false,
+      "expected_issue_codes": [
+        "market_collection_fact_objects_forbidden"
+      ]
+    },
+    {
+      "name": "reject collection not_evidence false",
+      "graph": "market_pass_xingheng_minimum_boundary.json",
+      "collection": "source_collection_output_fail_not_evidence_false.json",
+      "expected_returncode": 1,
+      "expected_ok": false,
+      "expected_issue_codes": [
+        "market_collection_not_evidence_missing"
+      ]
+    },
+    {
+      "name": "reject collection brief version mismatch",
+      "graph": "market_pass_xingheng_minimum_boundary.json",
+      "collection": "source_collection_output_fail_scope_mismatch.json",
+      "expected_returncode": 1,
+      "expected_ok": false,
+      "expected_issue_codes": [
+        "market_collection_graph_scope_mismatch"
+      ]
+    }
+  ]
+}

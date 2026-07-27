@@ -1,0 +1,92 @@
+{
+  "ok": true,
+  "route": "product_outbound_market_analysis_source_collection",
+  "source_plan_route": "product_outbound_market_analysis_source_plan",
+  "execution_level": "manual_source_collection_records_only",
+  "not_evidence": true,
+  "does_not_search_web": true,
+  "does_not_open_sources": true,
+  "uses_user_supplied_urls": true,
+  "uses_user_declared_open_status": true,
+  "does_not_create_evidence_cards": true,
+  "does_not_create_matrix_rows": true,
+  "allowed_output": "source_and_observation_records_only",
+  "issues": [],
+  "guardrails": [
+    "不自动搜索，只接收用户给定 URL / 已知来源。",
+    "不自动打开、抓取或下载来源；opened/access_status 只记录用户或上游工具已经完成的打开状态。",
+    "Source / Observation 只是 EvidenceCard 的输入，不是事实卡。",
+    "不创建 EvidenceCard，不创建 MatrixRow，不输出税率、认证、物流、趋势、价格或市场进入判断。",
+    "未打开、未访问或来源受限时，不能携带事实 raw_excerpt。",
+    "Source Pack / Query Plan / SearchLog 不能当事实来源。"
+  ],
+  "sources": [
+    {
+      "source_id": "source-entry_product_manufacturer_page-001",
+      "canonical_url": "https://www.xingheng.com.vn/products/48v20ah-lifepo4-battery",
+      "final_url": "https://www.xingheng.com.vn/products/48v20ah-lifepo4-battery",
+      "publisher_relation": "first_party",
+      "provenance": "manual_input",
+      "medium": "website",
+      "access_boundary": "manual_public_url_no_auto_fetch",
+      "owner_hint": "entry_product_manufacturer_page",
+      "material_role": "published_source_copy"
+    }
+  ],
+  "observations": [
+    {
+      "observation_id": "observation-entry_product_manufacturer_page-001",
+      "run_id": "run-xh-us",
+      "source_id": "source-entry_product_manufacturer_page-001",
+      "capability": "source.open",
+      "concrete_tool": "manual_user_supplied_source_record",
+      "observed_at": "2026-07-27T00:00:00Z",
+      "access_status": "opened",
+      "http_status": null,
+      "title": "Xing Heng 48V20Ah product page",
+      "raw_excerpt": "48V20Ah LiFePO4 battery pack; Design No. BAT001.02; 48 V; 20 Ah.",
+      "page_or_dom_locator": "manual-visible-excerpt",
+      "extraction_method": "manual_user_supplied_excerpt",
+      "language": "en",
+      "translation_status": "original"
+    }
+  ],
+  "collection_manifest": {
+    "collection_run_id": "collection-run-forbidden-fact-objects",
+    "run_id": "run-xh-us",
+    "brief_id": "brief-xh-us",
+    "brief_version_id": "brief-xh-us-v1",
+    "query_plan_id": "qp_010_qt_product_original_sources",
+    "query_group_id": "product_original_sources",
+    "source_plan_route": "product_outbound_market_analysis_source_plan",
+    "created_at": "2026-07-27T00:00:00Z",
+    "source_count": 1,
+    "observation_count": 1,
+    "opened_observation_count": 1,
+    "restricted_or_not_accessed_count": 0,
+    "records_are_not_evidence": true,
+    "manual_entries": [
+      {
+        "source_id": "source-entry_product_manufacturer_page-001",
+        "observation_id": "observation-entry_product_manufacturer_page-001",
+        "source_entry_id": "entry_product_manufacturer_page",
+        "medium": "website",
+        "access_status": "opened",
+        "has_factual_excerpt": true,
+        "not_evidence": true
+      }
+    ]
+  },
+  "evidence_cards": [
+    {
+      "evidence_card_id": "card-illegal-from-collection",
+      "status": "verified"
+    }
+  ],
+  "matrix_rows": [
+    {
+      "matrix_row_id": "row-illegal-from-collection",
+      "status": "verified"
+    }
+  ]
+}

@@ -261,3 +261,11 @@
 - 已新增验证记录：`docs/validation/product-market-analysis-code-slice-k-manual-source-collection-20260727.md`。
 - 已验证：source collection `6/6`、source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。
 - 当前下一步：提交 Code Slice K；之后可进入 Code Slice L，把手工 collection 输出并入正式图谱/导出链路的最小命令封装。
+
+## 产品出海市场分析：Code Slice L collection merge / export bridge
+
+- 已新增 `scripts/merge_product_market_collection.py`：把 Slice K 手工 collection 输出并入正式 `ProductMarketAnalysisGraph`，并可选执行 validate / audit / export。
+- 已新增 `evals/run_product_market_collection_merge_evals.py` 与 `evals/cases/product_market_collection_merge_cases.json`。
+- 已新增 7 个 collection output fixtures：3 个 pass 输出，4 个 fail 输出。
+- 已验证：collection merge `7/7`、source collection `6/6`、source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。
+- 当前下一步：提交 Code Slice L；之后进入 Code Slice M，封装 `collect -> merge -> validate/audit/export` 的单命令入口或用户给 URL/PDF 后的半自动运行剧本。

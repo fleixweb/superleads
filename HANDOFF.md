@@ -251,3 +251,13 @@
 - 已新增 source collection eval runner / cases / fixtures：官方产品页已打开、PDF URL shell、来源受限，以及 3 个失败夹具。
 - 验证记录：`docs/validation/product-market-analysis-code-slice-k-manual-source-collection-20260727.md`。
 - 已验证：source collection `6/6`、source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。下一步可提交 Code Slice K；之后进入 Code Slice L。
+
+## 产品出海市场分析 Code Slice L：手工 collection 并入正式图谱 / 导出链路
+
+- 2026-07-27 已新增 `scripts/merge_product_market_collection.py`，把 Slice K 的 `Source` / `Observation` collection 输出安全追加到正式 `ProductMarketAnalysisGraph`。
+- 合并脚本固定声明并执行边界：`not_evidence=true`、不搜索、不打开来源、不创建 EvidenceCard、不创建 MatrixRow、不新增 SearchLog、不改变事实矩阵。
+- 已新增 collection merge eval runner / cases / fixtures：官方产品页已打开、PDF URL shell、来源受限，以及重复 Source ID、夹带事实对象、`not_evidence=false`、Brief version mismatch 等失败夹具。
+- 新增验证记录：`docs/validation/product-market-analysis-code-slice-l-collection-merge-export-20260727.md`。
+- 已验证：collection merge `7/7`、source collection `6/6`、source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。
+- 边界：新增来源只进入“信息来源与待确认事项”导出内容；不会自动升级 UN38.3/SDS、最终税率、物流路线、趋势、价格或市场进入判断。
+- 当前下一步：提交 Code Slice L；之后可进入 Code Slice M，把 `collect -> merge -> validate/audit/export` 串成单个用户入口命令或半自动运行剧本。
