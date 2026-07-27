@@ -67,6 +67,8 @@
       "properties": {
         "source_id": {"type": ["string", "null"]},
         "observation_id": {"type": ["string", "null"]},
+        "search_log_id": {"type": ["string", "null"]},
+        "query_plan_id": {"type": ["string", "null"]},
         "relation": {
           "type": "string",
           "enum": ["supports", "contradicts", "contextual", "candidate_lead", "does_not_support"]
@@ -219,6 +221,82 @@
         },
         "evidence_card_ids": {"$ref": "#/$defs/IdRefs"},
         "gap_ids": {"$ref": "#/$defs/IdRefs"}
+      }
+    },
+    "MarketSearchLogRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "search_log_id",
+        "run_id",
+        "brief_id",
+        "brief_version_id",
+        "source_plan_route",
+        "query_plan_id",
+        "query_group_id",
+        "pack_id",
+        "template_id",
+        "queried_at",
+        "capability",
+        "concrete_tool",
+        "query_text",
+        "targeted_geography_literals",
+        "source_entry_ids",
+        "result_refs",
+        "result_use",
+        "must_open_source",
+        "reject_if_only_snippet",
+        "not_evidence",
+        "allowed_output"
+      ],
+      "properties": {
+        "search_log_id": {"type": "string", "minLength": 1},
+        "run_id": {"type": "string", "minLength": 1},
+        "brief_id": {"type": "string", "minLength": 1},
+        "brief_version_id": {"type": "string", "minLength": 1},
+        "source_plan_route": {"type": "string", "const": "product_outbound_market_analysis_source_plan"},
+        "source_plan_id": {"type": ["string", "null"]},
+        "query_plan_id": {"type": "string", "minLength": 1},
+        "query_group_id": {"type": "string", "minLength": 1},
+        "pack_id": {"type": ["string", "null"]},
+        "template_id": {"type": ["string", "null"]},
+        "queried_at": {"type": "string", "minLength": 1},
+        "capability": {"type": "string", "const": "search.web"},
+        "concrete_tool": {"type": "string", "minLength": 1},
+        "query_text": {"type": "string", "minLength": 1},
+        "query_language": {"type": ["string", "null"]},
+        "targeted_geography_literals": {"$ref": "#/$defs/StringList"},
+        "product_trigger_tags": {"$ref": "#/$defs/StringList"},
+        "source_entry_ids": {"$ref": "#/$defs/IdRefs"},
+        "required_source_priority": {"$ref": "#/$defs/StringList"},
+        "expected_observation_fields": {"$ref": "#/$defs/StringList"},
+        "result_refs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["result_url", "result_locator", "result_use"],
+            "properties": {
+              "result_url": {"type": "string", "minLength": 1, "pattern": "^https?://"},
+              "result_rank": {"type": ["integer", "null"], "minimum": 1},
+              "result_title": {"type": ["string", "null"], "minLength": 1},
+              "result_locator": {"type": "string", "minLength": 1},
+              "candidate_source_id": {"type": ["string", "null"]},
+              "opened_source_id": {"type": ["string", "null"]},
+              "result_use": {"type": "string", "enum": ["source_candidate_only", "opened_source_locator", "failed_or_restricted_locator"]},
+              "snippet_or_summary": {"type": ["string", "null"]}
+            }
+          }
+        },
+        "accessed_source_ids": {"$ref": "#/$defs/IdRefs"},
+        "failed_source_refs": {"$ref": "#/$defs/StringList"},
+        "restricted_source_refs": {"$ref": "#/$defs/StringList"},
+        "coverage_notes": {"$ref": "#/$defs/StringList"},
+        "result_use": {"type": "string", "const": "source_candidate_only"},
+        "must_open_source": {"type": "boolean", "const": true},
+        "reject_if_only_snippet": {"type": "boolean", "const": true},
+        "not_evidence": {"type": "boolean", "const": true},
+        "allowed_output": {"type": "string", "const": "search_log_or_source_locator_only"}
       }
     },
     "ProductAttributeRecord": {
@@ -503,6 +581,7 @@
     "products": {"type": "array", "items": {"$ref": "#/$defs/ProductSubject"}},
     "trade_premises": {"type": "array", "items": {"$ref": "#/$defs/TradePremise"}},
     "attributes": {"type": "array", "items": {"$ref": "#/$defs/ProductAttributeRecord"}},
+    "search_logs": {"type": "array", "items": {"$ref": "#/$defs/MarketSearchLogRecord"}},
     "sources": {"type": "array", "items": {"$ref": "source-observation.schema.json#/$defs/Source"}},
     "observations": {"type": "array", "items": {"$ref": "source-observation.schema.json#/$defs/Observation"}},
     "evidence_cards": {"type": "array", "items": {"$ref": "#/$defs/EvidenceCard"}},

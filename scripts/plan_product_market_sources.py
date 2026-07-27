@@ -688,12 +688,58 @@ def build_query_plan(brief_payload: dict[str, Any], registry: dict[str, Any]) ->
     }
 
 
+
+def build_empty_collection_run(plan: dict[str, Any]) -> dict[str, Any]:
+    """Create an empty, auditable collection-run shell from a Query Plan.
+
+    This is Slice J glue: it does not search or open sources.  It only records
+    which query-plan steps are ready to be executed and which guardrails must
+    survive into SearchLog / Source / Observation collection.
+    """
+    return {
+        "collection_run_id": "collection_run_manual_source_collection",
+        "route": "product_outbound_market_analysis_source_collection",
+        "source_plan_route": plan.get("route"),
+        "source_plan_generated_at": plan.get("generated_at"),
+        "execution_level": "collection_record_shell_only",
+        "does_not_search_web": True,
+        "does_not_open_sources": True,
+        "not_evidence": True,
+        "allowed_output": "collection_run_shell_only",
+        "search_logs": [],
+        "sources": [],
+        "observations": [],
+        "pending_query_plan_steps": [
+            {
+                "query_plan_id": step.get("query_plan_id"),
+                "query_group_id": step.get("query_group_id"),
+                "pack_id": step.get("pack_id"),
+                "template_id": step.get("template_id"),
+                "query_strings": step.get("query_strings", []),
+                "must_open_source": True,
+                "reject_if_only_snippet": True,
+                "search_log_allowed_output": "search_log_or_source_locator_only",
+                "observation_allowed_only_after_open_source": True,
+                "not_evidence": True,
+            }
+            for step in _as_list(plan.get("query_plan"))
+            if isinstance(step, dict)
+        ],
+        "guardrails": [
+            "Query Plan 不能直接生成 EvidenceCard 或 MatrixRow",
+            "SearchLog 只能记录查询和候选来源定位，不能写事实",
+            "未打开来源不能生成 Observation",
+            "Observation 必须引用已打开 Source，仍需再进入 EvidenceCard 互证",
+        ],
+    }
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", help="Brief JSON or ProductMarketAnalysisGraph JSON")
     parser.add_argument("--registry", default=str(DEFAULT_REGISTRY), help="Source Pack registry JSON")
     parser.add_argument("--format", choices=["json"], default="json")
     parser.add_argument("--check-registry", action="store_true", help="Only validate the Source Pack registry")
+    parser.add_argument("--emit-collection-run-shell", action="store_true", help="Also emit a SearchLog/Source/Observation collection-run shell without searching or opening sources")
     args = parser.parse_args()
 
     registry_path = Path(args.registry)
@@ -707,6 +753,9 @@ def main() -> int:
         parser.error("--input is required unless --check-registry is used")
     brief = _load_json(Path(args.input))
     result = build_query_plan(brief, registry)
+    if args.emit_collection_run_shell:
+        result = dict(result)
+        result["collection_run_shell"] = build_empty_collection_run(result)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if result.get("ok") else 1
 

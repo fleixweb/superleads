@@ -1,0 +1,53 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "add",
+      "path": "/search_logs",
+      "value": [
+        {
+          "search_log_id": "search-log-xh-product-page-001",
+          "run_id": "run-xh-us",
+          "brief_id": "brief-xh-us",
+          "brief_version_id": "brief-xh-us-v1",
+          "source_plan_route": "product_outbound_market_analysis_source_plan",
+          "source_plan_id": "source-plan-xh-us-v1",
+          "query_plan_id": "qp_010_qt_product_original_sources",
+          "query_group_id": "product_original_sources",
+          "pack_id": "seed_product_original_sources",
+          "template_id": "qt_product_original_sources",
+          "queried_at": "2026-07-26",
+          "capability": "search.web",
+          "concrete_tool": "fixture.static_search_web",
+          "query_text": "Xing Heng 48V20Ah LiFePO4 official product page BAT001.02",
+          "query_language": "en",
+          "targeted_geography_literals": ["United States", "Vietnam"],
+          "product_trigger_tags": ["lithium_battery", "dangerous_goods"],
+          "source_entry_ids": ["entry_product_manufacturer_page"],
+          "required_source_priority": ["first_party_product_material"],
+          "expected_observation_fields": ["model", "rated_voltage", "rated_capacity", "limitations"],
+          "result_refs": [
+            {
+              "result_url": "https://www.xingheng.com.vn/products/48v20ah-lifepo4-battery",
+              "result_rank": 1,
+              "result_title": "Xing Heng 48V20Ah LiFePO4 battery",
+              "result_locator": "xingheng.com.vn/products/48v20ah-lifepo4-battery",
+              "opened_source_id": "source-xh-product-page",
+              "result_use": "opened_source_locator",
+              "snippet_or_summary": "Candidate product page locator only; opened source observation carries the actual product fields."
+            }
+          ],
+          "accessed_source_ids": ["source-xh-product-page"],
+          "failed_source_refs": [],
+          "restricted_source_refs": [],
+          "coverage_notes": ["SearchLog records how the source was found; factual cards cite source.open Observation only."],
+          "result_use": "source_candidate_only",
+          "must_open_source": true,
+          "reject_if_only_snippet": true,
+          "not_evidence": true,
+          "allowed_output": "search_log_or_source_locator_only"
+        }
+      ]
+    }
+  ]
+}

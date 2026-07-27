@@ -1,0 +1,40 @@
+{
+  "extends": "market_pass_search_summary_candidate_only.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/search_logs/0/result_refs/0/result_use",
+      "value": "failed_or_restricted_locator"
+    },
+    {
+      "op": "replace",
+      "path": "/search_logs/0/restricted_source_refs",
+      "value": ["https://example.com/login-required-market-report"]
+    },
+    {
+      "op": "replace",
+      "path": "/search_logs/0/coverage_notes",
+      "value": ["候选来源需要登录或访问受限；本轮不生成 Source/Observation 事实。"]
+    },
+    {
+      "op": "replace",
+      "path": "/evidence_cards/0/current_value",
+      "value": "候选来源访问受限，只能保留待打开线索"
+    },
+    {
+      "op": "replace",
+      "path": "/evidence_cards/0/status",
+      "value": "source_restricted"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/0/status",
+      "value": "source_restricted"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/0/user_visible_cells/限制说明",
+      "value": "来源受限；没有打开来源，不生成事实结论"
+    }
+  ]
+}

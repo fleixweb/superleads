@@ -1,0 +1,9 @@
+{
+  "extends": "market_pass_search_summary_candidate_only.json",
+  "patches": [
+    {"op": "replace", "path": "/evidence_cards/0/status", "value": "verified"},
+    {"op": "replace", "path": "/evidence_cards/0/current_value", "value": "SearchLog 已证明该市场信号属实"},
+    {"op": "replace", "path": "/matrix_rows/0/status", "value": "verified"},
+    {"op": "replace", "path": "/matrix_rows/0/user_visible_cells/限制说明", "value": "搜索日志已经核实事实"}
+  ]
+}

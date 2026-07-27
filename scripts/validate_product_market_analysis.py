@@ -43,8 +43,8 @@ NEGATION_MARKERS = (
 )
 
 SEARCH_SOURCE_MARKERS = (
-    "search_result", "search summary", "search_summary", "search snippet", "search_snippet",
-    "搜索结果", "搜索摘要", "搜索 snippet", "搜索线索", "snippet",
+    "search_result", "search_log", "searchlog", "search log", "search summary", "search_summary", "search snippet", "search_snippet",
+    "搜索结果", "搜索日志", "搜索摘要", "搜索 snippet", "搜索线索", "snippet",
 )
 SKILL_SUMMARY_MARKERS = (
     "skill summary", "skill_summary", "previous skill", "upstream skill", "model summary",
@@ -165,6 +165,26 @@ ORIGIN_PROOF_AUTHORITY_MARKERS = (
     "europa.eu", "eur-lex", "access2markets", "gov.uk", "税务海关", "海关",
     "主管部门", "官方", "official", "regulation", "rules of origin",
 )
+SOURCE_OPEN_CAPABILITIES = {
+    "source.open",
+    "browser.render",
+    "document.extract",
+    "source.capture",
+    "social.visible.read",
+    "registry.lookup",
+    "trademark.lookup",
+    "maps.lookup",
+    "image.inspect",
+}
+OPENED_ACCESS_STATUSES = {"opened", "captured", "extracted", "rendered"}
+SOURCE_RESTRICTED_ACCESS_STATUSES = {"blocked", "login_wall", "login_required", "forbidden", "inaccessible", "not_accessed", "restricted"}
+SEARCH_LOG_ALLOWED_OUTPUT = "search_log_or_source_locator_only"
+SOURCE_PLAN_ROUTE = "product_outbound_market_analysis_source_plan"
+QUERY_PLAN_DIRECT_FACT_MARKERS = (
+    "source_plan_only", "source pack", "sourcepack", "query plan", "query_plan", "querytemplate",
+    "source_or_query_plan_only", "pack_boundary_note", "source pack / querytemplate",
+    "来源计划", "查询计划", "source pack", "source pack registry", "pack 入口",
+)
 INTERNAL_ID_RE = re.compile(r"\b(?:run|brief|obs|observation|evidence|card|matrix|gap|conflict|handoff|transition|src)_[A-Za-z0-9][A-Za-z0-9_-]*\b", re.I)
 HEX_HASH_RE = re.compile(r"\b(?:sha256:)?[a-f0-9]{32,64}\b", re.I)
 URL_RE = re.compile(r"https?://[^\s\]）)>\"']+", re.I)
@@ -175,6 +195,7 @@ ID_FIELDS = {
     "products": "product_subject_id",
     "trade_premises": "trade_premise_id",
     "attributes": "attribute_id",
+    "search_logs": "search_log_id",
     "sources": "source_id",
     "observations": "observation_id",
     "evidence_cards": "evidence_card_id",
@@ -550,6 +571,159 @@ def _origin_record_has_authority(
     return False
 
 
+def _observation_is_opened_source(obs: dict[str, Any]) -> bool:
+    return obs.get("capability") in SOURCE_OPEN_CAPABILITIES and str(obs.get("access_status") or "") in OPENED_ACCESS_STATUSES
+
+
+def _source_observation_opened(source_id: Any, observations_by_source: dict[str, list[dict[str, Any]]]) -> bool:
+    if not has_text(source_id):
+        return False
+    return any(_observation_is_opened_source(obs) for obs in observations_by_source.get(str(source_id), []))
+
+
+def _card_uses_query_plan_or_search_log_as_direct_source(card: dict[str, Any]) -> bool:
+    if has_text(card.get("query_plan_id")) or has_text(card.get("search_log_id")):
+        return True
+    if _contains_any([card.get("source_type"), card.get("source_locator")], QUERY_PLAN_DIRECT_FACT_MARKERS):
+        return True
+    for ref in as_list(card.get("source_refs")):
+        if isinstance(ref, dict) and (has_text(ref.get("query_plan_id")) or has_text(ref.get("search_log_id"))):
+            return True
+    return False
+
+
+def _source_linked_search_logs(source_id: str, search_logs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    linked: list[dict[str, Any]] = []
+    for log in search_logs:
+        if not isinstance(log, dict):
+            continue
+        if source_id in {str(item) for item in as_list(log.get("accessed_source_ids")) if has_text(item)}:
+            linked.append(log)
+            continue
+        for ref in as_list(log.get("result_refs")):
+            if isinstance(ref, dict) and str(ref.get("opened_source_id") or "") == source_id:
+                linked.append(log)
+                break
+    return linked
+
+
+def _public_source_url(source: dict[str, Any]) -> bool:
+    url = source.get("final_url") or source.get("canonical_url")
+    return is_safe_public_http_url(url)
+
+
+def _market_search_collection_issues(
+    graph: dict[str, Any],
+    ids: dict[str, dict[str, dict[str, Any]]],
+    observations_by_source: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, str]]:
+    issues: list[dict[str, str]] = []
+    run_ids = set(ids["runs"])
+    brief_ids = set(ids["briefs"])
+    brief_versions = {str(item.get("brief_version_id")) for item in ensure_list(graph, "briefs") if isinstance(item, dict) and has_text(item.get("brief_version_id"))}
+    search_logs = [item for item in ensure_list(graph, "search_logs") if isinstance(item, dict)]
+
+    for idx, log in enumerate(search_logs):
+        path = f"search_logs[{idx}]"
+        if log.get("run_id") not in run_ids:
+            _add_issue(issues, "critical", "market_search_log_run_missing", "Market SearchLog must reference an existing product-market run", f"{path}.run_id")
+        if log.get("brief_id") not in brief_ids:
+            _add_issue(issues, "critical", "market_search_log_brief_missing", "Market SearchLog must reference an existing product-market brief", f"{path}.brief_id")
+        if log.get("brief_version_id") not in brief_versions:
+            _add_issue(issues, "critical", "market_search_log_brief_version_missing", "Market SearchLog must carry a current Brief version", f"{path}.brief_version_id")
+        if log.get("source_plan_route") != SOURCE_PLAN_ROUTE:
+            _add_issue(issues, "critical", "market_search_log_source_plan_boundary_missing", "Market SearchLog must be tied to the product market Source Plan route", f"{path}.source_plan_route")
+        if log.get("capability") != "search.web":
+            _add_issue(issues, "critical", "market_search_log_capability_invalid", "Market SearchLog capability must be search.web", f"{path}.capability")
+        if str(log.get("concrete_tool") or "") in {"curl", "wget", "python_requests", "source.open", "browser.render"}:
+            _add_issue(issues, "critical", "market_search_log_tool_invalid", "Market SearchLog concrete_tool must identify a search provider, not a source-opening tool", f"{path}.concrete_tool")
+        if not has_text(log.get("query_text")):
+            _add_issue(issues, "critical", "market_search_log_query_missing", "Market SearchLog requires query_text", f"{path}.query_text")
+        if contains_local_path(log.get("query_text")) or "file:" in str(log.get("query_text") or "").casefold():
+            _add_issue(issues, "critical", "market_search_log_query_unsafe", "Market SearchLog query_text must not contain local paths or file URIs", f"{path}.query_text")
+        if re.search(r"(?i)\b(?:cookie|authorization|bearer|api[_ -]?key|access[_ -]?token|password|secret)\b", str(log.get("query_text") or "")):
+            _add_issue(issues, "critical", "market_search_log_query_unsafe", "Market SearchLog query_text must not contain secret or credential material", f"{path}.query_text")
+        if log.get("result_use") != "source_candidate_only":
+            _add_issue(issues, "critical", "market_search_log_result_use_invalid", "Market SearchLog result_use must remain source_candidate_only", f"{path}.result_use")
+        if log.get("must_open_source") is not True or log.get("reject_if_only_snippet") is not True or log.get("not_evidence") is not True:
+            _add_issue(issues, "critical", "market_search_log_source_plan_boundary_missing", "Market SearchLog must preserve must_open_source / reject_if_only_snippet / not_evidence", path)
+        if log.get("allowed_output") != SEARCH_LOG_ALLOWED_OUTPUT:
+            _add_issue(issues, "critical", "market_search_log_source_plan_boundary_missing", "Market SearchLog allowed_output must be search_log_or_source_locator_only", f"{path}.allowed_output")
+        for ref_idx, ref in enumerate(as_list(log.get("result_refs"))):
+            ref_path = f"{path}.result_refs[{ref_idx}]"
+            if not isinstance(ref, dict):
+                _add_issue(issues, "critical", "market_search_log_result_ref_invalid", "Market SearchLog result_refs must be objects", ref_path)
+                continue
+            if not is_safe_public_http_url(ref.get("result_url")):
+                _add_issue(issues, "critical", "market_search_log_result_url_not_public", "Market SearchLog result URL must be a safe public HTTP(S) URL", f"{ref_path}.result_url")
+            if contains_local_path(ref.get("result_locator")) or contains_local_path(ref.get("result_title")):
+                _add_issue(issues, "critical", "market_search_log_result_locator_unsafe", "Market SearchLog result locator must not contain local paths", ref_path)
+            if re.search(r"(?i)\b(?:cookie|authorization|bearer|api[_ -]?key|access[_ -]?token|password|secret)\b", text_of([ref.get("result_locator"), ref.get("result_title"), ref.get("result_url")])):
+                _add_issue(issues, "critical", "market_search_log_result_locator_unsafe", "Market SearchLog result locator must not contain secret or credential material", ref_path)
+            opened_id = ref.get("opened_source_id")
+            if has_text(opened_id):
+                source = ids["sources"].get(str(opened_id))
+                if not isinstance(source, dict):
+                    _add_issue(issues, "critical", "market_search_log_opened_source_missing", "SearchLog opened_source_id must reference an existing Source", f"{ref_path}.opened_source_id")
+                elif not _source_observation_opened(opened_id, observations_by_source):
+                    _add_issue(issues, "critical", "market_source_without_open_observation", "SearchLog opened_source_id requires a source.open/browser/document Observation", f"{ref_path}.opened_source_id")
+            # Snippets/summaries may be retained for audit context, but never become
+            # EvidenceCard support.  The factual path must point to opened_source_id
+            # plus a separate source.open/document Observation.
+
+    for idx, source in enumerate(ensure_list(graph, "sources")):
+        if not isinstance(source, dict):
+            continue
+        path = f"sources[{idx}]"
+        if source.get("medium") == "search_result":
+            _add_issue(issues, "critical", "market_search_result_as_source", "Product market analysis must record search results in search_logs, not as Source records", f"{path}.medium")
+        if not _public_source_url(source) and source.get("provenance") == "discovered_public":
+            _add_issue(issues, "critical", "market_source_url_not_public", "Discovered public Source must have a safe public HTTP(S) URL", path)
+
+    for idx, obs in enumerate(ensure_list(graph, "observations")):
+        if not isinstance(obs, dict):
+            continue
+        path = f"observations[{idx}]"
+        source_id = str(obs.get("source_id") or "")
+        source = ids["sources"].get(source_id)
+        if not isinstance(source, dict):
+            _add_issue(issues, "critical", "market_observation_source_missing", "Observation must reference an existing Source", f"{path}.source_id")
+            continue
+        if obs.get("capability") == "search.web":
+            _add_issue(issues, "critical", "market_search_result_as_observation", "Search.web output belongs in SearchLog, not Observation", f"{path}.capability")
+        if source.get("medium") == "search_result":
+            _add_issue(issues, "critical", "market_search_result_as_source", "Search result Source cannot produce Observation facts", path)
+        if str(obs.get("access_status") or "") in SOURCE_RESTRICTED_ACCESS_STATUSES and has_text(obs.get("raw_excerpt")):
+            _add_issue(issues, "major", "market_restricted_source_has_observation_excerpt", "Restricted/not-opened source must not have factual raw_excerpt", f"{path}.raw_excerpt")
+        if _observation_is_opened_source(obs):
+            linked_logs = _source_linked_search_logs(source_id, search_logs)
+            # User-provided product files are allowed without SearchLog; discovered-public web sources should be traceable to search/log or explicit user URL.
+            if source.get("provenance") == "discovered_public" and not linked_logs and source.get("medium") in {"website", "document", "registry", "directory"}:
+                # Existing legacy fixtures predate Slice J; this is a soft limitation unless the run declares source_opened/full_research.
+                pass
+
+    for idx, card in enumerate(ensure_list(graph, "evidence_cards")):
+        if not isinstance(card, dict):
+            continue
+        path = f"evidence_cards[{idx}]"
+        if card.get("status") in STATUS_FACTUAL and _card_uses_query_plan_or_search_log_as_direct_source(card):
+            _add_issue(issues, "critical", "market_query_plan_or_searchlog_promoted", "Query Plan or SearchLog was promoted directly to factual evidence", path)
+        if card.get("status") in STATUS_FACTUAL and card.get("status") != "derived_calculation":
+            has_open_ref = False
+            for ref in as_list(card.get("source_refs")):
+                if not isinstance(ref, dict):
+                    continue
+                obs = _observation_for_ref(ref, ids)
+                source = _source_for_ref(ref, ids)
+                if isinstance(obs, dict) and isinstance(source, dict) and _observation_is_opened_source(obs) and source.get("medium") != "search_result":
+                    has_open_ref = True
+                    break
+            if not has_open_ref:
+                _add_issue(issues, "critical", "market_evidence_without_open_observation", "Factual EvidenceCard requires an opened source Observation, not search/snippet/plan-only material", path)
+
+    return issues
+
+
 def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
     issues: list[dict[str, str]] = []
     issues.extend(_schema_validation_issues(graph))
@@ -558,6 +732,8 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
     for obs in ensure_list(graph, "observations"):
         if isinstance(obs, dict) and has_text(obs.get("source_id")):
             observations_by_source.setdefault(str(obs["source_id"]), []).append(obs)
+
+    issues.extend(_market_search_collection_issues(graph, ids, observations_by_source))
 
     # Every matrix row needs an explicit status in business language.
     for idx, row in enumerate(ensure_list(graph, "matrix_rows")):

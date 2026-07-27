@@ -1,0 +1,30 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "append",
+      "path": "/evidence_cards/-",
+      "value": {
+        "evidence_card_id": "card-query-plan-direct-fact",
+        "run_id": "run-xh-us",
+        "brief_version_id": "brief-xh-us-v1",
+        "producer_skill": "source_plan_skill",
+        "reviewer_skill": "Skill F - 交付复核",
+        "field_domain": "产品准入与合规要求",
+        "field_name": "Query Plan 直接结论",
+        "current_value": "source_plan_only query plan indicates compliance path, treated as verified",
+        "status": "verified",
+        "source_refs": [{"query_plan_id": "qp_001_qt_us_market_access_by_trigger", "relation": "supports"}],
+        "source_type": "query_plan",
+        "source_locator": "product outbound market analysis Query Plan",
+        "source_date": "2026-07-27",
+        "observed_at": "2026-07-27",
+        "applicability_scope": "仅限本 fixture",
+        "supports": ["Query Plan 直接支持事实"],
+        "does_not_support": [],
+        "boundary_rule_ids": ["SLICE-J-01"],
+        "review_status": "passed"
+      }
+    }
+  ]
+}

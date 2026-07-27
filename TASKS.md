@@ -240,3 +240,13 @@
   - `evals/run_product_market_source_plan_evals.py`
 - 已验证：source-plan `6/6`、market `36/36`、default `84/84`、deep `630/630`、all `670/670`。
 - 当前下一步：Code Slice J，设计 Query Plan 执行记录与真实来源采集衔接的最小 SearchLog / Source / Observation 夹具；继续保持“搜索摘要不成事实、未打开来源不成证据”。
+
+## 产品出海市场分析：Code Slice J SearchLog / Source / Observation 执行记录
+
+- 已新增 ProductMarketAnalysisGraph 可选 `search_logs`，用于记录 Query Plan 后续执行的搜索过程；SearchLog 仍是 `source_candidate_only`，不是事实来源。
+- 已增强 `plan_product_market_sources.py --emit-collection-run-shell`，可输出空的 collection shell，把 pending query steps 映射到未来 SearchLog / Source / Observation 轨道；该 shell 不搜索、不打开来源。
+- 已增强 validator：阻断 Query Plan / SearchLog 直接升级事实、搜索结果伪装 Source/Observation、未打开来源支撑 EvidenceCard、受限来源带事实摘录等。
+- 已新增 Slice J pass/fail fixtures，market suite 变为 `42/42`。
+- 已新增验证记录：`docs/validation/product-market-analysis-code-slice-j-collection-records-20260727.md`。
+- 已验证：source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。
+- 当前下一步：Code Slice K，可做真实来源采集执行器的“手工 URL 输入 / 打开来源记录”最小桥接；继续保持没有打开来源就不能形成 EvidenceCard。

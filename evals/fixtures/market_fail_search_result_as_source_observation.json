@@ -1,0 +1,37 @@
+{
+  "extends": "market_pass_search_summary_candidate_only.json",
+  "patches": [
+    {
+      "op": "append",
+      "path": "/sources/-",
+      "value": {
+        "source_id": "source-search-result-bad",
+        "canonical_url": "https://www.google.com/search?q=Xing+Heng+48V20Ah",
+        "final_url": "https://www.google.com/search?q=Xing+Heng+48V20Ah",
+        "publisher_relation": "third_party",
+        "provenance": "discovered_public",
+        "medium": "search_result",
+        "access_boundary": "public_web"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/observations/-",
+      "value": {
+        "observation_id": "observation-search-result-bad",
+        "run_id": "run-search-candidate",
+        "source_id": "source-search-result-bad",
+        "capability": "search.web",
+        "concrete_tool": "fixture.static_search_web",
+        "observed_at": "2026-07-26",
+        "access_status": "opened",
+        "title": "Search result snippet",
+        "raw_excerpt": "Search result says the product is compliant and tariff rate is known.",
+        "page_or_dom_locator": "search-snippet",
+        "extraction_method": "fixture_static",
+        "language": "en",
+        "translation_status": "original"
+      }
+    }
+  ]
+}

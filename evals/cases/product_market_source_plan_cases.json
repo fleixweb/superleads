@@ -40,7 +40,11 @@
         "Query Plan",
         "origin_proof_requirement",
         "seed_vn_export_general",
-        "market_source_plan_departure_node_unknown"
+        "market_source_plan_departure_node_unknown",
+        "collection_run_shell",
+        "collection_record_shell_only",
+        "search_log_or_source_locator_only",
+        "observation_allowed_only_after_open_source"
       ],
       "output_must_not_contain": [
         "UN38.3 已合规",
@@ -54,7 +58,8 @@
         "建议进入",
         "推荐价格",
         "推荐客户类型"
-      ]
+      ],
+      "emit_collection_run_shell": true
     },
     {
       "name": "uniqlo china textile to us source plan",

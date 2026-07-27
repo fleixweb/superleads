@@ -91,34 +91,8 @@
     }
   ],
   "attributes": [],
-  "sources": [
-    {
-      "source_id": "source-search-result",
-      "canonical_url": "https://www.google.com/search",
-      "final_url": "https://www.google.com/search",
-      "publisher_relation": "first_party",
-      "provenance": "discovered_public",
-      "medium": "search_result",
-      "access_boundary": "public_web"
-    }
-  ],
-  "observations": [
-    {
-      "observation_id": "observation-search-snippet",
-      "run_id": null,
-      "source_id": "source-search-result",
-      "capability": "search.web",
-      "concrete_tool": "fixture.static_search_web",
-      "observed_at": "2026-07-26",
-      "access_status": "opened",
-      "title": "Search result snippet",
-      "raw_excerpt": "Search result snippet mentions lithium battery imports and a possible HTS path; snippet not opened.",
-      "page_or_dom_locator": "fixture-visible-excerpt",
-      "extraction_method": "fixture_static",
-      "language": "en",
-      "translation_status": "original"
-    }
-  ],
+  "sources": [],
+  "observations": [],
   "evidence_cards": [
     {
       "evidence_card_id": "card-search-candidate",
@@ -132,13 +106,14 @@
       "status": "candidate",
       "source_refs": [
         {
-          "source_id": "source-search-result",
-          "observation_id": "observation-search-snippet",
-          "relation": "candidate_lead"
+          "search_log_id": "search-log-market-candidate-001",
+          "query_plan_id": "qp_001_market_signal_fixture",
+          "relation": "candidate_lead",
+          "note": "SearchLog only; no opened source."
         }
       ],
-      "source_type": "search_result",
-      "source_locator": "Google search result snippet",
+      "source_type": "search_log",
+      "source_locator": "SearchLog candidate locator only; original source not opened",
       "source_date": "日期未见",
       "observed_at": "2026-07-26",
       "applicability_scope": "仅限本 fixture 中的产品版本和目标市场",
@@ -147,7 +122,8 @@
       ],
       "does_not_support": [
         "不能作为已核实事实",
-        "不能支持税率、认证或市场结论"
+        "不能支持税率、认证或市场结论",
+        "不能替代打开来源后的 Observation"
       ],
       "boundary_rule_ids": [
         "E2E-03"
@@ -161,9 +137,9 @@
       "sheet_name": "公开市场资料与行业信息",
       "row_topic": "搜索摘要只作候选线索",
       "user_visible_cells": {
-        "来源类型": "搜索摘要",
-        "可见内容": "仅作为待打开来源入口",
-        "限制说明": "不能写成已核实事实"
+        "来源类型": "SearchLog 候选来源定位",
+        "可见内容": "仅记录查询词和候选 URL；未打开来源",
+        "限制说明": "不能写成已核实事实，不能生成 EvidenceCard 事实结论"
       },
       "status": "candidate",
       "evidence_card_ids": [
@@ -187,7 +163,7 @@
       "status": "source_restricted",
       "missing_item": "待打开原始来源",
       "requested_from": "用户/供应商/专业方",
-      "user_visible_note": "需要打开原始来源后才能形成 Observation 和 EvidenceCard。",
+      "user_visible_note": "需要打开原始来源后才能形成 Observation；SearchLog 不是事实来源。",
       "evidence_card_ids": []
     }
   ],
@@ -220,6 +196,66 @@
       "blocking_rule_id": null,
       "reviewed_by_skill": "Skill F - 交付复核",
       "reviewed_at": "2026-07-26"
+    }
+  ],
+  "search_logs": [
+    {
+      "search_log_id": "search-log-market-candidate-001",
+      "run_id": "run-search-candidate",
+      "brief_id": "brief-search-candidate",
+      "brief_version_id": "brief-search-candidate-v1",
+      "source_plan_route": "product_outbound_market_analysis_source_plan",
+      "source_plan_id": "source-plan-search-candidate-v1",
+      "query_plan_id": "qp_001_market_signal_fixture",
+      "query_group_id": "market_signal",
+      "pack_id": "seed_market_signal_global_to_us",
+      "template_id": "qt_market_signal_terms",
+      "queried_at": "2026-07-26",
+      "capability": "search.web",
+      "concrete_tool": "fixture.static_search_web",
+      "query_text": "Google Trends Xing Heng 48V20Ah LiFePO4 United States 2004 present",
+      "query_language": "en",
+      "targeted_geography_literals": [
+        "United States"
+      ],
+      "product_trigger_tags": [
+        "lithium_battery",
+        "dangerous_goods"
+      ],
+      "source_entry_ids": [
+        "entry_google_trends"
+      ],
+      "required_source_priority": [
+        "commercial_reference"
+      ],
+      "expected_observation_fields": [
+        "keyword",
+        "region",
+        "time_range",
+        "metric_definition",
+        "limitations"
+      ],
+      "result_refs": [
+        {
+          "result_url": "https://trends.google.com/trends/explore?q=Xing%20Heng%2048V20Ah%20LiFePO4&geo=US",
+          "result_rank": 1,
+          "result_title": "Google Trends candidate locator",
+          "result_locator": "trends.google.com/explore",
+          "result_use": "source_candidate_only",
+          "snippet_or_summary": "Search result snippet mentions a possible Google Trends entry; source not opened."
+        }
+      ],
+      "accessed_source_ids": [],
+      "failed_source_refs": [],
+      "restricted_source_refs": [],
+      "coverage_notes": [
+        "搜索结果只作为待打开来源入口；未打开前不形成 Observation 或事实。"
+      ],
+      "result_use": "source_candidate_only",
+      "must_open_source": true,
+      "reject_if_only_snippet": true,
+      "not_evidence": true,
+      "allowed_output": "search_log_or_source_locator_only"
     }
   ]
 }

@@ -69,6 +69,36 @@ def _assert_plan_json(payload: dict[str, Any], case: dict[str, Any]) -> list[str
     for template_id in case.get("must_include_template_ids", []) if isinstance(case.get("must_include_template_ids"), list) else []:
         if template_id not in templates:
             problems.append(f"missing query template {template_id}")
+    if case.get("emit_collection_run_shell"):
+        shell = payload.get("collection_run_shell")
+        if not isinstance(shell, dict):
+            problems.append("collection_run_shell missing")
+        else:
+            if shell.get("execution_level") != "collection_record_shell_only":
+                problems.append("collection_run_shell execution_level must be collection_record_shell_only")
+            if shell.get("not_evidence") is not True:
+                problems.append("collection_run_shell not_evidence must be true")
+            if shell.get("does_not_search_web") is not True or shell.get("does_not_open_sources") is not True:
+                problems.append("collection_run_shell must not search/open sources")
+            if shell.get("allowed_output") != "collection_run_shell_only":
+                problems.append("collection_run_shell allowed_output must be collection_run_shell_only")
+            if shell.get("search_logs") != [] or shell.get("sources") != [] or shell.get("observations") != []:
+                problems.append("collection_run_shell must start with empty search_logs/sources/observations")
+            pending = shell.get("pending_query_plan_steps")
+            if not isinstance(pending, list) or len(pending) != len(payload.get("query_plan", [])):
+                problems.append("collection_run_shell pending steps must match query_plan length")
+            else:
+                for pidx, pending_step in enumerate(pending):
+                    if not isinstance(pending_step, dict):
+                        problems.append(f"pending_query_plan_steps[{pidx}] is not object")
+                        continue
+                    if pending_step.get("search_log_allowed_output") != "search_log_or_source_locator_only":
+                        problems.append(f"pending_query_plan_steps[{pidx}] missing search_log_or_source_locator_only")
+                    if pending_step.get("observation_allowed_only_after_open_source") is not True:
+                        problems.append(f"pending_query_plan_steps[{pidx}] missing observation open-source gate")
+                    if pending_step.get("not_evidence") is not True:
+                        problems.append(f"pending_query_plan_steps[{pidx}] missing not_evidence")
+
     for idx, step in enumerate(payload.get("query_plan", []) if isinstance(payload.get("query_plan"), list) else []):
         if not isinstance(step, dict):
             problems.append(f"query_plan[{idx}] is not object")
@@ -90,6 +120,8 @@ def _planner_case(py: str, case: dict[str, Any]) -> dict[str, Any]:
     fixture = str(case.get("fixture"))
     expect = int(case.get("expected_returncode", 0))
     cmd = [py, str(SCRIPTS / "plan_product_market_sources.py"), "--input", str(FIXTURES / fixture), "--format", "json"]
+    if case.get("emit_collection_run_shell"):
+        cmd.append("--emit-collection-run-shell")
     result = run(cmd, expect)
     payload, parse_error = _parse_json(str(result.get("output", "")))
     problems: list[str] = []
