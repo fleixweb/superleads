@@ -220,3 +220,12 @@
 - 已新增验证记录：`docs/validation/product-market-analysis-code-slice-g-skill-entry-routing-20260727.md`。
 - 已验证：market suite `36/36`；主 default `84/84`；deep `630/630`；all `670/670`。
 - 当前下一步：提交 Code Slice G；然后进入 Code Slice H（导出列/Markdown 展示优化）。
+
+## 产品出海市场分析：Code Slice H 导出列 / Markdown 展示优化
+
+- 已优化 `export_product_market_workbook.py`：CSV/Markdown 字段名更人话，新增贸易前提拆分行、COO Markdown 专区和未执行模块顶部摘要。
+- 已把 COO / proof of origin 的用户可见展示改为“目标国是否要求原产地证明”“用户现在有没有可用材料”“什么情况下需要”“不能写成什么”。
+- 已把默认出口申报国、原产国/制造来源、实际起运地/起运港拆开展示；未知港口仍保留待业务确认，不猜港。
+- 已更新导出回归断言并新增验证记录：`docs/validation/product-market-analysis-code-slice-h-export-display-20260727.md`。
+- 已验证：market suite `36/36`；主 default `84/84`；deep `630/630`；all `670/670`。
+- 下一步建议：Code Slice I，做真实 Source Pack registry / Query Plan 读取骨架，仍只生成来源计划，不自动生成事实。

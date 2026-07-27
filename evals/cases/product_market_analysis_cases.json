@@ -1,5 +1,5 @@
 {
-  "description": "Product outbound market analysis Code Slice A-F fixtures. Use scripts/validate_product_market_analysis.py, scripts/audit_product_market_analysis.py, and scripts/export_product_market_workbook.py via evals/run_product_market_analysis_evals.py; existing evals/run_evals.py intentionally ignores market_* fields.",
+  "description": "Product outbound market analysis Code Slice A-H fixtures. Use scripts/validate_product_market_analysis.py, scripts/audit_product_market_analysis.py, and scripts/export_product_market_workbook.py via evals/run_product_market_analysis_evals.py; existing evals/run_evals.py intentionally ignores market_* fields.",
   "validator": "scripts/validate_product_market_analysis.py",
   "cases": [
     {
@@ -15,7 +15,12 @@
         "8507.60.00",
         "待技术资料确认",
         "起运节点",
-        "最终 HTSUS"
+        "最终 HTSUS",
+        "先看这几个贸易前提",
+        "出口申报国（默认可改）",
+        "原产国 / 制造来源（证据状态）",
+        "实际起运地 / 起运港（待业务确认）",
+        "不能由工厂地址猜港口"
       ],
       "market_export_absent": [
         "建议进入",
@@ -49,7 +54,11 @@
         "6205.20.20",
         "实物标签",
         "待实物核验",
-        "BOM"
+        "BOM",
+        "先看这几个贸易前提",
+        "出口申报国（默认可改）",
+        "目标销售国家/地区",
+        "候选 HS/HTS（非最终归类）"
       ],
       "market_export_absent": [
         "建议进入",
@@ -112,7 +121,12 @@
         "线上价格未执行",
         "节日与销售窗口未执行",
         "近期外部因素未执行",
-        "未执行"
+        "未执行",
+        "本轮未执行项",
+        "Google Trends 长期搜索趋势",
+        "线上市场 / 平台价格参考",
+        "不编造成趋势、价格、旺季或最新行情结论",
+        "不能推出什么"
       ],
       "market_export_absent": [
         "建议进入",
@@ -313,10 +327,13 @@
       "market_export_present": [
         "UQ-470177-US",
         "原产地证明 / COO",
-        "conditionally_required",
-        "user_not_provided_but_required",
         "CBP official trade agreement",
-        "不把优惠 proof 泛化为普通进口必需"
+        "不把优惠 proof 泛化为普通进口必需",
+        "原产地证明 / COO 怎么看",
+        "目标国是否要求原产地证明",
+        "条件性需要（如优惠税率、海关要求、贸易救济等）",
+        "用户未提供；若触发上述规则，需要补",
+        "用户没给 COO，不等于目标国不需要"
       ],
       "market_export_absent": [
         "建议进入",
@@ -345,11 +362,12 @@
       "market_export_markdown": "pass",
       "market_export_present": [
         "UQ-470177-US",
-        "normally_not_required",
-        "user_not_provided_and_not_required_for_current_scenario",
         "origin marking",
         "不等同 COO",
-        "CBP official country of origin marking"
+        "CBP official country of origin marking",
+        "目标国是否要求原产地证明",
+        "普通进口通常不要求单独 COO",
+        "用户未提供；当前场景通常不要求单独 COO"
       ],
       "market_export_absent": [
         "建议进入",
@@ -378,11 +396,12 @@
       "market_export_markdown": "pass",
       "market_export_present": [
         "UQ-470177-US",
-        "user_provided_valid_for_scope",
         "INV-2026-001",
         "仅限",
         "不等同海关最终原产地裁定",
-        "用户 COO 文件节选"
+        "用户 COO 文件节选",
+        "用户已提供；仅限当前订单/批次/范围初步可用",
+        "用户现在有没有可用材料"
       ],
       "market_export_absent": [
         "建议进入",
@@ -411,11 +430,12 @@
       "market_export_markdown": "pass",
       "market_export_present": [
         "XH-48V20AH-US",
-        "unable_to_verify",
-        "user_material_status_unknown",
         "未能核实",
         "不能写需要或不需要",
-        "来源受限"
+        "来源受限",
+        "未能用权威来源核实",
+        "用户材料状态未知",
+        "目标国是否要求原产地证明"
       ],
       "market_export_absent": [
         "建议进入",

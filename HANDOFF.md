@@ -211,3 +211,12 @@
   - `python3 evals/run_evals.py --suite all` = `670/670`
 - 边界：路由脚本只是 guardrail，不生成 Brief/graph/事实；真实报告仍走 ProductMarketAnalysisGraph 和 A-F 防错链路。
 - 下一步建议：Code Slice H，优化产品出海市场分析的导出列和 Markdown 展示，让 `origin_proof_requirement`、默认出口国/原产国/起运地、未执行模块在用户表格里更顺眼。
+
+## 产品出海市场分析 Code Slice H：导出列与 Markdown 展示优化
+
+- 2026-07-27 已优化 `scripts/export_product_market_workbook.py` 的用户可见字段名：`样本ID` -> `样本编号`，`目的国/地区` -> `目标销售国家/地区`，`候选 HS/HTS` -> `候选 HS/HTS（非最终归类）`，`限制说明/禁止升级` -> `不能推出什么/不能写成什么` 等。
+- `市场事实总览` 现在自动补 `贸易前提拆分` 行，把目标销售国家/地区、出口申报国（默认可改）、原产国 / 制造来源（证据状态）、实际起运地 / 起运港、目的节点分开展示。
+- Markdown 报告新增顶部 `先看这几个贸易前提`、`原产地证明 / COO 怎么看`、`本轮未执行项`；COO 状态在导出层人话化，例如“条件性需要”“用户未提供；若触发上述规则，需要补”“未能用权威来源核实”。
+- 已更新 `evals/cases/product_market_analysis_cases.json` 的导出断言，覆盖字段名、COO 展示、地理拆分和未执行简写。
+- 已验证：`python3 evals/run_product_market_analysis_evals.py --suite all` = `36/36`；主 default `84/84`；deep `630/630`；all `670/670`。
+- 边界：本轮只优化展示层，不新增真实来源、税率、趋势、价格、法规或物流结论；底层 graph enum 保持不变。

@@ -21,51 +21,62 @@ from validate_product_market_analysis import _looks_like_internal_leak, ensure_l
 
 SHEET_COLUMNS: dict[str, list[str]] = {
     "市场事实总览": [
-        "样本ID", "产品名称", "产品版本/型号", "目的国/地区", "原产/制造来源", "出口申报国",
-        "实际起运地", "关键已核实", "关键缺口", "总体状态", "观察日期", "备注",
+        "样本编号", "产品名称", "产品版本 / 型号", "目标销售国家/地区",
+        "出口申报国（默认可改）", "原产国 / 制造来源（证据状态）",
+        "实际起运地 / 起运港（待业务确认）", "卖方所在国/地区（如已知）",
+        "目的节点（港口/机场/城市，如已知）", "已经有依据的信息", "还缺什么",
+        "本轮状态", "资料观察日期", "边界说明",
     ],
     "产品档案与触发项": [
-        "样本ID", "属性族", "属性", "当前值", "状态", "触发的核验路径", "来源/依据", "缺口/下一步",
+        "样本编号", "属性族", "属性", "当前值", "状态", "触发的核验路径",
+        "来源/依据", "还缺什么 / 下一步核验", "不能推出什么",
     ],
     "长期需求与搜索趋势": [
-        "样本ID", "关键词/Topic", "语言/同义词", "国家/地区", "时间范围", "搜索类型/类目",
-        "趋势状态", "指标口径", "数据日期", "状态", "来源/依据", "限制说明",
+        "样本编号", "关键词 / Topic", "语言 / 同义词", "国家/地区", "时间范围",
+        "搜索类型 / 类目", "趋势状态", "指标口径", "数据日期", "状态",
+        "来源/依据", "不能推出什么",
     ],
     "公开市场资料与行业信息": [
-        "样本ID", "来源名称", "来源类型", "指标或主题", "可见内容", "时间范围", "地区",
-        "状态", "来源URL/文件", "限制说明",
+        "样本编号", "来源名称", "来源类型", "指标或主题", "可见内容", "时间范围",
+        "地区", "状态", "来源 URL / 文件", "不能推出什么",
     ],
     "线上市场与价格参考": [
-        "样本ID", "渠道/平台", "产品/规格", "价格", "币种", "税/运费/促销状态",
-        "观察日期", "状态", "来源URL/文件", "限制说明",
+        "样本编号", "渠道/平台", "产品/规格", "公开标价 / 价格参考", "币种",
+        "税/运费/促销状态", "资料观察日期", "状态", "来源 URL / 文件", "不能推出什么",
     ],
     "季节、节日与销售窗口": [
-        "样本ID", "节点/窗口", "日期/周期", "国家/地区", "适用条件", "影响口径",
-        "状态", "来源/依据", "限制说明",
+        "样本编号", "节点 / 窗口", "日期 / 周期", "国家/地区", "适用条件",
+        "影响口径", "状态", "来源/依据", "不能推出什么",
     ],
     "产品准入与合规要求": [
-        "样本ID", "要求类别", "要求名称", "适用条件", "当前证据", "状态",
-        "官方/优先来源", "待补材料", "禁止升级",
+        "样本编号", "要求类别", "要求名称", "目标销售国家/地区",
+        "原产国 / 出口国（不要混同）", "候选 HS/HTS（非最终归类）",
+        "适用条件", "什么情况下需要", "可能接受的文件形式",
+        "目标国是否要求原产地证明", "用户现在有没有可用材料", "目前依据",
+        "状态", "官方/优先依据", "需要用户/供应链补什么", "不能写成什么", "边界说明",
     ],
     "进口税费": [
-        "样本ID", "目的国", "候选 HS/HTS", "税号描述", "税种", "税率/金额",
-        "适用条件", "计算税基", "状态", "来源/依据", "缺口/下一步",
+        "样本编号", "目的国", "候选 HS/HTS（非最终归类）", "税号描述", "税种",
+        "税率/金额（非最终税额）", "适用条件", "计算税基", "状态",
+        "来源/依据", "还缺什么 / 下一步核验",
     ],
     "出口国要求": [
-        "样本ID", "出口申报国", "要求类别", "要求名称", "适用条件", "当前证据",
-        "状态", "来源/依据", "缺口/下一步",
+        "样本编号", "出口申报国（默认可改）", "要求类别", "要求名称",
+        "适用条件", "目前依据", "状态", "来源/依据", "还缺什么 / 下一步核验",
     ],
     "运输方式、路线、港口与申报节点": [
-        "样本ID", "运输方式", "起运节点", "目的节点", "适用条件", "时间口径",
-        "法定预申报", "操作截点", "状态", "来源/依据", "缺口/下一步",
+        "样本编号", "运输方式", "实际起运地 / 起运港（待业务确认）",
+        "目的节点（港口/机场/城市，如已知）", "适用条件", "运输时间口径（常见区间/未执行）",
+        "海关/承运人预申报", "订舱/截单节点", "状态", "来源/依据",
+        "还缺什么 / 下一步核验",
     ],
     "近期外部因素": [
-        "样本ID", "因素类型", "因素名称", "地区", "时间", "可能影响对象",
-        "状态", "来源/依据", "限制说明",
+        "样本编号", "因素类型", "因素名称", "地区", "时间", "可能影响对象",
+        "状态", "来源/依据", "不能推出什么",
     ],
     "信息来源与待确认事项": [
-        "样本ID", "来源ID", "来源名称", "来源类型", "URL/文件名", "观察日期",
-        "支持字段", "状态", "待确认事项", "用户可见备注",
+        "样本编号", "来源编号", "来源名称", "来源类型", "URL / 文件名",
+        "资料观察日期", "支持字段", "状态", "待确认事项", "用户可见备注",
     ],
 }
 
@@ -87,11 +98,115 @@ STATUS_LABELS = {
     "conflict_pending_review": "有冲突待复核",
 }
 
+ORIGIN_REQUIREMENT_LABELS = {
+    "required": "需要（按目标国规则/适用场景）",
+    "conditionally_required": "条件性需要（如优惠税率、海关要求、贸易救济等）",
+    "normally_not_required": "普通进口通常不要求单独 COO（但原产地标识/海关核验另看）",
+    "not_applicable": "不适用",
+    "unable_to_verify": "未能用权威来源核实",
+}
+
+ORIGIN_USER_MATERIAL_LABELS = {
+    "user_provided_valid_for_scope": "用户已提供；仅限当前订单/批次/范围初步可用",
+    "user_provided_needs_review": "用户已提供；仍需核验签章、编号、批次和适用范围",
+    "user_not_provided_but_required": "用户未提供；若触发上述规则，需要补",
+    "user_not_provided_and_not_required_for_current_scenario": "用户未提供；当前场景通常不要求单独 COO",
+    "user_material_status_unknown": "用户材料状态未知",
+}
+
+ORIGIN_EVIDENCE_LABELS = {
+    "L0": "没有 SKU 级原产证据",
+    "L1": "公开页面/产品资料线索",
+    "L2": "供应商或业务文件线索",
+    "L3": "订单/批次文件支持",
+    "L4": "主管机关、海关或签证文件支持",
+    "unknown": "证据等级未确认",
+}
+
+NOT_EXECUTED_MODULE_LABELS = {
+    "google_trends": "Google Trends 长期搜索趋势",
+    "online_price": "线上市场 / 平台价格参考",
+    "season_holiday": "节假日 / 季节销售窗口",
+    "external_factors": "近期外部因素",
+    "market_reports": "公开市场报告 / 行业资料",
+    "destination_compliance": "目标国准入与合规",
+    "import_tax": "进口税费",
+    "export_requirements": "出口国要求",
+    "logistics": "运输方式 / 路线 / 预申报",
+}
+
+SHEET_MODULE_KEYS = {
+    "长期需求与搜索趋势": {"google_trends"},
+    "线上市场与价格参考": {"online_price"},
+    "季节、节日与销售窗口": {"season_holiday"},
+    "近期外部因素": {"external_factors"},
+    "公开市场资料与行业信息": {"market_reports"},
+}
+
+COLUMN_LABELS = {
+    "样本ID": "样本编号",
+    "产品版本/型号": "产品版本 / 型号",
+    "目的国/地区": "目标销售国家/地区",
+    "原产/制造来源": "原产国 / 制造来源（证据状态）",
+    "出口申报国": "出口申报国（默认可改）",
+    "实际起运地": "实际起运地 / 起运港（待业务确认）",
+    "目的节点": "目的节点（港口/机场/城市，如已知）",
+    "关键已核实": "已经有依据的信息",
+    "关键缺口": "还缺什么",
+    "总体状态": "本轮状态",
+    "观察日期": "资料观察日期",
+    "备注": "边界说明",
+    "缺口/下一步": "还缺什么 / 下一步核验",
+    "限制说明": "不能推出什么",
+    "关键词/Topic": "关键词 / Topic",
+    "语言/同义词": "语言 / 同义词",
+    "搜索类型/类目": "搜索类型 / 类目",
+    "来源URL/文件": "来源 URL / 文件",
+    "价格": "公开标价 / 价格参考",
+    "节点/窗口": "节点 / 窗口",
+    "日期/周期": "日期 / 周期",
+    "当前证据": "目前依据",
+    "官方/优先来源": "官方/优先依据",
+    "待补材料": "需要用户/供应链补什么",
+    "禁止升级": "不能写成什么",
+    "候选 HS/HTS": "候选 HS/HTS（非最终归类）",
+    "税率/金额": "税率/金额（非最终税额）",
+    "时间口径": "运输时间口径（常见区间/未执行）",
+    "法定预申报": "海关/承运人预申报",
+    "操作截点": "订舱/截单节点",
+    "起运节点": "实际起运地 / 起运港（待业务确认）",
+    "来源ID": "来源编号",
+    "URL/文件名": "URL / 文件名",
+    "原产地证明要求结论": "目标国是否要求原产地证明",
+    "触发条件": "什么情况下需要",
+    "可接受文件": "可能接受的文件形式",
+    "用户材料状态": "用户现在有没有可用材料",
+    "原产国/制造来源": "原产国 / 制造来源（证据状态）",
+    "原产国/出口国": "原产国 / 出口国（不要混同）",
+}
+
 BLOCKED_ACCESS = {"blocked", "login_wall", "login_required", "forbidden", "inaccessible", "not_accessed"}
 
 
 def _status_label(value: Any) -> str:
     return STATUS_LABELS.get(str(value), str(value or "未提供"))
+
+
+def _display_key(value: Any) -> str:
+    text = str(value or "").strip()
+    return COLUMN_LABELS.get(text, text)
+
+
+def _replace_enum_tokens(text: str) -> str:
+    replacements = {
+        **STATUS_LABELS,
+        **ORIGIN_REQUIREMENT_LABELS,
+        **ORIGIN_USER_MATERIAL_LABELS,
+    }
+    result = text
+    for raw, label in sorted(replacements.items(), key=lambda item: len(item[0]), reverse=True):
+        result = result.replace(raw, label)
+    return result
 
 
 def _stringify(value: Any) -> str:
@@ -123,12 +238,179 @@ def _safe_cell(value: Any) -> str:
     return "用户可见内容已隐藏" if _looks_like_internal_leak(text) else text
 
 
+def _safe_human_enum_cell(value: Any) -> str:
+    raw = _stringify(value)
+    return _safe_cell(_replace_enum_tokens(raw))
+
+
 def _first_sample_id(matrix_rows: list[dict[str, Any]]) -> str:
     for row in matrix_rows:
         cells = row.get("user_visible_cells")
-        if isinstance(cells, dict) and has_text(cells.get("样本ID")):
-            return _safe_cell(cells.get("样本ID"))
+        if not isinstance(cells, dict):
+            continue
+        for key in ("样本编号", "样本ID"):
+            if has_text(cells.get(key)):
+                return _safe_cell(cells.get(key))
     return "未提供"
+
+
+def _current_run(graph: dict[str, Any]) -> dict[str, Any] | None:
+    for run in reversed(ensure_list(graph, "runs")):
+        if isinstance(run, dict):
+            return run
+    return None
+
+
+def _current_brief(graph: dict[str, Any]) -> dict[str, Any] | None:
+    run = _current_run(graph)
+    if isinstance(run, dict) and has_text(run.get("brief_id")):
+        for brief in ensure_list(graph, "briefs"):
+            if isinstance(brief, dict) and brief.get("brief_id") == run.get("brief_id"):
+                return brief
+    for brief in reversed(ensure_list(graph, "briefs")):
+        if isinstance(brief, dict):
+            return brief
+    return None
+
+
+def _not_executed_modules(graph: dict[str, Any] | None) -> list[str]:
+    if not isinstance(graph, dict):
+        return []
+    modules: list[str] = []
+    seen: set[str] = set()
+    for run in ensure_list(graph, "runs"):
+        if not isinstance(run, dict):
+            continue
+        for module in ensure_list(run, "not_executed_modules"):
+            key = str(module or "").strip()
+            if key and key not in seen:
+                seen.add(key)
+                modules.append(key)
+    return modules
+
+
+def _module_label(module: str) -> str:
+    return NOT_EXECUTED_MODULE_LABELS.get(module, module)
+
+
+def _sheet_not_executed(sheet_name: str, graph: dict[str, Any] | None) -> bool:
+    modules = set(_not_executed_modules(graph))
+    return bool(modules & SHEET_MODULE_KEYS.get(sheet_name, set()))
+
+
+def _origin_evidence_label(value: Any) -> str:
+    return ORIGIN_EVIDENCE_LABELS.get(str(value), str(value or "证据状态未提供"))
+
+
+def _brief_origin_note(graph: dict[str, Any]) -> str:
+    brief = _current_brief(graph)
+    origin = brief.get("origin_country_status") if isinstance(brief, dict) else None
+    if isinstance(origin, dict) and has_text(origin.get("note")):
+        return _safe_cell(origin.get("note"))
+    return "正式原产地以订单、原产地文件、进口清关或主管机关口径确认"
+
+
+def _format_origin_from_premise(premise: dict[str, Any], graph: dict[str, Any]) -> str:
+    country = _safe_cell(premise.get("origin_country_or_region") or "待确认")
+    evidence = _origin_evidence_label(premise.get("origin_evidence_level"))
+    status = _status_label(premise.get("status"))
+    if country == "待确认":
+        return f"待确认；{evidence}；状态：{status}"
+    return f"{country}；{evidence}；状态：{status}；{_brief_origin_note(graph)}"
+
+
+def _format_departure_from_premise(premise: dict[str, Any]) -> str:
+    if has_text(premise.get("departure_node")):
+        return _safe_cell(premise.get("departure_node"))
+    country = premise.get("departure_country_or_region")
+    if has_text(country):
+        return f"{_safe_cell(country)}；具体港口/机场/场站待业务确认"
+    return "待业务确认"
+
+
+def _format_export_country_from_premise(premise: dict[str, Any], graph: dict[str, Any]) -> str:
+    run = _current_run(graph)
+    country = premise.get("export_declaration_country") or (run or {}).get("default_export_declaration_country")
+    if not has_text(country):
+        return "未提供"
+    return f"{_safe_cell(country)}（本轮出口申报国；默认值可由用户设置）"
+
+
+def _first_trade_premise(graph: dict[str, Any]) -> dict[str, Any] | None:
+    for premise in ensure_list(graph, "trade_premises"):
+        if isinstance(premise, dict):
+            return premise
+    return None
+
+
+def _enrich_overview_row(exported: dict[str, str], graph: dict[str, Any]) -> None:
+    premise = _first_trade_premise(graph)
+    if not isinstance(premise, dict):
+        return
+    exported.setdefault("目标销售国家/地区", _safe_cell(premise.get("destination_country_or_region") or "未提供"))
+    exported.setdefault("出口申报国（默认可改）", _format_export_country_from_premise(premise, graph))
+    exported.setdefault("原产国 / 制造来源（证据状态）", _format_origin_from_premise(premise, graph))
+    exported.setdefault("实际起运地 / 起运港（待业务确认）", _format_departure_from_premise(premise))
+    exported.setdefault("卖方所在国/地区（如已知）", _safe_cell(premise.get("seller_country_or_region") or "未提供"))
+    exported.setdefault("目的节点（港口/机场/城市，如已知）", _safe_cell(premise.get("destination_node") or "未提供"))
+    exported.setdefault("本轮状态", _status_label(premise.get("status")))
+
+
+def _trade_premise_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for premise in ensure_list(graph, "trade_premises"):
+        if not isinstance(premise, dict):
+            continue
+        separation = premise.get("separation_check") if isinstance(premise.get("separation_check"), dict) else {}
+        rows.append({
+            "条目": "贸易前提拆分",
+            "状态": _status_label(premise.get("status")),
+            "样本编号": sample_id,
+            "目标销售国家/地区": _safe_cell(premise.get("destination_country_or_region") or "未提供"),
+            "出口申报国（默认可改）": _format_export_country_from_premise(premise, graph),
+            "原产国 / 制造来源（证据状态）": _format_origin_from_premise(premise, graph),
+            "实际起运地 / 起运港（待业务确认）": _format_departure_from_premise(premise),
+            "卖方所在国/地区（如已知）": _safe_cell(premise.get("seller_country_or_region") or "未提供"),
+            "目的节点（港口/机场/城市，如已知）": _safe_cell(premise.get("destination_node") or "未提供"),
+            "已经有依据的信息": "出口申报国、原产国/制造来源、实际起运地、目的国分开记录",
+            "还缺什么": _safe_cell(premise.get("departure_node_basis") or "如涉及报关和运输，仍需订单/提单/订舱/报关文件确认"),
+            "本轮状态": _status_label(premise.get("status")),
+            "边界说明": _safe_cell(separation.get("note") or "这些地理角色不能互相替代，也不能由工厂地址自动推出港口"),
+        })
+    return rows
+
+
+def _is_origin_proof_row(row: dict[str, Any]) -> bool:
+    return row.get("row_type") == "origin_proof_requirement" or isinstance(row.get("origin_proof_requirement"), dict)
+
+
+def _origin_proof_exported_row(row: dict[str, Any]) -> dict[str, str]:
+    cells = row.get("user_visible_cells") if isinstance(row.get("user_visible_cells"), dict) else {}
+    record = row.get("origin_proof_requirement") if isinstance(row.get("origin_proof_requirement"), dict) else {}
+    requirement_value = cells.get("原产地证明要求结论") if has_text(cells.get("原产地证明要求结论")) else record.get("requirement_status")
+    user_material_value = cells.get("用户材料状态") if has_text(cells.get("用户材料状态")) else record.get("user_material_status")
+    origin_country = cells.get("原产国/出口国") or cells.get("原产国/制造来源") or record.get("origin_or_export_country")
+    candidate_hs = cells.get("候选 HS/HTS") or record.get("candidate_hs_hts")
+    exported = {
+        "条目": _safe_cell(row.get("row_topic") or "原产地证明 / COO"),
+        "状态": _status_label(row.get("status")),
+        "样本编号": _safe_cell(record.get("sample_id") or cells.get("样本ID") or cells.get("样本编号")),
+        "要求类别": _safe_cell(cells.get("要求类别") or "原产地证明 / COO"),
+        "要求名称": _safe_cell(cells.get("要求名称") or "目标国原产地证明要求"),
+        "目标销售国家/地区": _safe_cell(cells.get("目的国/地区") or record.get("target_country_or_region")),
+        "原产国 / 出口国（不要混同）": _safe_cell(origin_country),
+        "候选 HS/HTS（非最终归类）": _safe_cell(candidate_hs),
+        "什么情况下需要": _safe_cell(record.get("trigger_conditions") or cells.get("触发条件")),
+        "可能接受的文件形式": _safe_cell(record.get("acceptable_documents") or cells.get("可接受文件") or "未能核实"),
+        "目标国是否要求原产地证明": _safe_human_enum_cell(requirement_value),
+        "用户现在有没有可用材料": _safe_human_enum_cell(user_material_value),
+        "目前依据": _safe_cell(cells.get("当前证据") or cells.get("目前依据")),
+        "官方/优先依据": _safe_cell(cells.get("官方/优先来源") or cells.get("官方/优先依据")),
+        "需要用户/供应链补什么": _safe_cell(cells.get("待补材料") or cells.get("需要用户/供应链补什么")),
+        "不能写成什么": _safe_cell(cells.get("禁止升级") or cells.get("不能写成什么")),
+        "边界说明": _safe_cell(record.get("limitation_note") or cells.get("边界说明")),
+    }
+    return exported
 
 
 def _observation_by_source(graph: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
@@ -155,12 +437,12 @@ def _source_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str, str]]:
         status = "来源受限" if restricted else ("已打开" if opened else "已记录")
         rows.append({
             "条目": _safe_cell(title or f"公开来源 S{idx}"),
-            "样本ID": sample_id,
-            "来源ID": f"S{idx}",
+            "样本编号": sample_id,
+            "来源编号": f"S{idx}",
             "来源名称": _safe_cell(title or source.get("publisher_relation") or source.get("medium") or "公开来源"),
             "来源类型": _safe_cell(source.get("medium") or "公开来源"),
-            "URL/文件名": url,
-            "观察日期": _safe_cell(observed_at or "日期未见"),
+            "URL / 文件名": url,
+            "资料观察日期": _safe_cell(observed_at or "日期未见"),
             "支持字段": "来源本身仅作可追溯入口；具体支持字段以各矩阵行为准",
             "状态": status,
             "待确认事项": "无额外事项" if opened and not restricted else "需打开或复核原始来源",
@@ -176,12 +458,12 @@ def _gap_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str, str]]:
             continue
         rows.append({
             "条目": _safe_cell(gap.get("field_name") or gap.get("missing_item") or f"待确认事项 G{idx}"),
-            "样本ID": sample_id,
-            "来源ID": f"G{idx}",
+            "样本编号": sample_id,
+            "来源编号": f"G{idx}",
             "来源名称": _safe_cell(gap.get("missing_item") or gap.get("field_name") or "待确认事项"),
             "来源类型": "待确认事项",
-            "URL/文件名": "用户/供应链/专业方待提供",
-            "观察日期": "日期未见",
+            "URL / 文件名": "用户/供应链/专业方待提供",
+            "资料观察日期": "日期未见",
             "支持字段": _safe_cell(" / ".join(str(item) for item in (gap.get("field_domain"), gap.get("field_name")) if has_text(item))),
             "状态": _status_label(gap.get("status")),
             "待确认事项": _safe_cell(gap.get("user_visible_note") or gap.get("missing_item") or "待确认"),
@@ -197,12 +479,12 @@ def _conflict_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str, str]
             continue
         rows.append({
             "条目": _safe_cell(conflict.get("field_name") or f"冲突待复核 C{idx}"),
-            "样本ID": sample_id,
-            "来源ID": f"C{idx}",
+            "样本编号": sample_id,
+            "来源编号": f"C{idx}",
             "来源名称": _safe_cell(conflict.get("field_name") or "来源冲突"),
             "来源类型": "冲突待复核",
-            "URL/文件名": "见已打开来源；需人工复核",
-            "观察日期": "日期未见",
+            "URL / 文件名": "见已打开来源；需人工复核",
+            "资料观察日期": "日期未见",
             "支持字段": _safe_cell(" / ".join(str(item) for item in (conflict.get("field_domain"), conflict.get("field_name")) if has_text(item))),
             "状态": _status_label(conflict.get("status")),
             "待确认事项": _safe_cell(conflict.get("summary") or "来源之间不一致，需复核"),
@@ -220,19 +502,29 @@ def build_sheets(graph: dict[str, Any]) -> dict[str, list[dict[str, str]]]:
         sheet_name = str(row.get("sheet_name") or "")
         if sheet_name not in sheets:
             continue
+        if _is_origin_proof_row(row):
+            exported = _origin_proof_exported_row(row)
+            sheets[sheet_name].append(exported)
+            continue
         cells = row.get("user_visible_cells")
         visible_cells = cells if isinstance(cells, dict) else {}
         exported: dict[str, str] = {"条目": _safe_cell(row.get("row_topic") or "未提供"), "状态": _status_label(row.get("status"))}
         for key, value in visible_cells.items():
             if not has_text(key):
                 continue
-            safe_key = _safe_cell(key)
+            safe_key = _safe_cell(_display_key(key))
             if safe_key == "用户可见内容已隐藏":
                 continue
             exported[safe_key] = _safe_cell(value)
-        if "样本ID" in SHEET_COLUMNS[sheet_name] and not has_text(exported.get("样本ID")) and sample_id != "未提供":
-            exported["样本ID"] = sample_id
+        if sheet_name == "市场事实总览":
+            _enrich_overview_row(exported, graph)
+        if "样本编号" in SHEET_COLUMNS[sheet_name] and not has_text(exported.get("样本编号")) and sample_id != "未提供":
+            exported["样本编号"] = sample_id
         sheets[sheet_name].append(exported)
+
+    trade_rows = _trade_premise_rows(graph, sample_id)
+    if trade_rows:
+        sheets["市场事实总览"][0:0] = trade_rows
 
     # The final sheet is explicitly allowed to include safe Source / Gap /
     # Conflict fields.  These rows do not introduce market facts; they expose
@@ -255,6 +547,89 @@ def _headers_for_sheet(sheet_name: str, rows: list[dict[str, str]]) -> list[str]
             if key not in base:
                 base.append(key)
     return base
+
+
+def _brief_markdown_summary(graph: dict[str, Any]) -> list[str]:
+    brief = _current_brief(graph)
+    run = _current_run(graph)
+    premise = _first_trade_premise(graph)
+    if not isinstance(brief, dict) and not isinstance(premise, dict):
+        return []
+    export_country = None
+    if isinstance(premise, dict):
+        export_country = _format_export_country_from_premise(premise, graph)
+    elif isinstance(run, dict):
+        export_country = run.get("default_export_declaration_country")
+    origin_text = _format_origin_from_premise(premise, graph) if isinstance(premise, dict) else "待确认"
+    departure_text = _format_departure_from_premise(premise) if isinstance(premise, dict) else "待业务确认"
+    destination = (
+        premise.get("destination_country_or_region")
+        if isinstance(premise, dict)
+        else brief.get("target_country_or_region")
+        if isinstance(brief, dict)
+        else None
+    )
+    not_executed = _not_executed_modules(graph)
+    lines = [
+        "## 先看这几个贸易前提",
+        "",
+        "| 项目 | 本轮写法 | 为什么要分开 |",
+        "| --- | --- | --- |",
+        f"| 目标销售国家/地区 | {_md_escape(destination or '未提供')} | 决定进口准入、税费、节假日、市场信号口径 |",
+        f"| 出口申报国 | {_md_escape(export_country or '未提供')} | 默认值可由用户设置，不能自动等同原产国或起运港 |",
+        f"| 原产国 / 制造来源 | {_md_escape(origin_text)} | 影响原产地规则、贸易救济和税费，但需看证据等级 |",
+        f"| 实际起运地 / 起运港 | {_md_escape(departure_text)} | 影响订舱、运输路线和预申报，不能由工厂地址猜港口 |",
+        "",
+    ]
+    if not_executed:
+        lines.extend([
+            "## 本轮未执行项",
+            "",
+            "；".join(_md_escape(_module_label(module)) for module in not_executed) + "。",
+            "",
+            "这些项在表格里保留为“未执行”，不编造成趋势、价格、旺季或最新行情结论。",
+            "",
+        ])
+    return lines
+
+
+def _origin_proof_markdown_summary(sheets: dict[str, list[dict[str, str]]]) -> list[str]:
+    rows = [
+        row for row in sheets.get("产品准入与合规要求", [])
+        if _safe_cell(row.get("要求类别")) == "原产地证明 / COO"
+        or "原产地证明" in _safe_cell(row.get("条目"))
+        or "COO" in _safe_cell(row.get("条目"))
+    ]
+    if not rows:
+        return []
+    headers = [
+        "样本编号",
+        "目标销售国家/地区",
+        "原产国 / 出口国（不要混同）",
+        "目标国是否要求原产地证明",
+        "什么情况下需要",
+        "用户现在有没有可用材料",
+        "需要用户/供应链补什么",
+        "不能写成什么",
+    ]
+    lines = [
+        "## 原产地证明 / COO 怎么看",
+        "",
+        "这里先回答“目标国规则是否需要”，再回答“用户材料有没有准备”。用户没给 COO，不等于目标国不需要。",
+        "",
+        "| " + " | ".join(_md_escape(header) for header in headers) + " |",
+        "| " + " | ".join("---" for _ in headers) + " |",
+    ]
+    for row in rows:
+        lines.append("| " + " | ".join(_md_escape(row.get(header, "未提供")) for header in headers) + " |")
+    lines.append("")
+    return lines
+
+
+def _empty_sheet_note(sheet_name: str, graph: dict[str, Any] | None = None) -> str:
+    if _sheet_not_executed(sheet_name, graph):
+        return "本轮未执行；不形成趋势、价格、旺季或最新影响结论。"
+    return "本表暂无矩阵行。"
 
 
 def _safe_filename(index: int, sheet_name: str) -> str:
@@ -283,20 +658,23 @@ def _md_escape(value: Any) -> str:
     return text.replace("\\", "\\\\").replace("|", "\\|").replace("\n", "<br>")
 
 
-def markdown_report(sheets: dict[str, list[dict[str, str]]]) -> str:
+def markdown_report(sheets: dict[str, list[dict[str, str]]], graph: dict[str, Any] | None = None) -> str:
     lines: list[str] = [
         "# 产品出海市场分析",
         "",
         "本报告只搬运已审核矩阵行和安全的来源/待确认字段；未执行、待确认和冲突项会保留显示。",
         "",
     ]
+    if isinstance(graph, dict):
+        lines.extend(_brief_markdown_summary(graph))
+    lines.extend(_origin_proof_markdown_summary(sheets))
     for sheet_name in SHEET_ORDER:
         rows = sheets.get(sheet_name, [])
         headers = _headers_for_sheet(sheet_name, rows)
         lines.append(f"## {sheet_name}")
         lines.append("")
         if not rows:
-            lines.append("本表暂无矩阵行。")
+            lines.append(_empty_sheet_note(sheet_name, graph))
             lines.append("")
             continue
         lines.append("| " + " | ".join(_md_escape(header) for header in headers) + " |")
@@ -348,7 +726,7 @@ def export_graph(
 
     if markdown_path is not None:
         markdown_path.parent.mkdir(parents=True, exist_ok=True)
-        markdown_path.write_text(markdown_report(sheets), encoding="utf-8")
+        markdown_path.write_text(markdown_report(sheets, graph), encoding="utf-8")
         generated.append({"sheet_name": "Markdown 报告", "filename": markdown_path.name, "row_count": None})
         written_paths.append(markdown_path)
 
