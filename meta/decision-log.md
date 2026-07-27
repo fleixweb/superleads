@@ -158,3 +158,9 @@
 - 决策：新增 `scripts/export_superleads_markdown.py`，把批量客户开发、单一客户背调、产品出海市场分析三条路线统一渲染为用户可见 Markdown，并在写出前运行 Slice T 用户可见输出合同校验。
 - 原因：Slice T 已冻结“用户应该看到什么”，下一步必须把合同接到真实导出链路，避免用户继续看到内部 graph / EvidenceCard / SearchLog / eval 语言。
 - 后果：三条路线现在都有可回归的 Markdown 交付入口；底层 audit 或用户可见校验不通过时不写文件。后续应优先把该命令接入 README、Skill 使用说明和实际使用入口，而不是继续做纯内部证据层。
+
+## 2026-07-28：Code Slice V 把三路线 Markdown 交付写入 README / Skill / 常用命令
+
+- 决策：不继续新增内部证据层，而是先把 `export_superleads_markdown.py` 的三路线用法写入 README、相关 Skill 说明、共享参考和 `docs/superleads-common-commands.md`。
+- 原因：Code Slice U 已具备统一 Markdown 交付器；下一步真实收益是让用户和 Agent 知道批量客户开发、单一客户背调、产品出海市场分析分别怎么提需求、怎么导出、哪些话不能写。
+- 后果：README 面向普通用户讲三条路线和样例 prompt；Skill 面向 Agent 明确 Markdown / CSV / XLSX 选择；常用命令面向本地流程记录最小命令。执行逻辑保持不变，不新增搜索、事实生成、推荐客户、采购概率、是否值得进入、推荐报价或最终税率判断。

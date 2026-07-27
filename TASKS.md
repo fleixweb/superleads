@@ -12,10 +12,12 @@
 - `source.open` 公开 GET 烟测已恢复（`https://example.com`，`200`）
 - `tmp/stage5_chillys/` 的 Chilly's 真实背调样本已验证可导出
 - `docs/validation/default-discovery-us-generator-aftermarket-run.md` 已记录当前默认发现受限状态
+- Code Slice U 三路线用户可见 Markdown 交付器已提交：`43f2ef7 Add Superleads Markdown delivery exporter`
+- Code Slice V README / Skill 使用说明 / 常用命令示例已完成并通过轻量验证，待提交
 
 ## 当前下一步
 
-1. 先提交 Slice R / Slice S / Slice T 当前变更。
+1. 先提交 Code Slice V 当前文档变更。
 2. 提交后再选择下一条 Code Slice；新 Slice 必须说明改善哪条路线的哪张用户可见表。
 3. Code Slice N 暂缓，除非先证明它能改善用户可见交付。
 
@@ -325,3 +327,12 @@
 - 已新增规格/验证文档：`spec/28-superleads-markdown-delivery-code-slice-u.md`、`docs/validation/superleads-markdown-delivery-code-slice-u-20260728.md`。
 - 已验证：Markdown delivery `4/4`、用户可见输出 `6/6`、market `42/42`、source-plan `6/6`、source collection `6/6`、collection merge `7/7`、collection pipeline `7/7`、default `91/91`、deep `637/637`、all `677/677`、`git diff --check` 通过。
 - 当前下一步：提交 Code Slice U；之后建议进入 Code Slice V（README / Skill 使用说明 / 常用命令示例）。
+
+## Superleads Code Slice V：README / Skill 使用说明 / 常用命令示例
+
+- 已更新 README 中文/英文首页，明确三条产品路线、首轮提问样例和统一 Markdown 交付入口。
+- 已新增 `docs/superleads-common-commands.md`，覆盖 Markdown、CSV/XLSX、产品市场来源计划 / collection、eval 回归常用命令。
+- 已更新导出、总入口、产品市场分析、单客背调 4 个 Skill 说明，以及 `route-map` / `output-schema` 两个共享参考。
+- 已新增验证记录：`docs/validation/superleads-markdown-delivery-docs-code-slice-v-20260728.md`。
+- 已验证：py_compile、Markdown delivery `4/4`、用户可见输出 `6/6`、market `42/42`、default `91/91`、4 个 Skill quick_validate、`git diff --check`。
+- 下一步：提交本 Slice；提交后再决定是否做 quickstart smoke / 示例输入输出包 / README 命令自动校验。

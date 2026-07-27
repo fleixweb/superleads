@@ -66,7 +66,24 @@ Prefer tables over long prose. The default report groups information into:
 11. 近期外部因素
 12. 信息来源与待确认事项
 
-When exporting, use `export_product_market_workbook.py`; it only moves reviewed user-visible matrix rows and safe source/gap/conflict fields.
+For a chat-readable / Codex / ChatGPT app report, prefer the unified
+Superleads Markdown delivery command after the graph has passed validation and
+audit:
+
+```bash
+python3 scripts/export_superleads_markdown.py graph.json --route product_outbound_market_analysis --output market-report.md --format json
+```
+
+For product-market CSV sheets plus optional Markdown / manifest, use:
+
+```bash
+python3 scripts/export_product_market_workbook.py graph.json --output-dir out --format csv --markdown market-report.md --manifest manifest.json
+```
+
+Both exporters only move reviewed user-visible matrix rows and safe
+source/gap/conflict fields. They must not search, create customer lists,
+recommend target customers, judge whether the product should enter the market,
+recommend quotations, or finalize classification / duties / compliance.
 
 ## Hard constraints
 

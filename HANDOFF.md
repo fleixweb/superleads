@@ -1,8 +1,8 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：`d1d9990 Freeze Superleads user-visible output contract`
-- 当前工作树：Code Slice U 三路线用户可见 Markdown 交付器已实现并通过验证，待用户确认后提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：`43f2ef7 Add Superleads Markdown delivery exporter`
+- 当前工作树：Code Slice V（README / Skill 使用说明 / 常用命令示例）已完成并通过轻量验证，待用户确认后提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已验证
 
@@ -13,6 +13,7 @@
 - market：`42/42`
 - 用户可见输出静态套件：`6/6`
 - 三路线 Markdown 交付器套件：`4/4`
+- Code Slice V Skill 快速校验：4 个 Skill 均 valid
 - 默认套件：`91/91`
 - 深度套件：`637/637`
 - 全量套件：`677/677`
@@ -21,12 +22,12 @@
 
 ## 当前结论
 
-Code Slice A-M 的产品出海市场分析底层链路稳定；Slice R/S/T 已把 Superleads 校准回批量客户开发、单一客户背调、产品出海市场分析三条外贸业务路线；Code Slice U 已把三条路线接成统一 Markdown 交付器。当前真实默认发现仍需要可记录的搜索/打开来源能力；没有时停在计划、样本池或已审核投影渲染层。
+Code Slice A-M 的产品出海市场分析底层链路稳定；Slice R/S/T 已把 Superleads 校准回批量客户开发、单一客户背调、产品出海市场分析三条外贸业务路线；Code Slice U 已把三条路线接成统一 Markdown 交付器；Code Slice V 已把 Markdown 交付器写入 README、Skill 使用说明和常用命令文档。当前真实默认发现仍需要可记录的搜索/打开来源能力；没有时停在计划、样本池或已审核投影渲染层。
 
 ## 下一步
 
-1. 优先提交 Code Slice U 当前变更。
-2. 提交后建议进入 Code Slice V：把 Markdown 交付器接到 README / Skill 使用说明 / 常用命令示例，让用户知道三条路线怎么导出。
+1. 优先提交 Code Slice V 当前文档变更。
+2. 提交后建议进入下一条用户可见收益明确的 Code Slice，例如安装后 quickstart smoke / 示例输入输出包 / README 命令自动校验三选一。
 3. 暂缓 Code Slice N（EvidenceCard 草稿前人工复核队列），除非它能绑定明确用户可见收益。
 4. 保留 `tmp/stage5_chillys/`，不要清理。
 
@@ -320,3 +321,14 @@ Code Slice A-M 的产品出海市场分析底层链路稳定；Slice R/S/T 已�
 - 已验证：Markdown delivery `4/4`、用户可见输出 `6/6`、market `42/42`、source-plan `6/6`、source collection `6/6`、collection merge `7/7`、collection pipeline `7/7`、default `91/91`、deep `637/637`、all `677/677`、`git diff --check` 通过。
 - 边界：本轮不联网、不搜索、不打开来源、不新增事实、不生成客户推荐/采购概率/市场进入建议/推荐报价/最终税率。
 - 下一步建议：先提交 Code Slice U；之后做 Code Slice V，把三路线 Markdown 导出命令写入 README / Skill 使用说明 / 常用命令示例。
+
+## Superleads Code Slice V：README / Skill 使用说明 / 常用命令示例
+
+- 2026-07-28 已更新 `README.md`、`README.zh-CN.md`、`README.en.md`，把首页改成三条路线并列说明：批量客户开发、单一客户背调、产品出海市场分析。
+- 已新增 `docs/superleads-common-commands.md`，集中说明三路线 Markdown 交付、CSV/XLSX 导出、产品市场来源计划/手工 collection 链路和常用 eval 命令。
+- 已更新 `skills/exporting-lead-workbooks/SKILL.md`、`skills/using-superleads/SKILL.md`、`skills/analyzing-product-outbound-market/SKILL.md`、`skills/researching-customer-background/SKILL.md`，明确 Markdown 交付器适合 Codex / ChatGPT app 直接阅读，CSV/XLSX 适合表格交接。
+- 已更新 `shared/references/route-map.md` 与 `shared/references/output-schema.md`，把 `export_superleads_markdown.py --route auto` 定位为统一 chat-readable Markdown 交付层。
+- 新增验证记录：`docs/validation/superleads-markdown-delivery-docs-code-slice-v-20260728.md`。
+- 已验证：py_compile 通过、Markdown delivery `4/4`、用户可见输出 `6/6`、market `42/42`、default `91/91`、4 个 Skill quick_validate 均通过、`git diff --check` 通过。
+- 边界：本轮只改文档和 Skill 说明，不改执行逻辑、不联网、不搜索、不新增事实、不引入客户推荐、采购概率、是否值得进入、推荐报价或最终税率表达。
+- 当前下一步：提交 Code Slice V；提交后再决定下一条用户可见收益明确的 Code Slice。

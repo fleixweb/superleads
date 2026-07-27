@@ -20,7 +20,12 @@ Conditional additions:
 - Use `resolving-company-identity` only when identity conflict needs active investigation or a deep-check output requires an Entity decision.
 - Use `reviewing-lead-research` → `verification-before-delivery` only for a formal background check, contact ownership verification, trade/China identity verification, a contactable list, or a standard development list. Default discovery does not expand attestation, hash, Manifest, or full-review work.
 - `learning-from-feedback` is cross-cutting after delivery, not a default discovery-round stage.
-- Use `export_product_market_workbook.py`, not `export_workbook.py`, for reviewed product outbound market analysis CSV/Markdown export.
+- Use `export_superleads_markdown.py --route auto` as the unified
+  chat-readable Markdown delivery layer after a route has already produced a
+  reviewed projection.
+- Use `export_product_market_workbook.py`, not `export_workbook.py`, for
+  reviewed product outbound market analysis CSV export and its product-market
+  Markdown variant.
 
 State machine:
 

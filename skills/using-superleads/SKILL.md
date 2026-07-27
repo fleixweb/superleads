@@ -63,7 +63,26 @@ For an explicitly approved connected mailbox, capture only inbound mail within t
 
 ## Output
 
-Return a concise Run Context and the next Superleads skill to use. Ask only for missing fields that block the minimum research target.
+Return a concise Run Context and the next Superleads skill to use. Ask only for
+missing fields that block the minimum research target.
+
+When the user asks to “直接给我看报告”, “用 Markdown 表格”, “在 ChatGPT app /
+Codex 里展示”, or otherwise wants a chat-readable deliverable, route the
+reviewed graph to the unified Markdown delivery layer:
+
+```bash
+python3 scripts/export_superleads_markdown.py graph.json --route auto --output report.md --format json
+```
+
+Keep the three user-visible routes separate:
+
+- Bulk customer development shows a candidate customer pool and pending checks.
+- Customer background research shows one specified object's background report.
+- Product outbound market analysis shows a product market/access matrix and
+  does not generate customer lists or market-entry recommendations.
+
+Do not expose internal graph, Claim, EvidenceCard, SearchLog, rule IDs, eval
+names, local paths, or artifact hashes in the user-facing report.
 
 ## Hard constraints
 

@@ -7,11 +7,24 @@ description: "Use when a Superleads discovery pool, deep check, or standard list
 
 ## Purpose
 
-Create user-facing workbook outputs after verification. Default output is a discovery candidate pool, not a recommended-customer shortlist. Prefer XLSX when available and fall back to UTF-8-SIG CSV files.
+Create user-facing workbook or Markdown outputs after verification. Default
+customer-development output is a discovery candidate pool, not a recommended
+customer shortlist. Prefer Markdown when the user wants to read the report
+directly in Codex / ChatGPT app, prefer XLSX when available for spreadsheet
+handoff, and fall back to UTF-8-SIG CSV files.
 
 ## Required references and script
 
-Read `../../shared/references/output-schema.md` and `../../shared/references/status-labels.md`. Use `../../scripts/export_workbook.py` for deterministic export. For a default-discovery workbook, `../../shared/references/default-discovery-reference.md` and its minimal skeleton show the base initial sheet set; consult the complete reference only for optional contact-status and conflict presentation.
+Read `../../shared/references/output-schema.md` and
+`../../shared/references/status-labels.md`. Use
+`../../scripts/export_superleads_markdown.py` for the unified three-route
+Markdown delivery layer. Use `../../scripts/export_workbook.py` for customer
+development / customer-background XLSX or CSV export. Use
+`../../scripts/export_product_market_workbook.py` for product outbound market
+CSV plus optional Markdown export. For a default-discovery workbook,
+`../../shared/references/default-discovery-reference.md` and its minimal
+skeleton show the base initial sheet set; consult the complete reference only
+for optional contact-status and conflict presentation.
 
 ## Sheet sets
 
@@ -24,6 +37,36 @@ Full review version: 开发需求, 关键词与搜索思路, 发现候选池, �
 Inquiry version: 询盘待办, 来信联系人, 询盘信息摘要, 待补充信息, 来源说明. It is not a standard development list and does not claim buyer verification.
 
 Customer background version: 客户一眼看懂, 客户、品牌与关联方, 我们看到的业务机会, 怎么联系、先找谁, 跟进前要注意什么, 信息从哪里来. Use `--mode background` only for `customer_background_research` with output mode `客户背调报告`; it uses the current Brief scope projection, never creates a DeliveryManifest, and does not enter the formal audit chain.
+
+## Markdown delivery
+
+Use the unified Markdown delivery command when the user wants a readable report
+inside a chat, Codex, or ChatGPT app:
+
+```bash
+python3 scripts/export_superleads_markdown.py graph.json --route auto --output report.md --format json
+```
+
+Explicit routes:
+
+```bash
+python3 scripts/export_superleads_markdown.py graph.json --route bulk_customer_development --output bulk-report.md --format json
+python3 scripts/export_superleads_markdown.py graph.json --route customer_background_research --output background-report.md --format json
+python3 scripts/export_superleads_markdown.py graph.json --route product_outbound_market_analysis --output market-report.md --format json
+```
+
+The Markdown command renders only already-audited workbook or matrix
+projections. It runs the user-visible output contract before writing a file and
+must not create facts, rank customers, recommend prices, decide market entry,
+or turn candidate HS/HTS / COO / logistics lines into final conclusions.
+
+For spreadsheet export, keep using:
+
+```bash
+python3 scripts/export_workbook.py graph.json --output-dir out --mode initial --format csv
+python3 scripts/export_workbook.py graph.json --output-dir out --mode background --format csv
+python3 scripts/export_product_market_workbook.py market-graph.json --output-dir out --format csv --markdown market-report.md --manifest manifest.json
+```
 
 ## Export rules
 

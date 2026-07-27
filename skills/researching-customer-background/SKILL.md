@@ -127,7 +127,15 @@ Superleads 的主路径不变：
 5. **跟进前要注意什么**：要注意的事、可能影响、建议动作、目前状态。
 6. **信息从哪里来**：上面哪条信息、来源、链接或材料、看到的原话或位置、时间、状态。
 
-对话表格每张最多六列。URL、原文摘录和复杂来源定位只放在最后的“信息从哪里来”；前五张表不堆砌证据细节。可使用 `python3 scripts/export_workbook.py graph.json --output-dir out --mode background` 导出同样的六张 XLSX/CSV 表，它只展示当前背景对象、其证据支持的关联主体与线索，不会输出无关批量客户或正式名单内容。
+对话表格每张最多六列。URL、原文摘录和复杂来源定位只放在最后的“信息从哪里来”；前五张表不堆砌证据细节。
+
+如果用户要在 Codex / ChatGPT app 中直接阅读 Markdown 报告，优先使用统一交付器：
+
+```bash
+python3 scripts/export_superleads_markdown.py graph.json --route customer_background_research --output report.md --format json
+```
+
+如需 CSV / XLSX 交接，可使用 `python3 scripts/export_workbook.py graph.json --output-dir out --mode background --format csv` 导出同样的六张表。两类导出都只展示当前背景对象、其证据支持的关联主体与线索，不会输出无关批量客户或正式名单内容。
 
 表述规则：
 

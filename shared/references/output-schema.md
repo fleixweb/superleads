@@ -36,6 +36,24 @@ Full review workbook:
 
 Avoid exposing internal artifact names such as Candidate Preview, Research Draft, Audit Package, Entity, ClaimEvidence, ContactClaim, or DeliveryManifest as user-facing sheet names.
 
+## Unified Markdown delivery
+
+For chat-readable delivery, use `scripts/export_superleads_markdown.py` after
+the route has already produced a reviewed graph / workbook projection:
+
+- `--route bulk_customer_development`: shows the development direction,
+  candidate customer pool, pending checks, and source status.
+- `--route customer_background_research`: shows one specified object's
+  background report in six business tables.
+- `--route product_outbound_market_analysis`: shows the product market/access
+  matrix, trade premise, COO/proof-of-origin section, logistics section, not
+  executed modules, and missing materials.
+
+The Markdown delivery layer must not create facts, invent sources, rank
+customers as guaranteed buyers, recommend quotations, decide market entry, or
+turn candidate HS/HTS / duty / compliance / logistics lines into final
+conclusions.
+
 ## Default discovery presentation
 
 发现候选池以 `directly_related` 和 `possibly_related` 为主体，并单独保留
