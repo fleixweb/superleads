@@ -1,8 +1,8 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：`1b3c040 Add open-world authority verification guardrails`
-- 当前状态：Code Slice AD 开放世界来源权威性防错闭环已完成实现、验证并提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：`6ae7bf8 Update handoff after authority guardrails commit`
+- 当前状态：Slice AE 状态词压缩 / 用户可见状态映射文档已完成，待提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已完成
 
@@ -11,6 +11,8 @@
 - Code Slice AC 已提交：`069314d Add product market freshness guardrails`。
 - Slice AD 文档已提交：`22be247 Document open world authority source model`。
 - Code Slice AD 已提交：`1b3c040 Add open-world authority verification guardrails`。
+- 状态同步已提交：`6ae7bf8 Update handoff after authority guardrails commit`。
+- Slice AE 文档已完成：`spec/34-superleads-user-visible-status-mapping-slice-ae.md`，待提交。
 
 ## Code Slice AD 已完成内容
 
@@ -42,6 +44,15 @@
 7. 文档
    - 新增 `docs/validation/superleads-code-slice-ad-authority-20260729.md`。
 
+
+## Slice AE 已完成内容
+
+1. 冻结用户可见 11 个状态词：已有明确依据、按已知数据计算、多来源方向一致、可作为线索、需补充资料、需权威/专业复核、资料过旧需复核、来源受限、说法冲突待复核、本轮未执行、暂不适用。
+2. 明确三层状态不得混用：业务/规则结论、依据状态、用户材料状态。
+3. 明确 COO / 原产地证明、认证 / 目的国准入必须分列目标国规则结论和用户材料状态。
+4. 冻结状态投影优先级：未执行、不适用、冲突、来源受限、时效过旧、权威未核实、缺材料等优先于 `verified`。
+5. 明确 Code Slice AE 只做状态投影与用户展示合同，不重构图谱、不新增真实来源、不扩国家库。
+
 ## 已验证
 
 ```bash
@@ -58,9 +69,9 @@ git diff --check  # passed
 
 ## 当前下一步建议
 
-1. 优先进入 Slice AE：状态词压缩 / 用户可见状态映射，先文档冻结，再进入 Code Slice AE。
-2. 后续优先级：单一客户背调工程资产、批量客户开发内核复盘。
-3. 若继续产品出海市场分析路线，重点把内部细粒度状态收口为用户可理解的人话状态。
+1. 提交 Slice AE 文档。
+2. 进入 Code Slice AE：状态投影工具 / 导出列 / 用户可见状态 eval。
+3. 后续优先级：单一客户背调工程资产、批量客户开发内核复盘。
 
 ## 重要边界
 
