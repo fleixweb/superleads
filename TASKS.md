@@ -14,7 +14,7 @@
 - Code Slice AB 多来源互证 / CorroborationRecord 最小闭环已完成并提交：`2073a98 Add weak-source corroboration records`。
 - Code Slice AC 资料时效 / freshness 降级最小闭环已提交：`069314d Add product market freshness guardrails`。
 - Slice AD 开放世界权威来源识别模型已完成并提交：`22be247 Document open world authority source model`。
-- Code Slice AD 开放世界来源权威性防错闭环已完成，待提交：schema / validator / exporter / audit / query plan / fixtures / evals。
+- Code Slice AD 开放世界来源权威性防错闭环已完成并提交：`1b3c040 Add open-world authority verification guardrails`。
 
 ## Code Slice AD 已完成
 
@@ -57,8 +57,8 @@ git diff --check  # passed
 
 ## 当前下一步
 
-1. 提交 Code Slice AD。
-2. 后续再排：状态词压缩 / 输出合同状态映射、单一客户背调工程资产、批量客户开发内核复盘。
+1. 进入 Slice AE：状态词压缩 / 用户可见状态映射，先做不写代码的产品设计冻结。
+2. 后续再排：单一客户背调工程资产、批量客户开发内核复盘。
 
 ## 当前阻塞 / 注意
 

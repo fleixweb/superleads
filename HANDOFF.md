@@ -1,8 +1,8 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：`22be247 Document open world authority source model`
-- 当前状态：Code Slice AD 开放世界来源权威性防错闭环已完成实现与验证，待提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：`1b3c040 Add open-world authority verification guardrails`
+- 当前状态：Code Slice AD 开放世界来源权威性防错闭环已完成实现、验证并提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已完成
 
@@ -10,7 +10,7 @@
 - Code Slice AB 已提交：`2073a98 Add weak-source corroboration records`。
 - Code Slice AC 已提交：`069314d Add product market freshness guardrails`。
 - Slice AD 文档已提交：`22be247 Document open world authority source model`。
-- Code Slice AD 已完成：开放世界 AuthorityProfile / AuthorityVerificationRecord 防错闭环。
+- Code Slice AD 已提交：`1b3c040 Add open-world authority verification guardrails`。
 
 ## Code Slice AD 已完成内容
 
@@ -58,9 +58,9 @@ git diff --check  # passed
 
 ## 当前下一步建议
 
-1. 提交 Code Slice AD。
-2. 后续优先级：状态词压缩、单一客户背调工程资产、批量客户开发内核复盘。
-3. 若继续产品出海市场分析路线，可进入 Code Slice AE：状态词压缩 / 输出合同状态映射。
+1. 优先进入 Slice AE：状态词压缩 / 用户可见状态映射，先文档冻结，再进入 Code Slice AE。
+2. 后续优先级：单一客户背调工程资产、批量客户开发内核复盘。
+3. 若继续产品出海市场分析路线，重点把内部细粒度状态收口为用户可理解的人话状态。
 
 ## 重要边界
 
