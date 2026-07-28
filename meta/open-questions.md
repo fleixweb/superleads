@@ -6,7 +6,7 @@
 |---|---|---|
 | 产品版本如何唯一标识的具体 ID 规则 | Slice 5 已确认需要 `ProductSubject` 与 `version_identifiers`，但具体 ID 生成、去重和版本合并规则还未实现 | 写 JSON Schema / validator 前 |
 | HS 是用户输入、候选归类还是允许多候选并列 | 决定税费与出口管制的表达方式和校验门槛 | 税费 Skill 设计前 |
-| 首批真实 Source Pack registry 的国家/地区和事实域范围 | Slice 10 已用美国、中国、越南做种子样例设计，但真实 registry 是否首批内置这些国家、是否纳入具体 URL 和维护责任仍需实现前决定 | Source Pack registry 实现前 |
+| Source Pack / Authority registry 如何维护少量加速样例而不滑向国家穷举 | Slice AD 已确认不能按 200+ 国家/地区逐一实现；但仍需决定内置样例、用户自定义 Pack、组织级 Pack、动态发现结果之间的维护边界 | Source Pack registry / Authority registry 实现前 |
 | Google Trends、期货、贸易统计等数据如何实际采集与许可 | Slice 8 已定义采集口径和降级规则，但具体工具、授权、频率和可复现机制未实现 | 数据接入设计前 |
 | 是否以及如何支持多目的国比较 | 影响 Brief、表格、成本和证据范围；当前 MVP 以单一具体目的国为准 | MVP 后评估 |
 | 是否将内陆段、贸易术语、保险和目的地费用纳入第一期 | 会显著扩大物流与成本范围 | 物流 Skill 设计前 |

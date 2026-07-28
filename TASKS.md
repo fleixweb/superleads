@@ -13,7 +13,8 @@
 - Slice AA 弱证据外贸场景校准已完成并提交：`b3145fc Calibrate weak-evidence delivery guardrails`。
 - Code Slice AA 用户交付污染 bug + 路由器修复已完成并提交：`b3145fc Calibrate weak-evidence delivery guardrails`。
 - Code Slice AB 多来源互证 / CorroborationRecord 最小闭环已完成并提交：`2073a98 Add weak-source corroboration records`。
-- Code Slice AC 资料时效 / freshness 降级最小闭环已实现并完成完整回归，纳入本次提交。
+- Code Slice AC 资料时效 / freshness 降级最小闭环已提交：`069314d Add product market freshness guardrails`。
+- Slice AD 开放世界权威来源识别模型已完成文档冻结：`spec/33-superleads-open-world-authority-source-model-slice-ad.md`。
 
 ## Code Slice AC 已完成内容
 
@@ -53,8 +54,28 @@ git diff --check  # passed
 
 ## 当前下一步
 
-1. 提交后检查工作树与最近提交。
-2. 后续再排：Authority registry、状态词压缩、单一客户背调工程资产、批量客户开发内核复盘。
+1. 先提交 Slice AD 文档与同步记录。
+2. 用户确认后进入 Code Slice AD：开放世界来源权威性防错闭环。
+3. 后续再排：状态词压缩、单一客户背调工程资产、批量客户开发内核复盘。
+
+## Code Slice AD 待实现方向
+
+1. schema
+   - 增加 AuthorityProfile / AuthorityIdentityEvidence / AuthorityCapability / AuthorityVerificationRecord。
+   - 不建立全球国家事实库；少量国家只做 fixture 或加速样例。
+2. validator
+   - 阻断 keyword-only authority、domain-only authority。
+   - 阻断事实域错配、管辖范围错配、Source Pack / registry 直接支撑事实。
+   - 阻断行业/商业/媒体/货代来源升级为主管官方来源。
+3. query plan
+   - 当目标国家/地区没有预置 Pack 时，仍生成动态 authority discovery 查询组。
+   - 搜索摘要只进候选来源，不形成 EvidenceCard。
+4. exporter / audit
+   - 用户可见展示：来源身份、适用范围、可以当作什么、不能当作什么、下一步核实。
+   - 权威性待核实、来源身份冲突、事实域不匹配要进入 limitation 或 blocker。
+5. fixtures/evals
+   - pass：未知国家 plan-only、官方税则只支撑税费、认证机构只作路径参考、货代只作物流线索。
+   - fail：博客冒充 required、只靠域名判官方、海关税则支撑认证、出口国来源支撑目的国准入、Source Pack 直接当事实、多弱来源冒充官方确认。
 
 ## 当前阻塞 / 注意
 

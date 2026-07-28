@@ -1,14 +1,15 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：Code Slice AC 提交后以 `git log --oneline -5` 为准。
-- 当前状态：Code Slice AC 资料时效 / freshness 已实现并完成完整回归；保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：`069314d Add product market freshness guardrails`
+- 当前状态：Slice AD 开放世界权威来源识别模型已完成文档冻结，待提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已完成
 
 - Slice AA / Code Slice AA 已提交：`b3145fc Calibrate weak-evidence delivery guardrails`。
 - Code Slice AB 已提交：`2073a98 Add weak-source corroboration records`。
-- Code Slice AC 已实现：产品出海市场分析新增资料时效 / Freshness 降级最小闭环。
+- Code Slice AC 已提交：`069314d Add product market freshness guardrails`。
+- Slice AD 已完成文档：`spec/33-superleads-open-world-authority-source-model-slice-ad.md`。
 
 ## Code Slice AC 已完成内容
 
@@ -51,8 +52,17 @@ git diff --check  # passed
 
 ## 当前下一步建议
 
-1. 提交后检查 `git status --short` 和 `git log --oneline -5`。
-2. 下一优先级：Authority registry、状态词压缩、单一客户背调工程资产、批量客户开发内核复盘。
+1. 先提交 Slice AD 文档与同步记录。
+2. 用户确认后进入 Code Slice AD：开放世界来源权威性防错闭环。
+3. 后续优先级：状态词压缩、单一客户背调工程资产、批量客户开发内核复盘。
+
+## Slice AD 冻结要点
+
+- 不按国家/地区穷举官方来源；Superleads 必须支持任意出口国、原产国、起运国和目标销售国家/地区。
+- Source Pack / registry 只能作为入口目录和动态查询加速器，不能直接支撑 EvidenceCard 或 MatrixRow 事实。
+- 权威性必须由来源身份、事实域、管辖范围、可见身份核验证据和 freshness 共同判断。
+- 无法核验来源身份或事实域能力时，只能输出候选来源、待查路径、来源受限或下一步核实，不能写确定性法规、关税、认证、COO 或出口要求结论。
+- 少量国家/地区只允许作为 fixture / eval / 加速样例，不作为产品覆盖边界。
 
 ## 重要边界
 
@@ -61,3 +71,4 @@ git diff --check  # passed
 - 不把搜索摘要写成 Claim。
 - 没有可记录的真实搜索/打开来源能力时，默认发现仍停在计划、样本池或已审核投影渲染层。
 - Code Slice AC 不判断真实“最新”，只按已有来源日期、生效日期、观察日期和复核窗口做交付降级。
+- Slice AD 不联网核验真实官方机构，也不新增国家事实库；它只冻结开放世界权威来源识别模型和后续 Code Slice AD 的防错方向。
