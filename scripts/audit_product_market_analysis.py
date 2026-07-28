@@ -37,6 +37,21 @@ LIMITATION_STATUSES = {
     "conflict_pending_review",
 }
 
+LIMITED_FRESHNESS_STATUSES = {
+    "stale_needs_recheck",
+    "date_unknown_needs_recheck",
+    "date_unknown_recently_observed",
+}
+
+FRESHNESS_STATUS_LABELS = {
+    "current_enough_for_scope": "本轮复核日期在当前口径内",
+    "date_unknown_recently_observed": "来源日期未见，但本轮已观察",
+    "stale_needs_recheck": "资料偏旧，需重新复核",
+    "date_unknown_needs_recheck": "来源日期未见，需复核后再当现行信息",
+    "not_time_sensitive": "非强时效字段",
+    "not_executed": "未执行",
+}
+
 STATUS_LABELS = {
     "verified": "已核实",
     "derived_calculation": "派生计算",
@@ -81,7 +96,7 @@ def _id_map(graph: dict[str, Any], key: str, id_field: str) -> dict[str, dict[st
 
 
 def _status_label(status: Any) -> str:
-    return STATUS_LABELS.get(str(status), str(status or "未提供"))
+    return STATUS_LABELS.get(str(status), FRESHNESS_STATUS_LABELS.get(str(status), str(status or "未提供")))
 
 
 def _add_issue(issues: list[dict[str, str]], severity: str, code: str, message: str, path: str) -> None:
@@ -231,6 +246,20 @@ def _collect_limitations(graph: dict[str, Any]) -> list[dict[str, str]]:
                 f"conflicts[{idx}]",
                 conflict.get("field_domain"),
                 conflict.get("field_name"),
+            ))
+
+    for idx, freshness in enumerate(ensure_list(graph, "freshness_records")):
+        if not isinstance(freshness, dict):
+            continue
+        status = str(freshness.get("freshness_status") or "")
+        if status in LIMITED_FRESHNESS_STATUSES:
+            add(_limitation(
+                "market_freshness_limitation",
+                str(freshness.get("user_visible_summary") or freshness.get("date_basis") or "资料时效需复核"),
+                status,
+                f"freshness_records[{idx}]",
+                freshness.get("field_domain"),
+                freshness.get("field_name"),
             ))
 
     for idx, premise in enumerate(ensure_list(graph, "trade_premises")):

@@ -1,0 +1,61 @@
+{
+  "extends": "market_pass_uniqlo_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "add",
+      "path": "/freshness_records",
+      "value": []
+    },
+    {
+      "op": "append",
+      "path": "/freshness_records/-",
+      "value": {
+        "freshness_id": "freshness-uq-body-trim-date-unknown",
+        "run_id": "run-uq-us",
+        "brief_version_id": "brief-uq-us-v1",
+        "field_domain": "产品属性",
+        "field_name": "网页 Body/Trim 成分字段",
+        "subject_type": "matrix_row",
+        "subject_ref_ids": [
+          "row-uq-body-trim"
+        ],
+        "freshness_status": "date_unknown_recently_observed",
+        "freshness_checked_at": "2026-07-28",
+        "review_window_days": 365,
+        "source_date_values": [
+          "日期未见"
+        ],
+        "observed_at_values": [
+          "2026-07-26"
+        ],
+        "effective_date_values": [],
+        "expires_at": null,
+        "date_basis": "产品页未显示发布日期，本轮仅记录观察日期",
+        "next_review_due_at": "2027-07-26",
+        "user_visible_summary": "SKU 属性页面日期未见；可作本轮网页线索，不泛化到实物标签或其它批次",
+        "cannot_conclude": [
+          "不能当实物标签已合规",
+          "不能当未来批次仍相同"
+        ],
+        "next_verification_steps": [
+          "订单前复核产品页或向供应链索取规格/BOM"
+        ],
+        "reviewer_skill": "Skill F - 交付复核",
+        "reviewed_at": "2026-07-28",
+        "review_status": "passed"
+      }
+    },
+    {
+      "op": "add",
+      "path": "/matrix_rows/1/freshness_record_ids",
+      "value": [
+        "freshness-uq-body-trim-date-unknown"
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/1/user_visible_cells/限制说明",
+      "value": "资料日期未见；仅作网页成分线索，不能替代实物标签或未来批次确认"
+    }
+  ]
+}

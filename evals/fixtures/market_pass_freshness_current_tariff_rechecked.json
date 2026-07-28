@@ -1,0 +1,161 @@
+{
+  "extends": "market_pass_uniqlo_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "add",
+      "path": "/freshness_records",
+      "value": []
+    },
+    {
+      "op": "append",
+      "path": "/sources/-",
+      "value": {
+        "source_id": "source-usitc-current-hts-fixture",
+        "canonical_url": "https://hts.usitc.gov/",
+        "final_url": "https://hts.usitc.gov/",
+        "publisher_relation": "first_party",
+        "provenance": "discovered_public",
+        "medium": "website",
+        "access_boundary": "public_web",
+        "owner_hint": "USITC official HTS current fixture"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/observations/-",
+      "value": {
+        "observation_id": "observation-usitc-current-hts-fixture",
+        "run_id": "run-uq-us",
+        "source_id": "source-usitc-current-hts-fixture",
+        "capability": "source.open",
+        "concrete_tool": "fixture.static_source_open",
+        "observed_at": "2026-07-28",
+        "access_status": "opened",
+        "title": "USITC HTS current fixture",
+        "raw_excerpt": "HTS page visible on 2026-07-20 for heading 6205; classification, duty, origin and declaration date still require customs-broker review.",
+        "page_or_dom_locator": "fixture-visible-excerpt",
+        "extraction_method": "fixture_static",
+        "language": "en",
+        "translation_status": "original"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/freshness_records/-",
+      "value": {
+        "freshness_id": "freshness-uq-hts-current-window",
+        "run_id": "run-uq-us",
+        "brief_version_id": "brief-uq-us-v1",
+        "field_domain": "进口税费",
+        "field_name": "HTS 本轮税表页面复核",
+        "subject_type": "matrix_row",
+        "subject_ref_ids": [
+          "row-uq-hts-current-window"
+        ],
+        "freshness_status": "current_enough_for_scope",
+        "freshness_checked_at": "2026-07-28",
+        "review_window_days": 30,
+        "source_date_values": [
+          "2026-07-20"
+        ],
+        "observed_at_values": [
+          "2026-07-28"
+        ],
+        "effective_date_values": [],
+        "expires_at": null,
+        "date_basis": "USITC 页面资料日期 2026-07-20；2026-07-28 本轮复核，仍需报关日前再次确认。",
+        "next_review_due_at": "2026-08-19",
+        "user_visible_summary": "本轮税表页面日期在 30 天复核窗口内；仍只支持候选税号查询入口，不替代报关日复核。",
+        "cannot_conclude": [
+          "不能当最终税率",
+          "不能当最终 10 位税号",
+          "不能替代报关日、原产地和税基确认"
+        ],
+        "next_verification_steps": [
+          "报关前重新打开报关日适用 HTS/关税来源",
+          "让报关行结合实物款式、原产地和税基复核"
+        ],
+        "reviewer_skill": "Skill F - 交付复核",
+        "reviewed_at": "2026-07-28",
+        "review_status": "passed"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/evidence_cards/-",
+      "value": {
+        "evidence_card_id": "card-uq-hts-current-window",
+        "run_id": "run-uq-us",
+        "brief_version_id": "brief-uq-us-v1",
+        "producer_skill": "Skill C - 目的国准入与税费",
+        "reviewer_skill": "Skill F - 交付复核",
+        "field_domain": "进口税费",
+        "field_name": "HTS 本轮税表页面复核",
+        "current_value": "截至 2026-07-28，本轮打开的 HTS 页面日期在 30 天复核窗口内；只作为候选税号查询入口。",
+        "status": "preliminary_reference",
+        "source_refs": [
+          {
+            "source_id": "source-usitc-current-hts-fixture",
+            "observation_id": "observation-usitc-current-hts-fixture",
+            "relation": "contextual"
+          }
+        ],
+        "source_type": "official_tariff_page",
+        "source_locator": "USITC HTS current fixture",
+        "source_date": "2026-07-20",
+        "observed_at": "2026-07-28",
+        "applicability_scope": "只支持候选税表查询入口；最终税率和最终 10 位税号需报关专业确认。",
+        "supports": [
+          "本轮已打开 HTS 页面且资料日期在复核窗口内"
+        ],
+        "does_not_support": [
+          "不能当最终税率",
+          "不能替代报关日复核"
+        ],
+        "boundary_rule_ids": [
+          "EB-TAR-03",
+          "EB-FRESH-01"
+        ],
+        "freshness_record_ids": [
+          "freshness-uq-hts-current-window"
+        ],
+        "review_status": "passed"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-uq-hts-current-window",
+        "sheet_name": "进口税费",
+        "row_topic": "HTS 本轮税表页面复核",
+        "user_visible_cells": {
+          "样本ID": "UQ-470177-US",
+          "目的国": "美国",
+          "候选 HS/HTS": "6205.20.20（候选路径）",
+          "税率/金额": "截至 2026-07-28，本轮税表页面日期在复核窗口内；不写最终税率",
+          "适用条件": "最终 10 位税号、原产地、报关日和税基待确认",
+          "缺口/下一步": "报关前重新打开报关日适用 HTS/关税来源，并由报关专业方复核"
+        },
+        "status": "preliminary_reference",
+        "evidence_card_ids": [
+          "card-uq-hts-current-window"
+        ],
+        "gap_ids": [
+          "gap-uq-final-htsus"
+        ],
+        "conflict_ids": [],
+        "freshness_record_ids": [
+          "freshness-uq-hts-current-window"
+        ],
+        "module_key": "import_tax",
+        "boundary_rule_ids": [
+          "EB-TAR-03",
+          "EB-FRESH-01"
+        ],
+        "internal_refs_hidden": true,
+        "row_type": "import_tax"
+      }
+    }
+  ]
+}

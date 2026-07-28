@@ -1,0 +1,161 @@
+{
+  "extends": "market_pass_uniqlo_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "add",
+      "path": "/freshness_records",
+      "value": []
+    },
+    {
+      "op": "append",
+      "path": "/sources/-",
+      "value": {
+        "source_id": "source-usitc-2024-hts-archive",
+        "canonical_url": "https://hts.usitc.gov/",
+        "final_url": "https://hts.usitc.gov/",
+        "publisher_relation": "first_party",
+        "provenance": "discovered_public",
+        "medium": "website",
+        "access_boundary": "public_web",
+        "owner_hint": "USITC official HTS archive fixture"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/observations/-",
+      "value": {
+        "observation_id": "observation-usitc-2024-hts-archive",
+        "run_id": "run-uq-us",
+        "source_id": "source-usitc-2024-hts-archive",
+        "capability": "source.open",
+        "concrete_tool": "fixture.static_source_open",
+        "observed_at": "2026-07-28",
+        "access_status": "opened",
+        "title": "USITC HTS archive fixture",
+        "raw_excerpt": "2024 HTS archive excerpt for cotton shirts; rate and classification require checking the current HTS at declaration time.",
+        "page_or_dom_locator": "fixture-visible-excerpt",
+        "extraction_method": "fixture_static",
+        "language": "en",
+        "translation_status": "original"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/evidence_cards/-",
+      "value": {
+        "evidence_card_id": "card-uq-hts-archive-stale-reference",
+        "run_id": "run-uq-us",
+        "brief_version_id": "brief-uq-us-v1",
+        "producer_skill": "Skill C - 目的国准入与税费",
+        "reviewer_skill": "Skill F - 交付复核",
+        "field_domain": "进口税费",
+        "field_name": "HTS 旧版税表线索",
+        "current_value": "2024 税表页面可作为历史归类线索；不能当 2026 年报关日税率",
+        "status": "preliminary_reference",
+        "source_refs": [
+          {
+            "source_id": "source-usitc-2024-hts-archive",
+            "observation_id": "observation-usitc-2024-hts-archive",
+            "relation": "contextual"
+          }
+        ],
+        "source_type": "official_tariff_archive",
+        "source_locator": "USITC HTS archive fixture",
+        "source_date": "2024-01-01",
+        "observed_at": "2026-07-28",
+        "applicability_scope": "只作历史税表/候选归类线索；不支持现行税率或最终税额",
+        "supports": [
+          "历史 HTS 归类线索"
+        ],
+        "does_not_support": [
+          "不能写成最新税率",
+          "不能替代报关日现行 HTS 复核"
+        ],
+        "boundary_rule_ids": [
+          "EB-TAR-03",
+          "EB-FRESH-01"
+        ],
+        "review_status": "passed",
+        "freshness_record_ids": [
+          "freshness-uq-hts-archive-stale"
+        ]
+      }
+    },
+    {
+      "op": "append",
+      "path": "/freshness_records/-",
+      "value": {
+        "freshness_id": "freshness-uq-hts-archive-stale",
+        "run_id": "run-uq-us",
+        "brief_version_id": "brief-uq-us-v1",
+        "field_domain": "进口税费",
+        "field_name": "HTS 旧版税表线索",
+        "subject_type": "matrix_row",
+        "subject_ref_ids": [
+          "row-uq-hts-stale-reference"
+        ],
+        "freshness_status": "stale_needs_recheck",
+        "freshness_checked_at": "2026-07-28",
+        "review_window_days": 30,
+        "source_date_values": [
+          "2024-01-01"
+        ],
+        "observed_at_values": [
+          "2026-07-28"
+        ],
+        "effective_date_values": [],
+        "expires_at": null,
+        "date_basis": "来源日期为 2024-01-01，超过进口税费默认短周期复核窗口",
+        "next_review_due_at": "2026-07-28",
+        "user_visible_summary": "旧版 HTS 只能当历史线索；报关前需重新打开报关日适用的 HTS/关税来源",
+        "cannot_conclude": [
+          "不能当最新税率",
+          "不能当最终税额",
+          "不能替代报关日归类复核"
+        ],
+        "next_verification_steps": [
+          "报关前重新打开报关日适用的 HTS/关税来源",
+          "结合最终 10 位税号、原产地和税基复核"
+        ],
+        "reviewer_skill": "Skill F - 交付复核",
+        "reviewed_at": "2026-07-28",
+        "review_status": "passed"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-uq-hts-stale-reference",
+        "sheet_name": "进口税费",
+        "row_topic": "旧版 HTS 税表时效边界",
+        "user_visible_cells": {
+          "样本ID": "UQ-470177-US",
+          "目的国": "美国",
+          "候选 HS/HTS": "6205.20.20（历史线索）",
+          "税率/金额": "旧版来源仅作参考，报关前需复核",
+          "适用条件": "最终 10 位税号、原产地、报关日和税基待确认",
+          "缺口/下一步": "重新打开报关日适用的 HTS/关税来源"
+        },
+        "status": "preliminary_reference",
+        "evidence_card_ids": [
+          "card-uq-hts-archive-stale-reference"
+        ],
+        "gap_ids": [
+          "gap-uq-final-htsus"
+        ],
+        "conflict_ids": [],
+        "freshness_record_ids": [
+          "freshness-uq-hts-archive-stale"
+        ],
+        "module_key": "import_tax",
+        "boundary_rule_ids": [
+          "EB-TAR-03",
+          "EB-FRESH-01"
+        ],
+        "internal_refs_hidden": true,
+        "row_type": "import_tax"
+      }
+    }
+  ]
+}

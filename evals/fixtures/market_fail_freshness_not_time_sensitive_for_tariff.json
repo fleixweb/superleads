@@ -1,0 +1,15 @@
+{
+  "extends": "market_pass_freshness_current_tariff_rechecked.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/freshness_records/0/freshness_status",
+      "value": "not_time_sensitive"
+    },
+    {
+      "op": "replace",
+      "path": "/freshness_records/0/user_visible_summary",
+      "value": "错误示例：把关税字段写成非强时效字段。"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "extends": "market_pass_freshness_stale_tariff_downgraded.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/user_visible_cells/税率~1金额",
+      "value": "最新税率 3.4%，可直接按此报关"
+    }
+  ]
+}

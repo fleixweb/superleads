@@ -1,0 +1,80 @@
+{
+  "extends": "market_pass_not_executed_modules_retained.json",
+  "patches": [
+    {
+      "op": "add",
+      "path": "/freshness_records",
+      "value": []
+    },
+    {
+      "op": "append",
+      "path": "/freshness_records/-",
+      "value": {
+        "freshness_id": "freshness-xh-external-observed-only",
+        "run_id": "run-not-executed",
+        "brief_version_id": "brief-not-executed-v1",
+        "field_domain": "近期外部因素",
+        "field_name": "港口拥堵影响",
+        "subject_type": "matrix_row",
+        "subject_ref_ids": [
+          "row-xh-external-observed-only"
+        ],
+        "freshness_status": "current_enough_for_scope",
+        "freshness_checked_at": "2026-07-28",
+        "review_window_days": 14,
+        "source_date_values": [],
+        "observed_at_values": [
+          "2026-07-28"
+        ],
+        "effective_date_values": [],
+        "expires_at": null,
+        "date_basis": "只记录本轮观察日期；原始消息未见发布日期或生效日期。",
+        "next_review_due_at": "2026-08-11",
+        "user_visible_summary": "本轮观察日期不能替代来源发布日期，不能写成最新外部影响。",
+        "cannot_conclude": [
+          "不能当最新外部因素",
+          "不能当当前港口拥堵结论"
+        ],
+        "next_verification_steps": [
+          "重新打开有发布日期的港口、船司或海关来源"
+        ],
+        "reviewer_skill": "Skill F - 交付复核",
+        "reviewed_at": "2026-07-28",
+        "review_status": "passed"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-xh-external-observed-only",
+        "sheet_name": "近期外部因素",
+        "row_topic": "只用观察日期声称当前外部因素",
+        "user_visible_cells": {
+          "样本ID": "XH-48V20AH-US",
+          "因素类型": "港口拥堵",
+          "因素名称": "港口拥堵消息",
+          "地区": "美国",
+          "时间": "截至 2026-07-28",
+          "可能影响对象": "锂电池包运输",
+          "来源/依据": "原始消息发布日期未见，仅有本轮观察日期",
+          "限制说明": "当前影响待复核"
+        },
+        "status": "preliminary_reference",
+        "evidence_card_ids": [],
+        "gap_ids": [],
+        "conflict_ids": [],
+        "freshness_record_ids": [
+          "freshness-xh-external-observed-only"
+        ],
+        "module_key": "external_factors",
+        "boundary_rule_ids": [
+          "EB-MKT-05",
+          "EB-FRESH-03"
+        ],
+        "internal_refs_hidden": true,
+        "row_type": "external_factor"
+      }
+    }
+  ]
+}

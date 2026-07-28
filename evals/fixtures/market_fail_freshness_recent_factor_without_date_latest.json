@@ -1,0 +1,35 @@
+{
+  "extends": "market_pass_not_executed_modules_retained.json",
+  "patches": [
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-xh-external-undated-latest",
+        "sheet_name": "近期外部因素",
+        "row_topic": "无日期外部因素被当作近期影响",
+        "user_visible_cells": {
+          "样本ID": "XH-48V20AH-US",
+          "因素类型": "港口拥堵",
+          "因素名称": "无日期新闻摘要",
+          "地区": "美国",
+          "时间": "日期未见",
+          "可能影响对象": "锂电池包运输",
+          "来源/依据": "未见日期的行业消息",
+          "限制说明": "最新影响可能延长交期；来源日期未见，未复核"
+        },
+        "status": "preliminary_reference",
+        "evidence_card_ids": [],
+        "gap_ids": [],
+        "conflict_ids": [],
+        "module_key": "external_factors",
+        "boundary_rule_ids": [
+          "EB-MKT-05",
+          "EB-FRESH-03"
+        ],
+        "internal_refs_hidden": true,
+        "row_type": "external_factor"
+      }
+    }
+  ]
+}

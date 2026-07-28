@@ -1,5 +1,5 @@
 {
-  "description": "Product outbound market analysis Code Slice A-X fixtures. Use scripts/validate_product_market_analysis.py, scripts/audit_product_market_analysis.py, scripts/export_product_market_workbook.py, and source plan runner; existing evals/run_evals.py intentionally ignores market_* fields.",
+  "description": "Product outbound market analysis Code Slice A-AC fixtures. Use scripts/validate_product_market_analysis.py, scripts/audit_product_market_analysis.py, scripts/export_product_market_workbook.py, and source plan runner; existing evals/run_evals.py intentionally ignores market_* fields.",
   "validator": "scripts/validate_product_market_analysis.py",
   "cases": [
     {
@@ -1689,6 +1689,243 @@
       "market_validate": "fail",
       "expected_error_codes": [
         "market_corroboration_unopened_source"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip",
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_pass_freshness_stale_tariff_downgraded.json",
+      "market_validate": "pass",
+      "market_audit": "pass",
+      "market_export_csv": "pass",
+      "market_export_markdown": "pass",
+      "market_export_present": [
+        "资料时效",
+        "资料偏旧，需重新复核",
+        "旧版 HTS 只能当历史线索",
+        "不能当最新税率",
+        "复核建议",
+        "不能当最新结论"
+      ],
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_pass_freshness_date_unknown_product_attribute.json",
+      "market_validate": "pass",
+      "market_audit": "pass",
+      "market_export_csv": "pass",
+      "market_export_markdown": "pass",
+      "market_export_present": [
+        "资料时效",
+        "来源日期未见，但本轮已观察",
+        "资料日期未见",
+        "不能当实物标签已合规",
+        "不能当未来批次仍相同"
+      ],
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_fail_freshness_old_tariff_called_latest.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_latest_claim_without_freshness"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip",
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_fail_freshness_date_unknown_regulation_verified.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_freshness_missing_for_date_unknown"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip",
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_fail_freshness_recent_factor_without_date_latest.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_latest_claim_without_freshness"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip",
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_pass_freshness_current_tariff_rechecked.json",
+      "market_validate": "pass",
+      "market_audit": "pass",
+      "market_export_csv": "pass",
+      "market_export_markdown": "pass",
+      "market_export_present": [
+        "资料时效",
+        "本轮复核日期在当前口径内",
+        "本轮税表页面日期在 30 天复核窗口内",
+        "不能当最终税率",
+        "报关前重新打开报关日适用 HTS/关税来源"
+      ],
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_fail_freshness_current_observed_only.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_freshness_current_without_date"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip",
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_fail_freshness_not_time_sensitive_for_tariff.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_freshness_not_time_sensitive_mismatch"
       ],
       "market_audit": "fail",
       "market_export_csv": "fail",

@@ -12,6 +12,7 @@ import argparse
 import json
 import re
 from copy import deepcopy
+from datetime import date
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
@@ -40,7 +41,8 @@ STATUS_NONFACTUAL = {
 NEGATION_MARKERS = (
     "不", "未", "非", "无", "勿", "禁止", "不得", "不能", "不可",
     "不是", "不等于", "无法", "不能推导", "不能替代", "不能写成", "不得写成",
-    "not", "not equal", "does not", "cannot", "can not", "must not", "should not", "no ", "pending",
+    "没", "没有", "未能",
+    "not", "not equal", "does not", "cannot", "can not", "must not", "should not", "no ", "without", "pending",
 )
 
 SEARCH_SOURCE_MARKERS = (
@@ -86,6 +88,55 @@ LOGISTICS_PHRASES = (
     "可直接空运", "可直接快递", "普通货运输", "best route", "best shipping method",
     "committed delivery", "guaranteed transit", "guaranteed delivery",
 )
+TIME_SENSITIVE_SHEETS = {
+    "长期需求与搜索趋势",
+    "公开市场资料与行业信息",
+    "线上市场与价格参考",
+    "季节、节日与销售窗口",
+    "产品准入与合规要求",
+    "进口税费",
+    "出口国要求",
+    "运输方式、路线、港口与申报节点",
+    "近期外部因素",
+}
+FRESHNESS_DATE_UNKNOWN_MARKERS = (
+    "日期未见", "未见日期", "无日期", "日期不明", "未公开日期", "未标日期",
+    "date unknown", "unknown date", "date not visible", "undated", "no date",
+    "not dated", "n.d.",
+)
+LATEST_OR_CURRENT_PHRASES = (
+    "最新", "现行", "当前有效", "截至", "有效税率", "现行税率", "最新税率",
+    "最新法规", "最新要求", "最新行情", "最新影响", "当前税率", "当前法规",
+    "current rate", "current tariff", "current duty", "current regulation",
+    "currently in force", "currently effective", "currently required",
+    "latest", "as of",
+)
+LATEST_NEGATION_MARKERS = (
+    "不称", "不能称", "不得称", "不写成", "不能写成", "不得写成",
+    "不当作", "不能当", "不得当", "不可当", "不能作为", "不作为",
+    "不支持", "不能支持", "不得支持", "无日期不称", "没有来源不称", "未复核不称",
+    "not latest", "not current", "cannot claim", "cannot call",
+    "must not call", "cannot be treated as", "not treated as", "does not support",
+)
+FRESHNESS_STATUS_LIMITED = {
+    "stale_needs_recheck",
+    "date_unknown_needs_recheck",
+    "date_unknown_recently_observed",
+}
+FRESHNESS_STATUS_CURRENTISH = {"current_enough_for_scope"}
+FRESHNESS_DEFAULT_WINDOWS = {
+    "external_factor": 14,
+    "import_tax": 30,
+    "export_requirement": 30,
+    "online_price": 30,
+    "google_trends": 90,
+    "logistics": 90,
+    "destination_requirement": 180,
+    "origin_proof_requirement": 180,
+    "certification_requirement": 180,
+    "market_report": 365,
+    "seasonality": 365,
+}
 VALUE_JUDGMENT_PHRASES = (
     "建议进入", "值得进入", "值得开发", "市场潜力高", "推荐开发", "优先开发",
     "推荐客户类型", "推荐客户", "推荐价格", "最佳切入", "should enter", "worth entering",
@@ -273,6 +324,7 @@ ID_FIELDS = {
     "observations": "observation_id",
     "evidence_cards": "evidence_card_id",
     "corroboration_records": "corroboration_id",
+    "freshness_records": "freshness_id",
     "matrix_rows": "matrix_row_id",
     "gaps": "gap_id",
     "conflicts": "conflict_id",
@@ -496,6 +548,115 @@ def _card_text(card: dict[str, Any], include_source: bool = True) -> str:
     if include_source:
         fields.extend([card.get("source_type"), card.get("source_locator")])
     return text_of(fields)
+
+
+def _parse_iso_date(value: Any) -> date | None:
+    if not has_text(value):
+        return None
+    text = str(value).strip()
+    match = re.search(r"(\d{4}-\d{2}-\d{2})", text)
+    if match:
+        try:
+            return date.fromisoformat(match.group(1))
+        except ValueError:
+            return None
+    match = re.search(r"(\d{4})[-/](\d{1,2})(?:[-/](\d{1,2}))?", text)
+    if match:
+        year, month, day = int(match.group(1)), int(match.group(2)), int(match.group(3) or 1)
+        try:
+            return date(year, month, day)
+        except ValueError:
+            return None
+    match = re.search(r"\b(20\d{2}|19\d{2})\b", text)
+    if match:
+        try:
+            return date(int(match.group(1)), 1, 1)
+        except ValueError:
+            return None
+    return None
+
+
+def _days_between(left: date | None, right: date | None) -> int | None:
+    if left is None or right is None:
+        return None
+    return abs((right - left).days)
+
+
+def _parsed_dates(values: Any) -> list[date]:
+    dates: list[date] = []
+    for item in as_list(values):
+        parsed = _parse_iso_date(item)
+        if parsed is not None:
+            dates.append(parsed)
+    return dates
+
+
+def _date_unknown(value: Any) -> bool:
+    return not _parse_iso_date(value) and _contains_any(value, FRESHNESS_DATE_UNKNOWN_MARKERS)
+
+
+def _freshness_text(record: dict[str, Any]) -> str:
+    return text_of([
+        record.get("field_domain"),
+        record.get("field_name"),
+        record.get("freshness_status"),
+        record.get("date_basis"),
+        record.get("user_visible_summary"),
+        record.get("cannot_conclude"),
+        record.get("next_verification_steps"),
+    ])
+
+
+def _field_freshness_key(field_domain: Any, field_name: Any = None, module_key: Any = None, sheet_name: Any = None) -> str | None:
+    text = norm([field_domain, field_name, module_key, sheet_name])
+    if any(marker in text for marker in ("近期外部", "外部因素", "political", "war", "disaster", "strike", "sanction", "external factor")):
+        return "external_factor"
+    if any(marker in text for marker in ("进口税费", "关税", "税率", "htsus", "tariff", "duty")):
+        return "import_tax"
+    if any(marker in text for marker in ("出口国要求", "出口管制", "商检", "检验检疫", "export control", "export requirement")):
+        return "export_requirement"
+    if any(marker in text for marker in ("线上市场", "价格", "标价", "online price", "platform price", "listing price")):
+        return "online_price"
+    if any(marker in text for marker in ("google trends", "谷歌趋势", "搜索趋势", "长期需求")):
+        return "google_trends"
+    if any(marker in text for marker in ("运输", "物流", "海运", "空运", "快递", "预申报", "logistics", "shipping", "transit")):
+        return "logistics"
+    if any(marker in text for marker in ("认证", "准入", "合规", "标签", "包装", "注册", "许可", "certification", "conformity", "compliance", "labeling", "packaging", "registration", "permit")):
+        return "certification_requirement"
+    if any(marker in text for marker in ("原产地证明", "coo", "proof of origin", "origin declaration")):
+        return "origin_proof_requirement"
+    if any(marker in text for marker in ("市场报告", "行业报告", "公开市场资料", "industry report", "market report")):
+        return "market_report"
+    if any(marker in text for marker in ("节日", "季节", "淡旺季", "holiday", "season")):
+        return "seasonality"
+    return None
+
+
+def _is_time_sensitive_field(field_domain: Any, field_name: Any = None, module_key: Any = None, sheet_name: Any = None) -> bool:
+    return _field_freshness_key(field_domain, field_name, module_key, sheet_name) is not None or sheet_name in TIME_SENSITIVE_SHEETS
+
+
+def _default_review_window_days(field_domain: Any, field_name: Any = None, module_key: Any = None, sheet_name: Any = None) -> int | None:
+    key = _field_freshness_key(field_domain, field_name, module_key, sheet_name)
+    if key:
+        return FRESHNESS_DEFAULT_WINDOWS[key]
+    return None
+
+
+def _latest_claim_without_freshness_text(text: Any) -> bool:
+    haystack = norm(text)
+    for phrase in LATEST_OR_CURRENT_PHRASES:
+        needle = phrase.casefold()
+        start = 0
+        while True:
+            idx = haystack.find(needle, start)
+            if idx < 0:
+                break
+            window = haystack[max(0, idx - 18):idx]
+            if not any(marker in window for marker in LATEST_NEGATION_MARKERS):
+                return True
+            start = idx + max(1, len(needle))
+    return False
 
 
 def _corroboration_text(record: dict[str, Any]) -> str:
@@ -961,6 +1122,183 @@ def _corroboration_issues(
     return issues
 
 
+def _freshness_refs_exist(
+    record: dict[str, Any],
+    ids: dict[str, dict[str, dict[str, Any]]],
+) -> list[str]:
+    subject_type = str(record.get("subject_type") or "")
+    mapping = {
+        "source": "sources",
+        "observation": "observations",
+        "evidence_card": "evidence_cards",
+        "matrix_row": "matrix_rows",
+        "corroboration_record": "corroboration_records",
+    }
+    collection_key = mapping.get(subject_type)
+    missing: list[str] = []
+    if not collection_key:
+        return missing
+    collection = ids.get(collection_key, {})
+    for ref_id in as_list(record.get("subject_ref_ids")):
+        if has_text(ref_id) and str(ref_id) not in collection:
+            missing.append(str(ref_id))
+    return missing
+
+
+def _freshness_record_by_id(graph: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    result: dict[str, dict[str, Any]] = {}
+    for record in ensure_list(graph, "freshness_records"):
+        if isinstance(record, dict) and has_text(record.get("freshness_id")):
+            result[str(record["freshness_id"])] = record
+    return result
+
+
+def _card_has_freshness_record(card: dict[str, Any], freshness_by_id: dict[str, dict[str, Any]]) -> bool:
+    for record_id in as_list(card.get("freshness_record_ids")):
+        record = freshness_by_id.get(str(record_id))
+        if isinstance(record, dict) and record.get("review_status") == "passed":
+            return True
+    card_id = str(card.get("evidence_card_id") or "")
+    if not card_id:
+        return False
+    return any(
+        isinstance(record, dict)
+        and record.get("subject_type") == "evidence_card"
+        and card_id in {str(item) for item in as_list(record.get("subject_ref_ids")) if has_text(item)}
+        and record.get("review_status") == "passed"
+        for record in freshness_by_id.values()
+    )
+
+
+def _row_freshness_records(row: dict[str, Any], freshness_by_id: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for record_id in as_list(row.get("freshness_record_ids")):
+        record = freshness_by_id.get(str(record_id))
+        if isinstance(record, dict):
+            records.append(record)
+    row_id = str(row.get("matrix_row_id") or "")
+    if row_id:
+        for record in freshness_by_id.values():
+            if (
+                isinstance(record, dict)
+                and record.get("subject_type") == "matrix_row"
+                and row_id in {str(item) for item in as_list(record.get("subject_ref_ids")) if has_text(item)}
+                and record not in records
+            ):
+                records.append(record)
+    return records
+
+
+def _row_has_currentish_freshness(row: dict[str, Any], freshness_by_id: dict[str, dict[str, Any]]) -> bool:
+    return any(record.get("freshness_status") in FRESHNESS_STATUS_CURRENTISH and record.get("review_status") == "passed" for record in _row_freshness_records(row, freshness_by_id))
+
+
+def _row_has_limited_freshness(row: dict[str, Any], freshness_by_id: dict[str, dict[str, Any]]) -> bool:
+    return any(record.get("freshness_status") in FRESHNESS_STATUS_LIMITED and record.get("review_status") == "passed" for record in _row_freshness_records(row, freshness_by_id))
+
+
+def _freshness_issues(
+    graph: dict[str, Any],
+    ids: dict[str, dict[str, dict[str, Any]]],
+) -> list[dict[str, str]]:
+    issues: list[dict[str, str]] = []
+    run_ids = set(ids["runs"])
+    freshness_by_id = _freshness_record_by_id(graph)
+
+    for idx, record in enumerate(ensure_list(graph, "freshness_records")):
+        if not isinstance(record, dict):
+            continue
+        path = f"freshness_records[{idx}]"
+        status = str(record.get("freshness_status") or "")
+        if record.get("run_id") not in run_ids:
+            _add_issue(issues, "critical", "market_freshness_run_missing", "FreshnessRecord must reference an existing product-market run", f"{path}.run_id")
+        if record.get("review_status") != "passed":
+            _add_issue(issues, "major", "market_freshness_not_reviewed", "FreshnessRecord must be reviewed before it can support delivery", f"{path}.review_status")
+        missing_refs = _freshness_refs_exist(record, ids)
+        if missing_refs:
+            _add_issue(issues, "critical", "market_freshness_subject_missing", "FreshnessRecord references missing subject ids", f"{path}.subject_ref_ids")
+        if status == "not_time_sensitive" and _is_time_sensitive_field(record.get("field_domain"), record.get("field_name"), None, None):
+            _add_issue(issues, "major", "market_freshness_not_time_sensitive_mismatch", "FreshnessRecord marked not_time_sensitive but field_domain/field_name is time-sensitive", path)
+        if status in FRESHNESS_STATUS_LIMITED and not as_list(record.get("cannot_conclude")):
+            _add_issue(issues, "major", "market_freshness_missing_boundary", "Limited or stale freshness must state what cannot be treated as current/latest", f"{path}.cannot_conclude")
+        if status in {"stale_needs_recheck", "date_unknown_needs_recheck"} and not as_list(record.get("next_verification_steps")):
+            _add_issue(issues, "major", "market_freshness_missing_next_review", "Stale/date-unknown freshness needs next verification steps", f"{path}.next_verification_steps")
+        if status == "current_enough_for_scope":
+            window = record.get("review_window_days")
+            if not isinstance(window, int):
+                _add_issue(issues, "major", "market_freshness_window_missing", "Current-enough freshness needs review_window_days", f"{path}.review_window_days")
+            checked = _parse_iso_date(record.get("freshness_checked_at"))
+            if checked is None:
+                _add_issue(issues, "critical", "market_freshness_checked_at_invalid", "FreshnessRecord needs a parseable freshness_checked_at date", f"{path}.freshness_checked_at")
+            primary_dates = _parsed_dates(as_list(record.get("effective_date_values")) + as_list(record.get("source_date_values")))
+            newest = max(primary_dates) if primary_dates else None
+            if newest is None:
+                _add_issue(issues, "critical", "market_freshness_current_without_date", "current_enough_for_scope requires a visible effective/source date; observed_at alone is not enough for current/latest claims", path)
+            elif isinstance(window, int) and _days_between(newest, checked) is not None and _days_between(newest, checked) > window:
+                _add_issue(issues, "critical", "market_freshness_stale_over_window", "FreshnessRecord is older than its declared review window but marked current", path)
+            if _date_unknown(record.get("date_basis")) or _contains_any([record.get("source_date_values"), record.get("effective_date_values")], FRESHNESS_DATE_UNKNOWN_MARKERS):
+                _add_issue(issues, "critical", "market_freshness_current_without_date", "Date-unknown material cannot be marked current_enough_for_scope", path)
+        if status in {"stale_needs_recheck", "date_unknown_needs_recheck"} and _latest_claim_without_freshness_text(_freshness_text(record)):
+            _add_issue(issues, "critical", "market_latest_claim_without_freshness", "Stale/date-unknown freshness cannot be written as latest/current", path)
+
+    for idx, card in enumerate(ensure_list(graph, "evidence_cards")):
+        if not isinstance(card, dict):
+            continue
+        path = f"evidence_cards[{idx}]"
+        is_time_sensitive = _is_time_sensitive_field(card.get("field_domain"), card.get("field_name"), None, None)
+        text = _card_text(card)
+        if _latest_claim_without_freshness_text(text):
+            source_date = _parse_iso_date(card.get("source_date"))
+            observed_at = _parse_iso_date(card.get("observed_at"))
+            has_freshness = _card_has_freshness_record(card, freshness_by_id)
+            if _date_unknown(card.get("source_date")) and not has_freshness:
+                _add_issue(issues, "critical", "market_latest_claim_without_freshness", "EvidenceCard claims latest/current while source_date is unknown and no freshness record is attached", path)
+            if is_time_sensitive:
+                window = _default_review_window_days(card.get("field_domain"), card.get("field_name"))
+                if source_date and observed_at and isinstance(window, int) and _days_between(source_date, observed_at) is not None and _days_between(source_date, observed_at) > window and not has_freshness:
+                    _add_issue(issues, "critical", "market_latest_claim_without_freshness", "EvidenceCard claims latest/current with stale source_date and no freshness recheck", path)
+
+    for idx, row in enumerate(ensure_list(graph, "matrix_rows")):
+        if not isinstance(row, dict):
+            continue
+        path = f"matrix_rows[{idx}]"
+        text = _row_text(row)
+        is_time_sensitive = _is_time_sensitive_field(row.get("sheet_name"), row.get("row_topic"), row.get("module_key"), row.get("sheet_name"))
+        has_limited = _row_has_limited_freshness(row, freshness_by_id)
+        has_currentish = _row_has_currentish_freshness(row, freshness_by_id)
+        if row.get("status") in STATUS_FACTUAL and is_time_sensitive and has_limited:
+            _add_issue(issues, "critical", "market_freshness_stale_row_not_downgraded", "Matrix row with stale/date-unknown freshness cannot remain verified/final", f"{path}.status")
+        if row.get("status") in STATUS_FACTUAL and is_time_sensitive:
+            for record in _row_freshness_records(row, freshness_by_id):
+                if record.get("freshness_status") == "not_time_sensitive" and record.get("review_status") == "passed":
+                    _add_issue(issues, "major", "market_freshness_not_time_sensitive_mismatch", "Time-sensitive matrix row cannot use not_time_sensitive freshness to support a factual/current conclusion", f"{path}.freshness_record_ids")
+        if row.get("status") in STATUS_FACTUAL and is_time_sensitive and not has_currentish:
+            for card_id in as_list(row.get("evidence_card_ids")):
+                card = ids["evidence_cards"].get(str(card_id))
+                if not isinstance(card, dict) or card.get("status") not in STATUS_FACTUAL:
+                    continue
+                if not _is_time_sensitive_field(card.get("field_domain"), card.get("field_name"), row.get("module_key"), row.get("sheet_name")):
+                    continue
+                source_date = _parse_iso_date(card.get("source_date"))
+                observed_at = _parse_iso_date(card.get("observed_at"))
+                window = _default_review_window_days(card.get("field_domain"), card.get("field_name"), row.get("module_key"), row.get("sheet_name"))
+                if _date_unknown(card.get("source_date")) and not _card_has_freshness_record(card, freshness_by_id):
+                    _add_issue(issues, "critical", "market_freshness_missing_for_date_unknown", "Verified time-sensitive matrix row uses a date-unknown EvidenceCard without a freshness boundary record", f"{path}.evidence_card_ids")
+                    break
+                if source_date and observed_at and isinstance(window, int) and _days_between(source_date, observed_at) is not None and _days_between(source_date, observed_at) > window and not _card_has_freshness_record(card, freshness_by_id):
+                    _add_issue(issues, "critical", "market_freshness_missing_for_stale_source", "Verified time-sensitive matrix row uses a stale EvidenceCard without freshness recheck/downgrade", f"{path}.evidence_card_ids")
+                    break
+        if _latest_claim_without_freshness_text(text):
+            if not has_currentish:
+                _add_issue(issues, "critical", "market_latest_claim_without_freshness", "Matrix row claims latest/current without a passed current-enough freshness record", path)
+            if has_limited:
+                _add_issue(issues, "critical", "market_latest_claim_without_freshness", "Matrix row claims latest/current while linked freshness says stale/date-unknown", path)
+        for record_id in as_list(row.get("freshness_record_ids")):
+            if has_text(record_id) and str(record_id) not in freshness_by_id:
+                _add_issue(issues, "critical", "market_freshness_record_missing", "Matrix row references a missing FreshnessRecord", f"{path}.freshness_record_ids")
+    return issues
+
+
 def _market_search_collection_issues(
     graph: dict[str, Any],
     ids: dict[str, dict[str, dict[str, Any]]],
@@ -1084,6 +1422,7 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
 
     issues.extend(_market_search_collection_issues(graph, ids, observations_by_source))
     issues.extend(_corroboration_issues(graph, ids, observations_by_source))
+    issues.extend(_freshness_issues(graph, ids))
 
     # Every matrix row needs an explicit status in business language.
     for idx, row in enumerate(ensure_list(graph, "matrix_rows")):
