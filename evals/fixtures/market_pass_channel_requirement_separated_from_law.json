@@ -1,0 +1,190 @@
+{
+  "extends": "market_pass_uniqlo_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "append",
+      "path": "/sources/-",
+      "value": {
+        "source_id": "source-us-ftc-textile-labeling",
+        "canonical_url": "https://www.ftc.gov/business-guidance/resources/threading-your-way-through-labeling-requirements-under-textile-wool-acts",
+        "final_url": "https://www.ftc.gov/business-guidance/resources/threading-your-way-through-labeling-requirements-under-textile-wool-acts",
+        "publisher_relation": "first_party",
+        "provenance": "discovered_public",
+        "medium": "website",
+        "access_boundary": "public_web",
+        "owner_hint": "U.S. Federal Trade Commission official textile labeling guidance"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/observations/-",
+      "value": {
+        "observation_id": "observation-us-ftc-textile-labeling",
+        "run_id": "run-uq-us",
+        "source_id": "source-us-ftc-textile-labeling",
+        "capability": "source.open",
+        "concrete_tool": "fixture.static_source_open",
+        "observed_at": "2026-07-28",
+        "access_status": "opened",
+        "title": "FTC textile labeling guidance",
+        "raw_excerpt": "Official guidance covers textile labeling requirements such as fiber content, country of origin, manufacturer or dealer identity, and care labeling depending on product scope.",
+        "page_or_dom_locator": "fixture-visible-excerpt",
+        "extraction_method": "fixture_static",
+        "language": "en",
+        "translation_status": "original"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/sources/-",
+      "value": {
+        "source_id": "source-retailer-vendor-manual-example",
+        "canonical_url": "https://supplier.example.com/vendor-requirements",
+        "final_url": "https://supplier.example.com/vendor-requirements",
+        "publisher_relation": "third_party",
+        "provenance": "discovered_public",
+        "medium": "website",
+        "access_boundary": "public_web",
+        "owner_hint": "retailer vendor requirement example fixture"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/observations/-",
+      "value": {
+        "observation_id": "observation-retailer-vendor-manual-example",
+        "run_id": "run-uq-us",
+        "source_id": "source-retailer-vendor-manual-example",
+        "capability": "source.open",
+        "concrete_tool": "fixture.static_source_open",
+        "observed_at": "2026-07-28",
+        "access_status": "opened",
+        "title": "Retailer vendor requirement example",
+        "raw_excerpt": "A retailer vendor manual may require supplier testing or audit documents for onboarding; this is a channel requirement and does not by itself establish a legal customs requirement.",
+        "page_or_dom_locator": "fixture-visible-excerpt",
+        "extraction_method": "fixture_static",
+        "language": "en",
+        "translation_status": "original"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/evidence_cards/-",
+      "value": {
+        "evidence_card_id": "card-us-textile-labeling-requirement",
+        "run_id": "run-uq-us",
+        "brief_version_id": "brief-uq-us-v1",
+        "producer_skill": "Skill C - 目的国准入与税费",
+        "reviewer_skill": "Skill F - 交付复核",
+        "field_domain": "目标国认证/准入要求",
+        "field_name": "美国纺织标签要求与渠道要求分列",
+        "current_value": "FTC 官方来源支持纺织标签要求需按产品范围核对；零售商 vendor manual 只作渠道/客户要求，不能写成美国法律或海关强制。",
+        "status": "verified",
+        "source_refs": [
+          {
+            "source_id": "source-us-ftc-textile-labeling",
+            "observation_id": "observation-us-ftc-textile-labeling",
+            "relation": "supports"
+          },
+          {
+            "source_id": "source-retailer-vendor-manual-example",
+            "observation_id": "observation-retailer-vendor-manual-example",
+            "relation": "contextual"
+          }
+        ],
+        "source_type": "official_labeling_guidance_plus_channel_context",
+        "source_locator": "FTC textile labeling guidance + retailer vendor manual fixture",
+        "source_date": "日期未见",
+        "observed_at": "2026-07-28",
+        "applicability_scope": "官方标签要求与渠道要求分列；实物标签仍需核验。",
+        "supports": [
+          "目标国法律/标签要求需要官方来源支持",
+          "渠道要求不能自动写成法律强制"
+        ],
+        "does_not_support": [
+          "不能写实物标签已合规",
+          "不能写零售商要求等于海关强制"
+        ],
+        "boundary_rule_ids": [
+          "EB-CERT-03",
+          "EB-CERT-05"
+        ],
+        "review_status": "passed"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-uq-cert-textile-labeling-channel-separated",
+        "sheet_name": "产品准入与合规要求",
+        "row_topic": "目标国认证/准入要求：纺织标签与渠道要求分列",
+        "user_visible_cells": {
+          "样本ID": "UQ-470177-US",
+          "要求项": "纺织标签 / 原产地标识 / 渠道供应商文件",
+          "要求类别": "labeling + channel_requirement",
+          "目的国/地区": "美国",
+          "目标国认证/准入要求结论": "conditionally_required",
+          "为什么可能需要": "纺织成衣进入美国销售通常要按产品范围核对标签信息；客户或零售渠道可能另有供应商测试/审厂文件。",
+          "触发条件": "纺织成衣、纤维成分、原产地标识、护理标签、销售渠道/客户规范",
+          "来源状态": "FTC 官方标签来源已打开；渠道要求只作客户准入参考",
+          "用户认证材料状态": "user_material_status_unknown",
+          "用户现在要补什么": "实物标签照片、BOM/辅料、客户或平台 vendor manual（如有）",
+          "不能推出什么": "网页字段不能替代实物标签已合规；渠道要求不能写成法律或海关强制。"
+        },
+        "status": "professional_confirmation_required",
+        "evidence_card_ids": [
+          "card-us-textile-labeling-requirement"
+        ],
+        "gap_ids": [
+          "gap-uq-label",
+          "gap-uq-bom"
+        ],
+        "conflict_ids": [],
+        "module_key": "destination_requirement",
+        "boundary_rule_ids": [
+          "EB-CERT-03",
+          "EB-CERT-05"
+        ],
+        "internal_refs_hidden": true,
+        "row_type": "destination_requirement",
+        "certification_requirement": {
+          "sample_id": "UQ-470177-US",
+          "requirement_name": "纺织标签与渠道供应商要求",
+          "requirement_family": "labeling",
+          "destination_country_or_region": "United States",
+          "candidate_hs_hts": "6205.20.20 candidate",
+          "applicability_status": "conditionally_required",
+          "trigger_conditions": [
+            "纺织成衣",
+            "纤维成分和原产地标识",
+            "实物标签和销售渠道"
+          ],
+          "accepted_evidence_or_documents": [
+            "physical label photos",
+            "BOM / trim composition",
+            "care label artwork",
+            "channel vendor manual if applicable"
+          ],
+          "user_material_status": "user_material_status_unknown",
+          "user_material_review_scope": [
+            "实物标签是否覆盖当前 SKU",
+            "成分、原产地、护理和 RN 信息",
+            "渠道文件是否仅为客户要求"
+          ],
+          "authority_source_refs": [
+            "source-us-ftc-textile-labeling"
+          ],
+          "source_authority_level": "primary_official",
+          "user_material_refs": [],
+          "limitation_note": "官方标签要求和渠道要求分列；本行不确认实物标签已合规。",
+          "cannot_conclude": [
+            "不能推出实物标签已合规",
+            "不能把渠道要求写成法律强制",
+            "不能推出最终归类"
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "extends": "market_pass_channel_requirement_separated_from_law.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/user_visible_cells/来源状态",
+      "value": "Amazon 平台要求该测试，所以这是美国法律强制和海关强制要求"
+    }
+  ]
+}

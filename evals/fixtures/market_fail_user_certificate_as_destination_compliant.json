@@ -1,0 +1,20 @@
+{
+  "extends": "market_pass_certification_requirement_destination_rule_split.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/matrix_rows/7/certification_requirement/user_material_status",
+      "value": "user_provided_needs_review"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/7/user_visible_cells/用户认证材料状态",
+      "value": "user_provided_needs_review"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/7/user_visible_cells/用户现在要补什么",
+      "value": "用户提供 CE 证书，因此美国认可，产品已合规，可以清关"
+    }
+  ]
+}

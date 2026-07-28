@@ -1,0 +1,10 @@
+{
+  "extends": "market_pass_certification_requirement_destination_rule_split.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/matrix_rows/7/user_visible_cells/来源状态",
+      "value": "已有 test report 测试报告，测试报告就是认证，可替代认证证书"
+    }
+  ]
+}

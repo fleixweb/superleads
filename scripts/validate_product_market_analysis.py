@@ -165,6 +165,78 @@ ORIGIN_PROOF_AUTHORITY_MARKERS = (
     "europa.eu", "eur-lex", "access2markets", "gov.uk", "税务海关", "海关",
     "主管部门", "官方", "official", "regulation", "rules of origin",
 )
+CERTIFICATION_REQUIREMENT_MARKERS = (
+    "certification", "certificate", "conformity", "compliance", "approval", "authorization",
+    "test report", "registration", "declaration of conformity", "doc", "labeling", "labelling",
+    "packaging", "import permit", "sds", "msds", "un38.3", "un 38.3", "fcc", "ul",
+    "ce", "fda", "cpsia", "reach", "rohs", "epr", "认证", "证书", "合格评定",
+    "测试报告", "检测报告", "注册", "备案", "标签", "标识", "包装", "进口许可",
+    "准入", "目的国要求", "目标国要求", "运输文件",
+)
+CERT_REQUIREMENT_COLUMN_MARKERS = (
+    "目标国认证/准入要求结论", "目标市场要求", "目标国要求", "目的国要求",
+    "准入要求结论", "认证要求结论", "applicability status", "destination requirement",
+)
+CERT_USER_MATERIAL_COLUMN_MARKERS = (
+    "用户认证材料状态", "用户材料状态", "用户现有材料", "用户当前材料状态",
+    "user material", "material status",
+)
+USER_CERT_MISSING_MARKERS = (
+    "用户未提供", "用户没有提供", "用户没提供", "未提供证书", "没有证书",
+    "未提供认证", "未提供测试报告", "user not provided", "user has not provided",
+    "no certificate provided", "no certification provided",
+)
+CERT_NOT_REQUIRED_PHRASES = (
+    "不需要认证", "无需认证", "不要求认证", "不需要证书", "无需证书",
+    "不需要测试报告", "无需测试报告", "不需要注册", "无需注册",
+    "certification not required", "certificate not required", "no certification required",
+    "test report not required", "registration not required",
+)
+USER_CERT_RULE_CONFLATION_PHRASES = (
+    "是否需要认证待用户提供", "是否需要证书待用户提供", "待用户提供后判断是否需要认证",
+    "待用户提供证书后判断是否需要", "用户没给所以待确认是否需要认证",
+    "用户未提供所以待确认是否需要认证", "没有证书无法分析需要什么认证",
+    "cannot analyze certification until user provides certificate",
+)
+CERT_ENTRY_MARKERS = (
+    "certificate download", "certificate page", "certificates", "download certificate",
+    "证书下载", "证书入口", "certificate 下载", "registration certificate",
+)
+CERT_ENTRY_PROMOTION_PHRASES = (
+    "已具备认证", "已获得认证", "已经认证", "认证齐全", "已合规", "完全合规",
+    "has certification", "certified", "fully compliant", "compliant for sale",
+)
+TEST_REPORT_MARKERS = (
+    "test report", "testing report", "laboratory report", "lab report", "检测报告", "测试报告", "实验室报告",
+)
+TEST_REPORT_AS_CERT_PHRASES = (
+    "等于认证", "就是认证", "视为认证", "替代认证", "作为认证证书", "已获得认证",
+    "equals certification", "is certification", "replaces certification", "certified",
+)
+CHANNEL_REQUIREMENT_MARKERS = (
+    "amazon", "walmart", "costco", "retailer", "platform", "seller requirement", "vendor manual",
+    "客户要求", "渠道要求", "平台要求", "零售商要求", "买家要求", "项目要求",
+)
+LEGAL_REQUIREMENT_PHRASES = (
+    "法律强制", "法规强制", "海关强制", "目标国强制要求", "必须依法", "进口法规要求",
+    "legally required", "customs mandatory", "mandatory by law", "regulatory requirement",
+)
+USER_CERT_FILE_MARKERS = (
+    "用户提供", "用户文件", "用户上传", "user provided", "user-provided", "uploaded certificate",
+    "用户证书", "用户测试报告",
+)
+DESTINATION_RECOGNITION_PHRASES = (
+    "目标国认可", "目的国认可", "美国认可", "欧盟认可", "已获目标市场认可", "产品已合规",
+    "可以销售", "可销售", "可以清关", "可清关", "recognized by destination",
+    "accepted by destination", "compliant for destination", "ready for customs clearance",
+)
+CERT_DETERMINATE_STATUSES = {"required", "conditionally_required", "normally_not_required", "not_applicable"}
+CERT_AUTHORITY_MARKERS = (
+    ".gov", "gov.", "government", "customs", "official", "regulation", "regulatory",
+    "authority", "agency", "cpsc", "fcc", "fda", "epa", "usda", "osha", "dot",
+    "phmsa", "cbp", "ftc", "europa.eu", "eur-lex", "access2markets", "gov.uk",
+    "主管部门", "官方", "海关", "法规", "法令", "标准机构", "认证主管", "市场监管",
+)
 SOURCE_OPEN_CAPABILITIES = {
     "source.open",
     "browser.render",
@@ -571,6 +643,106 @@ def _origin_record_has_authority(
     return False
 
 
+def _is_certification_requirement_row(row: dict[str, Any]) -> bool:
+    if row.get("row_type") in {"certification_requirement", "destination_requirement"}:
+        return True
+    if row.get("module_key") in {"certification_requirement", "destination_requirement"}:
+        return True
+    if isinstance(row.get("certification_requirement"), dict):
+        return True
+    cells = row.get("user_visible_cells")
+    if isinstance(cells, dict):
+        keys = list(cells)
+        return any(_contains_any(key, CERT_REQUIREMENT_COLUMN_MARKERS) for key in keys)
+    return False
+
+
+def _cert_requirement_record(row: dict[str, Any]) -> dict[str, Any]:
+    record = row.get("certification_requirement")
+    return record if isinstance(record, dict) else {}
+
+
+def _cert_requirement_status(row: dict[str, Any]) -> str:
+    record = _cert_requirement_record(row)
+    status = record.get("applicability_status")
+    if has_text(status):
+        return str(status)
+    cells = row.get("user_visible_cells")
+    if isinstance(cells, dict):
+        for key, value in cells.items():
+            if _contains_any(key, CERT_REQUIREMENT_COLUMN_MARKERS) and has_text(value):
+                return str(value)
+    return ""
+
+
+def _cert_user_material_status(row: dict[str, Any]) -> str:
+    record = _cert_requirement_record(row)
+    status = record.get("user_material_status")
+    if has_text(status):
+        return str(status)
+    cells = row.get("user_visible_cells")
+    if isinstance(cells, dict):
+        for key, value in cells.items():
+            if _contains_any(key, CERT_USER_MATERIAL_COLUMN_MARKERS) and has_text(value):
+                return str(value)
+    return ""
+
+
+def _cert_row_has_split_fields(row: dict[str, Any]) -> bool:
+    record = _cert_requirement_record(row)
+    if has_text(record.get("applicability_status")) and has_text(record.get("user_material_status")):
+        return True
+    cells = row.get("user_visible_cells")
+    if not isinstance(cells, dict):
+        return False
+    keys = list(cells)
+    has_rule = any(_contains_any(key, CERT_REQUIREMENT_COLUMN_MARKERS) for key in keys)
+    has_user = any(_contains_any(key, CERT_USER_MATERIAL_COLUMN_MARKERS) for key in keys)
+    return has_rule and has_user
+
+
+def _cert_record_authority_source_ids(record: dict[str, Any]) -> list[str]:
+    return [str(item) for item in as_list(record.get("authority_source_refs")) if has_text(item)]
+
+
+def _cert_source_looks_authoritative(source: dict[str, Any] | None, observations: list[dict[str, Any]]) -> bool:
+    if not isinstance(source, dict):
+        return False
+    source_text = text_of([
+        source.get("publisher_relation"),
+        source.get("provenance"),
+        source.get("medium"),
+        source.get("canonical_url"),
+        source.get("final_url"),
+        source.get("owner_hint"),
+    ])
+    observation_text = text_of([
+        obs.get("title") if isinstance(obs, dict) else None
+        for obs in observations
+    ] + [
+        obs.get("raw_excerpt") if isinstance(obs, dict) else None
+        for obs in observations
+    ])
+    return _contains_any([source_text, observation_text], CERT_AUTHORITY_MARKERS)
+
+
+def _cert_record_has_authority(
+    record: dict[str, Any],
+    ids: dict[str, dict[str, dict[str, Any]]],
+    observations_by_source: dict[str, list[dict[str, Any]]],
+) -> bool:
+    if record.get("source_authority_level") == "source_restricted":
+        return False
+    source_ids = _cert_record_authority_source_ids(record)
+    if not source_ids:
+        return False
+    for source_id in source_ids:
+        source = ids["sources"].get(source_id)
+        if _cert_source_looks_authoritative(source, observations_by_source.get(source_id, [])):
+            return True
+    return False
+
+
 def _observation_is_opened_source(obs: dict[str, Any]) -> bool:
     return obs.get("capability") in SOURCE_OPEN_CAPABILITIES and str(obs.get("access_status") or "") in OPENED_ACCESS_STATUSES
 
@@ -911,6 +1083,59 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
     for idx, row in enumerate(ensure_list(graph, "matrix_rows")):
         if isinstance(row, dict) and _contains_any(_row_text(row), GEO_MERGE_PHRASES):
             _add_issue(issues, "critical", "market_geo_roles_merged", "Matrix row merges export declaration, origin, departure, or destination roles", f"matrix_rows[{idx}]")
+
+    # Certification / destination-entry requirements must be destination-rule
+    # facts first, and user material readiness second.  The module helps users
+    # discover what the target market may require; it is not merely a user
+    # certificate upload review.
+    for idx, row in enumerate(ensure_list(graph, "matrix_rows")):
+        if not isinstance(row, dict) or not _is_certification_requirement_row(row):
+            continue
+        text = _row_text(row)
+        record = _cert_requirement_record(row)
+        requirement_status = _cert_requirement_status(row)
+        user_material_status = _cert_user_material_status(row)
+
+        if not _cert_row_has_split_fields(row):
+            _add_issue(issues, "critical", "market_certification_requirement_user_material_conflated", "Certification/destination requirement row must split target-market requirement status from user material status", f"matrix_rows[{idx}]")
+
+        user_missing = user_material_status in {"user_not_provided_but_required", "user_material_status_unknown", "user_material_not_requested_yet"} or _contains_any(text, USER_CERT_MISSING_MARKERS)
+        written_not_required = requirement_status == "normally_not_required" or _contains_positive_phrase(text, CERT_NOT_REQUIRED_PHRASES)
+        if user_missing and written_not_required and any(marker in norm(text) for marker in CAUSAL_MARKERS):
+            _add_issue(issues, "critical", "market_certification_requirement_user_material_conflated", "User missing certificate/test material was used to infer destination requirement is not required", f"matrix_rows[{idx}]")
+        if _contains_any(text, USER_CERT_RULE_CONFLATION_PHRASES):
+            _add_issue(issues, "critical", "market_certification_requirement_user_material_conflated", "Destination certification/entry requirement was made dependent on whether the user provided a file", f"matrix_rows[{idx}]")
+
+        if _contains_any(text, CERT_ENTRY_MARKERS) and _contains_positive_phrase(text, CERT_ENTRY_PROMOTION_PHRASES):
+            _add_issue(issues, "critical", "market_certificate_entry_promoted_to_certified", "Certificate download/page/entry was promoted to having certification or being compliant", f"matrix_rows[{idx}]")
+
+        if _contains_any(text, TEST_REPORT_MARKERS) and _contains_positive_phrase(text, TEST_REPORT_AS_CERT_PHRASES):
+            _add_issue(issues, "critical", "market_test_report_promoted_to_certification", "Test report was conflated with certification/approval", f"matrix_rows[{idx}]")
+
+        if _contains_any(text, CHANNEL_REQUIREMENT_MARKERS) and _contains_positive_phrase(text, LEGAL_REQUIREMENT_PHRASES):
+            _add_issue(issues, "critical", "market_channel_requirement_promoted_to_legal", "Channel/customer/platform requirement was promoted to law/customs mandatory requirement", f"matrix_rows[{idx}]")
+
+        if _contains_any(text, USER_CERT_FILE_MARKERS) and _contains_positive_phrase(text, DESTINATION_RECOGNITION_PHRASES):
+            _add_issue(issues, "critical", "market_user_certificate_promoted_to_destination_compliance", "User-provided certificate/test material was promoted to destination recognition or product compliance", f"matrix_rows[{idx}]")
+
+        if requirement_status in CERT_DETERMINATE_STATUSES and not _cert_record_has_authority(record, ids, observations_by_source):
+            _add_issue(issues, "critical", "market_certification_requirement_without_authority", "Determinate certification/destination requirement status needs official or authoritative destination-rule source refs", f"matrix_rows[{idx}].certification_requirement.authority_source_refs")
+
+    for idx, card in enumerate(ensure_list(graph, "evidence_cards")):
+        if not isinstance(card, dict):
+            continue
+        text = _card_text(card)
+        is_cert_card = _contains_any(text, CERTIFICATION_REQUIREMENT_MARKERS) or _contains_any([card.get("field_domain"), card.get("field_name")], ("认证", "准入", "测试报告", "标签", "注册", "certification", "destination requirement"))
+        if not is_cert_card:
+            continue
+        if _contains_any(text, CERT_ENTRY_MARKERS) and _contains_positive_phrase(text, CERT_ENTRY_PROMOTION_PHRASES):
+            _add_issue(issues, "critical", "market_certificate_entry_promoted_to_certified", "Evidence card promotes certificate entry/page to certification or compliance", f"evidence_cards[{idx}]")
+        if _contains_any(text, TEST_REPORT_MARKERS) and _contains_positive_phrase(text, TEST_REPORT_AS_CERT_PHRASES):
+            _add_issue(issues, "critical", "market_test_report_promoted_to_certification", "Evidence card conflates test report with certification/approval", f"evidence_cards[{idx}]")
+        if _contains_any(text, CHANNEL_REQUIREMENT_MARKERS) and _contains_positive_phrase(text, LEGAL_REQUIREMENT_PHRASES):
+            _add_issue(issues, "critical", "market_channel_requirement_promoted_to_legal", "Evidence card promotes channel/customer/platform requirement to law/customs mandatory requirement", f"evidence_cards[{idx}]")
+        if _contains_any(text, USER_CERT_FILE_MARKERS) and _contains_positive_phrase(text, DESTINATION_RECOGNITION_PHRASES):
+            _add_issue(issues, "critical", "market_user_certificate_promoted_to_destination_compliance", "Evidence card promotes user-provided certificate/test material to destination recognition or product compliance", f"evidence_cards[{idx}]")
 
     # COO / proof-of-origin requirements must be destination-rule facts first,
     # and user material readiness second.  One cannot be inferred from the

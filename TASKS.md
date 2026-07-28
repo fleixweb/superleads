@@ -14,18 +14,44 @@
 - `docs/validation/default-discovery-us-generator-aftermarket-run.md` 已记录当前默认发现受限状态
 - Code Slice U 三路线用户可见 Markdown 交付器已提交：`43f2ef7 Add Superleads Markdown delivery exporter`
 - Code Slice V README / Skill 使用说明 / 常用命令示例已提交：`8ea336a Document Superleads Markdown delivery usage`
-- Slice W 目的国认证 / 准入要求判断纠偏已完成文档与 Skill 说明更新，待提交
+- Slice W 目的国认证 / 准入要求判断纠偏已提交：`8f6703a Calibrate product market certification requirements`
+- Code Slice X 认证 / 目的国准入要求防错闭环已完成 schema / validator / fixtures / 验证记录与完整回归，market `50/50`、default `91/91`、deep `637/637`、all `677/677`，待提交
 
 ## 当前下一步
 
-1. 先提交 Slice W 当前文档变更。
-2. 提交后建议进入 Code Slice X：schema / validator / fixtures 增加 `certification_requirement` / `destination_requirement` 防错规则。
+1. 提交 Code Slice X 当前变更。
+2. 提交后建议进入 Code Slice Y：认证 / 目的国准入要求的 Markdown / CSV 人话展示优化。
 3. Code Slice N 暂缓，除非先证明它能改善用户可见交付。
 
 ## 当前阻塞
 
 - 真实默认发现仍受能力限制：`search.web=unknown`、`source.open=available`。
 - 没有可记录的真实搜索/打开来源能力时，默认发现只能停在计划或样本池层；不能伪造 SearchLog / Source / Observation。
+
+## 产品出海市场分析：Code Slice X 认证 / 目的国准入要求防错规则
+
+- 已更新 schema：新增 `DestinationRequirementStatus`、`CertificationUserMaterialStatus`、`RequirementFamily`、`SourceAuthorityLevel`、`CertificationRequirementRecord`，并允许矩阵行挂载 `certification_requirement`。
+- 已更新 validator，新增错误码：
+  - `market_certification_requirement_user_material_conflated`
+  - `market_certificate_entry_promoted_to_certified`
+  - `market_test_report_promoted_to_certification`
+  - `market_channel_requirement_promoted_to_legal`
+  - `market_user_certificate_promoted_to_destination_compliance`
+  - `market_certification_requirement_without_authority`
+- 已新增 2 个 pass fixture：
+  - `market_pass_certification_requirement_destination_rule_split.json`
+  - `market_pass_channel_requirement_separated_from_law.json`
+- 已新增 6 个 fail fixture：
+  - `market_fail_user_missing_certificate_as_not_required.json`
+  - `market_fail_certificate_entry_as_certified.json`
+  - `market_fail_test_report_as_certification.json`
+  - `market_fail_channel_requirement_as_legal_mandatory.json`
+  - `market_fail_user_certificate_as_destination_compliant.json`
+  - `market_fail_certification_requirement_without_official_source.json`
+- 已更新 `evals/cases/product_market_analysis_cases.json`，market case 总数为 50。
+- 已新增验证记录：`docs/validation/product-market-analysis-code-slice-x-certification-requirement-20260728.md`。
+- 已验证：`python3 evals/run_product_market_analysis_evals.py --suite all` = `50/50`；`python3 evals/run_evals.py --suite default` = `91/91`；`deep` = `637/637`；`all` = `677/677`；`git diff --check` 通过。
+- 当前下一步：提交 Code Slice X。
 
 ## 产品出海市场分析
 

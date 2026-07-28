@@ -1,0 +1,20 @@
+{
+  "extends": "market_pass_certification_requirement_destination_rule_split.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/matrix_rows/7/certification_requirement/authority_source_refs",
+      "value": []
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/7/certification_requirement/source_authority_level",
+      "value": "unknown"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/7/user_visible_cells/来源状态",
+      "value": "未见官方来源，但写成目标国要求结论"
+    }
+  ]
+}

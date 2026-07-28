@@ -1,0 +1,157 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "append",
+      "path": "/sources/-",
+      "value": {
+        "source_id": "source-us-dot-lithium-battery-transport",
+        "canonical_url": "https://www.phmsa.dot.gov/lithiumbatteries",
+        "final_url": "https://www.phmsa.dot.gov/lithiumbatteries",
+        "publisher_relation": "first_party",
+        "provenance": "discovered_public",
+        "medium": "website",
+        "access_boundary": "public_web",
+        "owner_hint": "U.S. Department of Transportation PHMSA official lithium battery transport guidance"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/observations/-",
+      "value": {
+        "observation_id": "observation-us-dot-lithium-battery-transport",
+        "run_id": "run-xh-us",
+        "source_id": "source-us-dot-lithium-battery-transport",
+        "capability": "source.open",
+        "concrete_tool": "fixture.static_source_open",
+        "observed_at": "2026-07-28",
+        "access_status": "opened",
+        "title": "PHMSA lithium battery transport guidance",
+        "raw_excerpt": "Official guidance describes lithium battery transportation requirements and references testing, classification, packaging, hazard communication, and transport-document obligations depending on battery type and shipment scenario.",
+        "page_or_dom_locator": "fixture-visible-excerpt",
+        "extraction_method": "fixture_static",
+        "language": "en",
+        "translation_status": "original"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/evidence_cards/-",
+      "value": {
+        "evidence_card_id": "card-us-lithium-transport-requirement",
+        "run_id": "run-xh-us",
+        "brief_version_id": "brief-xh-us-v1",
+        "producer_skill": "Skill C - 目的国准入与税费",
+        "reviewer_skill": "Skill F - 交付复核",
+        "field_domain": "目标国认证/准入要求",
+        "field_name": "锂电运输测试与文件要求",
+        "current_value": "美国官方来源显示锂电运输要求会按电池类型、Wh、单独运输/随设备等场景触发测试、包装、标识和运输文件；用户未提供 UN38.3/SDS 只是材料缺口，不代表目标市场不要求。",
+        "status": "verified",
+        "source_refs": [
+          {
+            "source_id": "source-us-dot-lithium-battery-transport",
+            "observation_id": "observation-us-dot-lithium-battery-transport",
+            "relation": "supports"
+          }
+        ],
+        "source_type": "official_transport_guidance",
+        "source_locator": "PHMSA official lithium battery transport guidance fixture excerpt",
+        "source_date": "日期未见",
+        "observed_at": "2026-07-28",
+        "applicability_scope": "仅支持锂电运输要求存在触发条件；具体文件清单需按实物、包装和运输场景确认。",
+        "supports": [
+          "目标国/运输规则和用户材料状态应分列",
+          "用户未提供文件不能反推目标国不要求"
+        ],
+        "does_not_support": [
+          "不能写产品已合规",
+          "不能写可普通货运输",
+          "不能替代承运人/报关专业确认"
+        ],
+        "boundary_rule_ids": [
+          "EB-CERT-01",
+          "EB-CERT-02",
+          "EB-CERT-07"
+        ],
+        "review_status": "passed"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-xh-cert-lithium-transport-requirement",
+        "sheet_name": "产品准入与合规要求",
+        "row_topic": "目标国认证/准入要求：锂电运输测试与文件",
+        "user_visible_cells": {
+          "样本ID": "XH-48V20AH-US",
+          "要求项": "锂电运输测试与文件",
+          "要求类别": "transport_document",
+          "目的国/地区": "美国",
+          "目标国认证/准入要求结论": "conditionally_required",
+          "为什么可能需要": "产品为 LiFePO4 电池包，960 Wh，单独运输/随设备/装入设备会影响运输文件、包装和标识路径。",
+          "触发条件": "锂电池类型、Wh、包装方式、是否随设备、运输方式、承运人规则",
+          "来源状态": "官方运输主管来源已打开；具体适用仍需按订单和包装确认",
+          "用户认证材料状态": "user_not_provided_but_required",
+          "用户现在要补什么": "对应型号 UN38.3、SDS、包装说明、净重、运输场景说明",
+          "不能推出什么": "不能因为用户没给文件就写目标国不需要；不能写已合规、可普通货或可直接快递。"
+        },
+        "status": "professional_confirmation_required",
+        "evidence_card_ids": [
+          "card-us-lithium-transport-requirement"
+        ],
+        "gap_ids": [
+          "gap-xh-un38",
+          "gap-xh-sds"
+        ],
+        "conflict_ids": [],
+        "module_key": "certification_requirement",
+        "boundary_rule_ids": [
+          "EB-CERT-01",
+          "EB-CERT-02",
+          "EB-CERT-07"
+        ],
+        "internal_refs_hidden": true,
+        "row_type": "certification_requirement",
+        "certification_requirement": {
+          "sample_id": "XH-48V20AH-US",
+          "requirement_name": "锂电运输测试与文件",
+          "requirement_family": "transport_document",
+          "destination_country_or_region": "United States",
+          "candidate_hs_hts": "8507.60.00 candidate",
+          "applicability_status": "conditionally_required",
+          "trigger_conditions": [
+            "锂电池包",
+            "960 Wh",
+            "单独运输/随设备/装入设备",
+            "运输方式和包装方式"
+          ],
+          "accepted_evidence_or_documents": [
+            "UN38.3 test summary/report",
+            "SDS",
+            "lithium battery transport declaration or shipper instructions",
+            "packaging information"
+          ],
+          "user_material_status": "user_not_provided_but_required",
+          "user_material_review_scope": [
+            "型号 BAT001.02 / 48V20Ah 是否覆盖",
+            "报告版本和签发日期",
+            "包装方式和运输场景",
+            "承运人接受条件"
+          ],
+          "authority_source_refs": [
+            "source-us-dot-lithium-battery-transport"
+          ],
+          "source_authority_level": "primary_official",
+          "user_material_refs": [],
+          "limitation_note": "本行只说明目标市场/运输规则存在条件性要求；不构成最终合规或承运承诺。",
+          "cannot_conclude": [
+            "不能推出产品已合规",
+            "不能推出目标国不需要文件",
+            "不能推出可普通货运输"
+          ]
+        }
+      }
+    }
+  ]
+}

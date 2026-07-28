@@ -419,7 +419,8 @@
         "boundary_rule_ids": {"$ref": "#/$defs/IdRefs"},
         "internal_refs_hidden": {"type": "boolean"},
         "row_type": {"$ref": "#/$defs/MatrixRowType"},
-        "origin_proof_requirement": {"$ref": "#/$defs/OriginProofRequirementRecord"}
+        "origin_proof_requirement": {"$ref": "#/$defs/OriginProofRequirementRecord"},
+        "certification_requirement": {"$ref": "#/$defs/CertificationRequirementRecord"}
       }
     },
     "GapRecord": {
@@ -536,6 +537,8 @@
         "seasonality",
         "compliance_requirement",
         "origin_proof_requirement",
+        "certification_requirement",
+        "destination_requirement",
         "import_tax",
         "export_requirement",
         "logistics_node",
@@ -571,6 +574,92 @@
         "authority_source_refs": {"$ref": "#/$defs/IdRefs"},
         "user_material_refs": {"$ref": "#/$defs/IdRefs"},
         "limitation_note": {"type": "string", "minLength": 1}
+      }
+    },
+    "DestinationRequirementStatus": {
+      "type": "string",
+      "enum": [
+        "required",
+        "conditionally_required",
+        "normally_not_required",
+        "not_applicable",
+        "unable_to_verify",
+        "not_executed"
+      ]
+    },
+    "CertificationUserMaterialStatus": {
+      "type": "string",
+      "enum": [
+        "user_material_not_requested_yet",
+        "user_material_status_unknown",
+        "user_not_provided_but_required",
+        "user_not_provided_and_not_required_for_current_scenario",
+        "user_provided_needs_review",
+        "user_provided_valid_for_scope",
+        "user_provided_not_valid_for_scope"
+      ]
+    },
+    "RequirementFamily": {
+      "type": "string",
+      "enum": [
+        "certification",
+        "test_report",
+        "registration",
+        "labeling",
+        "packaging",
+        "import_permit",
+        "transport_document",
+        "channel_requirement",
+        "other"
+      ]
+    },
+    "SourceAuthorityLevel": {
+      "type": "string",
+      "enum": [
+        "primary_official",
+        "secondary_official",
+        "standards_body",
+        "certification_body_reference",
+        "professional_reference",
+        "channel_official",
+        "source_restricted",
+        "unknown"
+      ]
+    },
+    "CertificationRequirementRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sample_id",
+        "requirement_name",
+        "requirement_family",
+        "destination_country_or_region",
+        "applicability_status",
+        "trigger_conditions",
+        "accepted_evidence_or_documents",
+        "user_material_status",
+        "user_material_review_scope",
+        "authority_source_refs",
+        "source_authority_level",
+        "limitation_note",
+        "cannot_conclude"
+      ],
+      "properties": {
+        "sample_id": {"type": "string", "minLength": 1},
+        "requirement_name": {"type": "string", "minLength": 1},
+        "requirement_family": {"$ref": "#/$defs/RequirementFamily"},
+        "destination_country_or_region": {"type": "string", "minLength": 1},
+        "candidate_hs_hts": {"type": ["string", "null"]},
+        "applicability_status": {"$ref": "#/$defs/DestinationRequirementStatus"},
+        "trigger_conditions": {"$ref": "#/$defs/StringList"},
+        "accepted_evidence_or_documents": {"$ref": "#/$defs/StringList"},
+        "user_material_status": {"$ref": "#/$defs/CertificationUserMaterialStatus"},
+        "user_material_review_scope": {"$ref": "#/$defs/StringList"},
+        "authority_source_refs": {"$ref": "#/$defs/IdRefs"},
+        "source_authority_level": {"$ref": "#/$defs/SourceAuthorityLevel"},
+        "user_material_refs": {"$ref": "#/$defs/IdRefs"},
+        "limitation_note": {"type": "string", "minLength": 1},
+        "cannot_conclude": {"$ref": "#/$defs/StringList"}
       }
     }
   },

@@ -1,5 +1,5 @@
 {
-  "description": "Product outbound market analysis Code Slice A-J fixtures. Use scripts/validate_product_market_analysis.py, scripts/audit_product_market_analysis.py, scripts/export_product_market_workbook.py, and source plan runner; existing evals/run_evals.py intentionally ignores market_* fields.",
+  "description": "Product outbound market analysis Code Slice A-X fixtures. Use scripts/validate_product_market_analysis.py, scripts/audit_product_market_analysis.py, scripts/export_product_market_workbook.py, and source plan runner; existing evals/run_evals.py intentionally ignores market_* fields.",
   "validator": "scripts/validate_product_market_analysis.py",
   "cases": [
     {
@@ -1254,6 +1254,240 @@
       "expected_error_codes": [
         "market_query_plan_or_searchlog_promoted",
         "market_evidence_without_open_observation"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip",
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_pass_certification_requirement_destination_rule_split.json",
+      "market_validate": "pass",
+      "market_audit": "pass",
+      "market_export_csv": "pass",
+      "market_export_markdown": "pass",
+      "market_export_present": [
+        "目标国认证/准入要求：锂电运输测试与文件",
+        "目标国认证/准入要求结论",
+        "conditionally_required",
+        "用户认证材料状态",
+        "user_not_provided_but_required",
+        "不能因为用户没给文件就写目标国不需要",
+        "不能写已合规"
+      ],
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_pass_channel_requirement_separated_from_law.json",
+      "market_validate": "pass",
+      "market_audit": "pass",
+      "market_export_csv": "pass",
+      "market_export_markdown": "pass",
+      "market_export_present": [
+        "目标国认证/准入要求：纺织标签与渠道要求分列",
+        "FTC 官方标签来源已打开",
+        "渠道要求只作客户准入参考",
+        "渠道要求不能写成法律或海关强制",
+        "用户认证材料状态"
+      ],
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_fail_user_missing_certificate_as_not_required.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_certification_requirement_user_material_conflated"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip",
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_fail_certificate_entry_as_certified.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_certificate_entry_promoted_to_certified"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip",
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_fail_test_report_as_certification.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_test_report_promoted_to_certification"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip",
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_fail_channel_requirement_as_legal_mandatory.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_channel_requirement_promoted_to_legal"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip",
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_fail_user_certificate_as_destination_compliant.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_user_certificate_promoted_to_destination_compliance"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip",
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_fail_certification_requirement_without_official_source.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_certification_requirement_without_authority"
       ],
       "market_audit": "fail",
       "market_export_csv": "fail",

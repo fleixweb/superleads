@@ -1,8 +1,8 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：`8ea336a Document Superleads Markdown delivery usage`
-- 当前工作树：Slice W（目的国认证 / 准入要求判断纠偏）已完成文档与 Skill 说明更新，待用户确认后提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：`8f6703a Calibrate product market certification requirements`
+- 当前工作树：Code Slice X（认证 / 目的国准入要求防错闭环）已完成 schema / validator / fixtures / 验证记录与完整回归，待提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已验证
 
@@ -10,7 +10,7 @@
 - collection merge：`7/7`
 - source collection：`6/6`
 - source-plan：`6/6`
-- market：`42/42`
+- market：`50/50`
 - 用户可见输出静态套件：`6/6`
 - 三路线 Markdown 交付器套件：`4/4`
 - Code Slice V Skill 快速校验：4 个 Skill 均 valid
@@ -23,14 +23,24 @@
 
 ## 当前结论
 
-Code Slice A-M 的产品出海市场分析底层链路稳定；Slice R/S/T 已把 Superleads 校准回批量客户开发、单一客户背调、产品出海市场分析三条外贸业务路线；Code Slice U 已把三条路线接成统一 Markdown 交付器；Code Slice V 已把 Markdown 交付器写入 README、Skill 使用说明和常用命令文档；Slice W 已把“认证”纠偏为目标市场准入要求判断，而不是等用户提供证书。当前真实默认发现仍需要可记录的搜索/打开来源能力；没有时停在计划、样本池或已审核投影渲染层。
+Code Slice A-M 的产品出海市场分析底层链路稳定；Slice R/S/T 已把 Superleads 校准回批量客户开发、单一客户背调、产品出海市场分析三条外贸业务路线；Code Slice U 已把三条路线接成统一 Markdown 交付器；Code Slice V 已把 Markdown 交付器写入 README、Skill 使用说明和常用命令文档；Slice W 已把“认证”纠偏为目标市场准入要求判断，而不是等用户提供证书；Code Slice X 已把该口径落入 schema / validator / fixtures，防止用户材料状态反推目标国要求。当前真实默认发现仍需要可记录的搜索/打开来源能力；没有时停在计划、样本池或已审核投影渲染层。
 
 ## 下一步
 
-1. 优先提交 Slice W 当前文档变更。
-2. 提交后建议进入 Code Slice X：schema / validator / fixtures 增加 `certification_requirement` / `destination_requirement` 防错规则。
-3. 暂缓 Code Slice N（EvidenceCard 草稿前人工复核队列），除非它能绑定明确用户可见收益。
-4. 保留 `tmp/stage5_chillys/`，不要清理。
+1. 提交 Code Slice X 当前变更。
+2. 提交后建议进入 Code Slice Y：认证 / 准入要求在 Markdown / CSV 中的人话展示优化。
+4. 暂缓 Code Slice N（EvidenceCard 草稿前人工复核队列），除非它能绑定明确用户可见收益。
+5. 保留 `tmp/stage5_chillys/`，不要清理。
+
+## 产品出海市场分析 Code Slice X：认证 / 目的国准入要求防错闭环
+
+- 2026-07-28 已把 Slice W 落到代码层：`shared/schemas/product-market-analysis.schema.json` 新增 `certification_requirement` 专门结构，`MatrixRowType` 增加 `certification_requirement` / `destination_requirement`。
+- `scripts/validate_product_market_analysis.py` 新增 6 个认证 / 准入防错错误码：`market_certification_requirement_user_material_conflated`、`market_certificate_entry_promoted_to_certified`、`market_test_report_promoted_to_certification`、`market_channel_requirement_promoted_to_legal`、`market_user_certificate_promoted_to_destination_compliance`、`market_certification_requirement_without_authority`。
+- 新增 2 个 pass fixture：锂电运输测试与文件要求按目标国规则和用户材料状态分列；纺织标签官方要求与渠道/客户要求分列。
+- 新增 6 个 fail fixture：用户没给证书被写成不需要认证、证书入口升级已认证、测试报告当认证、渠道要求当法律强制、用户证书升级目标国认可/已合规/可清关、确定性准入要求无官方/权威来源。
+- `evals/cases/product_market_analysis_cases.json` 已扩展到 50 个 market case；已验证 `python3 evals/run_product_market_analysis_evals.py --suite all` = `50/50`。
+- 验证记录：`docs/validation/product-market-analysis-code-slice-x-certification-requirement-20260728.md`。
+- 边界：本轮使用静态 fixture，不联网核验真实美国/欧盟/其它国家的最新法规；导出器仍只搬运已审矩阵，不补认证事实、不判断是否值得进入。
 
 ## 产品出海市场分析补充状态
 
