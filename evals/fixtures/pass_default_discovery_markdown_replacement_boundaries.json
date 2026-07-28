@@ -1,0 +1,30 @@
+{
+  "extends": "pass_default_discovery_candidate_pool.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/candidates/0/name",
+      "value": "The Telegraph Photograph paragraph evaluation"
+    },
+    {
+      "op": "replace",
+      "path": "/candidates/0/company_name",
+      "value": "The Telegraph Photograph paragraph evaluation"
+    },
+    {
+      "op": "replace",
+      "path": "/candidates/0/next_verification_steps/0",
+      "value": "review graph eval EvidenceCard wording while preserving The Telegraph Photograph paragraph evaluation"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/canonical_url",
+      "value": "https://telegraph-boundary.example/products"
+    },
+    {
+      "op": "replace",
+      "path": "/sources/0/final_url",
+      "value": "https://telegraph-boundary.example/products"
+    }
+  ]
+}

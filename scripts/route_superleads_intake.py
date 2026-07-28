@@ -14,28 +14,35 @@ from typing import Any
 COUNTRY_HINTS = (
     "美国", "德国", "加拿大", "英国", "法国", "意大利", "西班牙", "越南", "中国", "日本",
     "韩国", "澳大利亚", "欧盟", "墨西哥", "巴西", "印度", "土耳其", "沙特", "阿联酋",
+    "中东", "东南亚", "南美", "北美", "非洲",
     "united states", "usa", "u.s.", "america", "germany", "canada", "uk", "eu",
     "european union", "vietnam", "china", "japan", "korea", "australia", "mexico",
 )
 MARKET_MARKERS = (
-    "产品出海市场分析", "出海市场", "出口", "进入", "市场", "趋势", "google trends",
-    "价格", "淡旺季", "节假日", "认证", "包装", "标签", "准入", "关税", "税率",
+    "产品出海市场分析", "出海市场", "分析市场", "市场分析", "出口要求", "进入门槛",
+    "进入要求", "进口要求", "趋势", "google trends",
+    "淡旺季", "节假日", "认证", "标签要求", "包装要求", "准入", "关税", "税率",
     "物流", "运输", "海运", "空运", "快递", "铁路", "陆运", "散杂", "滚装",
-    "coo", "原产地证书", "原产地证明", "proof of origin", "商检", "检验检疫",
+    "sds", "un38.3", "un 38.3", "msds", "coo", "原产地证书", "原产地证明", "proof of origin", "商检", "检验检疫",
     "出口管制", "外部因素",
 )
 MARKET_FACT_DOMAIN_MARKERS = (
     "产品出海市场分析", "出海市场", "分析市场", "趋势", "google trends",
-    "能不能做", "好不好卖", "市场怎么样",
-    "价格", "淡旺季", "节假日", "认证", "包装", "标签", "准入", "关税", "税率",
+    "能不能做", "好不好卖", "市场怎么样", "要不要", "需不需要", "是否需要",
+    "淡旺季", "节假日", "认证", "标签要求", "包装要求", "准入", "关税", "税率",
     "物流", "运输", "海运", "空运", "快递", "铁路", "陆运", "散杂", "滚装",
-    "coo", "原产地证书", "原产地证明", "proof of origin", "商检", "检验检疫",
+    "sds", "un38.3", "un 38.3", "msds", "coo", "原产地证书", "原产地证明", "proof of origin", "商检", "检验检疫",
     "出口管制", "外部因素",
 )
 CUSTOMER_MARKERS = (
     "找客户", "找买家", "找进口商", "开发客户", "客户名单", "买家名单", "进口商名单",
-    "客户", "买家", "进口商", "采购商",
-    "leads", "lead list", "buyers", "importers", "prospects",
+    "客户", "买家", "进口商", "采购商", "开发", "经销商", "批发商", "零售商",
+    "代理商", "渠道商", "分销商", "连锁", "维修商", "服务商", "零件渠道",
+    "经销", "批发", "零售", "代理",
+    "leads", "lead list", "buyers", "importers", "prospects", "distributor",
+    "distributors", "wholesaler", "wholesalers", "retailer", "retailers",
+    "dealer", "dealers", "reseller", "resellers", "agent", "agents",
+    "chain", "chains", "service company", "repair shop", "repair companies",
 )
 BACKGROUND_MARKERS = (
     "背调", "客户背调", "背景调查", "调查一下", "尽调", "due diligence", "background check",
@@ -43,7 +50,9 @@ BACKGROUND_MARKERS = (
 TABLE_MARKERS = ("客户表", "客户名单表", "excel", "csv", "表格补全", "补全表格", "补全已有")
 PRODUCT_MARKERS = (
     "产品", "型号", "电池", "锂电", "纺织", "衬衫", "面料", "化工", "农产品", "机械",
-    "steel", "battery", "textile", "fabric", "shirt", "product",
+    "配件", "零件", "汽车配件", "户外家具", "柴油发电机", "发电机",
+    "steel", "battery", "textile", "fabric", "shirt", "product", "parts",
+    "accessories", "furniture", "generator",
 )
 
 
@@ -54,6 +63,18 @@ def norm(value: str) -> str:
 def contains_any(text: str, markers: tuple[str, ...]) -> bool:
     haystack = norm(text)
     return any(marker.casefold() in haystack for marker in markers)
+
+
+def _has_compliance_question(text: str) -> bool:
+    low = norm(text)
+    fact = contains_any(text, MARKET_FACT_DOMAIN_MARKERS)
+    asks_need = any(marker in low for marker in ("要不要", "需不需要", "是否需要", "需要什么", "要求是什么", "到底要不要"))
+    compliance_objects = any(marker in low for marker in (
+        "sds", "un38.3", "un 38.3", "msds", "认证", "准入", "标签要求", "包装要求",
+        "关税", "税率", "coo", "原产地证书", "原产地证明", "商检", "检验检疫",
+        "出口管制", "物流", "运输", "海运", "空运", "快递",
+    ))
+    return fact and (asks_need or compliance_objects)
 
 
 def _target_hint(text: str) -> str:
@@ -117,6 +138,8 @@ def classify(text: str) -> dict[str, Any]:
     has_product = contains_any(text, PRODUCT_MARKERS)
     has_country = contains_any(text, COUNTRY_HINTS)
     direct_market = "产品出海市场分析" in text
+    fact_market_question = contains_any(text, MARKET_FACT_DOMAIN_MARKERS)
+    compliance_question = _has_compliance_question(text)
 
     if has_background and not direct_market:
         return {
@@ -142,11 +165,25 @@ def classify(text: str) -> dict[str, Any]:
             ],
         }
 
+    if compliance_question and not direct_market:
+        missing_fields: list[str] = []
+        if not has_country:
+            missing_fields.append("target_country_or_region")
+        if not has_product:
+            missing_fields.append("product_identity")
+        return {
+            "route": "product_outbound_market_analysis",
+            "next_skill": "analyzing-product-outbound-market",
+            "split_customer_development": False,
+            "missing_fields": missing_fields,
+            "response_lines": _market_response(text, False),
+        }
+
     if has_customer and not direct_market:
         # Customer words have priority unless the user also asks for explicit
         # market/compliance/tax/logistics analysis; “找美国锂电池进口商客户”
         # is customer development, while “分析市场然后找客户” is split-stage.
-        if not contains_any(text, MARKET_FACT_DOMAIN_MARKERS):
+        if not fact_market_question:
             return {
                 "route": "bulk_customer_development",
                 "next_skill": "scoping-lead-research",
@@ -158,7 +195,7 @@ def classify(text: str) -> dict[str, Any]:
                 ],
             }
 
-    if direct_market or (has_market and (has_product or has_country)):
+    if direct_market or ((has_market or fact_market_question) and (has_product or has_country)):
         missing_fields: list[str] = []
         if not has_country:
             missing_fields.append("target_country_or_region")

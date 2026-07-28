@@ -30,6 +30,32 @@
       ]
     },
     {
+      "name": "bulk generated Markdown replacement boundaries",
+      "fixture": "evals/fixtures/pass_default_discovery_markdown_replacement_boundaries.json",
+      "route": "auto",
+      "expected_route": "bulk_customer_development",
+      "expected": "pass",
+      "min_tables": 3,
+      "must_contain": [
+        "The Telegraph",
+        "Photograph",
+        "paragraph",
+        "evaluation",
+        "资料包",
+        "检查",
+        "证据记录"
+      ],
+      "must_not_contain": [
+        "The Tele资料包",
+        "Photo资料包",
+        "para资料包",
+        "检查uation",
+        "EvidenceCard",
+        " graph ",
+        " eval "
+      ]
+    },
+    {
       "name": "customer background generated Markdown",
       "fixture": "evals/fixtures/pass_customer_background_chillys_markdown.json",
       "route": "auto",
@@ -69,14 +95,16 @@
         "出口申报国",
         "原产国 / 制造来源",
         "实际起运地 / 起运港",
-        "Google Trends",
-        "未执行",
+        "产品档案与触发项",
+        "长期需求与搜索趋势",
+        "产品准入与合规要求",
+        "进口税费",
+        "运输方式、路线、港口与申报节点",
+        "信息来源与待确认事项",
         "候选 HTSUS",
-        "COO / 原产地证明",
-        "海运拼箱",
-        "国际快递",
-        "待补材料清单",
-        "不能因用户未提供 COO 就写“不需要”"
+        "UN38.3",
+        "SDS",
+        "不能"
       ],
       "must_not_contain": [
         "候选客户池",
@@ -88,7 +116,10 @@
         "最佳路线",
         "承诺交期",
         "EvidenceCard",
-        "SearchLog"
+        "SearchLog",
+        "运输方式补充：海运拼箱 / 国际快递",
+        "| 海运拼箱 | 待确认 |",
+        "| 国际快递 | 待确认 |"
       ]
     },
     {

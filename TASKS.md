@@ -2,372 +2,57 @@
 
 ## 已完成
 
-- `python3 evals/run_evals.py --suite default` 通过
-- `python3 evals/run_evals.py --suite deep` 通过
-- `python3 evals/run_evals.py --suite all` 通过
-- 产品出海市场分析 Code Slice A-M 已完成，最新验证记录为 collection pipeline `7/7`、collection merge `7/7`、source collection `6/6`、source-plan `6/6`、market `42/42`
-- Slice R 产品内核复盘已完成，确认 Superleads 是外贸业务情报产品，不是通用工作流框架
-- Slice S 三路线真实外贸样本已完成，确认批量客户开发、单一客户背调、产品出海市场分析三条用户可见交付能分清
-- Slice T 用户可见输出合同与静态 eval 已完成，用户可见输出 `6/6`，主套件 default `90/90`、deep `636/636`、all `676/676`
-- `source.open` 公开 GET 烟测已恢复（`https://example.com`，`200`）
-- `tmp/stage5_chillys/` 的 Chilly's 真实背调样本已验证可导出
-- `docs/validation/default-discovery-us-generator-aftermarket-run.md` 已记录当前默认发现受限状态
-- Code Slice U 三路线用户可见 Markdown 交付器已提交：`43f2ef7 Add Superleads Markdown delivery exporter`
-- Code Slice V README / Skill 使用说明 / 常用命令示例已提交：`8ea336a Document Superleads Markdown delivery usage`
-- Slice W 目的国认证 / 准入要求判断纠偏已提交：`8f6703a Calibrate product market certification requirements`
-- Code Slice X 认证 / 目的国准入要求防错闭环已完成 schema / validator / fixtures / 验证记录与完整回归，market `50/50`、default `91/91`、deep `637/637`、all `677/677`，待提交
+- 产品出海市场分析 Slice 1-13 及 Code Slice A-M 已完成。
+- Slice R 产品内核复盘已完成，确认 Superleads 是外贸业务情报产品，不是通用工作流框架。
+- Slice S 三路线真实外贸样本已完成。
+- Slice T 用户可见输出合同与静态 eval 已完成。
+- Code Slice U 三路线用户可见 Markdown 交付器已提交：`43f2ef7 Add Superleads Markdown delivery exporter`。
+- Code Slice V README / Skill 使用说明 / 常用命令示例已提交：`8ea336a Document Superleads Markdown delivery usage`。
+- Slice W 目的国认证 / 准入要求判断纠偏已提交：`8f6703a Calibrate product market certification requirements`。
+- Code Slice X 认证 / 目的国准入要求防错闭环已提交：`85197d7 Add certification requirement guardrails`。
+- Slice AA 弱证据外贸场景校准已完成：`spec/30-superleads-weak-evidence-calibration.md`。
+- Code Slice AA 用户交付污染 bug + 路由器修复已完成并通过回归，待提交。
+
+## Code Slice AA 已完成内容
+
+1. `scripts/export_superleads_markdown.py`
+   - 内部术语替换加英文词边界；不破坏 `The Telegraph`、`Photograph`、`paragraph`、`evaluation`。
+   - 支持 lead fixture 的 `extends/patches` 最小解析。
+   - 停止为了过固定合同而补 Google Trends / COO / 海运拼箱 / 国际快递 / 待补材料清单样板段。
+2. `scripts/validate_superleads_user_visible_output.py`
+   - 黑名单检查支持否定语境豁免。
+   - 英文内部词 `graph` / `eval` 不再命中普通单词内部。
+   - 正向违规如“建议进入”“推荐客户”“采购概率 80%”“候选税号就是最终税率”仍失败。
+3. `scripts/route_superleads_intake.py`
+   - 增加经销商、批发商、零售商、代理商、连锁、维修商、distributor、wholesaler、retailer、dealer、reseller、service company 等真实外贸客户词。
+   - “客户问我要 SDS / UN38.3 / 认证 / 关税 / 物流要求”进入产品出海市场分析。
+   - “后市场”“中性包装”不再因 `市场` / `包装` substring 被误判。
+4. evals
+   - `evals/cases/superleads_route_cases.json` 路由 case 扩展到 11 条。
+   - `evals/cases/superleads_user_visible_output_cases.json` 用户可见 case 扩展到 8 条。
+   - `evals/cases/superleads_markdown_delivery_cases.json` Markdown delivery case 扩展到 5 条。
+
+## 已验证
+
+```bash
+python3 evals/run_superleads_user_visible_output_evals.py --suite all  # 8/8
+python3 evals/run_superleads_markdown_delivery_evals.py --suite all    # 5/5
+python3 evals/run_evals.py --suite default                             # 98/98
+python3 evals/run_evals.py --suite deep                                 # 644/644
+python3 evals/run_evals.py --suite all                                  # 684/684
+python3 evals/run_product_market_analysis_evals.py --suite all          # 50/50
+git diff --check                                                        # 通过
+```
+
+说明：`python3 evals/run_evals.py --suite all` 当前不包含 market suite；market 需单独运行 `python3 evals/run_product_market_analysis_evals.py --suite all`。
 
 ## 当前下一步
 
-1. 提交 Code Slice X 当前变更。
-2. 提交后建议进入 Code Slice Y：认证 / 目的国准入要求的 Markdown / CSV 人话展示优化。
-3. Code Slice N 暂缓，除非先证明它能改善用户可见交付。
+1. 提交 Slice AA + Code Slice AA 当前变更。
+2. 提交后建议进入 P1：`Code Slice AB：多来源互证 / CorroborationRecord 最小设计与 eval`。
+3. 后续再排：时效降级、Authority registry、状态词压缩、单一客户背调工程资产、批量客户开发内核复盘。
 
-## 当前阻塞
+## 当前阻塞 / 注意
 
-- 真实默认发现仍受能力限制：`search.web=unknown`、`source.open=available`。
-- 没有可记录的真实搜索/打开来源能力时，默认发现只能停在计划或样本池层；不能伪造 SearchLog / Source / Observation。
-
-## 产品出海市场分析：Code Slice X 认证 / 目的国准入要求防错规则
-
-- 已更新 schema：新增 `DestinationRequirementStatus`、`CertificationUserMaterialStatus`、`RequirementFamily`、`SourceAuthorityLevel`、`CertificationRequirementRecord`，并允许矩阵行挂载 `certification_requirement`。
-- 已更新 validator，新增错误码：
-  - `market_certification_requirement_user_material_conflated`
-  - `market_certificate_entry_promoted_to_certified`
-  - `market_test_report_promoted_to_certification`
-  - `market_channel_requirement_promoted_to_legal`
-  - `market_user_certificate_promoted_to_destination_compliance`
-  - `market_certification_requirement_without_authority`
-- 已新增 2 个 pass fixture：
-  - `market_pass_certification_requirement_destination_rule_split.json`
-  - `market_pass_channel_requirement_separated_from_law.json`
-- 已新增 6 个 fail fixture：
-  - `market_fail_user_missing_certificate_as_not_required.json`
-  - `market_fail_certificate_entry_as_certified.json`
-  - `market_fail_test_report_as_certification.json`
-  - `market_fail_channel_requirement_as_legal_mandatory.json`
-  - `market_fail_user_certificate_as_destination_compliant.json`
-  - `market_fail_certification_requirement_without_official_source.json`
-- 已更新 `evals/cases/product_market_analysis_cases.json`，market case 总数为 50。
-- 已新增验证记录：`docs/validation/product-market-analysis-code-slice-x-certification-requirement-20260728.md`。
-- 已验证：`python3 evals/run_product_market_analysis_evals.py --suite all` = `50/50`；`python3 evals/run_evals.py --suite default` = `91/91`；`deep` = `637/637`；`all` = `677/677`；`git diff --check` 通过。
-- 当前下一步：提交 Code Slice X。
-
-## 产品出海市场分析
-
-- 已完成一次公开来源补齐试跑：`docs/validation/product-market-analysis-public-source-fill-20260726.md`。
-- 本次试跑选择 Tianneng `TMLiN-4810S1` 与 XM Textiles `Canvas-270` 作为可抽取技术字段的示范 SKU。
-- 结论：公开目录/TDS 能补齐部分技术字段；SKU 级原产地、HS、UN38.3/SDS、起运港/出口申报国仍不能由公开来源自动猜测。
-
-## 产品出海市场分析：真实样本复核
-
-- 已按公开来源复核两个更真实样本：Xing Heng `48V20Ah` LiFePO4 电池包、UNIQLO Men's Corduroy Overshirt `470177`。
-- 新增验证记录：`docs/validation/product-market-analysis-public-source-fill-xingheng-uniqlo-20260726.md`。
-- 已同步更新：`spec/11-first-market-analysis-sample-briefs.md`、`spec/10-product-outbound-market-analysis-contract.md`、`meta/decision-log.md`、`meta/open-questions.md`。
-- 下一步：基于这两个样本设计端到端输出矩阵的验收夹具/测试，重点覆盖“候选税号不等于最终税率”“QCVN 测试不等于 UN38.3/SDS”“网页标签不等于实物标签已合规”。
-
-## 产品出海市场分析：输出矩阵验收设计
-
-- 已新增 `spec/12-product-outbound-market-analysis-output-matrix-and-acceptance.md`。
-- 已冻结对话展示顺序、12 张 XLSX/CSV 工作表、状态词、人话解释、Xing Heng / UNIQLO 两个样本的正向与负向验收断言。
-- 推荐下一步 Slice 1：不联网、不接新来源，先用已验证字段生成两份静态 Markdown 样例，确保表格结构、状态词和“不得输出”断言可测。
-
-## 产品出海市场分析：静态样例报告 Slice 1
-
-- 已新增 `docs/validation/product-market-analysis-static-sample-reports-slice1-20260726.md`。
-- 该文档用已复核字段生成 Xing Heng / UNIQLO 两份 Markdown 样例报告，不联网、不新增来源。
-- 自检覆盖：表格化结构、状态词、候选税号边界、QCVN/UN38.3/SDS 边界、UNIQLO 网页标签/实物标签边界、未执行模块不得编造成结论。
-- 下一步建议：进入 Slice 2，定义 XLSX/CSV 样本矩阵的表头、状态枚举和空值保留规则；仍可先不接真实搜索。
-
-## 产品出海市场分析：工作簿合同 Slice 2
-
-- 已新增 `spec/13-product-outbound-market-analysis-workbook-contract.md`。
-- 已新增 `docs/validation/product-market-analysis-workbook-slice2-sample-matrix-20260726.md`。
-- 已冻结 12 张 XLSX/CSV 工作表、字段顺序、状态枚举、空值保留规则、两个样本的最小行矩阵和自检断言。
-- 下一步建议：进入 Slice 3 证据边界校验规则，优先把“候选税号不能升级”“QCVN 不能升级 UN38.3/SDS”“网页标签不能升级实物标签合规”做成可检查清单或轻量测试夹具。
-
-## 产品出海市场分析：证据边界校验规则 Slice 3
-
-- 已新增 `spec/14-product-outbound-market-analysis-evidence-boundary-rules.md`。
-- 已新增 `docs/validation/product-market-analysis-evidence-boundary-slice3-checklist-20260726.md`。
-- 已冻结证据类型、允许表述、禁止升级规则、降级/阻断规则、禁止短语、Xing Heng / UNIQLO 样本特定断言。
-- 文档清单验收通过：候选税号未升级最终税率，QCVN/Vietnam Register 未升级 UN38.3/SDS，UNIQLO 网页标签未升级实物标签合规，未执行模块未编造成结论。
-- 下一步二选一：继续产品设计做 Slice 4 Skill 分工互证流程；或进入轻量实现，做 Markdown/CSV 禁止升级扫描脚本和 eval fixture。
-
-## 产品出海市场分析：Skill 分工互证流程 Slice 4
-
-- 已新增 `spec/15-product-outbound-market-analysis-skill-orchestration.md`。
-- 已新增 `docs/validation/product-market-analysis-skill-orchestration-slice4-checklist-20260726.md`。
-- 已冻结六个 Skill 的输入、输出、证据卡、互证矩阵、三道门禁、打回/降级规则、状态流转和 Brief 改版重跑触发。
-- 文档清单验收通过：前序摘要不能直接变事实，搜索摘要只能做线索，冲突/缺口/未执行必须保留到最终矩阵，Xing Heng / UNIQLO 两个样本均可套入流程。
-- 后续已进入 Slice 5 数据模型与 eval 夹具设计。
-
-## 产品出海市场分析：数据模型与 eval 夹具设计 Slice 5
-
-- 已新增 `spec/16-product-outbound-market-analysis-data-model-and-eval-fixtures.md`。
-- 已新增 `docs/validation/product-market-analysis-data-model-eval-fixtures-slice5-checklist-20260726.md`。
-- 已冻结未来独立 `ProductMarketAnalysisGraph`、EvidenceCard、StateTransitionRecord、SkillHandoffRecord、MatrixRowRecord、Gap/Conflict、状态枚举、非法状态流转和证据覆盖规则。
-- 已设计首批 pass/fail eval fixture 清单与错误码草案，覆盖搜索摘要升级、Skill 摘要当来源、QCVN 升级 UN38.3、候选税号变最终税率、网页标签变实物标签合规、Google Trends 写成销量、物流承诺、起运港猜测、未执行行丢失等。
-- 后续已进入 Slice 6 实现前执行计划。
-
-## 产品出海市场分析：实现前执行计划 Slice 6
-
-- 已新增 `spec/17-product-outbound-market-analysis-implementation-plan.md`。
-- 已新增 `docs/validation/product-market-analysis-implementation-plan-slice6-checklist-20260726.md`。
-- 已冻结后续实现顺序：Schema 骨架、语义 validator、eval fixtures/cases、audit 最小门禁、CSV/Markdown 最小导出、eval 集成、Skill 文档/路由接入、真实来源采集接入。
-- 已冻结第一批建议 pass/fail fixture 和错误码，第一轮代码目标是防错闭环，不接 Google Trends、关税 API、法规库或真实搜索。
-- 后续已进入 Slice 7 Skill 文案/用户入口设计。
-
-## 产品出海市场分析：Skill 文案与用户入口设计 Slice 7
-
-- 已新增 `spec/18-product-outbound-market-analysis-skill-copy-and-user-entry.md`。
-- 已新增 `docs/validation/product-market-analysis-skill-copy-entry-slice7-checklist-20260726.md`。
-- 已冻结用户入口、触发词、非触发词、容易误判表达、首轮回应模板、缺信息追问模板、最多 3 个追问规则、用户材料说明、输出承诺和未来 Skill description 草案。
-- 文档验收通过：产品市场分析与批量客户开发/单客背调入口区分清楚；用户问“值不值得做”时只转客观分析；同时要求市场和找客户时拆成两个阶段；Xing Heng / UNIQLO 样本文案未越界。
-- 后续已完成 Slice 8 真实来源采集策略。
-
-## 产品出海市场分析：真实来源采集策略 Slice 8
-
-- 已新增 `spec/19-product-outbound-market-analysis-real-source-collection-strategy.md`。
-- 已新增 `docs/validation/product-market-analysis-real-source-collection-slice8-checklist-20260726.md`。
-- 已冻结真实来源采集流程：Brief、能力预检、采集计划、搜索线索、打开来源、证据卡、交叉复核、矩阵交付。
-- 已冻结各事实域来源优先级和降级策略，覆盖产品资料、Google Trends、市场/价格、目的国准入、进口税费、出口国要求、物流/预申报、近期外部因素。
-- 已提出 Source Pack 机制，避免国家逐一硬编码；Source Pack 只是来源入口目录，不是事实库。
-- 后续已完成 Slice 9 Source Pack 字段合同。
-
-## 产品出海市场分析：Code Slice D-E
-
-- 已新增 `scripts/audit_product_market_analysis.py`，用于最小 audit 门禁。
-- 已新增 `scripts/export_product_market_workbook.py`，用于 12 张 CSV + 可选 Markdown / manifest 的安全导出。
-- 已新增 `evals/run_product_market_analysis_evals.py`，用于独立 market suite 验收。
-- 已新增 `evals/fixtures/market_fail_blocked_needs_input_minimal.json`，用于验证 `blocked_needs_input` 分流。
-- 已新增验证记录：`docs/validation/product-market-analysis-code-slice-d-e-20260726.md`。
-- 已验证：Xing Heng / UNIQLO pass 样本可通过 audit 并导出；候选税号升级 fail 样本被 audit 阻断；独立 market suite `21/21` 通过；现有 `default/deep` 主 eval 未回归。
-
-## 产品出海市场分析：Source Pack 字段合同 Slice 9
-
-- 已新增 `spec/20-product-outbound-market-analysis-source-pack-contract.md`。
-- 已新增 `docs/validation/product-market-analysis-source-pack-contract-slice9-checklist-20260726.md`。
-- 已冻结 Source Pack 的对象边界、Pack 类型、SourcePack / SourceEntry / QueryTemplate / ObservationRequirement / PackRouteRule 字段、状态枚举、产品触发标签、路由规则和禁止字段。
-- 文档验收通过：Source Pack 只是来源入口目录，不是事实库；Pack / Entry / QueryTemplate 不能直接变 EvidenceCard 或 MatrixRow 事实；Pack 日期不能当法规/税率/价格日期。
-- 后续已完成 Slice 10 Source Pack 种子样例设计。
-
-## 产品出海市场分析：Source Pack 种子样例 Slice 10
-
-- 已新增 `spec/21-product-outbound-market-analysis-source-pack-seed-samples.md`。
-- 已新增 `docs/validation/product-market-analysis-source-pack-seed-samples-slice10-checklist-20260726.md`。
-- 已用美国 / 中国 / 越南 + 跨太平洋物流 / 美国市场信号 / 锂电通用规则 / 纺织服装通用规则 / 产品原始来源设计首批种子 Pack 样例。
-- 已设计 SourceEntry 类型、QueryTemplate、PackRouteRule、ObservationRequirement 的种子样例，并演示 Xing Heng / UNIQLO 两个样本如何路由。
-- 文档验收通过：种子样例没有填具体税率、认证结论、固定物流时效、趋势结论、价格区间或市场进入建议。
-- 后续已完成 Slice 11 端到端运行剧本。
-
-## 产品出海市场分析：端到端运行剧本 Slice 11
-
-- 已新增 `spec/22-product-outbound-market-analysis-end-to-end-runbook.md`。
-- 已新增 `docs/validation/product-market-analysis-end-to-end-runbook-slice11-checklist-20260726.md`。
-- 已冻结 Brief -> Source Pack -> Query Plan -> SearchLog / Source -> Observation -> EvidenceCard -> MatrixRow -> Markdown / XLSX 的端到端人工运行顺序。
-- 已明确三道门禁、状态流转、Skill 交接、打回/降级点、两个样本人工剧本、Mermaid 图和用户可见报告骨架。
-- 文档验收通过：Xing Heng 不升级 UN38.3/SDS/普通货/起运港/最终税率；UNIQLO 不升级实物标签合规/全成分/出口申报国/起运港/最终归类；趋势、价格、物流和价值判断均未越界。
-- 后续已完成 Slice 12 MVP 收口与实现前冻结。
-
-## 产品出海市场分析：MVP 收口与实现前冻结 Slice 12
-
-- 已新增 `spec/23-product-outbound-market-analysis-mvp-freeze.md`。
-- 已新增 `docs/validation/product-market-analysis-mvp-freeze-slice12-checklist-20260726.md`。
-- 已把 Slice 1-11 收口为 MVP-0 防错闭环、MVP-1 安全交付骨架、MVP-2 Skill 入口接入、MVP-3 真实来源采集四层。
-- 已冻结第一轮优先 Code Slice A-C：schema、validator、首批 fixtures；若需要可扩到 A-E：audit 与 CSV/Markdown 最小导出。
-- 已明确第一轮不接 Google Trends、关税 API、真实法规库、真实 Source Pack registry，不改批量客户开发和单客背调主流程。
-- 下一步二选一：先提交 Slice 1-12 文档；或用户明确后开始 Code Slice A-C。
-
-## 产品出海市场分析：Code Slice A-C schema / validator / fixtures
-
-- 已新增 `shared/schemas/product-market-analysis.schema.json`。
-- 已新增 `scripts/validate_product_market_analysis.py`。
-- 已新增 `evals/cases/product_market_analysis_cases.json`。
-- 已新增首批 market fixtures：
-  - pass：`market_pass_xingheng_minimum_boundary.json`、`market_pass_uniqlo_minimum_boundary.json`、`market_pass_search_summary_candidate_only.json`、`market_pass_not_executed_modules_retained.json`、`market_pass_derived_wh_with_formula.json`、`market_pass_conflict_preserved.json`。
-  - fail：`market_fail_search_summary_as_verified.json`、`market_fail_skill_summary_as_source.json`、`market_fail_qcvn_as_un38_3.json`、`market_fail_candidate_htsus_as_final_rate.json`、`market_fail_web_label_as_physical_compliance.json`、`market_fail_google_trends_as_sales.json`、`market_fail_logistics_best_or_committed.json`、`market_fail_departure_port_guessed.json`、`market_fail_not_executed_rows_missing.json`、`market_fail_source_local_path_or_hash_leak.json`、`market_fail_matrix_row_missing_status.json`、`market_fail_value_judgment_in_delivery.json`、`market_fail_geo_roles_merged.json`、`market_fail_brief_changed_without_rerun.json`。
-- 已新增验证记录：`docs/validation/product-market-analysis-code-slice-a-c-20260726.md`。
-- 已验证：
-  - `python3 scripts/validate_product_market_analysis.py evals/fixtures/market_pass_*.json` 通过。
-  - `python3 scripts/validate_product_market_analysis.py evals/fixtures/market_fail_*.json` 按预期失败并覆盖预期错误码。
-  - `python3 evals/run_evals.py --suite default`：`77/77`。
-  - `python3 evals/run_evals.py --suite deep`：`623/623`。
-  - `python3 evals/run_evals.py --suite all`：`663/663`。
-- 当前下一步：继续 Code Slice D-E（audit 最小门禁 + CSV/Markdown 最小导出）。
-
-## 产品出海市场分析：真实业务感 fixture 补充
-
-- 已新增 3 个更贴近真实业务的 pass fixture：Tianneng 锂电、XM Canvas-270 面料、平台/零售价格仅参考。
-- 已新增 3 个更贴近真实业务的 fail fixture：工厂新闻升级原产地/默认港口、纺织证书/HTS 过度断言、平台价升级成交价/推荐价。
-- 已新增 validator 错误码 `market_platform_price_promoted`。
-- 已新增验证记录：`docs/validation/product-market-analysis-realistic-fixtures-20260726.md`。
-- 已验证独立 market suite：`python3 evals/run_product_market_analysis_evals.py --suite all` = `27/27`。
-- 已回归通过：`python3 evals/run_product_market_analysis_evals.py --suite all` = `27/27`；`python3 evals/run_evals.py --suite default` = `77/77`；`deep` = `623/623`；`all` = `663/663`。当前下一步可提交本轮 fixture 增补。
-
-## 产品出海市场分析：Slice 13 COO / 原产地证明需求判断
-
-- 已新增 Slice 13 设计文档：`spec/24-product-outbound-market-analysis-origin-proof-requirements.md`。
-- 已新增验收清单：`docs/validation/product-market-analysis-origin-proof-requirements-slice13-checklist-20260727.md`。
-- 已同步更新既有规格：产品合同、工作簿合同、证据边界、Skill 分工、真实来源采集策略、Source Pack 字段合同、端到端 runbook。
-- 已冻结规则：目标国是否需要 COO / proof of origin 必须主动按官方/权威来源判断；用户当前是否有 COO 只是材料准备状态，不能反推法规要求。
-- 下一步代码增量建议：schema / validator / fixtures 增加 `origin_proof_requirement` 行类型、目标国要求状态、用户材料状态和对应 fail 规则。
-
-## 产品出海市场分析：Code Slice F COO / 原产地证明防错规则
-
-- 已更新 schema：新增 `OriginProofRequirementStatus`、`OriginProofUserMaterialStatus`、`MatrixRowType`、`OriginProofRequirementRecord`，并允许矩阵行挂载 `origin_proof_requirement`。
-- 已更新 validator，新增错误码：
-  - `market_origin_proof_user_material_conflated`
-  - `market_origin_marking_conflated_with_coo`
-  - `market_origin_preferential_overgeneralized`
-  - `market_user_coo_promoted_to_official_ruling`
-  - `market_origin_requirement_without_authority`
-- 已新增 4 个 pass fixture：
-  - `market_pass_origin_proof_conditionally_required_user_missing.json`
-  - `market_pass_origin_proof_normally_not_required_marking_required.json`
-  - `market_pass_origin_proof_user_coo_scope_limited.json`
-  - `market_pass_origin_proof_unable_to_verify_source_limited.json`
-- 已新增 5 个 fail fixture：
-  - `market_fail_user_missing_coo_as_not_required.json`
-  - `market_fail_marking_as_coo_required.json`
-  - `market_fail_preferential_origin_as_all_imports.json`
-  - `market_fail_coo_as_final_origin_ruling.json`
-  - `market_fail_origin_requirement_without_official_source.json`
-- 已更新 `evals/cases/product_market_analysis_cases.json`，market case 总数为 36。
-- 已增强 `evals/run_product_market_analysis_evals.py`：fail case 会检查 `expected_error_codes`。
-- 已新增验证记录：`docs/validation/product-market-analysis-code-slice-f-origin-proof-20260727.md`。
-- 已验证：
-  - `python3 evals/run_product_market_analysis_evals.py --suite all` = `36/36`
-  - `python3 evals/run_evals.py --suite default` = `77/77`
-  - `python3 evals/run_evals.py --suite deep` = `623/623`
-  - `python3 evals/run_evals.py --suite all` = `663/663`
-- 当前下一步：提交 Code Slice F；之后可选 Code Slice G（导出列/Markdown 展示优化）或 Skill 入口接入前的最小路由设计。
-
-## 产品出海市场分析：Code Slice G Skill 入口与路由
-
-- 已新增 `skills/analyzing-product-outbound-market/` 独立 Skill 入口。
-- 已新增 `shared/references/product-outbound-market-intake.md`，包含触发/非触发、首轮回应、追问和产品触发项提示。
-- 已更新 `using-superleads`、`route-map`、`user-intake`，明确产品出海市场分析、批量客户开发、客户背调三条路线并列。
-- 已新增 `scripts/route_superleads_intake.py` 作为轻量路由 guardrail。
-- 已新增 `evals/cases/superleads_route_cases.json` 和 `evals/behavioral/product-market-route-prompts.json`。
-- 已新增验证记录：`docs/validation/product-market-analysis-code-slice-g-skill-entry-routing-20260727.md`。
-- 已验证：market suite `36/36`；主 default `84/84`；deep `630/630`；all `670/670`。
-- 当前下一步：提交 Code Slice G；然后进入 Code Slice H（导出列/Markdown 展示优化）。
-
-## 产品出海市场分析：Code Slice H 导出列 / Markdown 展示优化
-
-- 已优化 `export_product_market_workbook.py`：CSV/Markdown 字段名更人话，新增贸易前提拆分行、COO Markdown 专区和未执行模块顶部摘要。
-- 已把 COO / proof of origin 的用户可见展示改为“目标国是否要求原产地证明”“用户现在有没有可用材料”“什么情况下需要”“不能写成什么”。
-- 已把默认出口申报国、原产国/制造来源、实际起运地/起运港拆开展示；未知港口仍保留待业务确认，不猜港。
-- 已更新导出回归断言并新增验证记录：`docs/validation/product-market-analysis-code-slice-h-export-display-20260727.md`。
-- 已验证：market suite `36/36`；主 default `84/84`；deep `630/630`；all `670/670`。
-- 下一步建议：Code Slice I，做真实 Source Pack registry / Query Plan 读取骨架，仍只生成来源计划，不自动生成事实。
-
-## 产品出海市场分析：Code Slice I Source Pack / Query Plan
-
-- 已新增 seed Source Pack registry：`shared/source_packs/product_market_seed_packs.json`。
-- 已新增 Query Plan generator：`scripts/plan_product_market_sources.py`。
-- 已新增 source-plan fixtures / cases / runner：
-  - `evals/fixtures/source_plan_*_brief.json`
-  - `evals/cases/product_market_source_plan_cases.json`
-  - `evals/run_product_market_source_plan_evals.py`
-- 已验证：source-plan `6/6`、market `36/36`、default `84/84`、deep `630/630`、all `670/670`。
-- 当前下一步：Code Slice J，设计 Query Plan 执行记录与真实来源采集衔接的最小 SearchLog / Source / Observation 夹具；继续保持“搜索摘要不成事实、未打开来源不成证据”。
-
-## 产品出海市场分析：Code Slice J SearchLog / Source / Observation 执行记录
-
-- 已新增 ProductMarketAnalysisGraph 可选 `search_logs`，用于记录 Query Plan 后续执行的搜索过程；SearchLog 仍是 `source_candidate_only`，不是事实来源。
-- 已增强 `plan_product_market_sources.py --emit-collection-run-shell`，可输出空的 collection shell，把 pending query steps 映射到未来 SearchLog / Source / Observation 轨道；该 shell 不搜索、不打开来源。
-- 已增强 validator：阻断 Query Plan / SearchLog 直接升级事实、搜索结果伪装 Source/Observation、未打开来源支撑 EvidenceCard、受限来源带事实摘录等。
-- 已新增 Slice J pass/fail fixtures，market suite 变为 `42/42`。
-- 已新增验证记录：`docs/validation/product-market-analysis-code-slice-j-collection-records-20260727.md`。
-- 已验证：source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。
-- 当前下一步：Code Slice K，可做真实来源采集执行器的“手工 URL 输入 / 打开来源记录”最小桥接；继续保持没有打开来源就不能形成 EvidenceCard。
-
-## 产品出海市场分析：Code Slice K 手工 URL / 已知来源采集桥接
-
-- 已新增 `scripts/collect_product_market_sources.py`：只接收用户明确给定的公开 URL / 已知来源状态，输出 `Source` / `Observation` / `collection_manifest`。
-- 脚本声明并执行边界：不自动搜索、不自动打开来源、不创建 EvidenceCard、不创建 MatrixRow、不输出税率/认证/物流/趋势/价格/市场判断。
-- 已新增 source collection eval：`evals/run_product_market_source_collection_evals.py` 与 `evals/cases/product_market_source_collection_cases.json`。
-- 已新增 3 个 pass 输入 fixture：官方产品页已打开、PDF URL shell 未访问、登录墙/来源受限。
-- 已新增 3 个 fail 输入 fixture：本地路径 / file URI、token/API key URL、未打开来源携带事实摘录。
-- 已新增验证记录：`docs/validation/product-market-analysis-code-slice-k-manual-source-collection-20260727.md`。
-- 已验证：source collection `6/6`、source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。
-- 当前下一步：提交 Code Slice K；之后可进入 Code Slice L，把手工 collection 输出并入正式图谱/导出链路的最小命令封装。
-
-## 产品出海市场分析：Code Slice L collection merge / export bridge
-
-- 已新增 `scripts/merge_product_market_collection.py`：把 Slice K 手工 collection 输出并入正式 `ProductMarketAnalysisGraph`，并可选执行 validate / audit / export。
-- 已新增 `evals/run_product_market_collection_merge_evals.py` 与 `evals/cases/product_market_collection_merge_cases.json`。
-- 已新增 7 个 collection output fixtures：3 个 pass 输出，4 个 fail 输出。
-- 已验证：collection merge `7/7`、source collection `6/6`、source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。
-- 当前下一步：提交 Code Slice L；之后进入 Code Slice M，封装 `collect -> merge -> validate/audit/export` 的单命令入口或用户给 URL/PDF 后的半自动运行剧本。
-
-## 产品出海市场分析：Code Slice M collection pipeline
-
-- 已新增 `scripts/run_product_market_collection_pipeline.py`：单命令串联手工 collection、merge、validate/audit、可选 export。
-- 已新增 `evals/run_product_market_collection_pipeline_evals.py` 与 `evals/cases/product_market_collection_pipeline_cases.json`。
-- 已新增 `evals/fixtures/source_collection_fail_scope_mismatch_input.json`，覆盖 collect 成功但 merge 因 brief version mismatch 阻断。
-- 已验证：collection pipeline `7/7`、collection merge `7/7`、source collection `6/6`、source-plan `6/6`、market `42/42`、default `84/84`、deep `630/630`、all `670/670`。
-- 当前下一步：提交 Code Slice M；之后进入 Code Slice N（建议：EvidenceCard 草稿前人工复核队列 / 用户材料包导入清单 / 运行文档三选一）。
-
-## Superleads 产品内核复盘：Slice R
-
-- 已新增 `spec/25-superleads-product-kernel-and-de-superpowers-calibration.md`，冻结结论：Superleads 是外贸业务情报产品，不是通用工作流框架；Superpowers 只提供计划、切片、验证、交接、eval 等执行纪律参考。
-- 已新增 `docs/validation/superleads-product-kernel-de-superpowers-slice-r-checklist-20260727.md`，完成人工验收：三条路线、A-M 价值与风险、去 Superpowers 化校准规则、弱证据哲学、用户可见语言均已覆盖。
-- 已重新明确三条产品路线：批量客户开发、单一客户背调、产品出海市场分析。所有 schema、Skill、eval、导出和后续 Slice 都必须服务其中一条真实外贸业务动作。
-- 已调整下一步判断：Code Slice N（EvidenceCard 草稿前人工复核队列）暂缓，避免继续围绕内部对象过度工程化。
-- 当前下一步建议：Slice S，用真实外贸任务各跑一份用户可见样本——批量客户开发样表、单一客户背调表格化报告、产品出海市场分析矩阵——检查 Superleads 是否像外贸产品，而不是像工作流框架。
-
-## Superleads 三路线真实样本跑通：Slice S
-
-- 已新增 `spec/26-superleads-three-route-real-sample-run-slice-s.md`。
-- 已新增 `docs/validation/superleads-three-route-real-sample-run-slice-s-20260727.md`。
-- 已用三个样本验收三条路线：美国柴油发电机后市场配件批量开发、Chilly's 单客背调、Xing Heng 48V20Ah LiFePO4 电池出口美国的产品出海市场分析。
-- 结论：三条路线能分清；用户看到的是候选客户池、客户背调表、市场与准入矩阵，而不是内部 graph / EvidenceCard / SearchLog / eval 语言。
-- 下一步建议：Slice T，把三条用户可见样本固化为输出合同 / 静态 eval。
-
-## Superleads 用户可见输出合同：Slice T
-
-- 已新增 `spec/27-superleads-user-visible-output-contract-slice-t.md`，冻结三条路线的用户交付标准。
-- 已新增 `scripts/validate_superleads_user_visible_output.py`，静态检查 Markdown 用户可见输出是否表格化、说人话、不串线、不外露内部对象、不输出价值判断、不做证据升级。
-- 已新增 `evals/run_superleads_user_visible_output_evals.py`、`evals/cases/superleads_user_visible_output_cases.json`、`evals/user_visible_outputs/` 下 3 个 pass / 3 个 fail 样本。
-- 已接入 `evals/run_evals.py` 主套件。
-- 已验证：
-  - `python3 -m py_compile scripts/validate_superleads_user_visible_output.py evals/run_superleads_user_visible_output_evals.py evals/run_evals.py` 通过。
-  - `python3 evals/run_superleads_user_visible_output_evals.py --suite all` = `6/6`。
-  - `python3 evals/run_product_market_analysis_evals.py --suite all` = `42/42`。
-  - `python3 evals/run_evals.py --suite default` = `90/90`。
-  - `python3 evals/run_evals.py --suite deep` = `636/636`。
-  - `python3 evals/run_evals.py --suite all` = `676/676`。
-- 当前下一步建议：先提交 Slice R / S / T；再决定下一条真正改善用户可见交付的 Code Slice。
-
-## Superleads Code Slice U：三路线用户可见 Markdown 交付器
-
-- 已新增统一命令：`scripts/export_superleads_markdown.py`。
-- 支持 `--route auto` 识别三条路线：批量客户开发、单一客户背调、产品出海市场分析。
-- 批量客户开发输出：开发方向四行、发现候选池样表、待确认事项、来源 / 来源状态。
-- 单一客户背调输出：一句话先说清、客户一眼看懂、客户/品牌/关联方、公开业务信号、怎么联系、注意事项、来源。
-- 产品出海市场分析输出：先看贸易前提、Google Trends 未执行兜底、COO / 原产地证明、海运拼箱 / 国际快递、待补材料清单、市场矩阵。
-- 已新增 eval：`evals/run_superleads_markdown_delivery_evals.py`、`evals/cases/superleads_markdown_delivery_cases.json`。
-- 已新增 fixture：`evals/fixtures/pass_customer_background_chillys_markdown.json`。
-- 已新增规格/验证文档：`spec/28-superleads-markdown-delivery-code-slice-u.md`、`docs/validation/superleads-markdown-delivery-code-slice-u-20260728.md`。
-- 已验证：Markdown delivery `4/4`、用户可见输出 `6/6`、market `42/42`、source-plan `6/6`、source collection `6/6`、collection merge `7/7`、collection pipeline `7/7`、default `91/91`、deep `637/637`、all `677/677`、`git diff --check` 通过。
-- 当前下一步：提交 Code Slice U；之后建议进入 Code Slice V（README / Skill 使用说明 / 常用命令示例）。
-
-## Superleads Code Slice V：README / Skill 使用说明 / 常用命令示例
-
-- 已更新 README 中文/英文首页，明确三条产品路线、首轮提问样例和统一 Markdown 交付入口。
-- 已新增 `docs/superleads-common-commands.md`，覆盖 Markdown、CSV/XLSX、产品市场来源计划 / collection、eval 回归常用命令。
-- 已更新导出、总入口、产品市场分析、单客背调 4 个 Skill 说明，以及 `route-map` / `output-schema` 两个共享参考。
-- 已新增验证记录：`docs/validation/superleads-markdown-delivery-docs-code-slice-v-20260728.md`。
-- 已验证：py_compile、Markdown delivery `4/4`、用户可见输出 `6/6`、market `42/42`、default `91/91`、4 个 Skill quick_validate、`git diff --check`。
-- 下一步：提交本 Slice；提交后再决定是否做 quickstart smoke / 示例输入输出包 / README 命令自动校验。
-
-## 产品出海市场分析 Slice W：目的国认证 / 准入要求判断纠偏
-
-- 已新增 `spec/29-product-outbound-market-analysis-certification-requirement-calibration.md`。
-- 已同步产品合同、输出矩阵、工作簿合同、证据边界、Skill 分工、数据模型设计、真实来源采集、Source Pack 合同、入口参考、Skill 文案、README 和常用命令文档。
-- 已新增验证记录：`docs/validation/product-market-analysis-certification-requirement-slice-w-20260728.md`。
-- 已冻结规则：认证分析先查目标国要求，再看用户材料状态；用户没给证书不能推出不需要认证，用户给了证书不能推出目标国认可或产品已合规。
-- 下一步建议：Code Slice X，把认证/准入要求状态、用户材料状态和禁止升级断言落入 schema / validator / fixtures。
+- 真实默认发现仍受能力限制：没有可记录的真实搜索/打开来源能力时，默认发现只能停在计划或样本池层；不能伪造 SearchLog / Source / Observation。
+- `tmp/stage5_chillys/` 必须保留。

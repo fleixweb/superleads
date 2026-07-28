@@ -121,6 +121,48 @@
         "目标销售国家/地区",
         "候选 HTSUS"
       ]
+    },
+    {
+      "name": "product market negated guardrails and source names pass",
+      "fixture": "evals/user_visible_outputs/product_market_negated_guardrails_and_source_names.md",
+      "route": "product_outbound_market_analysis",
+      "expected": "pass",
+      "min_tables": 6,
+      "must_contain": [
+        "The Telegraph",
+        "Photograph",
+        "paragraph 3",
+        "evaluation plan",
+        "不判断是否值得进入",
+        "不做推荐客户排序，也不给采购概率",
+        "Made in 等于 COO 是错误理解"
+      ],
+      "must_not_contain": [
+        "The Tele资料包",
+        "Photo资料包",
+        "para资料包",
+        "检查uation",
+        "采购概率 80%"
+      ]
+    },
+    {
+      "name": "fail user visible positive recommendation still blocked",
+      "fixture": "evals/user_visible_outputs/fail_user_visible_positive_recommendation.md",
+      "route": "product_outbound_market_analysis",
+      "expected": "fail",
+      "min_tables": 6,
+      "expected_error_codes": [
+        "user_visible_route_crossed",
+        "user_visible_value_judgment",
+        "user_visible_evidence_upgrade"
+      ],
+      "must_contain": [
+        "先看贸易前提",
+        "目标销售国家/地区",
+        "建议进入该市场",
+        "推荐客户 A",
+        "采购概率 80%"
+      ]
     }
   ]
 }

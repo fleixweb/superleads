@@ -48,13 +48,11 @@ ROUTE_REQUIRED: dict[str, list[str]] = {
         "原产国 / 制造来源",
         "实际起运地 / 起运港",
         "产品档案与触发项",
-        "Google Trends",
-        "未执行",
-        "候选 HTSUS",
-        "COO / 原产地证明",
-        "海运拼箱",
-        "国际快递",
-        "待补材料清单",
+        "准入",
+        "进口税费",
+        "运输方式",
+        "信息来源与待确认事项",
+        "待确认",
         "不能",
     ],
 }
@@ -149,6 +147,46 @@ GENERIC_EVIDENCE_UPGRADES = [
     "wholesale 入口说明正在采购",
 ]
 
+NEGATION_MARKERS = (
+    "不", "未", "非", "无", "勿", "禁止", "不得", "不能", "不可",
+    "不是", "不等于", "无法", "不能推导", "不能替代", "不能写成", "不得写成",
+    "not", "does not", "cannot", "can not", "must not", "should not", "no ",
+)
+AFTER_NEGATION_MARKERS = (
+    "错误", "错误理解", "误解", "不成立", "不应", "不能", "不可", "不得",
+    "不能推出", "不能据此", "并不", "并非", "not", "invalid", "wrong",
+)
+
+ENGLISH_TOKEN_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_-]*$")
+
+
+def _phrase_matches(text: str, phrase: str, *, allow_negated: bool = False) -> bool:
+    """Match a phrase without hitting English substrings inside normal words.
+
+    User-visible guardrails should catch leaked internal tokens such as
+    ``graph`` and ``eval`` while leaving source names / words like
+    ``The Telegraph``, ``Photograph``, ``paragraph`` and ``evaluation`` alone.
+    For value judgments and evidence-upgrade phrases, compliant negated
+    wording such as “不判断是否值得进入” should not fail the report.
+    """
+    if not phrase:
+        return False
+    if ENGLISH_TOKEN_RE.fullmatch(phrase):
+        pattern = re.compile(rf"(?<![A-Za-z0-9_-]){re.escape(phrase)}(?![A-Za-z0-9_-])", re.IGNORECASE)
+        matches = list(pattern.finditer(text))
+    else:
+        matches = [match for match in re.finditer(re.escape(phrase), text, re.IGNORECASE)]
+    if not allow_negated:
+        return bool(matches)
+    for match in matches:
+        window = text[max(0, match.start() - 36):match.start()].casefold()
+        after_window = text[match.end():match.end() + 36].casefold()
+        negated_before = any(marker.casefold() in window for marker in NEGATION_MARKERS)
+        negated_after = any(marker.casefold() in after_window for marker in AFTER_NEGATION_MARKERS)
+        if not (negated_before or negated_after):
+            return True
+    return False
+
 
 def _count_markdown_tables(text: str) -> int:
     lines = text.splitlines()
@@ -183,19 +221,19 @@ def validate(text: str, route: str, *, min_tables: int = 3, extra_required: list
             issues.append(_issue("user_visible_missing_required_text", f"missing required phrase: {phrase}", phrase))
 
     for phrase in ROUTE_FORBIDDEN.get(route, []):
-        if phrase in text:
+        if _phrase_matches(text, phrase, allow_negated=True):
             issues.append(_issue("user_visible_route_crossed", f"route-forbidden phrase present: {phrase}", phrase))
 
     for phrase in GENERIC_INTERNAL_LANGUAGE:
-        if phrase in text:
+        if _phrase_matches(text, phrase):
             issues.append(_issue("user_visible_internal_language", f"internal language leaked: {phrase}", phrase))
 
     for phrase in GENERIC_VALUE_JUDGMENTS:
-        if phrase in text:
+        if _phrase_matches(text, phrase, allow_negated=True):
             issues.append(_issue("user_visible_value_judgment", f"value judgment present: {phrase}", phrase))
 
     for phrase in GENERIC_EVIDENCE_UPGRADES:
-        if phrase in text:
+        if _phrase_matches(text, phrase, allow_negated=True):
             issues.append(_issue("user_visible_evidence_upgrade", f"evidence boundary upgrade present: {phrase}", phrase))
 
     return issues

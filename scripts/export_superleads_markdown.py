@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -107,8 +109,12 @@ def _stringify(value: Any) -> str:
 def _safe_text(value: Any) -> str:
     text = _stringify(value)
     text = redact_local_paths(text)
-    for raw, replacement in INTERNAL_REPLACEMENTS.items():
-        text = text.replace(raw, replacement)
+    for raw, replacement in sorted(INTERNAL_REPLACEMENTS.items(), key=lambda item: len(item[0]), reverse=True):
+        if re.fullmatch(r"[A-Za-z0-9_]+", raw):
+            pattern = re.compile(rf"(?<![A-Za-z0-9_]){re.escape(raw)}(?![A-Za-z0-9_])", re.IGNORECASE)
+            text = pattern.sub(replacement, text)
+        else:
+            text = text.replace(raw, replacement)
     return text
 
 
@@ -143,6 +149,82 @@ def _id_map(items: Any, key: str) -> dict[str, dict[str, Any]]:
         if isinstance(item, dict) and has_text(item.get(key)):
             result[str(item[key])] = item
     return result
+
+
+def _decode_pointer_token(value: str) -> str:
+    return value.replace("~1", "/").replace("~0", "~")
+
+
+def _patch_parent(document: object, pointer: str) -> tuple[object, str]:
+    if not pointer.startswith("/"):
+        raise ValueError(f"patch path must be a JSON Pointer: {pointer}")
+    tokens = [_decode_pointer_token(token) for token in pointer[1:].split("/")]
+    if not tokens:
+        raise ValueError("patch path must target a value")
+    current = document
+    for token in tokens[:-1]:
+        current = current[int(token)] if isinstance(current, list) else current[token]  # type: ignore[index]
+    return current, tokens[-1]
+
+
+def _apply_fixture_patches(graph: dict[str, Any], patches: object) -> dict[str, Any]:
+    if not isinstance(patches, list):
+        raise ValueError("fixture patches must be a list")
+    result = deepcopy(graph)
+    for patch in patches:
+        if not isinstance(patch, dict):
+            raise ValueError("fixture patch must be an object")
+        parent, token = _patch_parent(result, str(patch.get("path", "")))
+        operation = patch.get("op")
+        if operation == "remove":
+            if isinstance(parent, list):
+                del parent[int(token)]
+            elif isinstance(parent, dict):
+                del parent[token]
+            else:
+                raise ValueError("fixture patch parent is not mutable")
+        elif operation == "replace":
+            if "value" not in patch:
+                raise ValueError("replace patch lacks value")
+            if isinstance(parent, list):
+                parent[int(token)] = patch["value"]
+            elif isinstance(parent, dict):
+                parent[token] = patch["value"]
+            else:
+                raise ValueError("fixture patch parent is not mutable")
+        elif operation == "add":
+            if "value" not in patch:
+                raise ValueError("add patch lacks value")
+            if isinstance(parent, list):
+                parent.insert(int(token), patch["value"])
+            elif isinstance(parent, dict):
+                parent[token] = patch["value"]
+            else:
+                raise ValueError("fixture patch parent is not mutable")
+        elif operation == "append":
+            if not isinstance(parent, list) or token != "-" or "value" not in patch:
+                raise ValueError("append patch must target /-")
+            parent.append(patch["value"])
+        else:
+            raise ValueError(f"unsupported fixture patch operation: {operation}")
+    return result
+
+
+def _load_lead_fixture(path: Path, seen: set[Path] | None = None) -> dict[str, Any]:
+    seen = seen or set()
+    path = path.resolve()
+    if path in seen:
+        raise ValueError(f"fixture inheritance cycle: {path.name}")
+    payload = load_json(path)
+    if not isinstance(payload, dict):
+        raise ValueError(f"fixture must be a JSON object: {path.name}")
+    if "extends" not in payload:
+        return payload
+    base_name = payload.get("extends")
+    if not isinstance(base_name, str) or Path(base_name).name != base_name:
+        raise ValueError(f"fixture base must be a local filename: {path.name}")
+    base = _load_lead_fixture(path.parent / base_name, seen | {path})
+    return _apply_fixture_patches(base, payload.get("patches"))
 
 
 def _current_brief(graph: dict[str, Any]) -> dict[str, Any]:
@@ -460,55 +542,6 @@ def _market_gap_rows(graph: dict[str, Any]) -> list[dict[str, Any]]:
 def _market_append_required_human_sections(text: str, graph: dict[str, Any]) -> str:
     if "## 先看这几个贸易前提" in text and "先看贸易前提" not in text:
         text = text.replace("## 先看这几个贸易前提", "## 先看贸易前提（先看这几个贸易前提）", 1)
-    elif "先看贸易前提" not in text:
-        text += "\n## 先看贸易前提\n\n本轮会把目标销售国家/地区、出口申报国、原产国 / 制造来源、实际起运地 / 起运港分开展示。\n"
-
-    append_lines: list[str] = []
-    not_executed = _market_not_executed_modules(graph)
-    if "Google Trends" not in text:
-        rows = [{
-            "模块": "Google Trends 长期搜索趋势",
-            "本轮状态": "未执行",
-            "怎么理解": "Google Trends 只能作为相对搜索兴趣信号，不等于销量、GMV、进口量或真实采购需求。",
-            "下一步": "如用户需要，后续按目标国家/地区和关键词单独查询。",
-        }]
-        _append_table(append_lines, "Google Trends / 长期搜索趋势", ["模块", "本轮状态", "怎么理解", "下一步"], rows)
-    if "本轮未执行项" not in text or not_executed:
-        rows = [{
-            "未执行模块": PRODUCT_MODULE_LABELS.get(module, module),
-            "状态": "未执行",
-            "不能写成什么": "不能编造成趋势、价格、旺季或最新行情结论。",
-        } for module in not_executed]
-        if rows:
-            _append_table(append_lines, "本轮未执行项补充", ["未执行模块", "状态", "不能写成什么"], rows)
-    if "COO / 原产地证明" not in text:
-        rows = [{
-            "事项": "COO / 原产地证明",
-            "当前状态": "待权威来源确认",
-            "用户材料状态": "用户是否提供材料需单独记录",
-            "不能写成什么": "不能因用户未提供 COO 就写“不需要”；也不能把 Production / Made in 直接写成 COO 文件。",
-        }]
-        _append_table(append_lines, "COO / 原产地证明", ["事项", "当前状态", "用户材料状态", "不能写成什么"], rows)
-    if "海运拼箱" not in text or "国际快递" not in text:
-        rows = [
-            {
-                "运输方式": "海运拼箱",
-                "本轮状态": "待确认",
-                "适用边界": "需看货物属性、包装、承运人/拼箱仓接受条件和目的港/CFS。",
-                "不能写成什么": "不能写成唯一确定路线或固定交付日期。",
-            },
-            {
-                "运输方式": "国际快递",
-                "本轮状态": "待确认",
-                "适用边界": "需看禁限运、申报价值、件数、账号和目的国清关规则。",
-                "不能写成什么": "不能写成一定可走或固定到达日期。",
-            },
-        ]
-        _append_table(append_lines, "运输方式补充：海运拼箱 / 国际快递", ["运输方式", "本轮状态", "适用边界", "不能写成什么"], rows)
-    if "待补材料清单" not in text:
-        _append_table(append_lines, "待补材料清单", ["待补材料/事项", "为什么要补", "向谁要", "状态"], _market_gap_rows(graph))
-    if append_lines:
-        text = text.rstrip() + "\n\n" + "\n".join(append_lines).rstrip() + "\n"
     return text
 
 
@@ -547,15 +580,20 @@ def build_markdown(input_path: Path, route: str) -> tuple[str | None, list[dict[
         try:
             resolved_for_route = load_market_fixture(input_path)
         except Exception:
-            resolved_for_route = raw
+            try:
+                resolved_for_route = _load_lead_fixture(input_path)
+            except Exception:
+                resolved_for_route = raw
     actual_route = infer_route(resolved_for_route) if route == "auto" else route
     if actual_route == "product_outbound_market_analysis":
         graph = load_market_fixture(input_path)
         text, issues = build_product_market_markdown(graph)
     elif actual_route == "customer_background_research":
-        text, issues = build_background_markdown(raw)
+        graph = resolved_for_route if resolved_for_route is not raw else raw
+        text, issues = build_background_markdown(graph)
     elif actual_route == "bulk_customer_development":
-        text, issues = build_bulk_markdown(raw)
+        graph = resolved_for_route if resolved_for_route is not raw else raw
+        text, issues = build_bulk_markdown(graph)
     else:
         return None, [{"severity": "critical", "code": "markdown_delivery_unknown_route", "message": f"Unknown route: {route}", "path": "route"}], actual_route
     return text, issues, actual_route

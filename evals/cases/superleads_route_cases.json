@@ -9,7 +9,11 @@
       "expected_next_skill": "analyzing-product-outbound-market",
       "expected_split_customer_development": false,
       "expected_missing_fields": [],
-      "response_must_contain": ["产品出海市场分析", "不生成客户名单", "不判断是否值得进入"]
+      "response_must_contain": [
+        "产品出海市场分析",
+        "不生成客户名单",
+        "不判断是否值得进入"
+      ]
     },
     {
       "name": "textile compliance tax coo logistics",
@@ -18,7 +22,13 @@
       "expected_next_skill": "analyzing-product-outbound-market",
       "expected_split_customer_development": false,
       "expected_missing_fields": [],
-      "response_must_contain": ["产品出海市场分析", "趋势", "准入", "税费", "物流"]
+      "response_must_contain": [
+        "产品出海市场分析",
+        "趋势",
+        "准入",
+        "税费",
+        "物流"
+      ]
     },
     {
       "name": "market plus customer split",
@@ -27,7 +37,11 @@
       "expected_next_skill": "analyzing-product-outbound-market",
       "expected_split_customer_development": true,
       "expected_missing_fields": [],
-      "response_must_contain": ["产品出海市场分析", "第二阶段", "批量客户开发"]
+      "response_must_contain": [
+        "产品出海市场分析",
+        "第二阶段",
+        "批量客户开发"
+      ]
     },
     {
       "name": "pure customer development",
@@ -36,7 +50,9 @@
       "expected_next_skill": "scoping-lead-research",
       "expected_split_customer_development": false,
       "expected_missing_fields": [],
-      "response_must_contain": ["批量客户开发"]
+      "response_must_contain": [
+        "批量客户开发"
+      ]
     },
     {
       "name": "single domain background research",
@@ -45,7 +61,9 @@
       "expected_next_skill": "researching-customer-background",
       "expected_split_customer_development": false,
       "expected_missing_fields": [],
-      "response_must_contain": ["客户背调报告"]
+      "response_must_contain": [
+        "客户背调报告"
+      ]
     },
     {
       "name": "missing target country",
@@ -53,8 +71,73 @@
       "expected_route": "product_outbound_market_analysis",
       "expected_next_skill": "analyzing-product-outbound-market",
       "expected_split_customer_development": false,
-      "expected_missing_fields": ["target_country_or_region"],
-      "response_must_contain": ["产品出海市场分析", "待确认"]
+      "expected_missing_fields": [
+        "target_country_or_region"
+      ],
+      "response_must_contain": [
+        "产品出海市场分析",
+        "待确认"
+      ]
+    },
+    {
+      "name": "bulk diesel generator parts distributors real wording",
+      "text": "我要开发美国的柴油发电机配件经销商",
+      "expected_route": "bulk_customer_development",
+      "expected_next_skill": "scoping-lead-research",
+      "expected_split_customer_development": false,
+      "expected_missing_fields": [],
+      "response_must_contain": [
+        "批量客户开发"
+      ]
+    },
+    {
+      "name": "bulk auto parts middle east market wording",
+      "text": "我们工厂做汽车配件，想开发中东市场",
+      "expected_route": "bulk_customer_development",
+      "expected_next_skill": "scoping-lead-research",
+      "expected_split_customer_development": false,
+      "expected_missing_fields": [],
+      "response_must_contain": [
+        "批量客户开发"
+      ]
+    },
+    {
+      "name": "bulk outdoor furniture retail chains",
+      "text": "帮我找美国做户外家具的零售连锁",
+      "expected_route": "bulk_customer_development",
+      "expected_next_skill": "scoping-lead-research",
+      "expected_split_customer_development": false,
+      "expected_missing_fields": [],
+      "response_must_contain": [
+        "批量客户开发"
+      ]
+    },
+    {
+      "name": "market compliance question sds un38_3 from customer",
+      "text": "客户问我要 SDS 和 UN38.3，美国那边到底要不要",
+      "expected_route": "product_outbound_market_analysis",
+      "expected_next_skill": "analyzing-product-outbound-market",
+      "expected_split_customer_development": false,
+      "expected_missing_fields": [
+        "product_identity"
+      ],
+      "response_must_contain": [
+        "产品出海市场分析",
+        "准入",
+        "税费",
+        "物流"
+      ]
+    },
+    {
+      "name": "bulk slice s neutral packaging aftermarket sample",
+      "text": "中性包装柴油发电机后市场配件，美国，维修商/零件渠道/经销商",
+      "expected_route": "bulk_customer_development",
+      "expected_next_skill": "scoping-lead-research",
+      "expected_split_customer_development": false,
+      "expected_missing_fields": [],
+      "response_must_contain": [
+        "批量客户开发"
+      ]
     }
   ]
 }
