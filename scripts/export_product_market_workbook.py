@@ -98,6 +98,15 @@ STATUS_LABELS = {
     "conflict_pending_review": "有冲突待复核",
 }
 
+CORROBORATION_STATUS_LABELS = {
+    "multi_source_consistent": "多来源一致指向",
+    "single_source_only": "单点来源线索",
+    "not_enough_independent_sources": "独立来源不足",
+    "conflict_present": "来源之间有冲突",
+    "source_restricted": "来源受限",
+    "not_executed": "未执行",
+}
+
 ORIGIN_REQUIREMENT_LABELS = {
     "required": "需要（按目标国规则/适用场景）",
     "conditionally_required": "条件性需要（如优惠税率、海关要求、贸易救济等）",
@@ -243,6 +252,10 @@ def _safe_human_enum_cell(value: Any) -> str:
     return _safe_cell(_replace_enum_tokens(raw))
 
 
+def _corroboration_status_label(value: Any) -> str:
+    return CORROBORATION_STATUS_LABELS.get(str(value), str(value or "未提供"))
+
+
 def _first_sample_id(matrix_rows: list[dict[str, Any]]) -> str:
     for row in matrix_rows:
         cells = row.get("user_visible_cells")
@@ -384,7 +397,7 @@ def _is_origin_proof_row(row: dict[str, Any]) -> bool:
     return row.get("row_type") == "origin_proof_requirement" or isinstance(row.get("origin_proof_requirement"), dict)
 
 
-def _origin_proof_exported_row(row: dict[str, Any]) -> dict[str, str]:
+def _origin_proof_exported_row(row: dict[str, Any], corroboration_records: dict[str, dict[str, Any]] | None = None) -> dict[str, str]:
     cells = row.get("user_visible_cells") if isinstance(row.get("user_visible_cells"), dict) else {}
     record = row.get("origin_proof_requirement") if isinstance(row.get("origin_proof_requirement"), dict) else {}
     requirement_value = cells.get("原产地证明要求结论") if has_text(cells.get("原产地证明要求结论")) else record.get("requirement_status")
@@ -410,6 +423,7 @@ def _origin_proof_exported_row(row: dict[str, Any]) -> dict[str, str]:
         "不能写成什么": _safe_cell(cells.get("禁止升级") or cells.get("不能写成什么")),
         "边界说明": _safe_cell(record.get("limitation_note") or cells.get("边界说明")),
     }
+    _apply_corroboration_to_row(exported, row, corroboration_records or {})
     return exported
 
 
@@ -419,6 +433,45 @@ def _observation_by_source(graph: dict[str, Any]) -> dict[str, list[dict[str, An
         if isinstance(obs, dict) and has_text(obs.get("source_id")):
             result.setdefault(str(obs["source_id"]), []).append(obs)
     return result
+
+
+def _corroboration_by_id(graph: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    result: dict[str, dict[str, Any]] = {}
+    for record in ensure_list(graph, "corroboration_records"):
+        if isinstance(record, dict) and has_text(record.get("corroboration_id")):
+            result[str(record["corroboration_id"])] = record
+    return result
+
+
+def _format_corroboration(record: dict[str, Any]) -> dict[str, str]:
+    source_count = record.get("independent_source_count")
+    status = _corroboration_status_label(record.get("corroboration_status"))
+    count_text = f"{source_count} 个独立来源" if isinstance(source_count, int) else "独立来源数未提供"
+    return {
+        "多来源互证情况": _safe_cell(f"{status}；{count_text}；{record.get('user_visible_summary') or '未提供摘要'}"),
+        "互证边界": _safe_cell(record.get("cannot_conclude") or "不能把多来源弱信号写成最终事实"),
+        "下一步核实": _safe_cell(record.get("next_verification_steps") or "需要业务文件、权威来源或专业复核后再升级"),
+    }
+
+
+def _apply_corroboration_to_row(exported: dict[str, str], row: dict[str, Any], corroboration_records: dict[str, dict[str, Any]]) -> None:
+    summaries: list[str] = []
+    boundaries: list[str] = []
+    next_steps: list[str] = []
+    for record_id in ensure_list(row, "corroboration_record_ids"):
+        record = corroboration_records.get(str(record_id))
+        if not isinstance(record, dict):
+            continue
+        formatted = _format_corroboration(record)
+        summaries.append(formatted["多来源互证情况"])
+        boundaries.append(formatted["互证边界"])
+        next_steps.append(formatted["下一步核实"])
+    if summaries:
+        exported["多来源互证情况"] = "；".join(summaries)
+    if boundaries:
+        exported["互证边界"] = "；".join(boundaries)
+    if next_steps:
+        exported["下一步核实"] = "；".join(next_steps)
 
 
 def _source_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str, str]]:
@@ -497,13 +550,14 @@ def build_sheets(graph: dict[str, Any]) -> dict[str, list[dict[str, str]]]:
     sheets: dict[str, list[dict[str, str]]] = {sheet: [] for sheet in SHEET_ORDER}
     matrix_rows = [row for row in ensure_list(graph, "matrix_rows") if isinstance(row, dict)]
     sample_id = _first_sample_id(matrix_rows)
+    corroboration_records = _corroboration_by_id(graph)
 
     for row in matrix_rows:
         sheet_name = str(row.get("sheet_name") or "")
         if sheet_name not in sheets:
             continue
         if _is_origin_proof_row(row):
-            exported = _origin_proof_exported_row(row)
+            exported = _origin_proof_exported_row(row, corroboration_records)
             sheets[sheet_name].append(exported)
             continue
         cells = row.get("user_visible_cells")
@@ -518,6 +572,7 @@ def build_sheets(graph: dict[str, Any]) -> dict[str, list[dict[str, str]]]:
             exported[safe_key] = _safe_cell(value)
         if sheet_name == "市场事实总览":
             _enrich_overview_row(exported, graph)
+        _apply_corroboration_to_row(exported, row, corroboration_records)
         if "样本编号" in SHEET_COLUMNS[sheet_name] and not has_text(exported.get("样本编号")) and sample_id != "未提供":
             exported["样本编号"] = sample_id
         sheets[sheet_name].append(exported)

@@ -415,6 +415,7 @@
         "evidence_card_ids": {"$ref": "#/$defs/IdRefs"},
         "gap_ids": {"$ref": "#/$defs/IdRefs"},
         "conflict_ids": {"$ref": "#/$defs/IdRefs"},
+        "corroboration_record_ids": {"$ref": "#/$defs/IdRefs"},
         "module_key": {"type": ["string", "null"]},
         "boundary_rule_ids": {"$ref": "#/$defs/IdRefs"},
         "internal_refs_hidden": {"type": "boolean"},
@@ -451,6 +452,60 @@
         "status": {"$ref": "#/$defs/Status"},
         "evidence_card_ids": {"$ref": "#/$defs/IdRefs"},
         "summary": {"type": "string", "minLength": 1}
+      }
+    },
+    "CorroborationStatus": {
+      "type": "string",
+      "enum": [
+        "multi_source_consistent",
+        "single_source_only",
+        "not_enough_independent_sources",
+        "conflict_present",
+        "source_restricted",
+        "not_executed"
+      ]
+    },
+    "CorroborationRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "corroboration_id",
+        "run_id",
+        "field_domain",
+        "field_name",
+        "current_signal",
+        "corroboration_status",
+        "source_refs",
+        "supporting_evidence_card_ids",
+        "conflicting_evidence_card_ids",
+        "independent_source_count",
+        "independence_basis",
+        "user_visible_summary",
+        "cannot_conclude",
+        "review_status"
+      ],
+      "properties": {
+        "corroboration_id": {"type": "string", "minLength": 1},
+        "run_id": {"type": "string", "minLength": 1},
+        "brief_version_id": {"type": ["string", "null"]},
+        "field_domain": {"type": "string", "minLength": 1},
+        "field_name": {"type": "string", "minLength": 1},
+        "current_signal": {"type": "string", "minLength": 1},
+        "corroboration_status": {"$ref": "#/$defs/CorroborationStatus"},
+        "source_refs": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/SourceRef"}
+        },
+        "supporting_evidence_card_ids": {"$ref": "#/$defs/IdRefs"},
+        "conflicting_evidence_card_ids": {"$ref": "#/$defs/IdRefs"},
+        "independent_source_count": {"type": "integer", "minimum": 0},
+        "independence_basis": {"$ref": "#/$defs/StringList"},
+        "user_visible_summary": {"type": "string", "minLength": 1},
+        "cannot_conclude": {"$ref": "#/$defs/StringList"},
+        "next_verification_steps": {"$ref": "#/$defs/StringList"},
+        "reviewer_skill": {"type": ["string", "null"]},
+        "reviewed_at": {"type": ["string", "null"]},
+        "review_status": {"$ref": "#/$defs/ReviewStatus"}
       }
     },
     "SkillHandoffRecord": {
@@ -674,6 +729,7 @@
     "sources": {"type": "array", "items": {"$ref": "source-observation.schema.json#/$defs/Source"}},
     "observations": {"type": "array", "items": {"$ref": "source-observation.schema.json#/$defs/Observation"}},
     "evidence_cards": {"type": "array", "items": {"$ref": "#/$defs/EvidenceCard"}},
+    "corroboration_records": {"type": "array", "items": {"$ref": "#/$defs/CorroborationRecord"}},
     "matrix_rows": {"type": "array", "items": {"$ref": "#/$defs/MatrixRowRecord"}},
     "gaps": {"type": "array", "items": {"$ref": "#/$defs/GapRecord"}},
     "conflicts": {"type": "array", "items": {"$ref": "#/$defs/ConflictRecord"}},

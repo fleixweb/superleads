@@ -14,6 +14,7 @@ import re
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from _superleads_common import contains_local_path, has_text, is_safe_public_http_url, issue
 
@@ -271,6 +272,7 @@ ID_FIELDS = {
     "sources": "source_id",
     "observations": "observation_id",
     "evidence_cards": "evidence_card_id",
+    "corroboration_records": "corroboration_id",
     "matrix_rows": "matrix_row_id",
     "gaps": "gap_id",
     "conflicts": "conflict_id",
@@ -496,6 +498,19 @@ def _card_text(card: dict[str, Any], include_source: bool = True) -> str:
     return text_of(fields)
 
 
+def _corroboration_text(record: dict[str, Any]) -> str:
+    return text_of([
+        record.get("field_domain"),
+        record.get("field_name"),
+        record.get("current_signal"),
+        record.get("corroboration_status"),
+        record.get("independence_basis"),
+        record.get("user_visible_summary"),
+        record.get("cannot_conclude"),
+        record.get("next_verification_steps"),
+    ])
+
+
 def _row_text(row: dict[str, Any]) -> str:
     return text_of([row.get("sheet_name"), row.get("row_topic"), row.get("user_visible_cells"), row.get("status")])
 
@@ -517,6 +532,11 @@ def _visible_text_items(graph: dict[str, Any]) -> list[tuple[str, Any]]:
     for idx, conflict in enumerate(ensure_list(graph, "conflicts")):
         if isinstance(conflict, dict):
             items.append((f"conflicts[{idx}].summary", conflict.get("summary")))
+    for idx, record in enumerate(ensure_list(graph, "corroboration_records")):
+        if isinstance(record, dict):
+            items.append((f"corroboration_records[{idx}].user_visible_summary", record.get("user_visible_summary")))
+            items.append((f"corroboration_records[{idx}].cannot_conclude", record.get("cannot_conclude")))
+            items.append((f"corroboration_records[{idx}].next_verification_steps", record.get("next_verification_steps")))
     for idx, card in enumerate(ensure_list(graph, "evidence_cards")):
         if isinstance(card, dict):
             items.append((f"evidence_cards[{idx}].source_locator", card.get("source_locator")))
@@ -784,6 +804,163 @@ def _public_source_url(source: dict[str, Any]) -> bool:
     return is_safe_public_http_url(url)
 
 
+def _source_independence_key(source: dict[str, Any] | None) -> str | None:
+    """Return a conservative source-owner key for weak-source corroboration."""
+    if not isinstance(source, dict):
+        return None
+    owner = source.get("owner_hint")
+    if has_text(owner):
+        return f"owner:{norm(owner)}"
+    for field in ("final_url", "canonical_url"):
+        url = source.get(field)
+        if not has_text(url):
+            continue
+        try:
+            host = (urlsplit(str(url)).hostname or "").casefold().lstrip("www.")
+        except ValueError:
+            host = ""
+        if host:
+            return f"host:{host}"
+    # If neither owner_hint nor public URL host is available, do not count the
+    # source as independently identifiable.  A source_id is an internal handle,
+    # not business-world independence.
+    return None
+
+
+def _source_ids_from_refs(refs: Any, ids: dict[str, dict[str, dict[str, Any]]]) -> list[str]:
+    source_ids: list[str] = []
+    seen: set[str] = set()
+    for ref in as_list(refs):
+        if not isinstance(ref, dict):
+            continue
+        source_id = ref.get("source_id")
+        if not has_text(source_id) and has_text(ref.get("observation_id")):
+            obs = ids["observations"].get(str(ref.get("observation_id")))
+            if isinstance(obs, dict):
+                source_id = obs.get("source_id")
+        if has_text(source_id) and str(source_id) not in seen:
+            seen.add(str(source_id))
+            source_ids.append(str(source_id))
+    return source_ids
+
+
+def _card_source_ids(card: dict[str, Any], ids: dict[str, dict[str, dict[str, Any]]]) -> list[str]:
+    return _source_ids_from_refs(card.get("source_refs"), ids)
+
+
+def _source_has_opened_observation(source_id: str, observations_by_source: dict[str, list[dict[str, Any]]]) -> bool:
+    return any(_observation_is_opened_source(obs) for obs in observations_by_source.get(source_id, []) if isinstance(obs, dict))
+
+
+def _corroboration_issues(
+    graph: dict[str, Any],
+    ids: dict[str, dict[str, dict[str, Any]]],
+    observations_by_source: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, str]]:
+    issues: list[dict[str, str]] = []
+    run_ids = set(ids["runs"])
+    evidence_cards = ids["evidence_cards"]
+    conflicts = ids["conflicts"]
+    corroborations = ids.get("corroboration_records", {})
+
+    for idx, record in enumerate(ensure_list(graph, "corroboration_records")):
+        if not isinstance(record, dict):
+            continue
+        path = f"corroboration_records[{idx}]"
+        status = str(record.get("corroboration_status") or "")
+        if record.get("run_id") not in run_ids:
+            _add_issue(issues, "critical", "market_corroboration_run_missing", "CorroborationRecord must reference an existing product-market run", f"{path}.run_id")
+
+        if record.get("review_status") != "passed":
+            _add_issue(issues, "major", "market_corroboration_not_reviewed", "CorroborationRecord must be reviewed before it can support delivery", f"{path}.review_status")
+
+        if _card_uses_query_plan_or_search_log_as_direct_source(record):
+            _add_issue(issues, "critical", "market_corroboration_search_or_plan_source", "Search snippets, SearchLog, Source Pack, or Query Plan cannot be used as direct corroboration evidence", path)
+
+        source_ids = _source_ids_from_refs(record.get("source_refs"), ids)
+        for card_id in as_list(record.get("supporting_evidence_card_ids")):
+            card = evidence_cards.get(str(card_id))
+            if not isinstance(card, dict):
+                _add_issue(issues, "critical", "market_corroboration_card_missing", "CorroborationRecord references a missing supporting EvidenceCard", f"{path}.supporting_evidence_card_ids")
+                continue
+            source_ids.extend(source_id for source_id in _card_source_ids(card, ids) if source_id not in source_ids)
+            if _card_uses_search_source(card, ids) or _card_uses_query_plan_or_search_log_as_direct_source(card):
+                _add_issue(issues, "critical", "market_corroboration_search_or_plan_source", "Search-only or plan-only card cannot support corroboration", f"{path}.supporting_evidence_card_ids")
+
+        opened_source_ids: list[str] = []
+        independence_keys: set[str] = set()
+        for source_id in source_ids:
+            source = ids["sources"].get(source_id)
+            if not isinstance(source, dict):
+                _add_issue(issues, "critical", "market_corroboration_source_missing", "CorroborationRecord references a missing Source", f"{path}.source_refs")
+                continue
+            if source.get("medium") == "search_result":
+                _add_issue(issues, "critical", "market_corroboration_search_or_plan_source", "Search result source cannot be used as corroboration evidence", f"{path}.source_refs")
+            if not _source_has_opened_observation(source_id, observations_by_source):
+                _add_issue(issues, "critical", "market_corroboration_unopened_source", "CorroborationRecord requires opened/captured/extracted observations for each supporting source", f"{path}.source_refs")
+            else:
+                opened_source_ids.append(source_id)
+            key = _source_independence_key(source)
+            if key:
+                independence_keys.add(key)
+
+        actual_independent_count = len(independence_keys)
+        declared_count = record.get("independent_source_count")
+        if not isinstance(declared_count, int):
+            _add_issue(issues, "critical", "market_corroboration_source_count_mismatch", "CorroborationRecord needs an integer independent_source_count", f"{path}.independent_source_count")
+        elif declared_count != actual_independent_count:
+            _add_issue(issues, "critical", "market_corroboration_source_count_mismatch", "Declared independent_source_count must match distinct opened source-owner/domain count", f"{path}.independent_source_count")
+
+        has_conflict_cards = any(has_text(card_id) for card_id in as_list(record.get("conflicting_evidence_card_ids")))
+        for card_id in as_list(record.get("conflicting_evidence_card_ids")):
+            if has_text(card_id) and str(card_id) not in evidence_cards:
+                _add_issue(issues, "critical", "market_corroboration_card_missing", "CorroborationRecord references a missing conflicting EvidenceCard", f"{path}.conflicting_evidence_card_ids")
+
+        same_field_conflicts = [
+            conflict
+            for conflict in conflicts.values()
+            if isinstance(conflict, dict)
+            and conflict.get("run_id") == record.get("run_id")
+            and norm(conflict.get("field_domain")) == norm(record.get("field_domain"))
+            and norm(conflict.get("field_name")) == norm(record.get("field_name"))
+            and conflict.get("status") == "conflict_pending_review"
+        ]
+        has_conflict_records = bool(same_field_conflicts)
+        if has_conflict_records and status == "multi_source_consistent":
+            _add_issue(issues, "critical", "market_corroboration_conflict_hidden", "CorroborationRecord cannot claim multi-source consistency while a same-field conflict is pending", path)
+        if has_conflict_cards and status == "multi_source_consistent":
+            _add_issue(issues, "critical", "market_corroboration_conflict_hidden", "CorroborationRecord with conflicting cards must use conflict_present, not multi_source_consistent", path)
+
+        if status == "multi_source_consistent":
+            if actual_independent_count < 2:
+                _add_issue(issues, "critical", "market_corroboration_not_independent", "Multi-source consistency requires at least two independent opened source owners/domains", f"{path}.source_refs")
+            if not as_list(record.get("cannot_conclude")):
+                _add_issue(issues, "major", "market_corroboration_missing_boundary", "Multi-source consistency must state what cannot be concluded", f"{path}.cannot_conclude")
+            if _contains_positive_phrase(_corroboration_text(record), VALUE_JUDGMENT_PHRASES + FINAL_TAX_PHRASES + DESTINATION_RECOGNITION_PHRASES):
+                _add_issue(issues, "critical", "market_corroboration_overstated", "Multi-source weak evidence was overstated as recommendation, final duty/classification, or destination compliance", path)
+        elif status == "single_source_only" and actual_independent_count > 1:
+            _add_issue(issues, "major", "market_corroboration_source_count_mismatch", "single_source_only status conflicts with multiple independent opened sources", f"{path}.corroboration_status")
+        elif status == "not_enough_independent_sources" and actual_independent_count >= 2 and not has_conflict_records:
+            _add_issue(issues, "major", "market_corroboration_source_count_mismatch", "not_enough_independent_sources status conflicts with source count", f"{path}.corroboration_status")
+        elif status == "conflict_present" and not (has_conflict_cards or has_conflict_records):
+            _add_issue(issues, "major", "market_corroboration_conflict_status_without_conflict", "conflict_present status needs conflicting cards or same-field ConflictRecord", f"{path}.corroboration_status")
+
+    for row_idx, row in enumerate(ensure_list(graph, "matrix_rows")):
+        if not isinstance(row, dict):
+            continue
+        row_refs = [str(item) for item in as_list(row.get("corroboration_record_ids")) if has_text(item)]
+        for record_id in row_refs:
+            record = corroborations.get(record_id)
+            if not isinstance(record, dict):
+                _add_issue(issues, "critical", "market_corroboration_record_missing", "Matrix row references a missing CorroborationRecord", f"matrix_rows[{row_idx}].corroboration_record_ids")
+                continue
+            if record.get("corroboration_status") == "multi_source_consistent" and row.get("status") in STATUS_FACTUAL:
+                _add_issue(issues, "critical", "market_corroboration_overstated", "A multi-source weak-evidence signal must not make a matrix row verified/final by itself", f"matrix_rows[{row_idx}].status")
+            if _contains_positive_phrase(_row_text(row), ("多来源证实", "多来源证明", "共同证明", "已证实", "confirmed by multiple sources", "proven by multiple sources")):
+                _add_issue(issues, "critical", "market_corroboration_overstated", "User-visible row overstates weak-source consistency as proof", f"matrix_rows[{row_idx}]")
+    return issues
+
+
 def _market_search_collection_issues(
     graph: dict[str, Any],
     ids: dict[str, dict[str, dict[str, Any]]],
@@ -906,6 +1083,7 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
             observations_by_source.setdefault(str(obs["source_id"]), []).append(obs)
 
     issues.extend(_market_search_collection_issues(graph, ids, observations_by_source))
+    issues.extend(_corroboration_issues(graph, ids, observations_by_source))
 
     # Every matrix row needs an explicit status in business language.
     for idx, row in enumerate(ensure_list(graph, "matrix_rows")):

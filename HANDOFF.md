@@ -1,46 +1,52 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：`85197d7 Add certification requirement guardrails`
-- 当前工作树：Slice AA / Code Slice AA 已完成并通过回归，待提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：`b3145fc Calibrate weak-evidence delivery guardrails`
+- 当前工作树：Code Slice AB 已完成并通过回归，待提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
+
+## 已完成
+
+- Slice AA / Code Slice AA 已提交：`b3145fc Calibrate weak-evidence delivery guardrails`。
+- Code Slice AB 已完成：产品出海市场分析新增多来源互证 / `CorroborationRecord` 最小闭环。
+
+## Code Slice AB 已完成内容
+
+1. `shared/schemas/product-market-analysis.schema.json`
+   - 增加可选 `corroboration_records`。
+   - 新增 `CorroborationRecord` / `CorroborationStatus`。
+   - `MatrixRowRecord` 可引用 `corroboration_record_ids`。
+2. `scripts/validate_product_market_analysis.py`
+   - 多来源一致必须来自已打开/已抽取来源。
+   - 搜索摘要 / SearchLog / Source Pack / Query Plan 不能直接作为互证来源。
+   - 独立来源数按 owner/domain 保守计算；同域名或同 owner 不算多个独立来源。
+   - 存在同字段冲突时不能写成多来源一致。
+   - 多个弱来源一致不能把用户矩阵行升级为 `verified` 或最终事实。
+3. `scripts/export_product_market_workbook.py`
+   - 用户可见导出增加人话字段：`多来源互证情况`、`互证边界`、`下一步核实`。
+   - 不暴露内部对象名，不新增事实。
+4. evals
+   - market suite 从 `50` 条扩展到 `57` 条。
+   - 新增 1 个 pass / 6 个 fail 互证 fixtures。
 
 ## 已验证
 
-- Slice AA / Code Slice AA：
-  - 用户可见输出静态套件：`8/8`
-  - 三路线 Markdown 交付器套件：`5/5`
-  - 默认套件：`98/98`
-  - 深度套件：`644/644`
-  - 全量套件：`684/684`
-  - market 独立套件：`50/50`
-  - `git diff --check` 通过
-- 注意：`python3 evals/run_evals.py --suite all` 与 `python3 evals/run_product_market_analysis_evals.py --suite all` 仍是并列套件；前者目前不包含 market 那 50 条。
+```bash
+python3 -m py_compile scripts/validate_product_market_analysis.py scripts/export_product_market_workbook.py scripts/audit_product_market_analysis.py
+python3 evals/run_product_market_analysis_evals.py --suite all  # 57/57
+python3 evals/run_superleads_user_visible_output_evals.py --suite all  # 8/8
+python3 evals/run_superleads_markdown_delivery_evals.py --suite all  # 5/5
+python3 evals/run_evals.py --suite default  # 98/98
+python3 evals/run_evals.py --suite all  # 684/684
+python3 evals/run_evals.py --suite deep  # 644/644
+git diff --check  # 通过
+```
 
-## 当前结论
+注意：`python3 evals/run_evals.py --suite all` 与 `python3 evals/run_product_market_analysis_evals.py --suite all` 仍是并列套件；前者目前不包含 market 那 57 条。
 
-Slice AA 已正式把 Superleads 校准为“弱证据收敛 + 可审计交付”系统，而不是沿用 Superpowers 的强证据二值判定。
+## 当前下一步建议
 
-Code Slice AA 已修复 P0：
-
-1. `export_superleads_markdown.py` 的内部术语替换已加英文词边界，不再破坏 `The Telegraph`、`Photograph`、`paragraph`、`evaluation`。
-2. `validate_superleads_user_visible_output.py` 已支持否定语境豁免和英文词边界；“不判断是否值得进入”“不做推荐客户排序，也不给采购概率”“Made in 等于 COO 是错误理解”不再误报；正向“建议进入 / 推荐客户 / 采购概率 / 候选税号就是最终税率”仍失败。
-3. `route_superleads_intake.py` 已补真实外贸客户词，修复经销商/批发商/零售商/代理商/连锁/维修商等 bulk 入口；SDS / UN38.3 / 认证 / 关税 / 物流要求进入产品出海市场分析；“后市场”“中性包装”不再因普通 `市场` / `包装` 子串误伤。
-4. 产品市场 Markdown 交付器停止补固定 `Google Trends / COO / 海运拼箱 / 国际快递 / 待补材料清单` 样板段；用户可见合同改为通用栏目，具体样本词放在 case 级 `must_contain`。
-
-## 本轮新增关键文件
-
-- `spec/30-superleads-weak-evidence-calibration.md`
-- `docs/validation/superleads-weak-evidence-diagnostic-20260728.md`
-- `docs/validation/superleads-code-slice-aa-p0-fixes-20260728.md`
-- `evals/fixtures/pass_default_discovery_markdown_replacement_boundaries.json`
-- `evals/user_visible_outputs/product_market_negated_guardrails_and_source_names.md`
-- `evals/user_visible_outputs/fail_user_visible_positive_recommendation.md`
-
-## 下一步建议
-
-1. 先提交 Slice AA + Code Slice AA 当前变更。
-2. 提交后进入 P1 中最关键的一项：`Code Slice AB：多来源互证 / CorroborationRecord 最小设计与 eval`。
-3. 暂缓展示美化类 Slice，直到多来源互证、时效降级、Authority registry 的方向排清楚。
+1. 先提交 Code Slice AB 当前变更。
+2. 提交后进入 `Code Slice AC：时效降级 / freshness`。
 
 ## 重要边界
 
