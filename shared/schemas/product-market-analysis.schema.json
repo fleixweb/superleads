@@ -376,6 +376,7 @@
         "gap_ids": {"$ref": "#/$defs/IdRefs"},
         "boundary_rule_ids": {"$ref": "#/$defs/IdRefs"},
         "freshness_record_ids": {"$ref": "#/$defs/IdRefs"},
+        "authority_verification_record_ids": {"$ref": "#/$defs/IdRefs"},
         "review_status": {"$ref": "#/$defs/ReviewStatus"}
       }
     },
@@ -418,6 +419,7 @@
         "conflict_ids": {"$ref": "#/$defs/IdRefs"},
         "corroboration_record_ids": {"$ref": "#/$defs/IdRefs"},
         "freshness_record_ids": {"$ref": "#/$defs/IdRefs"},
+        "authority_verification_record_ids": {"$ref": "#/$defs/IdRefs"},
         "module_key": {"type": ["string", "null"]},
         "boundary_rule_ids": {"$ref": "#/$defs/IdRefs"},
         "internal_refs_hidden": {"type": "boolean"},
@@ -748,6 +750,93 @@
         "unknown"
       ]
     },
+    "AuthorityLevel": {"type": "string", "enum": ["primary_official_authority", "official_service_or_portal", "official_gazette_or_legal_database", "delegated_or_recognized_body", "intergovernmental_reference", "industry_or_professional_reference", "commercial_market_reference", "media_or_general_web_reference", "unknown_authority"]},
+    "AuthorityVerificationStatus": {"type": "string", "enum": ["verified_for_fact_domain", "candidate_needs_check", "secondary_reference_only", "unable_to_verify", "conflicting_identity", "not_executed"]},
+    "AuthorityJurisdictionRole": {"type": "string", "enum": ["destination_market", "import_customs", "export_declaration", "origin_country", "departure_logistics", "transit", "market_signal", "common_rule", "product_source", "global_or_international", "unknown"]},
+    "AuthorityJurisdictionType": {"type": "string", "enum": ["country", "customs_union", "region", "subnational", "port_or_airport", "carrier_network", "global_or_international", "product_specific", "unknown"]},
+    "AuthorityIdentityEvidenceType": {"type": "string", "enum": ["official_portal_link", "page_footer_or_about", "official_gazette_or_legal_database", "delegation_or_accreditation_list", "pdf_from_official_locator", "institution_contact_or_address", "third_party_description", "other"]},
+    "AuthorityProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority_profile_id", "jurisdiction_type", "jurisdiction_role", "jurisdiction_name", "institution_name", "institution_type", "authority_level", "authority_basis_summary", "identity_evidence_ids", "capability_ids", "known_limitations", "verification_status", "review_status"],
+      "properties": {
+        "authority_profile_id": {"type": "string", "minLength": 1},
+        "source_id": {"type": ["string", "null"]},
+        "source_entry_id": {"type": ["string", "null"]},
+        "jurisdiction_type": {"$ref": "#/$defs/AuthorityJurisdictionType"},
+        "jurisdiction_role": {"$ref": "#/$defs/AuthorityJurisdictionRole"},
+        "jurisdiction_code": {"type": ["string", "null"]},
+        "jurisdiction_name": {"type": "string", "minLength": 1},
+        "institution_name": {"type": "string", "minLength": 1},
+        "institution_name_local": {"type": ["string", "null"]},
+        "institution_type": {"type": "string", "minLength": 1},
+        "authority_level": {"$ref": "#/$defs/AuthorityLevel"},
+        "authority_basis_summary": {"type": "string", "minLength": 1},
+        "identity_evidence_ids": {"$ref": "#/$defs/IdRefs"},
+        "capability_ids": {"$ref": "#/$defs/IdRefs"},
+        "known_limitations": {"$ref": "#/$defs/StringList"},
+        "verification_status": {"$ref": "#/$defs/AuthorityVerificationStatus"},
+        "review_status": {"$ref": "#/$defs/ReviewStatus"}
+      }
+    },
+    "AuthorityIdentityEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority_identity_evidence_id", "authority_profile_id", "evidence_type", "visible_evidence_summary", "locator", "supports_identity_as", "does_not_support", "review_status"],
+      "properties": {
+        "authority_identity_evidence_id": {"type": "string", "minLength": 1},
+        "authority_profile_id": {"type": "string", "minLength": 1},
+        "source_id": {"type": ["string", "null"]},
+        "observation_ids": {"$ref": "#/$defs/IdRefs"},
+        "evidence_type": {"$ref": "#/$defs/AuthorityIdentityEvidenceType"},
+        "visible_evidence_summary": {"type": "string", "minLength": 1},
+        "locator": {"type": "string", "minLength": 1},
+        "supports_identity_as": {"type": "string", "minLength": 1},
+        "does_not_support": {"$ref": "#/$defs/StringList"},
+        "review_status": {"$ref": "#/$defs/ReviewStatus"}
+      }
+    },
+    "AuthorityCapability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority_capability_id", "authority_profile_id", "fact_domains_supported", "fact_domains_not_supported", "supported_claim_types", "unsupported_claim_types", "minimum_authority_level", "requires_freshness_record", "requires_professional_confirmation", "capability_basis", "review_status"],
+      "properties": {
+        "authority_capability_id": {"type": "string", "minLength": 1},
+        "authority_profile_id": {"type": "string", "minLength": 1},
+        "fact_domains_supported": {"$ref": "#/$defs/StringList"},
+        "fact_domains_not_supported": {"$ref": "#/$defs/StringList"},
+        "supported_claim_types": {"$ref": "#/$defs/StringList"},
+        "unsupported_claim_types": {"$ref": "#/$defs/StringList"},
+        "minimum_authority_level": {"$ref": "#/$defs/AuthorityLevel"},
+        "requires_freshness_record": {"type": "boolean"},
+        "requires_professional_confirmation": {"type": "boolean"},
+        "capability_basis": {"type": "string", "minLength": 1},
+        "review_status": {"$ref": "#/$defs/ReviewStatus"}
+      }
+    },
+    "AuthorityVerificationRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority_verification_id", "run_id", "source_id", "observation_ids", "authority_profile_id", "fact_domain", "jurisdiction_role", "verification_status", "verification_basis", "can_support", "cannot_support", "next_verification_steps", "review_status"],
+      "properties": {
+        "authority_verification_id": {"type": "string", "minLength": 1},
+        "run_id": {"type": "string", "minLength": 1},
+        "brief_version_id": {"type": ["string", "null"]},
+        "source_id": {"type": "string", "minLength": 1},
+        "observation_ids": {"$ref": "#/$defs/IdRefs"},
+        "authority_profile_id": {"type": "string", "minLength": 1},
+        "fact_domain": {"type": "string", "minLength": 1},
+        "jurisdiction_role": {"$ref": "#/$defs/AuthorityJurisdictionRole"},
+        "verification_status": {"$ref": "#/$defs/AuthorityVerificationStatus"},
+        "verification_basis": {"type": "string", "minLength": 1},
+        "can_support": {"$ref": "#/$defs/StringList"},
+        "cannot_support": {"$ref": "#/$defs/StringList"},
+        "next_verification_steps": {"$ref": "#/$defs/StringList"},
+        "reviewer_skill": {"type": ["string", "null"]},
+        "reviewed_at": {"type": ["string", "null"]},
+        "review_status": {"$ref": "#/$defs/ReviewStatus"}
+      }
+    },
     "CertificationRequirementRecord": {
       "type": "object",
       "additionalProperties": false,
@@ -802,6 +891,10 @@
     "gaps": {"type": "array", "items": {"$ref": "#/$defs/GapRecord"}},
     "conflicts": {"type": "array", "items": {"$ref": "#/$defs/ConflictRecord"}},
     "handoffs": {"type": "array", "items": {"$ref": "#/$defs/SkillHandoffRecord"}},
-    "state_transitions": {"type": "array", "items": {"$ref": "#/$defs/StateTransitionRecord"}}
+    "state_transitions": {"type": "array", "items": {"$ref": "#/$defs/StateTransitionRecord"}},
+    "authority_profiles": {"type": "array", "items": {"$ref": "#/$defs/AuthorityProfile"}},
+    "authority_identity_evidence": {"type": "array", "items": {"$ref": "#/$defs/AuthorityIdentityEvidence"}},
+    "authority_capabilities": {"type": "array", "items": {"$ref": "#/$defs/AuthorityCapability"}},
+    "authority_verification_records": {"type": "array", "items": {"$ref": "#/$defs/AuthorityVerificationRecord"}}
   }
 }

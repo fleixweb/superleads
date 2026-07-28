@@ -289,6 +289,51 @@ CERT_AUTHORITY_MARKERS = (
     "phmsa", "cbp", "ftc", "europa.eu", "eur-lex", "access2markets", "gov.uk",
     "主管部门", "官方", "海关", "法规", "法令", "标准机构", "认证主管", "市场监管",
 )
+AUTHORITY_STRONG_LEVELS = {
+    "primary_official_authority",
+    "official_service_or_portal",
+    "official_gazette_or_legal_database",
+}
+AUTHORITY_SECONDARY_LEVELS = {
+    "delegated_or_recognized_body",
+    "intergovernmental_reference",
+    "industry_or_professional_reference",
+    "commercial_market_reference",
+    "media_or_general_web_reference",
+    "unknown_authority",
+}
+AUTHORITY_REGULATORY_DOMAINS = {
+    "import_tax",
+    "trade_remedy",
+    "certification_requirement",
+    "destination_requirement",
+    "origin_proof_requirement",
+    "export_requirement",
+    "export_control",
+    "inspection_quarantine",
+    "dangerous_goods_transport",
+    "logistics_prefiling",
+}
+AUTHORITY_DETERMINATE_CLAIM_MARKERS = (
+    "required", "not required", "normally_not_required", "conditionally_required",
+    "mandatory", "current", "latest", "final", "in force", "effective",
+    "需要", "不需要", "无需", "通常不要求", "条件性需要", "强制", "现行", "最新", "最终", "有效",
+)
+AUTHORITY_KEYWORD_ONLY_MARKERS = (
+    "official", "regulation", "regulatory", "customs", "authority", "agency",
+    "government", "主管", "官方", "海关", "法规", "权威",
+)
+AUTHORITY_DOMAIN_ONLY_MARKERS = (
+    ".gov", "gov.", ".gouv", ".go.", ".gov.", ".europa.eu", "domain", "url suffix",
+    "official domain", "政府域名", "官方域名", "域名后缀", "网址后缀",
+)
+AUTHORITY_VISIBLE_IDENTITY_MARKERS = (
+    "official portal link", "page footer", "about page", "contact page",
+    "legal database", "official gazette", "delegation list", "accreditation list",
+    "linked from", "listed by", "statutory", "mandate", "职责", "法定职责",
+    "官方门户", "页面页脚", "机构介绍", "联系方式", "官方公报", "法规库", "授权名单",
+    "认可名单", "主管机关链接", "由主管机关列出",
+)
 SOURCE_OPEN_CAPABILITIES = {
     "source.open",
     "browser.render",
@@ -325,6 +370,10 @@ ID_FIELDS = {
     "evidence_cards": "evidence_card_id",
     "corroboration_records": "corroboration_id",
     "freshness_records": "freshness_id",
+    "authority_profiles": "authority_profile_id",
+    "authority_identity_evidence": "authority_identity_evidence_id",
+    "authority_capabilities": "authority_capability_id",
+    "authority_verification_records": "authority_verification_id",
     "matrix_rows": "matrix_row_id",
     "gaps": "gap_id",
     "conflicts": "conflict_id",
@@ -789,6 +838,8 @@ def _origin_record_authority_source_ids(record: dict[str, Any]) -> list[str]:
 def _source_looks_authoritative(source: dict[str, Any] | None, observations: list[dict[str, Any]]) -> bool:
     if not isinstance(source, dict):
         return False
+    if source.get("publisher_relation") != "first_party":
+        return False
     source_text = text_of([
         source.get("publisher_relation"),
         source.get("provenance"),
@@ -804,8 +855,6 @@ def _source_looks_authoritative(source: dict[str, Any] | None, observations: lis
         obs.get("raw_excerpt") if isinstance(obs, dict) else None
         for obs in observations
     ])
-    if source.get("publisher_relation") == "first_party" and _contains_any([source_text, observation_text], ORIGIN_PROOF_AUTHORITY_MARKERS):
-        return True
     return _contains_any([source_text, observation_text], ORIGIN_PROOF_AUTHORITY_MARKERS)
 
 
@@ -888,6 +937,8 @@ def _cert_record_authority_source_ids(record: dict[str, Any]) -> list[str]:
 
 def _cert_source_looks_authoritative(source: dict[str, Any] | None, observations: list[dict[str, Any]]) -> bool:
     if not isinstance(source, dict):
+        return False
+    if source.get("publisher_relation") != "first_party":
         return False
     source_text = text_of([
         source.get("publisher_relation"),
@@ -1299,6 +1350,479 @@ def _freshness_issues(
     return issues
 
 
+def _authority_verification_by_id(graph: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    result: dict[str, dict[str, Any]] = {}
+    for record in ensure_list(graph, "authority_verification_records"):
+        if isinstance(record, dict) and has_text(record.get("authority_verification_id")):
+            result[str(record["authority_verification_id"])] = record
+    return result
+
+
+def _authority_fact_domain_key(value: Any) -> str | None:
+    text = norm(value)
+    if any(marker in text for marker in ("贸易救济", "反倾销", "反补贴", "section 301", "trade remedy", "additional duty", "safeguard")):
+        return "trade_remedy"
+    # Proof-of-origin text often mentions preferential tariff treatment.  In
+    # that mixed wording, the authority question is still "who can speak for
+    # the COO/proof rule", not "who can speak for final import duty".
+    if any(marker in text for marker in ("原产地证明", "certificate of origin", "proof of origin", "coo", "rules of origin", "origin declaration", "origin certification")):
+        return "origin_proof_requirement"
+    if any(marker in text for marker in ("进口税费", "关税", "税率", "税则", "htsus", "tariff", "duty", "import tax")):
+        return "import_tax"
+    if any(marker in text for marker in ("出口国要求", "出口管制", "出口许可", "export control", "export requirement", "export license")):
+        return "export_requirement"
+    if any(marker in text for marker in ("检验检疫", "动植物检疫", "食品", "农产品", "phytosanitary", "quarantine", "food safety")):
+        return "inspection_quarantine"
+    if any(marker in text for marker in ("锂电", "危险品", "un38.3", "sds", "dangerous goods", "hazmat", "lithium battery")):
+        return "dangerous_goods_transport"
+    if any(marker in text for marker in ("预申报", "advance manifest", "ams", "ens", "isf", "logistics prefiling")):
+        return "logistics_prefiling"
+    if any(marker in text for marker in ("认证", "准入", "合格评定", "标签", "包装", "注册", "许可", "certification", "conformity", "compliance", "labeling", "packaging", "registration", "permit", "destination requirement")):
+        return "certification_requirement"
+    if any(marker in text for marker in ("物流", "运输", "港口", "海运", "空运", "快递", "logistics", "shipping", "transit", "port")):
+        return "logistics"
+    if any(marker in text for marker in ("google trends", "谷歌趋势", "市场信号", "公开市场", "行业报告", "价格", "market signal", "market report", "online price", "platform price")):
+        return "market_signal"
+    if any(marker in text for marker in ("产品资料", "产品档案", "规格", "product profile", "product source", "specification")):
+        return "product_source"
+    return None
+
+
+def _authority_fact_domain_for_row(row: dict[str, Any]) -> str | None:
+    if row.get("sheet_name") == "产品档案与触发项" or row.get("row_type") == "product_attribute":
+        return "product_source"
+    if _is_origin_proof_row(row):
+        return "origin_proof_requirement"
+    if _is_certification_requirement_row(row):
+        record = _cert_requirement_record(row)
+        family = str(record.get("requirement_family") or "")
+        if family == "transport_document" or _contains_any(_row_text(row), ("锂电", "un38.3", "sds", "危险品", "dangerous goods", "lithium")):
+            return "dangerous_goods_transport"
+        return "certification_requirement"
+    return _authority_fact_domain_key([row.get("sheet_name"), row.get("row_topic"), row.get("row_type"), row.get("module_key"), row.get("user_visible_cells")])
+
+
+def _authority_fact_domain_for_card(card: dict[str, Any]) -> str | None:
+    return _authority_fact_domain_key([card.get("field_domain"), card.get("field_name"), card.get("current_value"), card.get("supports")])
+
+
+def _authority_domain_matches(actual: Any, expected: Any) -> bool:
+    actual_key = _authority_fact_domain_key(actual) or norm(actual).replace(" ", "_")
+    expected_key = _authority_fact_domain_key(expected) or norm(expected).replace(" ", "_")
+    if not actual_key or not expected_key:
+        return False
+    if actual_key == expected_key:
+        return True
+    compatible = {
+        "destination_requirement": {"certification_requirement", "inspection_quarantine", "dangerous_goods_transport"},
+        "certification_requirement": {"destination_requirement", "inspection_quarantine", "dangerous_goods_transport"},
+        "dangerous_goods_transport": {"certification_requirement", "logistics_prefiling"},
+        "logistics_prefiling": {"logistics", "dangerous_goods_transport"},
+        "logistics": {"logistics_prefiling"},
+        "origin_proof_requirement": {"import_tax", "trade_remedy"},
+        "import_tax": {"trade_remedy"},
+    }
+    return expected_key in compatible.get(actual_key, set()) or actual_key in compatible.get(expected_key, set())
+
+
+def _authority_claim_is_determinate(value: Any) -> bool:
+    text = norm(value)
+    if not text:
+        return False
+    if _contains_positive_phrase(text, AUTHORITY_DETERMINATE_CLAIM_MARKERS + FINAL_TAX_PHRASES + LEGAL_REQUIREMENT_PHRASES):
+        return True
+    return any(marker in text for marker in ("required", "normally_not_required", "conditionally_required", "not_applicable", "current_enough", "现行", "最新", "最终"))
+
+
+def _authority_basis_is_keyword_only(value: Any) -> bool:
+    text = norm(value)
+    if not text:
+        return False
+    explicit = (
+        "keyword-only", "keyword only", "only keyword", "only because it says",
+        "仅靠关键词", "只靠关键词", "只因出现", "因为出现 official", "因为出现 regulation",
+    )
+    if any(marker in text for marker in explicit):
+        return True
+    has_keyword = _contains_any(text, AUTHORITY_KEYWORD_ONLY_MARKERS)
+    has_identity = _contains_any(text, AUTHORITY_VISIBLE_IDENTITY_MARKERS)
+    return has_keyword and not has_identity and len(text.split()) <= 8
+
+
+def _authority_basis_is_domain_only(value: Any) -> bool:
+    text = norm(value)
+    if not text:
+        return False
+    explicit = ("domain-only", "domain only", "url suffix only", "only .gov", "仅靠域名", "只靠域名", "域名后缀")
+    if any(marker in text for marker in explicit):
+        return True
+    has_domain = _contains_any(text, AUTHORITY_DOMAIN_ONLY_MARKERS)
+    has_identity = _contains_any(text, AUTHORITY_VISIBLE_IDENTITY_MARKERS)
+    return has_domain and not has_identity and len(text.split()) <= 8
+
+
+def _geo_same(left: Any, right: Any) -> bool:
+    if not has_text(left) or not has_text(right):
+        return True
+    def clean(value: Any) -> str:
+        text = norm(value)
+        aliases = {
+            "us": "unitedstates",
+            "u.s.": "unitedstates",
+            "usa": "unitedstates",
+            "u.s.a.": "unitedstates",
+            "america": "unitedstates",
+            "美国": "unitedstates",
+            "united states": "unitedstates",
+            "中国": "china",
+            "中华人民共和国": "china",
+            "越南": "vietnam",
+            "viet nam": "vietnam",
+        }
+        mapped = aliases.get(text, text)
+        return re.sub(r"[^a-z0-9\u4e00-\u9fff]+", "", mapped)
+    return clean(left) == clean(right)
+
+
+def _authority_graph_context(graph: dict[str, Any]) -> dict[str, Any]:
+    brief = next((item for item in reversed(ensure_list(graph, "briefs")) if isinstance(item, dict)), {})
+    premise = next((item for item in reversed(ensure_list(graph, "trade_premises")) if isinstance(item, dict)), {})
+    origin_status = brief.get("origin_country_status") if isinstance(brief, dict) else {}
+    return {
+        "target": (premise or {}).get("destination_country_or_region") or (brief or {}).get("target_country_or_region"),
+        "export": (premise or {}).get("export_declaration_country") or (brief or {}).get("export_declaration_country"),
+        "origin": (premise or {}).get("origin_country_or_region") or (origin_status or {}).get("country_or_region"),
+        "departure": (premise or {}).get("departure_country_or_region") or (brief or {}).get("departure_country_or_region"),
+    }
+
+
+def _authority_expected_jurisdiction(row: dict[str, Any], graph: dict[str, Any], role: Any) -> Any:
+    role_text = str(role or "")
+    if _is_certification_requirement_row(row):
+        record = _cert_requirement_record(row)
+        if has_text(record.get("destination_country_or_region")):
+            return record.get("destination_country_or_region")
+    if _is_origin_proof_row(row):
+        record = _origin_requirement_record(row)
+        if role_text == "origin_country" and has_text(record.get("origin_or_export_country")):
+            return record.get("origin_or_export_country")
+        if has_text(record.get("target_country_or_region")):
+            return record.get("target_country_or_region")
+    cells = row.get("user_visible_cells") if isinstance(row.get("user_visible_cells"), dict) else {}
+    context = _authority_graph_context(graph)
+    if role_text in {"destination_market", "import_customs"}:
+        return cells.get("目标销售国家/地区") or cells.get("目的国/地区") or cells.get("目的国") or context.get("target")
+    if role_text == "export_declaration":
+        return cells.get("出口申报国（默认可改）") or cells.get("出口申报国") or context.get("export")
+    if role_text == "origin_country":
+        return cells.get("原产国/制造来源") or cells.get("原产国 / 制造来源（证据状态）") or context.get("origin")
+    if role_text == "departure_logistics":
+        return cells.get("起运国") or context.get("departure")
+    return None
+
+
+def _authority_expected_roles_for_fact(fact_domain: str | None) -> set[str]:
+    if fact_domain in {"import_tax", "trade_remedy", "origin_proof_requirement"}:
+        return {"destination_market", "import_customs"}
+    if fact_domain in {"certification_requirement", "destination_requirement", "inspection_quarantine", "dangerous_goods_transport"}:
+        return {"destination_market", "global_or_international"}
+    if fact_domain in {"export_requirement", "export_control"}:
+        return {"export_declaration"}
+    if fact_domain in {"logistics_prefiling"}:
+        return {"destination_market", "import_customs", "departure_logistics", "transit"}
+    if fact_domain in {"logistics"}:
+        return {"departure_logistics", "transit", "global_or_international", "destination_market"}
+    if fact_domain in {"market_signal"}:
+        return {"market_signal", "destination_market", "global_or_international"}
+    if fact_domain in {"product_source"}:
+        return {"product_source", "origin_country", "global_or_international"}
+    return set()
+
+
+def _authority_identity_records(profile: dict[str, Any], ids: dict[str, dict[str, dict[str, Any]]]) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for evidence_id in as_list(profile.get("identity_evidence_ids")):
+        evidence = ids.get("authority_identity_evidence", {}).get(str(evidence_id))
+        if isinstance(evidence, dict):
+            records.append(evidence)
+    return records
+
+
+def _authority_capability_records(profile: dict[str, Any], ids: dict[str, dict[str, dict[str, Any]]]) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for capability_id in as_list(profile.get("capability_ids")):
+        capability = ids.get("authority_capabilities", {}).get(str(capability_id))
+        if isinstance(capability, dict):
+            records.append(capability)
+    return records
+
+
+def _authority_capability_supports(capability: dict[str, Any], fact_domain: Any) -> bool:
+    for supported in as_list(capability.get("fact_domains_supported")):
+        if _authority_domain_matches(supported, fact_domain):
+            return True
+    return False
+
+
+def _authority_record_refs_for_item(
+    item: dict[str, Any],
+    item_fact_domain: str | None,
+    ids: dict[str, dict[str, dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    authority_records = ids.get("authority_verification_records", {})
+    for record_id in as_list(item.get("authority_verification_record_ids")):
+        record = authority_records.get(str(record_id))
+        if isinstance(record, dict) and str(record.get("authority_verification_id")) not in seen:
+            seen.add(str(record.get("authority_verification_id")))
+            records.append(record)
+    source_ids = set()
+    if isinstance(item.get("certification_requirement"), dict):
+        source_ids.update(str(sid) for sid in as_list(item["certification_requirement"].get("authority_source_refs")) if has_text(sid))
+    if isinstance(item.get("origin_proof_requirement"), dict):
+        source_ids.update(str(sid) for sid in as_list(item["origin_proof_requirement"].get("authority_source_refs")) if has_text(sid))
+    source_ids.update(_source_ids_from_refs(item.get("source_refs"), ids))
+    for record in authority_records.values():
+        record_id = str(record.get("authority_verification_id") or "")
+        if record_id in seen:
+            continue
+        if has_text(record.get("source_id")) and str(record.get("source_id")) in source_ids:
+            if item_fact_domain is None or _authority_domain_matches(record.get("fact_domain"), item_fact_domain):
+                seen.add(record_id)
+                records.append(record)
+    return records
+
+
+def _authority_record_is_supportive(
+    record: dict[str, Any],
+    item_fact_domain: str | None,
+    row: dict[str, Any] | None,
+    graph: dict[str, Any],
+    ids: dict[str, dict[str, dict[str, Any]]],
+    observations_by_source: dict[str, list[dict[str, Any]]],
+) -> bool:
+    if record.get("review_status") != "passed" or record.get("verification_status") != "verified_for_fact_domain":
+        return False
+    profile = ids.get("authority_profiles", {}).get(str(record.get("authority_profile_id")))
+    if not isinstance(profile, dict) or profile.get("review_status") != "passed":
+        return False
+    if item_fact_domain is not None and not _authority_domain_matches(record.get("fact_domain"), item_fact_domain):
+        return False
+    if not _source_has_opened_observation(str(record.get("source_id") or ""), observations_by_source):
+        return False
+    if profile.get("authority_level") not in AUTHORITY_STRONG_LEVELS and str(record.get("fact_domain") or "") in AUTHORITY_REGULATORY_DOMAINS:
+        return False
+    identities = _authority_identity_records(profile, ids)
+    if not any(evidence.get("review_status") == "passed" and evidence.get("evidence_type") != "third_party_description" for evidence in identities):
+        return False
+    capabilities = _authority_capability_records(profile, ids)
+    if not any(cap.get("review_status") == "passed" and _authority_capability_supports(cap, record.get("fact_domain")) for cap in capabilities):
+        return False
+    expected_roles = _authority_expected_roles_for_fact(item_fact_domain or str(record.get("fact_domain") or ""))
+    role = str(record.get("jurisdiction_role") or "")
+    if expected_roles and role not in expected_roles:
+        return False
+    if row is not None:
+        expected_geo = _authority_expected_jurisdiction(row, graph, role)
+        if expected_geo and role in {"destination_market", "import_customs", "export_declaration", "origin_country", "departure_logistics"}:
+            if not _geo_same(profile.get("jurisdiction_name"), expected_geo):
+                return False
+    return True
+
+
+def _authority_uses_registry_or_plan_as_fact(item: dict[str, Any]) -> bool:
+    if _contains_any(item, QUERY_PLAN_DIRECT_FACT_MARKERS):
+        return True
+    for ref in as_list(item.get("source_refs")):
+        if isinstance(ref, dict) and (has_text(ref.get("query_plan_id")) or has_text(ref.get("search_log_id"))):
+            return True
+    return False
+
+
+def _authority_issues(
+    graph: dict[str, Any],
+    ids: dict[str, dict[str, dict[str, Any]]],
+    observations_by_source: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, str]]:
+    issues: list[dict[str, str]] = []
+    run_ids = set(ids["runs"])
+
+    for idx, profile in enumerate(ensure_list(graph, "authority_profiles")):
+        if not isinstance(profile, dict):
+            continue
+        path = f"authority_profiles[{idx}]"
+        if has_text(profile.get("source_id")) and str(profile.get("source_id")) not in ids["sources"]:
+            _add_issue(issues, "critical", "market_authority_record_ref_missing", "AuthorityProfile references a missing Source", f"{path}.source_id")
+        for evidence_id in as_list(profile.get("identity_evidence_ids")):
+            if has_text(evidence_id) and str(evidence_id) not in ids.get("authority_identity_evidence", {}):
+                _add_issue(issues, "critical", "market_authority_identity_evidence_missing", "AuthorityProfile references missing identity evidence", f"{path}.identity_evidence_ids")
+        for capability_id in as_list(profile.get("capability_ids")):
+            if has_text(capability_id) and str(capability_id) not in ids.get("authority_capabilities", {}):
+                _add_issue(issues, "critical", "market_authority_capability_missing", "AuthorityProfile references missing fact-domain capability", f"{path}.capability_ids")
+        if profile.get("verification_status") == "verified_for_fact_domain" and profile.get("review_status") != "passed":
+            _add_issue(issues, "major", "market_authority_unknown_required_claim", "Verified AuthorityProfile must be reviewed before supporting determinate claims", f"{path}.review_status")
+
+    for idx, evidence in enumerate(ensure_list(graph, "authority_identity_evidence")):
+        if not isinstance(evidence, dict):
+            continue
+        path = f"authority_identity_evidence[{idx}]"
+        if str(evidence.get("authority_profile_id") or "") not in ids.get("authority_profiles", {}):
+            _add_issue(issues, "critical", "market_authority_record_ref_missing", "AuthorityIdentityEvidence references a missing AuthorityProfile", f"{path}.authority_profile_id")
+        if has_text(evidence.get("source_id")) and str(evidence.get("source_id")) not in ids["sources"]:
+            _add_issue(issues, "critical", "market_authority_record_ref_missing", "AuthorityIdentityEvidence references a missing Source", f"{path}.source_id")
+        for observation_id in as_list(evidence.get("observation_ids")):
+            obs = ids["observations"].get(str(observation_id))
+            if not isinstance(obs, dict) or not _observation_is_opened_source(obs):
+                _add_issue(issues, "critical", "market_authority_source_unopened", "Authority identity evidence must come from opened/captured/extracted source observations", f"{path}.observation_ids")
+
+    for idx, capability in enumerate(ensure_list(graph, "authority_capabilities")):
+        if not isinstance(capability, dict):
+            continue
+        path = f"authority_capabilities[{idx}]"
+        if str(capability.get("authority_profile_id") or "") not in ids.get("authority_profiles", {}):
+            _add_issue(issues, "critical", "market_authority_record_ref_missing", "AuthorityCapability references a missing AuthorityProfile", f"{path}.authority_profile_id")
+        if capability.get("review_status") == "passed" and not as_list(capability.get("fact_domains_supported")):
+            _add_issue(issues, "critical", "market_authority_capability_missing", "AuthorityCapability must list supported fact domains", f"{path}.fact_domains_supported")
+
+    for idx, record in enumerate(ensure_list(graph, "authority_verification_records")):
+        if not isinstance(record, dict):
+            continue
+        path = f"authority_verification_records[{idx}]"
+        status = str(record.get("verification_status") or "")
+        profile = ids.get("authority_profiles", {}).get(str(record.get("authority_profile_id")))
+        profile_path = f"{path}.authority_profile_id"
+        identities = _authority_identity_records(profile, ids) if isinstance(profile, dict) else []
+        capabilities = _authority_capability_records(profile, ids) if isinstance(profile, dict) else []
+
+        if record.get("run_id") not in run_ids:
+            _add_issue(issues, "critical", "market_authority_record_missing", "AuthorityVerificationRecord must reference an existing product-market run", f"{path}.run_id")
+        source = ids["sources"].get(str(record.get("source_id") or ""))
+        if not isinstance(source, dict):
+            _add_issue(issues, "critical", "market_authority_record_ref_missing", "AuthorityVerificationRecord references a missing Source", f"{path}.source_id")
+        if not isinstance(profile, dict):
+            _add_issue(issues, "critical", "market_authority_record_ref_missing", "AuthorityVerificationRecord references a missing AuthorityProfile", profile_path)
+        elif profile.get("review_status") != "passed" and status == "verified_for_fact_domain":
+            _add_issue(issues, "major", "market_authority_unknown_required_claim", "AuthorityProfile must be reviewed before a verified authority record can support facts", profile_path)
+
+        if record.get("review_status") != "passed" and status == "verified_for_fact_domain":
+            _add_issue(issues, "major", "market_authority_unknown_required_claim", "AuthorityVerificationRecord must be reviewed before supporting determinate claims", f"{path}.review_status")
+
+        observation_ids = [str(item) for item in as_list(record.get("observation_ids")) if has_text(item)]
+        if not observation_ids:
+            _add_issue(issues, "critical", "market_authority_source_unopened", "AuthorityVerificationRecord needs opened source observations, not only a URL, domain, registry entry, or search result", f"{path}.observation_ids")
+        for observation_id in observation_ids:
+            obs = ids["observations"].get(observation_id)
+            if not isinstance(obs, dict) or not _observation_is_opened_source(obs):
+                _add_issue(issues, "critical", "market_authority_source_unopened", "AuthorityVerificationRecord observation must be opened/captured/extracted/rendered", f"{path}.observation_ids")
+            elif has_text(record.get("source_id")) and obs.get("source_id") != record.get("source_id"):
+                _add_issue(issues, "critical", "market_authority_record_ref_missing", "AuthorityVerificationRecord observation must belong to its source_id", f"{path}.observation_ids")
+        if isinstance(source, dict) and source.get("medium") == "search_result":
+            _add_issue(issues, "critical", "market_authority_source_unopened", "Search result entries cannot support authority verification", f"{path}.source_id")
+
+        basis_text = text_of([
+            record.get("verification_basis"),
+            profile.get("authority_basis_summary") if isinstance(profile, dict) else None,
+            [e.get("visible_evidence_summary") for e in identities if isinstance(e, dict)],
+        ])
+        if status == "verified_for_fact_domain" and _authority_basis_is_keyword_only(basis_text):
+            _add_issue(issues, "critical", "market_authority_keyword_only", "Authority verification cannot rely only on words like official/customs/regulation", f"{path}.verification_basis")
+        if status == "verified_for_fact_domain" and _authority_basis_is_domain_only(basis_text):
+            _add_issue(issues, "critical", "market_authority_domain_only", "Authority verification cannot rely only on a domain suffix or URL pattern", f"{path}.verification_basis")
+        if status == "verified_for_fact_domain":
+            passed_identity = [
+                evidence for evidence in identities
+                if isinstance(evidence, dict)
+                and evidence.get("review_status") == "passed"
+                and evidence.get("evidence_type") != "third_party_description"
+            ]
+            if not passed_identity:
+                _add_issue(issues, "critical", "market_authority_identity_evidence_missing", "Verified authority needs visible identity evidence beyond third-party descriptions", f"{path}.authority_profile_id")
+            passed_caps = [
+                cap for cap in capabilities
+                if isinstance(cap, dict)
+                and cap.get("review_status") == "passed"
+                and _authority_capability_supports(cap, record.get("fact_domain"))
+            ]
+            if not passed_caps:
+                _add_issue(issues, "critical", "market_authority_capability_missing", "Verified authority needs a reviewed capability for this fact domain", f"{path}.fact_domain")
+            if isinstance(profile, dict) and profile.get("authority_level") in AUTHORITY_SECONDARY_LEVELS and _authority_claim_is_determinate([record.get("can_support"), record.get("verification_basis")]):
+                code = "market_authority_unknown_required_claim" if profile.get("authority_level") == "unknown_authority" else "market_authority_secondary_promoted_to_official"
+                _add_issue(issues, "critical", code, "Secondary, commercial, media, industry, or unknown authority cannot support determinate official requirements", path)
+            if str(record.get("jurisdiction_role") or "") in {"common_rule", "global_or_international"} and str(record.get("fact_domain") or "") in AUTHORITY_REGULATORY_DOMAINS and _authority_claim_is_determinate(record.get("can_support")):
+                _add_issue(issues, "critical", "market_authority_common_rule_overgeneralized", "Common/international rules cannot be generalized into a determinate destination-market requirement", path)
+
+    authority_records = _authority_verification_by_id(graph)
+    for idx, row in enumerate(ensure_list(graph, "matrix_rows")):
+        if not isinstance(row, dict):
+            continue
+        path = f"matrix_rows[{idx}]"
+        fact_domain = _authority_fact_domain_for_row(row)
+        for record_id in as_list(row.get("authority_verification_record_ids")):
+            if has_text(record_id) and str(record_id) not in authority_records:
+                _add_issue(issues, "critical", "market_authority_record_ref_missing", "Matrix row references a missing AuthorityVerificationRecord", f"{path}.authority_verification_record_ids")
+        if row.get("status") in STATUS_CONCLUSIONISH and _authority_uses_registry_or_plan_as_fact(row):
+            _add_issue(issues, "critical", "market_authority_registry_used_as_fact", "Source Pack, Query Plan, registry entry, or SearchLog cannot directly support a matrix fact", path)
+
+        requirement_status = ""
+        if _is_certification_requirement_row(row):
+            requirement_status = _cert_requirement_status(row)
+        elif _is_origin_proof_row(row):
+            requirement_status = _origin_requirement_status(row)
+        requires_authority = (
+            fact_domain in AUTHORITY_REGULATORY_DOMAINS
+            and (
+                row.get("status") in STATUS_FACTUAL
+                or requirement_status in CERT_DETERMINATE_STATUSES
+                or requirement_status in ORIGIN_PROOF_DETERMINATE_STATUSES
+            )
+        )
+        if requires_authority:
+            records = _authority_record_refs_for_item(row, fact_domain, ids)
+            if not records:
+                _add_issue(issues, "critical", "market_authority_record_missing", "Determinate regulatory/tax/COO/destination requirement row needs an AuthorityVerificationRecord", path)
+            elif not any(_authority_record_is_supportive(record, fact_domain, row, graph, ids, observations_by_source) for record in records):
+                _add_issue(issues, "critical", "market_authority_unknown_required_claim", "Linked authority records do not support this determinate row for the right fact domain and jurisdiction", path)
+            for record in records:
+                record_domain = str(record.get("fact_domain") or "")
+                if fact_domain and not _authority_domain_matches(record_domain, fact_domain):
+                    _add_issue(issues, "critical", "market_authority_fact_domain_mismatch", "Authority source fact-domain does not match the matrix row fact-domain", f"{path}.authority_verification_record_ids")
+                expected_roles = _authority_expected_roles_for_fact(fact_domain)
+                role = str(record.get("jurisdiction_role") or "")
+                if expected_roles and role not in expected_roles:
+                    _add_issue(issues, "critical", "market_authority_jurisdiction_mismatch", "Authority jurisdiction role does not match the matrix row trade role", f"{path}.authority_verification_record_ids")
+                profile = ids.get("authority_profiles", {}).get(str(record.get("authority_profile_id") or ""))
+                expected_geo = _authority_expected_jurisdiction(row, graph, role)
+                if isinstance(profile, dict) and expected_geo and role in {"destination_market", "import_customs", "export_declaration", "origin_country", "departure_logistics"}:
+                    if not _geo_same(profile.get("jurisdiction_name"), expected_geo):
+                        _add_issue(issues, "critical", "market_authority_jurisdiction_mismatch", "Authority jurisdiction name does not match the row's destination/export/origin premise", f"{path}.authority_verification_record_ids")
+        if _contains_positive_phrase(_row_text(row), ("多来源官方确认", "多来源官方证实", "officially confirmed by multiple sources", "official confirmation from weak sources")) and not as_list(row.get("authority_verification_record_ids")):
+            _add_issue(issues, "critical", "market_authority_secondary_promoted_to_official", "Weak-source corroboration was promoted into official confirmation without authority verification", path)
+
+    for idx, card in enumerate(ensure_list(graph, "evidence_cards")):
+        if not isinstance(card, dict):
+            continue
+        path = f"evidence_cards[{idx}]"
+        fact_domain = _authority_fact_domain_for_card(card)
+        for record_id in as_list(card.get("authority_verification_record_ids")):
+            if has_text(record_id) and str(record_id) not in authority_records:
+                _add_issue(issues, "critical", "market_authority_record_ref_missing", "EvidenceCard references a missing AuthorityVerificationRecord", f"{path}.authority_verification_record_ids")
+        if card.get("status") in STATUS_FACTUAL and _authority_uses_registry_or_plan_as_fact(card):
+            _add_issue(issues, "critical", "market_authority_registry_used_as_fact", "Source Pack, Query Plan, registry entry, or SearchLog cannot directly support an EvidenceCard fact", path)
+        if card.get("status") in STATUS_FACTUAL and fact_domain in AUTHORITY_REGULATORY_DOMAINS and _authority_claim_is_determinate(_card_text(card, include_source=False)):
+            records = _authority_record_refs_for_item(card, fact_domain, ids)
+            if not records:
+                _add_issue(issues, "critical", "market_authority_record_missing", "Determinate regulatory/tax/COO EvidenceCard needs an AuthorityVerificationRecord", path)
+            elif not any(_authority_record_is_supportive(record, fact_domain, None, graph, ids, observations_by_source) for record in records):
+                _add_issue(issues, "critical", "market_authority_unknown_required_claim", "Linked authority records do not support this EvidenceCard for the right fact domain", path)
+            for record in records:
+                if fact_domain and not _authority_domain_matches(record.get("fact_domain"), fact_domain):
+                    _add_issue(issues, "critical", "market_authority_fact_domain_mismatch", "Authority source fact-domain does not match the EvidenceCard fact-domain", f"{path}.authority_verification_record_ids")
+        if _contains_positive_phrase(_card_text(card, include_source=False), ("多来源官方确认", "多来源官方证实", "officially confirmed by multiple sources", "official confirmation from weak sources")) and not as_list(card.get("authority_verification_record_ids")):
+            _add_issue(issues, "critical", "market_authority_secondary_promoted_to_official", "Weak-source corroboration was promoted into official confirmation without authority verification", path)
+    return issues
+
+
 def _market_search_collection_issues(
     graph: dict[str, Any],
     ids: dict[str, dict[str, dict[str, Any]]],
@@ -1423,6 +1947,7 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
     issues.extend(_market_search_collection_issues(graph, ids, observations_by_source))
     issues.extend(_corroboration_issues(graph, ids, observations_by_source))
     issues.extend(_freshness_issues(graph, ids))
+    issues.extend(_authority_issues(graph, ids, observations_by_source))
 
     # Every matrix row needs an explicit status in business language.
     for idx, row in enumerate(ensure_list(graph, "matrix_rows")):

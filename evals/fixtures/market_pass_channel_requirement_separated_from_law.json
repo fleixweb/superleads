@@ -2,6 +2,129 @@
   "extends": "market_pass_uniqlo_minimum_boundary.json",
   "patches": [
     {
+      "op": "add",
+      "path": "/authority_profiles",
+      "value": [
+        {
+          "authority_profile_id": "auth-profile-us-ftc-textile-labeling",
+          "source_id": "source-us-ftc-textile-labeling",
+          "jurisdiction_type": "country",
+          "jurisdiction_role": "destination_market",
+          "jurisdiction_code": "US",
+          "jurisdiction_name": "United States",
+          "institution_name": "U.S. Federal Trade Commission",
+          "institution_name_local": null,
+          "institution_type": "consumer_product_labeling_authority",
+          "authority_level": "primary_official_authority",
+          "authority_basis_summary": "Opened FTC official business guidance page; visible source context identifies the U.S. Federal Trade Commission as the publisher of textile labeling guidance.",
+          "identity_evidence_ids": [
+            "auth-id-us-ftc-textile-labeling"
+          ],
+          "capability_ids": [
+            "auth-cap-us-ftc-textile-labeling"
+          ],
+          "known_limitations": [
+            "Does not support physical label already compliant",
+            "Does not make retailer vendor manual a legal requirement",
+            "Does not support final HTS classification"
+          ],
+          "verification_status": "verified_for_fact_domain",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_identity_evidence",
+      "value": [
+        {
+          "authority_identity_evidence_id": "auth-id-us-ftc-textile-labeling",
+          "authority_profile_id": "auth-profile-us-ftc-textile-labeling",
+          "source_id": "source-us-ftc-textile-labeling",
+          "observation_ids": [
+            "observation-us-ftc-textile-labeling"
+          ],
+          "evidence_type": "official_portal_link",
+          "visible_evidence_summary": "Opened official portal link and page context for FTC textile labeling business guidance; institution identity is visible from the opened source.",
+          "locator": "fixture-visible-excerpt",
+          "supports_identity_as": "U.S. Federal Trade Commission official textile labeling guidance source",
+          "does_not_support": [
+            "Physical label compliance",
+            "Retailer channel requirement as law"
+          ],
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_capabilities",
+      "value": [
+        {
+          "authority_capability_id": "auth-cap-us-ftc-textile-labeling",
+          "authority_profile_id": "auth-profile-us-ftc-textile-labeling",
+          "fact_domains_supported": [
+            "certification_requirement",
+            "destination_requirement"
+          ],
+          "fact_domains_not_supported": [
+            "import_tax",
+            "origin_proof_requirement",
+            "dangerous_goods_transport",
+            "market_signal"
+          ],
+          "supported_claim_types": [
+            "conditional textile labeling requirement path for covered products"
+          ],
+          "unsupported_claim_types": [
+            "physical label fully compliant",
+            "retailer requirement is customs law",
+            "final classification"
+          ],
+          "minimum_authority_level": "primary_official_authority",
+          "requires_freshness_record": true,
+          "requires_professional_confirmation": true,
+          "capability_basis": "FTC opened official guidance covers textile labeling topics; capability is limited to destination labeling requirement path and boundary notes.",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_verification_records",
+      "value": [
+        {
+          "authority_verification_id": "auth-ver-us-ftc-textile-labeling",
+          "run_id": "run-uq-us",
+          "brief_version_id": "brief-uq-us-v1",
+          "source_id": "source-us-ftc-textile-labeling",
+          "observation_ids": [
+            "observation-us-ftc-textile-labeling"
+          ],
+          "authority_profile_id": "auth-profile-us-ftc-textile-labeling",
+          "fact_domain": "certification_requirement",
+          "jurisdiction_role": "destination_market",
+          "verification_status": "verified_for_fact_domain",
+          "verification_basis": "Opened FTC official textile labeling guidance; institution identity visible; capability limited to textile labeling requirement path.",
+          "can_support": [
+            "conditional textile labeling requirement path for covered apparel/textile products"
+          ],
+          "cannot_support": [
+            "physical label already compliant",
+            "retailer vendor manual is legal/customs requirement",
+            "final HTS classification"
+          ],
+          "next_verification_steps": [
+            "Reopen FTC source before shipment/sale",
+            "Check exact product scope, physical label and channel documents with compliance professional"
+          ],
+          "reviewer_skill": "Skill F - 交付复核",
+          "reviewed_at": "2026-07-28",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
       "op": "append",
       "path": "/sources/-",
       "value": {
@@ -109,7 +232,10 @@
           "EB-CERT-03",
           "EB-CERT-05"
         ],
-        "review_status": "passed"
+        "review_status": "passed",
+        "authority_verification_record_ids": [
+          "auth-ver-us-ftc-textile-labeling"
+        ]
       }
     },
     {
@@ -183,7 +309,10 @@
             "不能把渠道要求写成法律强制",
             "不能推出最终归类"
           ]
-        }
+        },
+        "authority_verification_record_ids": [
+          "auth-ver-us-ftc-textile-labeling"
+        ]
       }
     }
   ]

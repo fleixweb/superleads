@@ -1,5 +1,5 @@
 {
-  "description": "Product outbound market analysis Code Slice A-AC fixtures. Use scripts/validate_product_market_analysis.py, scripts/audit_product_market_analysis.py, scripts/export_product_market_workbook.py, and source plan runner; existing evals/run_evals.py intentionally ignores market_* fields.",
+  "description": "Product outbound market analysis Code Slice A-AD fixtures. Use scripts/validate_product_market_analysis.py, scripts/audit_product_market_analysis.py, scripts/export_product_market_workbook.py, and source plan runner; existing evals/run_evals.py intentionally ignores market_* fields.",
   "validator": "scripts/validate_product_market_analysis.py",
   "cases": [
     {
@@ -433,7 +433,7 @@
         "未能核实",
         "不能写需要或不需要",
         "来源受限",
-        "未能用权威来源核实",
+        "未能核实权威性",
         "用户材料状态未知",
         "目标国是否要求原产地证明"
       ],
@@ -1926,6 +1926,274 @@
       "market_validate": "fail",
       "expected_error_codes": [
         "market_freshness_not_time_sensitive_mismatch"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip",
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_pass_authority_official_for_tariff_only.json",
+      "market_validate": "pass",
+      "market_audit": "pass",
+      "market_export_csv": "pass",
+      "market_export_markdown": "pass",
+      "market_export_present": [
+        "来源权威性 / Authority",
+        "来源身份",
+        "U.S. International Trade Commission HTS",
+        "适用范围",
+        "进口税费",
+        "可以当作什么",
+        "不能当作什么",
+        "不能当认证/标签主管来源"
+      ],
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_pass_authority_cert_body_secondary.json",
+      "market_validate": "pass",
+      "market_audit": "pass",
+      "market_export_csv": "pass",
+      "market_export_markdown": "pass",
+      "market_export_present": [
+        "认证机构页面只作路线参考",
+        "二级/参考来源，不能当主管结论",
+        "OEKO-TEX",
+        "不能写成美国法律强制",
+        "不能写产品已认证"
+      ],
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_pass_authority_forwarder_logistics_clue.json",
+      "market_validate": "pass",
+      "market_audit": "pass",
+      "market_export_csv": "pass",
+      "market_export_markdown": "pass",
+      "market_export_present": [
+        "货代页面只作物流线索",
+        "商业/市场参考",
+        "Forwarder example",
+        "不能当作什么",
+        "不能证明产品可出运",
+        "不承诺时效"
+      ],
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_fail_authority_blog_claims_required_cert.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_authority_secondary_promoted_to_official"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip",
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_fail_authority_domain_only_official.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_authority_domain_only"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip",
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_fail_authority_fact_domain_mismatch.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_authority_fact_domain_mismatch"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip",
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_fail_authority_jurisdiction_mismatch.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_authority_jurisdiction_mismatch"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip",
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_fail_authority_source_pack_as_fact.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_authority_registry_used_as_fact"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip",
+      "market_export_absent": [
+        "建议进入",
+        "值得开发",
+        "推荐价格",
+        "最佳运输方式",
+        "最终税率就是",
+        "承诺交期",
+        "/home/",
+        "/tmp/",
+        "file://",
+        "token=",
+        "api_key=",
+        "run-",
+        "brief-",
+        "card-",
+        "gap-",
+        "conflict-"
+      ]
+    },
+    {
+      "fixture": "market_fail_authority_weak_corroboration_as_official.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_authority_secondary_promoted_to_official"
       ],
       "market_audit": "fail",
       "market_export_csv": "fail",

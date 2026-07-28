@@ -53,21 +53,27 @@ SHEET_COLUMNS: dict[str, list[str]] = {
         "原产国 / 出口国（不要混同）", "候选 HS/HTS（非最终归类）",
         "适用条件", "什么情况下需要", "可能接受的文件形式",
         "目标国是否要求原产地证明", "用户现在有没有可用材料", "目前依据",
-        "资料时效", "复核建议", "不能当最新结论", "状态", "官方/优先依据", "需要用户/供应链补什么", "不能写成什么", "边界说明",
+        "资料时效", "复核建议", "不能当最新结论", "状态", "官方/优先依据",
+        "来源身份", "适用范围", "可以当作什么", "不能当作什么", "权威性核实",
+        "需要用户/供应链补什么", "不能写成什么", "边界说明",
     ],
     "进口税费": [
         "样本编号", "目的国", "候选 HS/HTS（非最终归类）", "税号描述", "税种",
-        "税率/金额（非最终税额）", "适用条件", "计算税基", "资料时效", "复核建议", "不能当最新结论", "状态",
+        "税率/金额（非最终税额）", "适用条件", "计算税基", "资料时效", "复核建议", "不能当最新结论",
+        "来源身份", "适用范围", "可以当作什么", "不能当作什么", "权威性核实", "状态",
         "来源/依据", "还缺什么 / 下一步核验",
     ],
     "出口国要求": [
         "样本编号", "出口申报国（默认可改）", "要求类别", "要求名称",
-        "适用条件", "目前依据", "资料时效", "复核建议", "不能当最新结论", "状态", "来源/依据", "还缺什么 / 下一步核验",
+        "适用条件", "目前依据", "资料时效", "复核建议", "不能当最新结论",
+        "来源身份", "适用范围", "可以当作什么", "不能当作什么", "权威性核实", "状态",
+        "来源/依据", "还缺什么 / 下一步核验",
     ],
     "运输方式、路线、港口与申报节点": [
         "样本编号", "运输方式", "实际起运地 / 起运港（待业务确认）",
         "目的节点（港口/机场/城市，如已知）", "适用条件", "运输时间口径（常见区间/未执行）",
-        "海关/承运人预申报", "订舱/截单节点", "资料时效", "复核建议", "不能当最新结论", "状态", "来源/依据",
+        "海关/承运人预申报", "订舱/截单节点", "资料时效", "复核建议", "不能当最新结论",
+        "来源身份", "适用范围", "可以当作什么", "不能当作什么", "权威性核实", "状态", "来源/依据",
         "还缺什么 / 下一步核验",
     ],
     "近期外部因素": [
@@ -114,6 +120,57 @@ FRESHNESS_STATUS_LABELS = {
     "date_unknown_needs_recheck": "来源日期未见，需复核后再当现行信息",
     "not_time_sensitive": "非强时效字段",
     "not_executed": "未执行",
+}
+
+AUTHORITY_STATUS_LABELS = {
+    "verified_for_fact_domain": "已核实：仅限该事实域",
+    "candidate_needs_check": "候选来源，待核实身份",
+    "secondary_reference_only": "二级/参考来源，不能当主管结论",
+    "unable_to_verify": "未能核实权威性",
+    "conflicting_identity": "来源身份有冲突",
+    "not_executed": "未执行",
+}
+
+AUTHORITY_LEVEL_LABELS = {
+    "primary_official_authority": "主管官方来源",
+    "official_service_or_portal": "官方服务/查询入口",
+    "official_gazette_or_legal_database": "官方公报/法规库",
+    "delegated_or_recognized_body": "被授权/认可机构",
+    "intergovernmental_reference": "国际/政府间参考",
+    "industry_or_professional_reference": "行业/专业参考",
+    "commercial_market_reference": "商业/市场参考",
+    "media_or_general_web_reference": "媒体/普通网页参考",
+    "unknown_authority": "权威性未知",
+}
+
+AUTHORITY_ROLE_LABELS = {
+    "destination_market": "目标销售国/地区",
+    "import_customs": "进口海关",
+    "export_declaration": "出口申报国",
+    "origin_country": "原产国/制造来源",
+    "departure_logistics": "实际起运地/物流节点",
+    "transit": "中转地",
+    "market_signal": "市场信号地区",
+    "common_rule": "通用规则",
+    "product_source": "产品原始来源",
+    "global_or_international": "全球/国际口径",
+    "unknown": "未知范围",
+}
+
+AUTHORITY_FACT_DOMAIN_LABELS = {
+    "import_tax": "进口税费",
+    "trade_remedy": "贸易救济",
+    "certification_requirement": "认证/准入要求",
+    "destination_requirement": "目标国准入要求",
+    "origin_proof_requirement": "原产地证明 / COO",
+    "export_requirement": "出口国要求",
+    "export_control": "出口管制",
+    "inspection_quarantine": "检验检疫",
+    "dangerous_goods_transport": "危险品/锂电运输",
+    "logistics_prefiling": "预申报/舱单要求",
+    "logistics": "物流线索",
+    "market_signal": "市场信号",
+    "product_source": "产品来源",
 }
 
 ORIGIN_REQUIREMENT_LABELS = {
@@ -221,6 +278,8 @@ def _replace_enum_tokens(text: str) -> str:
         **ORIGIN_REQUIREMENT_LABELS,
         **ORIGIN_USER_MATERIAL_LABELS,
         **FRESHNESS_STATUS_LABELS,
+        **AUTHORITY_STATUS_LABELS,
+        **AUTHORITY_LEVEL_LABELS,
     }
     result = text
     for raw, label in sorted(replacements.items(), key=lambda item: len(item[0]), reverse=True):
@@ -411,6 +470,7 @@ def _origin_proof_exported_row(
     row: dict[str, Any],
     corroboration_records: dict[str, dict[str, Any]] | None = None,
     freshness_records: dict[str, dict[str, Any]] | None = None,
+    authority_ctx: dict[str, dict[str, dict[str, Any]]] | None = None,
 ) -> dict[str, str]:
     cells = row.get("user_visible_cells") if isinstance(row.get("user_visible_cells"), dict) else {}
     record = row.get("origin_proof_requirement") if isinstance(row.get("origin_proof_requirement"), dict) else {}
@@ -439,6 +499,7 @@ def _origin_proof_exported_row(
     }
     _apply_freshness_to_row(exported, row, freshness_records or {})
     _apply_corroboration_to_row(exported, row, corroboration_records or {})
+    _apply_authority_to_row(exported, row, authority_ctx or {})
     return exported
 
 
@@ -464,6 +525,29 @@ def _freshness_by_id(graph: dict[str, Any]) -> dict[str, dict[str, Any]]:
         if isinstance(record, dict) and has_text(record.get("freshness_id")):
             result[str(record["freshness_id"])] = record
     return result
+
+
+def _authority_profiles_by_id(graph: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    result: dict[str, dict[str, Any]] = {}
+    for profile in ensure_list(graph, "authority_profiles"):
+        if isinstance(profile, dict) and has_text(profile.get("authority_profile_id")):
+            result[str(profile["authority_profile_id"])] = profile
+    return result
+
+
+def _authority_verification_by_id(graph: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    result: dict[str, dict[str, Any]] = {}
+    for record in ensure_list(graph, "authority_verification_records"):
+        if isinstance(record, dict) and has_text(record.get("authority_verification_id")):
+            result[str(record["authority_verification_id"])] = record
+    return result
+
+
+def _authority_context(graph: dict[str, Any]) -> dict[str, dict[str, dict[str, Any]]]:
+    return {
+        "profiles": _authority_profiles_by_id(graph),
+        "records": _authority_verification_by_id(graph),
+    }
 
 
 def _format_freshness(record: dict[str, Any]) -> dict[str, str]:
@@ -499,6 +583,48 @@ def _apply_freshness_to_row(exported: dict[str, str], row: dict[str, Any], fresh
         exported["复核建议"] = "；".join(next_steps)
     if cannot_latest:
         exported["不能当最新结论"] = "；".join(cannot_latest)
+
+
+def _format_authority(record: dict[str, Any], profiles: dict[str, dict[str, Any]]) -> dict[str, str]:
+    profile = profiles.get(str(record.get("authority_profile_id") or ""), {})
+    institution = profile.get("institution_name") or "来源机构未提供"
+    jurisdiction = profile.get("jurisdiction_name") or "适用地区未提供"
+    role = AUTHORITY_ROLE_LABELS.get(str(record.get("jurisdiction_role")), str(record.get("jurisdiction_role") or "未提供"))
+    level = AUTHORITY_LEVEL_LABELS.get(str(profile.get("authority_level")), str(profile.get("authority_level") or "权威等级未提供"))
+    status = AUTHORITY_STATUS_LABELS.get(str(record.get("verification_status")), str(record.get("verification_status") or "未提供"))
+    domain = AUTHORITY_FACT_DOMAIN_LABELS.get(str(record.get("fact_domain")), str(record.get("fact_domain") or "未提供"))
+    return {
+        "来源身份": _safe_cell(f"{institution}；{level}"),
+        "适用范围": _safe_cell(f"{jurisdiction} / {role} / {domain}"),
+        "可以当作什么": _safe_cell(record.get("can_support") or "只能当该事实域的来源身份核实记录"),
+        "不能当作什么": _safe_cell(record.get("cannot_support") or profile.get("known_limitations") or "不能当最终合规、最终税率或最终通关结论"),
+        "权威性核实": _safe_cell(f"{status}；{record.get('verification_basis') or profile.get('authority_basis_summary') or '核实依据未提供'}"),
+        "权威性下一步": _safe_cell(record.get("next_verification_steps") or "发货/申报前重新打开主管来源，并由对应专业方复核"),
+    }
+
+
+def _apply_authority_to_row(exported: dict[str, str], row: dict[str, Any], authority_ctx: dict[str, dict[str, dict[str, Any]]]) -> None:
+    summaries: dict[str, list[str]] = {
+        "来源身份": [],
+        "适用范围": [],
+        "可以当作什么": [],
+        "不能当作什么": [],
+        "权威性核实": [],
+    }
+    records = authority_ctx.get("records", {})
+    profiles = authority_ctx.get("profiles", {})
+    for record_id in ensure_list(row, "authority_verification_record_ids"):
+        record = records.get(str(record_id))
+        if not isinstance(record, dict):
+            continue
+        formatted = _format_authority(record, profiles)
+        for key in summaries:
+            summaries[key].append(formatted[key])
+        if not has_text(exported.get("下一步核实")):
+            exported["下一步核实"] = formatted["权威性下一步"]
+    for key, values in summaries.items():
+        if values:
+            exported[key] = "；".join(values)
 
 
 def _format_corroboration(record: dict[str, Any]) -> dict[str, str]:
@@ -619,13 +745,14 @@ def build_sheets(graph: dict[str, Any]) -> dict[str, list[dict[str, str]]]:
     sample_id = _first_sample_id(matrix_rows)
     corroboration_records = _corroboration_by_id(graph)
     freshness_records = _freshness_by_id(graph)
+    authority_ctx = _authority_context(graph)
 
     for row in matrix_rows:
         sheet_name = str(row.get("sheet_name") or "")
         if sheet_name not in sheets:
             continue
         if _is_origin_proof_row(row):
-            exported = _origin_proof_exported_row(row, corroboration_records, freshness_records)
+            exported = _origin_proof_exported_row(row, corroboration_records, freshness_records, authority_ctx)
             sheets[sheet_name].append(exported)
             continue
         cells = row.get("user_visible_cells")
@@ -642,6 +769,7 @@ def build_sheets(graph: dict[str, Any]) -> dict[str, list[dict[str, str]]]:
             _enrich_overview_row(exported, graph)
         _apply_freshness_to_row(exported, row, freshness_records)
         _apply_corroboration_to_row(exported, row, corroboration_records)
+        _apply_authority_to_row(exported, row, authority_ctx)
         if "样本编号" in SHEET_COLUMNS[sheet_name] and not has_text(exported.get("样本编号")) and sample_id != "未提供":
             exported["样本编号"] = sample_id
         sheets[sheet_name].append(exported)
@@ -786,6 +914,44 @@ def _freshness_markdown_summary(sheets: dict[str, list[dict[str, str]]]) -> list
     return lines
 
 
+def _authority_markdown_summary(sheets: dict[str, list[dict[str, str]]]) -> list[str]:
+    rows: list[dict[str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for sheet_name, sheet_rows in sheets.items():
+        for row in sheet_rows:
+            authority = _safe_cell(row.get("权威性核实"))
+            if not has_text(authority) or authority == "未提供":
+                continue
+            key = (sheet_name, _safe_cell(row.get("条目")), authority)
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append({
+                "表": sheet_name,
+                "条目": _safe_cell(row.get("条目")),
+                "来源身份": _safe_cell(row.get("来源身份")),
+                "适用范围": _safe_cell(row.get("适用范围")),
+                "可以当作什么": _safe_cell(row.get("可以当作什么")),
+                "不能当作什么": _safe_cell(row.get("不能当作什么")),
+                "权威性核实": authority,
+            })
+    if not rows:
+        return []
+    headers = ["表", "条目", "来源身份", "适用范围", "可以当作什么", "不能当作什么", "权威性核实"]
+    lines = [
+        "## 来源权威性 / Authority",
+        "",
+        "来源是否权威要看机构身份、事实域、管辖范围、可见身份核验证据和资料时效；Source Pack、搜索摘要、博客和多弱来源一致不能直接当官方结论。",
+        "",
+        "| " + " | ".join(_md_escape(header) for header in headers) + " |",
+        "| " + " | ".join("---" for _ in headers) + " |",
+    ]
+    for row in rows[:12]:
+        lines.append("| " + " | ".join(_md_escape(row.get(header, "未提供")) for header in headers) + " |")
+    lines.append("")
+    return lines
+
+
 def _empty_sheet_note(sheet_name: str, graph: dict[str, Any] | None = None) -> str:
     if _sheet_not_executed(sheet_name, graph):
         return "本轮未执行；不形成趋势、价格、旺季或最新影响结论。"
@@ -829,6 +995,7 @@ def markdown_report(sheets: dict[str, list[dict[str, str]]], graph: dict[str, An
         lines.extend(_brief_markdown_summary(graph))
     lines.extend(_origin_proof_markdown_summary(sheets))
     lines.extend(_freshness_markdown_summary(sheets))
+    lines.extend(_authority_markdown_summary(sheets))
     for sheet_name in SHEET_ORDER:
         rows = sheets.get(sheet_name, [])
         headers = _headers_for_sheet(sheet_name, rows)

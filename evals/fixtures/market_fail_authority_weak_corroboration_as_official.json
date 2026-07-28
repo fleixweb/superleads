@@ -1,0 +1,32 @@
+{
+  "extends": "market_pass_multi_source_corroboration_reference.json",
+  "patches": [
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-weak-corroboration-official-confirm",
+        "sheet_name": "产品准入与合规要求",
+        "row_topic": "错误：多弱来源写成官方确认",
+        "user_visible_cells": {
+          "样本ID": "UQ-470177-US",
+          "要求类别": "certification",
+          "目的国/地区": "美国",
+          "目标国认证/准入要求结论": "多来源官方确认 required",
+          "用户认证材料状态": "user_material_status_unknown",
+          "当前证据": "3 个弱来源一致，因此多来源官方确认"
+        },
+        "status": "preliminary_reference",
+        "evidence_card_ids": [],
+        "gap_ids": [],
+        "conflict_ids": [],
+        "module_key": "destination_requirement",
+        "boundary_rule_ids": [
+          "EB-AUTH-FAIL"
+        ],
+        "internal_refs_hidden": true,
+        "row_type": "destination_requirement"
+      }
+    }
+  ]
+}

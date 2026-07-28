@@ -1,0 +1,216 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "append",
+      "path": "/sources/-",
+      "value": {
+        "source_id": "source-freight-blog-official-keywords",
+        "canonical_url": "https://freight-blog.example.com/us-lithium-regulation",
+        "final_url": "https://freight-blog.example.com/us-lithium-regulation",
+        "publisher_relation": "third_party",
+        "provenance": "discovered_public",
+        "medium": "website",
+        "access_boundary": "public_web",
+        "owner_hint": "third-party freight blog using regulation and official keywords"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/observations/-",
+      "value": {
+        "observation_id": "observation-freight-blog-official-keywords",
+        "run_id": "run-xh-us",
+        "source_id": "source-freight-blog-official-keywords",
+        "capability": "source.open",
+        "concrete_tool": "fixture.static_source_open",
+        "observed_at": "2026-07-28",
+        "access_status": "opened",
+        "title": "Freight blog lithium regulation article",
+        "raw_excerpt": "Per US regulation, official lithium shipping documents are required. Blog summary uses customs and authority words but is not regulator source.",
+        "page_or_dom_locator": "fixture-visible-excerpt",
+        "extraction_method": "fixture_static",
+        "language": "en",
+        "translation_status": "original"
+      }
+    },
+    {
+      "op": "add",
+      "path": "/authority_profiles",
+      "value": [
+        {
+          "authority_profile_id": "auth-profile-freight-blog",
+          "source_id": "source-freight-blog-official-keywords",
+          "jurisdiction_type": "country",
+          "jurisdiction_role": "destination_market",
+          "jurisdiction_code": "US",
+          "jurisdiction_name": "United States",
+          "institution_name": "Freight Blog Example",
+          "institution_name_local": null,
+          "institution_type": "commercial_forwarder_blog",
+          "authority_level": "commercial_market_reference",
+          "authority_basis_summary": "Opened commercial freight blog; visible page context is a market participant article, not a regulator or official portal.",
+          "identity_evidence_ids": [
+            "auth-id-freight-blog"
+          ],
+          "capability_ids": [
+            "auth-cap-freight-blog"
+          ],
+          "known_limitations": [
+            "Not official regulator",
+            "Cannot impose required certification"
+          ],
+          "verification_status": "verified_for_fact_domain",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_identity_evidence",
+      "value": [
+        {
+          "authority_identity_evidence_id": "auth-id-freight-blog",
+          "authority_profile_id": "auth-profile-freight-blog",
+          "source_id": "source-freight-blog-official-keywords",
+          "observation_ids": [
+            "observation-freight-blog-official-keywords"
+          ],
+          "evidence_type": "page_footer_or_about",
+          "visible_evidence_summary": "Opened blog article page; identity visible as commercial freight blog.",
+          "locator": "fixture-visible-excerpt",
+          "supports_identity_as": "commercial freight blog reference",
+          "does_not_support": [
+            "official regulator identity",
+            "customs authority"
+          ],
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_capabilities",
+      "value": [
+        {
+          "authority_capability_id": "auth-cap-freight-blog",
+          "authority_profile_id": "auth-profile-freight-blog",
+          "fact_domains_supported": [
+            "dangerous_goods_transport"
+          ],
+          "fact_domains_not_supported": [
+            "certification_requirement",
+            "import_tax",
+            "origin_proof_requirement"
+          ],
+          "supported_claim_types": [
+            "commercial logistics clue"
+          ],
+          "unsupported_claim_types": [
+            "official required certification",
+            "legal mandate"
+          ],
+          "minimum_authority_level": "commercial_market_reference",
+          "requires_freshness_record": true,
+          "requires_professional_confirmation": true,
+          "capability_basis": "Commercial blog can only be a clue; it cannot support determinate official requirements.",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_verification_records",
+      "value": [
+        {
+          "authority_verification_id": "auth-ver-freight-blog",
+          "run_id": "run-xh-us",
+          "brief_version_id": "brief-xh-us-v1",
+          "source_id": "source-freight-blog-official-keywords",
+          "observation_ids": [
+            "observation-freight-blog-official-keywords"
+          ],
+          "authority_profile_id": "auth-profile-freight-blog",
+          "fact_domain": "dangerous_goods_transport",
+          "jurisdiction_role": "destination_market",
+          "verification_status": "verified_for_fact_domain",
+          "verification_basis": "Opened commercial freight blog; treated incorrectly in this fail fixture as if it could support a required official lithium document conclusion.",
+          "can_support": [
+            "required lithium shipping certification"
+          ],
+          "cannot_support": [
+            "official requirement",
+            "legal mandate",
+            "product compliance"
+          ],
+          "next_verification_steps": [
+            "Open regulator source",
+            "Ask carrier/DG professional"
+          ],
+          "reviewer_skill": "Skill F - 交付复核",
+          "reviewed_at": "2026-07-28",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-blog-required-cert",
+        "sheet_name": "产品准入与合规要求",
+        "row_topic": "错误：货代博客写成目标国 required",
+        "user_visible_cells": {
+          "样本ID": "XH-48V20AH-US",
+          "要求类别": "transport_document",
+          "目的国/地区": "美国",
+          "目标国认证/准入要求结论": "required",
+          "当前证据": "freight blog says official regulation required",
+          "用户认证材料状态": "user_not_provided_but_required",
+          "不能推出什么": "未写"
+        },
+        "status": "verified",
+        "evidence_card_ids": [],
+        "gap_ids": [],
+        "conflict_ids": [],
+        "module_key": "certification_requirement",
+        "boundary_rule_ids": [
+          "EB-AUTH-FAIL"
+        ],
+        "internal_refs_hidden": true,
+        "row_type": "certification_requirement",
+        "certification_requirement": {
+          "sample_id": "XH-48V20AH-US",
+          "requirement_name": "Lithium documents",
+          "requirement_family": "transport_document",
+          "destination_country_or_region": "United States",
+          "candidate_hs_hts": "8507.60.00 candidate",
+          "applicability_status": "required",
+          "trigger_conditions": [
+            "lithium battery"
+          ],
+          "accepted_evidence_or_documents": [
+            "UN38.3",
+            "SDS"
+          ],
+          "user_material_status": "user_not_provided_but_required",
+          "user_material_review_scope": [
+            "model"
+          ],
+          "authority_source_refs": [
+            "source-freight-blog-official-keywords"
+          ],
+          "source_authority_level": "primary_official",
+          "user_material_refs": [],
+          "limitation_note": "bad fixture",
+          "cannot_conclude": [
+            "bad"
+          ]
+        },
+        "authority_verification_record_ids": [
+          "auth-ver-freight-blog"
+        ]
+      }
+    }
+  ]
+}

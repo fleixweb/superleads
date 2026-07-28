@@ -1,0 +1,61 @@
+{
+  "extends": "market_pass_authority_official_for_tariff_only.json",
+  "patches": [
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-tariff-source-used-for-cert",
+        "sheet_name": "产品准入与合规要求",
+        "row_topic": "错误：税则来源支撑认证 required",
+        "user_visible_cells": {
+          "样本ID": "UQ-470177-US",
+          "要求类别": "labeling",
+          "目的国/地区": "美国",
+          "目标国认证/准入要求结论": "required",
+          "用户认证材料状态": "user_material_status_unknown"
+        },
+        "status": "verified",
+        "evidence_card_ids": [],
+        "gap_ids": [],
+        "conflict_ids": [],
+        "module_key": "destination_requirement",
+        "boundary_rule_ids": [
+          "EB-AUTH-FAIL"
+        ],
+        "internal_refs_hidden": true,
+        "row_type": "destination_requirement",
+        "authority_verification_record_ids": [
+          "auth-ver-usitc-tariff-only"
+        ],
+        "certification_requirement": {
+          "sample_id": "UQ-470177-US",
+          "requirement_name": "Label approval",
+          "requirement_family": "labeling",
+          "destination_country_or_region": "United States",
+          "candidate_hs_hts": "6205.20.20 candidate",
+          "applicability_status": "required",
+          "trigger_conditions": [
+            "apparel"
+          ],
+          "accepted_evidence_or_documents": [
+            "label approval"
+          ],
+          "user_material_status": "user_material_status_unknown",
+          "user_material_review_scope": [
+            "label"
+          ],
+          "authority_source_refs": [
+            "source-usitc-authority-tariff-only"
+          ],
+          "source_authority_level": "primary_official",
+          "user_material_refs": [],
+          "limitation_note": "bad",
+          "cannot_conclude": [
+            "bad"
+          ]
+        }
+      }
+    }
+  ]
+}

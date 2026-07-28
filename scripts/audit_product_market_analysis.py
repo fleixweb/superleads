@@ -43,12 +43,29 @@ LIMITED_FRESHNESS_STATUSES = {
     "date_unknown_recently_observed",
 }
 
+LIMITED_AUTHORITY_STATUSES = {
+    "candidate_needs_check",
+    "secondary_reference_only",
+    "unable_to_verify",
+    "conflicting_identity",
+    "not_executed",
+}
+
 FRESHNESS_STATUS_LABELS = {
     "current_enough_for_scope": "本轮复核日期在当前口径内",
     "date_unknown_recently_observed": "来源日期未见，但本轮已观察",
     "stale_needs_recheck": "资料偏旧，需重新复核",
     "date_unknown_needs_recheck": "来源日期未见，需复核后再当现行信息",
     "not_time_sensitive": "非强时效字段",
+    "not_executed": "未执行",
+}
+
+AUTHORITY_STATUS_LABELS = {
+    "verified_for_fact_domain": "已核实：仅限该事实域",
+    "candidate_needs_check": "候选来源，待核实身份",
+    "secondary_reference_only": "二级/参考来源，不能当主管结论",
+    "unable_to_verify": "未能核实权威性",
+    "conflicting_identity": "来源身份有冲突",
     "not_executed": "未执行",
 }
 
@@ -96,7 +113,10 @@ def _id_map(graph: dict[str, Any], key: str, id_field: str) -> dict[str, dict[st
 
 
 def _status_label(status: Any) -> str:
-    return STATUS_LABELS.get(str(status), FRESHNESS_STATUS_LABELS.get(str(status), str(status or "未提供")))
+    return STATUS_LABELS.get(
+        str(status),
+        FRESHNESS_STATUS_LABELS.get(str(status), AUTHORITY_STATUS_LABELS.get(str(status), str(status or "未提供"))),
+    )
 
 
 def _add_issue(issues: list[dict[str, str]], severity: str, code: str, message: str, path: str) -> None:
@@ -260,6 +280,20 @@ def _collect_limitations(graph: dict[str, Any]) -> list[dict[str, str]]:
                 f"freshness_records[{idx}]",
                 freshness.get("field_domain"),
                 freshness.get("field_name"),
+            ))
+
+    for idx, authority in enumerate(ensure_list(graph, "authority_verification_records")):
+        if not isinstance(authority, dict):
+            continue
+        status = str(authority.get("verification_status") or "")
+        if status in LIMITED_AUTHORITY_STATUSES:
+            add(_limitation(
+                "market_authority_limitation",
+                str(authority.get("verification_basis") or "来源权威性未能核实或仅可作参考，不能支撑确定性官方结论"),
+                status,
+                f"authority_verification_records[{idx}]",
+                authority.get("fact_domain"),
+                authority.get("jurisdiction_role"),
             ))
 
     for idx, premise in enumerate(ensure_list(graph, "trade_premises")):

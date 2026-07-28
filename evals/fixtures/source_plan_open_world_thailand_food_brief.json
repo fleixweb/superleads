@@ -1,0 +1,37 @@
+{
+  "brief_id": "source-brief-th-food-open-world",
+  "brief_version_id": "source-brief-th-food-open-world-v1",
+  "product_name": "freeze dried mango snack gift pack",
+  "manufacturer_or_brand": "Example Foods",
+  "model_or_sku": "gift-pack-100g",
+  "target_country_or_region": "Thailand",
+  "export_declaration_country": "India",
+  "origin_country_or_region": "India",
+  "departure_country_or_region": "India",
+  "departure_node": null,
+  "destination_node": null,
+  "candidate_hs_hts": "0804.50 candidate",
+  "product_trigger_tags": [
+    "food",
+    "fresh_produce",
+    "gift",
+    "plant_material"
+  ],
+  "analysis_modules_requested": [
+    "product_profile",
+    "destination_compliance",
+    "origin_proof_requirement",
+    "import_tax",
+    "export_requirements",
+    "logistics",
+    "season_holiday",
+    "external_factors"
+  ],
+  "attributes": {
+    "food_contact_or_food": "ready-to-eat fruit snack",
+    "gift_attribute": "holiday gift pack",
+    "packaging_status": "unknown",
+    "shelf_life": "unknown"
+  },
+  "business_decision_policy": "开放世界国家/地区只生成权威来源发现计划；不得写泰国税率、证书、COO 或准入结论。"
+}

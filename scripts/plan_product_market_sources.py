@@ -394,6 +394,10 @@ def _select_pack_ids(brief: dict[str, Any], registry: dict[str, Any]) -> tuple[l
 
     for tag in tags:
         for pack_id in COMMON_TRIGGER_PACKS.get(tag, []):
+            if pack_id.startswith("seed_us_") and target != "United States":
+                continue
+            if pack_id == "seed_market_signal_global_to_us" and target != "United States":
+                continue
             if pack_id == "seed_transpacific_logistics_general" and not transpacific_applies:
                 continue
             selected.append(pack_id)
@@ -496,10 +500,157 @@ def _fill_blueprint(template: str, inputs: dict[str, Any]) -> str:
     return re.sub(r"\{([A-Za-z0-9_]+)\}", repl, template)
 
 
+def _manual_authority_discovery_steps(brief: dict[str, Any]) -> list[dict[str, Any]]:
+    """Open-world authority discovery plan for non-prelisted jurisdictions.
+
+    This intentionally emits search/open tasks only.  It does not assume a
+    regulator name, official domain, tariff rate, certificate, route, or legal
+    conclusion for the target country.  The collector must later open sources
+    and create AuthorityVerificationRecords before any determinate MatrixRow.
+    """
+    target = _country(_brief_value(brief, "target_country_or_region", "destination_country_or_region"))
+    if not target or target == "United States":
+        return []
+
+    product = _brief_value(brief, "product_name", "display_name", "product") or "<product:待确认>"
+    candidate_hs = _brief_value(brief, "candidate_hs_hts", "candidate_hs", "candidate_hts") or "<candidate_hs:待确认>"
+    tags = set(_brief_product_tags(brief))
+    requested = set(_str_list(_brief_value(brief, "analysis_modules_requested", "modules_requested")))
+    steps: list[dict[str, Any]] = []
+
+    def add(step_id: str, group: str, purpose: str, queries: list[str], domains: list[str], sheet: str, priority: list[str] | None = None) -> None:
+        steps.append({
+            "query_plan_id": f"qp_manual_authority_{step_id}",
+            "pack_id": None,
+            "template_id": f"manual_open_world_authority_{step_id}",
+            "query_group_id": group,
+            "purpose": purpose,
+            "inputs_used": {
+                "target_country_or_region": target,
+                "product_name": product,
+                "candidate_hs_hts": candidate_hs,
+                "open_world_authority_discovery": True,
+            },
+            "query_strings": queries,
+            "source_entry_ids": [],
+            "required_source_priority": priority or ["primary_official", "official_portal", "official_gazette_or_legal_database"],
+            "authority_discovery_model": {
+                "open_world": True,
+                "not_country_hardcoded": True,
+                "must_verify_identity": True,
+                "must_match_fact_domain": True,
+                "must_match_jurisdiction": True,
+                "must_record_authority_profile_before_claim": True,
+                "fact_domains_to_verify": domains,
+                "fallback_when_unverified": "candidate_needs_check_or_unable_to_verify",
+            },
+            "must_open_source": True,
+            "reject_if_only_snippet": True,
+            "not_evidence": True,
+            "allowed_output": ALLOWED_OUTPUT,
+            "expected_observation_fields": [
+                "source_name",
+                "url",
+                "visible_institution_identity",
+                "jurisdiction",
+                "fact_domain_scope",
+                "source_date_or_effective_date",
+                "limitations",
+            ],
+            "expected_matrix_sheet": sheet,
+            "fallback_status": "authority_discovery_plan_only",
+            "handoff_target_skill": "analyzing-product-outbound-market",
+            "blocked_outputs": BOUNDARY_BLOCKED_FACTS + [
+                "official_requirement_claim_without_authority_verification",
+                "domain_suffix_as_authority",
+                "keyword_only_authority",
+            ],
+            "boundary_note": NOT_EVIDENCE_NOTE + " 开放世界国家/地区必须先核实机构身份、事实域、管辖范围和时效，再生成 AuthorityVerificationRecord。",
+        })
+
+    if requested & {"destination_compliance", "origin_proof_requirement"} or not requested:
+        add(
+            "destination_market_access",
+            "authority_discovery_destination_compliance",
+            f"为 {target} 发现产品准入、标签、包装、认证或许可主管来源；只形成权威来源候选，不形成要求结论。",
+            [
+                f"{target} official product safety market access {product}",
+                f"{target} official labeling packaging requirements {product} {candidate_hs}",
+                f"{target} official conformity certification import requirements {product}",
+            ],
+            ["certification_requirement", "destination_requirement"],
+            "产品准入与合规要求",
+        )
+        add(
+            "origin_proof",
+            "authority_discovery_origin_proof",
+            f"为 {target} 发现 COO / proof of origin / 原产地规则主管来源；只形成来源核实路径。",
+            [
+                f"{target} official certificate of origin proof of origin import rules {candidate_hs}",
+                f"{target} customs rules of origin import proof {product}",
+            ],
+            ["origin_proof_requirement"],
+            "产品准入与合规要求",
+        )
+    if requested & {"import_tax"} or not requested:
+        add(
+            "customs_tariff",
+            "authority_discovery_import_tax",
+            f"为 {target} 发现官方海关税则、关税、贸易救济查询入口；不输出税率。",
+            [
+                f"{target} official customs tariff lookup {candidate_hs}",
+                f"{target} official import duty tariff schedule {product} {candidate_hs}",
+                f"{target} official trade remedy additional duty {candidate_hs}",
+            ],
+            ["import_tax", "trade_remedy"],
+            "进口税费",
+        )
+    if requested & {"logistics"} or not requested:
+        add(
+            "prefiling_logistics",
+            "authority_discovery_logistics_prefiling",
+            f"为 {target} 发现进口预申报、舱单、危险品/运输监管来源；不承诺路线或时效。",
+            [
+                f"{target} official customs advance manifest pre filing import cargo",
+                f"{target} official dangerous goods transport requirements {product}",
+            ],
+            ["logistics_prefiling", "dangerous_goods_transport"],
+            "运输方式、路线、港口与申报节点",
+            ["primary_official", "port_or_transport_authority", "carrier_or_forwarder_reference_only"],
+        )
+    if tags & {"food", "fresh_produce", "plant_material", "tea", "flower"}:
+        add(
+            "food_agri_quarantine",
+            "authority_discovery_inspection_quarantine",
+            f"产品触发食品/农产品/植物材料路径；为 {target} 发现检验检疫或食品安全主管来源。",
+            [
+                f"{target} official food safety import requirements {product}",
+                f"{target} official phytosanitary quarantine import requirements {product}",
+                f"{target} official agriculture quarantine import permit {candidate_hs}",
+            ],
+            ["inspection_quarantine", "certification_requirement"],
+            "产品准入与合规要求",
+        )
+    if tags & {"lithium_battery", "dangerous_goods", "battery_standalone", "chemical", "liquid"}:
+        add(
+            "dangerous_goods",
+            "authority_discovery_dangerous_goods",
+            f"产品触发危险品/化学品/锂电路径；为 {target} 发现运输和市场准入主管来源。",
+            [
+                f"{target} official lithium battery dangerous goods transport requirements {product}",
+                f"{target} official hazardous materials import transport documentation {candidate_hs}",
+            ],
+            ["dangerous_goods_transport", "certification_requirement"],
+            "产品准入与合规要求",
+        )
+    return steps
+
+
 def _manual_gap_steps(brief: dict[str, Any], selected_pack_ids: list[str], templates: list[dict[str, Any]]) -> list[dict[str, Any]]:
     steps: list[dict[str, Any]] = []
     target = _country(_brief_value(brief, "target_country_or_region", "destination_country_or_region"))
     export_country = _country(_brief_value(brief, "export_declaration_country", "default_export_declaration_country"))
+    steps.extend(_manual_authority_discovery_steps(brief))
     if target and target != "United States":
         steps.append({
             "query_plan_id": "qp_manual_destination_pack_gap",

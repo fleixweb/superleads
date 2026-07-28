@@ -1,0 +1,31 @@
+{
+  "extends": "market_pass_uniqlo_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-source-pack-as-fact",
+        "sheet_name": "进口税费",
+        "row_topic": "错误：Source Pack 直接当事实",
+        "user_visible_cells": {
+          "样本ID": "UQ-470177-US",
+          "目的国": "美国",
+          "候选 HS/HTS": "来自 Source Pack",
+          "税率/金额": "Source Pack / Query Plan 直接写成税费事实（错误示范）",
+          "来源/依据": "source_plan_only Source Pack / QueryTemplate"
+        },
+        "status": "verified",
+        "evidence_card_ids": [],
+        "gap_ids": [],
+        "conflict_ids": [],
+        "module_key": "import_tax",
+        "boundary_rule_ids": [
+          "EB-AUTH-FAIL"
+        ],
+        "internal_refs_hidden": true,
+        "row_type": "import_tax"
+      }
+    }
+  ]
+}

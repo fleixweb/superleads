@@ -1,5 +1,5 @@
 {
-  "description": "Product outbound market analysis Code Slice I Source Pack registry + Query Plan fixtures. These cases assert source_plan_only boundaries and pack/template routing; they must not produce facts.",
+  "description": "Product outbound market analysis Code Slice I/AD Source Pack registry + open-world Query Plan fixtures. These cases assert source_plan_only boundaries and pack/template routing; they must not produce facts.",
   "runner": "evals/run_product_market_source_plan_evals.py",
   "planner": "scripts/plan_product_market_sources.py",
   "registry": "shared/source_packs/product_market_seed_packs.json",
@@ -216,6 +216,50 @@
         "可出运",
         "建议进入",
         "推荐价格"
+      ]
+    },
+    {
+      "name": "open world Thailand food authority discovery plan only",
+      "fixture": "source_plan_open_world_thailand_food_brief.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "must_select_pack_ids": [
+        "seed_product_original_sources"
+      ],
+      "must_include_template_ids": [
+        "manual_open_world_authority_destination_market_access",
+        "manual_open_world_authority_origin_proof",
+        "manual_open_world_authority_customs_tariff",
+        "manual_open_world_authority_prefiling_logistics",
+        "manual_open_world_authority_food_agri_quarantine",
+        "manual_destination_source_pack_gap",
+        "manual_export_source_pack_gap"
+      ],
+      "output_must_contain": [
+        "source_plan_only",
+        "open_world_authority_discovery",
+        "not_country_hardcoded",
+        "must_verify_identity",
+        "must_match_fact_domain",
+        "must_match_jurisdiction",
+        "authority_discovery_destination_compliance",
+        "authority_discovery_import_tax",
+        "authority_discovery_origin_proof",
+        "authority_discovery_inspection_quarantine",
+        "candidate_needs_check_or_unable_to_verify",
+        "Source Pack 和 Query Plan 只是来源/查询计划"
+      ],
+      "output_must_not_contain": [
+        "Thailand duty rate is",
+        "泰国税率为",
+        "最终税率为",
+        "required certificate",
+        "COO required",
+        "已合规",
+        "可出运",
+        "最佳路线",
+        "推荐价格",
+        "建议进入"
       ]
     }
   ]

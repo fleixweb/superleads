@@ -1,0 +1,15 @@
+{
+  "extends": "market_pass_channel_requirement_separated_from_law.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/certification_requirement/destination_country_or_region",
+      "value": "Germany"
+    },
+    {
+      "op": "replace",
+      "path": "/matrix_rows/5/user_visible_cells/目的国~1地区",
+      "value": "德国"
+    }
+  ]
+}

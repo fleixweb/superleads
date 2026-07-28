@@ -2,6 +2,128 @@
   "extends": "market_pass_uniqlo_minimum_boundary.json",
   "patches": [
     {
+      "op": "add",
+      "path": "/authority_profiles",
+      "value": [
+        {
+          "authority_profile_id": "auth-profile-us-cbp-origin-preference",
+          "source_id": "source-us-cbp-origin-preference",
+          "jurisdiction_type": "country",
+          "jurisdiction_role": "import_customs",
+          "jurisdiction_code": "US",
+          "jurisdiction_name": "United States",
+          "institution_name": "U.S. Customs and Border Protection",
+          "institution_name_local": null,
+          "institution_type": "customs_authority",
+          "authority_level": "primary_official_authority",
+          "authority_basis_summary": "Opened CBP official portal guidance page; visible page context identifies U.S. Customs and Border Protection as customs authority for origin and trade preference guidance.",
+          "identity_evidence_ids": [
+            "auth-id-us-cbp-origin-preference"
+          ],
+          "capability_ids": [
+            "auth-cap-us-cbp-origin-proof"
+          ],
+          "known_limitations": [
+            "Does not support final origin ruling",
+            "Does not prove user COO validity",
+            "Does not support all ordinary imports always require COO"
+          ],
+          "verification_status": "verified_for_fact_domain",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_identity_evidence",
+      "value": [
+        {
+          "authority_identity_evidence_id": "auth-id-us-cbp-origin-preference",
+          "authority_profile_id": "auth-profile-us-cbp-origin-preference",
+          "source_id": "source-us-cbp-origin-preference",
+          "observation_ids": [
+            "observation-us-cbp-origin-preference"
+          ],
+          "evidence_type": "official_portal_link",
+          "visible_evidence_summary": "Opened official portal link and page context for CBP origin / trade preference guidance; institution identity is visible from the opened source.",
+          "locator": "fixture-visible-excerpt",
+          "supports_identity_as": "U.S. Customs and Border Protection official customs guidance source for origin / preference topics",
+          "does_not_support": [
+            "Final importer-specific ruling",
+            "User document authenticity"
+          ],
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_capabilities",
+      "value": [
+        {
+          "authority_capability_id": "auth-cap-us-cbp-origin-proof",
+          "authority_profile_id": "auth-profile-us-cbp-origin-preference",
+          "fact_domains_supported": [
+            "origin_proof_requirement"
+          ],
+          "fact_domains_not_supported": [
+            "certification_requirement",
+            "dangerous_goods_transport",
+            "market_signal",
+            "logistics"
+          ],
+          "supported_claim_types": [
+            "conditional proof of origin path for preference/customs-request scenarios"
+          ],
+          "unsupported_claim_types": [
+            "final origin determination",
+            "all ordinary imports always require COO",
+            "uploaded COO is valid"
+          ],
+          "minimum_authority_level": "primary_official_authority",
+          "requires_freshness_record": true,
+          "requires_professional_confirmation": true,
+          "capability_basis": "CBP opened official guidance covers origin / trade preference proof concepts; capability is limited to origin-proof requirement path and boundary notes.",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_verification_records",
+      "value": [
+        {
+          "authority_verification_id": "auth-ver-us-cbp-origin-preference",
+          "run_id": "run-uq-us",
+          "brief_version_id": "brief-uq-us-v1",
+          "source_id": "source-us-cbp-origin-preference",
+          "observation_ids": [
+            "observation-us-cbp-origin-preference"
+          ],
+          "authority_profile_id": "auth-profile-us-cbp-origin-preference",
+          "fact_domain": "origin_proof_requirement",
+          "jurisdiction_role": "import_customs",
+          "verification_status": "verified_for_fact_domain",
+          "verification_basis": "Opened CBP official origin / trade preference guidance; institution identity visible; fact-domain capability limited to proof-of-origin requirement path.",
+          "can_support": [
+            "conditional proof of origin / origin certification requirement path for preference or customs-request scenarios"
+          ],
+          "cannot_support": [
+            "final origin ruling",
+            "uploaded COO is valid",
+            "ordinary import always requires COO"
+          ],
+          "next_verification_steps": [
+            "Reopen CBP source before shipment",
+            "Check exact trade program, importer request, HTS and entry scenario with broker/customs professional"
+          ],
+          "reviewer_skill": "Skill F - 交付复核",
+          "reviewed_at": "2026-07-28",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
       "op": "append",
       "path": "/sources/-",
       "value": {
@@ -105,7 +227,10 @@
           "EB-ORI-08",
           "EB-ORI-10"
         ],
-        "review_status": "passed"
+        "review_status": "passed",
+        "authority_verification_record_ids": [
+          "auth-ver-us-cbp-origin-preference"
+        ]
       }
     },
     {
@@ -209,7 +334,10 @@
             "source-user-coo-uq-sample"
           ],
           "limitation_note": "用户材料只说明文件节选与当前样本范围初步匹配，不替代目标国官方规则或海关最终裁定。"
-        }
+        },
+        "authority_verification_record_ids": [
+          "auth-ver-us-cbp-origin-preference"
+        ]
       }
     }
   ]

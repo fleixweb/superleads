@@ -2,6 +2,128 @@
   "extends": "market_pass_xingheng_minimum_boundary.json",
   "patches": [
     {
+      "op": "add",
+      "path": "/authority_profiles",
+      "value": [
+        {
+          "authority_profile_id": "auth-profile-us-dot-phmsa",
+          "source_id": "source-us-dot-lithium-battery-transport",
+          "jurisdiction_type": "country",
+          "jurisdiction_role": "destination_market",
+          "jurisdiction_code": "US",
+          "jurisdiction_name": "United States",
+          "institution_name": "U.S. Department of Transportation PHMSA",
+          "institution_name_local": null,
+          "institution_type": "transport_dangerous_goods_authority",
+          "authority_level": "primary_official_authority",
+          "authority_basis_summary": "Opened PHMSA/DOT official lithium battery transport guidance; visible source context identifies the U.S. Department of Transportation PHMSA.",
+          "identity_evidence_ids": [
+            "auth-id-us-dot-phmsa"
+          ],
+          "capability_ids": [
+            "auth-cap-us-dot-phmsa-lithium"
+          ],
+          "known_limitations": [
+            "Does not support product already has UN38.3/SDS",
+            "Does not support final carrier acceptance",
+            "Does not support final import duty"
+          ],
+          "verification_status": "verified_for_fact_domain",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_identity_evidence",
+      "value": [
+        {
+          "authority_identity_evidence_id": "auth-id-us-dot-phmsa",
+          "authority_profile_id": "auth-profile-us-dot-phmsa",
+          "source_id": "source-us-dot-lithium-battery-transport",
+          "observation_ids": [
+            "observation-us-dot-lithium-battery-transport"
+          ],
+          "evidence_type": "official_portal_link",
+          "visible_evidence_summary": "Opened official portal link and page context for PHMSA/DOT lithium battery transport guidance; institution identity is visible from the opened source.",
+          "locator": "fixture-visible-excerpt",
+          "supports_identity_as": "U.S. DOT PHMSA official transport/dangerous goods guidance source",
+          "does_not_support": [
+            "Final carrier acceptance",
+            "Product compliance"
+          ],
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_capabilities",
+      "value": [
+        {
+          "authority_capability_id": "auth-cap-us-dot-phmsa-lithium",
+          "authority_profile_id": "auth-profile-us-dot-phmsa",
+          "fact_domains_supported": [
+            "dangerous_goods_transport",
+            "certification_requirement"
+          ],
+          "fact_domains_not_supported": [
+            "import_tax",
+            "origin_proof_requirement",
+            "market_signal"
+          ],
+          "supported_claim_types": [
+            "conditional lithium battery transport documentation path"
+          ],
+          "unsupported_claim_types": [
+            "final product compliance",
+            "carrier commitment",
+            "final import duty"
+          ],
+          "minimum_authority_level": "primary_official_authority",
+          "requires_freshness_record": true,
+          "requires_professional_confirmation": true,
+          "capability_basis": "PHMSA opened official page covers lithium battery transportation requirements and references testing, packaging, marking and documentation depending on scenario.",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_verification_records",
+      "value": [
+        {
+          "authority_verification_id": "auth-ver-us-dot-phmsa-lithium",
+          "run_id": "run-xh-us",
+          "brief_version_id": "brief-xh-us-v1",
+          "source_id": "source-us-dot-lithium-battery-transport",
+          "observation_ids": [
+            "observation-us-dot-lithium-battery-transport"
+          ],
+          "authority_profile_id": "auth-profile-us-dot-phmsa",
+          "fact_domain": "dangerous_goods_transport",
+          "jurisdiction_role": "destination_market",
+          "verification_status": "verified_for_fact_domain",
+          "verification_basis": "Opened PHMSA/DOT official lithium battery transport guidance; institution identity visible; capability limited to transport/documentation rules.",
+          "can_support": [
+            "conditional lithium battery transport test/document/packaging requirement path"
+          ],
+          "cannot_support": [
+            "product already compliant",
+            "UN38.3/SDS already available",
+            "ordinary cargo transportability"
+          ],
+          "next_verification_steps": [
+            "Check exact shipment scenario with carrier/DG professional",
+            "Reopen source for freshness before shipment"
+          ],
+          "reviewer_skill": "Skill F - 交付复核",
+          "reviewed_at": "2026-07-28",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
       "op": "append",
       "path": "/sources/-",
       "value": {
@@ -73,7 +195,10 @@
           "EB-CERT-02",
           "EB-CERT-07"
         ],
-        "review_status": "passed"
+        "review_status": "passed",
+        "authority_verification_record_ids": [
+          "auth-ver-us-dot-phmsa-lithium"
+        ]
       }
     },
     {
@@ -150,7 +275,10 @@
             "不能推出目标国不需要文件",
             "不能推出可普通货运输"
           ]
-        }
+        },
+        "authority_verification_record_ids": [
+          "auth-ver-us-dot-phmsa-lithium"
+        ]
       }
     }
   ]

@@ -1,0 +1,197 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "append",
+      "path": "/sources/-",
+      "value": {
+        "source_id": "source-forwarder-lithium-lcl-clue",
+        "canonical_url": "https://forwarder.example.com/lithium-lcl-guide",
+        "final_url": "https://forwarder.example.com/lithium-lcl-guide",
+        "publisher_relation": "third_party",
+        "provenance": "discovered_public",
+        "medium": "website",
+        "access_boundary": "public_web",
+        "owner_hint": "commercial forwarder guidance fixture"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/observations/-",
+      "value": {
+        "observation_id": "observation-forwarder-lithium-lcl-clue",
+        "run_id": "run-xh-us",
+        "source_id": "source-forwarder-lithium-lcl-clue",
+        "capability": "source.open",
+        "concrete_tool": "fixture.static_source_open",
+        "observed_at": "2026-07-28",
+        "access_status": "opened",
+        "title": "Forwarder lithium LCL guide fixture",
+        "raw_excerpt": "Commercial forwarder guide says lithium battery LCL handling depends on UN38.3, SDS, packing and carrier acceptance. This is a logistics clue, not regulator confirmation.",
+        "page_or_dom_locator": "fixture-visible-excerpt",
+        "extraction_method": "fixture_static",
+        "language": "en",
+        "translation_status": "original"
+      }
+    },
+    {
+      "op": "add",
+      "path": "/authority_profiles",
+      "value": [
+        {
+          "authority_profile_id": "auth-profile-forwarder-logistics-clue",
+          "source_id": "source-forwarder-lithium-lcl-clue",
+          "jurisdiction_type": "carrier_network",
+          "jurisdiction_role": "departure_logistics",
+          "jurisdiction_code": null,
+          "jurisdiction_name": "Commercial forwarder network",
+          "institution_name": "Forwarder example",
+          "institution_name_local": null,
+          "institution_type": "commercial_forwarder",
+          "authority_level": "commercial_market_reference",
+          "authority_basis_summary": "Opened commercial forwarder guide; visible page context supports logistics-market clue only, not customs or dangerous goods authority.",
+          "identity_evidence_ids": [
+            "auth-id-forwarder-logistics-clue"
+          ],
+          "capability_ids": [
+            "auth-cap-forwarder-logistics-clue"
+          ],
+          "known_limitations": [
+            "Not regulator",
+            "No carrier commitment",
+            "不能证明产品可出运"
+          ],
+          "verification_status": "secondary_reference_only",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_identity_evidence",
+      "value": [
+        {
+          "authority_identity_evidence_id": "auth-id-forwarder-logistics-clue",
+          "authority_profile_id": "auth-profile-forwarder-logistics-clue",
+          "source_id": "source-forwarder-lithium-lcl-clue",
+          "observation_ids": [
+            "observation-forwarder-lithium-lcl-clue"
+          ],
+          "evidence_type": "page_footer_or_about",
+          "visible_evidence_summary": "Opened commercial forwarder guide page; identity visible as market participant reference.",
+          "locator": "fixture-visible-excerpt",
+          "supports_identity_as": "commercial forwarder logistics reference",
+          "does_not_support": [
+            "customs authority",
+            "dangerous goods regulator",
+            "carrier booking acceptance"
+          ],
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_capabilities",
+      "value": [
+        {
+          "authority_capability_id": "auth-cap-forwarder-logistics-clue",
+          "authority_profile_id": "auth-profile-forwarder-logistics-clue",
+          "fact_domains_supported": [
+            "logistics"
+          ],
+          "fact_domains_not_supported": [
+            "dangerous_goods_transport",
+            "certification_requirement",
+            "import_tax",
+            "origin_proof_requirement"
+          ],
+          "supported_claim_types": [
+            "logistics clue about documents to ask for"
+          ],
+          "unsupported_claim_types": [
+            "mandatory regulation",
+            "transportability",
+            "carrier acceptance"
+          ],
+          "minimum_authority_level": "commercial_market_reference",
+          "requires_freshness_record": true,
+          "requires_professional_confirmation": true,
+          "capability_basis": "Commercial forwarder content can inform what to ask a carrier/DG professional, but not make official claims.",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_verification_records",
+      "value": [
+        {
+          "authority_verification_id": "auth-ver-forwarder-logistics-clue",
+          "run_id": "run-xh-us",
+          "brief_version_id": "brief-xh-us-v1",
+          "source_id": "source-forwarder-lithium-lcl-clue",
+          "observation_ids": [
+            "observation-forwarder-lithium-lcl-clue"
+          ],
+          "authority_profile_id": "auth-profile-forwarder-logistics-clue",
+          "fact_domain": "logistics",
+          "jurisdiction_role": "departure_logistics",
+          "verification_status": "secondary_reference_only",
+          "verification_basis": "Opened commercial forwarder guide; usable as logistics clue only, not official transport requirement.",
+          "can_support": [
+            "documents/questions to ask freight forwarder or DG professional"
+          ],
+          "cannot_support": [
+            "official lithium battery transport requirement",
+            "LCL availability",
+            "carrier acceptance",
+            "不能证明产品可出运",
+            "ordinary cargo status"
+          ],
+          "next_verification_steps": [
+            "Ask DG professional/carrier with UN38.3, SDS, packing and shipment scenario",
+            "Open official transport authority source for regulatory requirements"
+          ],
+          "reviewer_skill": "Skill F - 交付复核",
+          "reviewed_at": "2026-07-28",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-forwarder-logistics-clue",
+        "sheet_name": "运输方式、路线、港口与申报节点",
+        "row_topic": "货代页面只作物流线索",
+        "user_visible_cells": {
+          "样本ID": "XH-48V20AH-US",
+          "运输方式": "海运拼箱 / FCL / 快递是否可行待确认",
+          "实际起运地": "越南；具体港口待业务确认",
+          "目的节点": "美国；具体港口/机场待业务确认",
+          "适用条件": "LiFePO4 电池包，需看 UN38.3、SDS、包装、承运人和 DG 要求",
+          "运输时间口径": "不承诺时效；本行只提示需问哪些文件",
+          "来源/依据": "商业货代页面，非主管机关",
+          "还缺什么 / 下一步核验": "向承运人/DG 专业方确认，并打开官方运输主管来源"
+        },
+        "status": "preliminary_reference",
+        "evidence_card_ids": [],
+        "gap_ids": [
+          "gap-xh-un38",
+          "gap-xh-sds"
+        ],
+        "conflict_ids": [],
+        "module_key": "logistics",
+        "boundary_rule_ids": [
+          "EB-AUTH-03"
+        ],
+        "internal_refs_hidden": true,
+        "authority_verification_record_ids": [
+          "auth-ver-forwarder-logistics-clue"
+        ]
+      }
+    }
+  ]
+}

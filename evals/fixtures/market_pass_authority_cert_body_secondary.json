@@ -1,0 +1,191 @@
+{
+  "extends": "market_pass_uniqlo_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "append",
+      "path": "/sources/-",
+      "value": {
+        "source_id": "source-oekotex-cert-body-scope",
+        "canonical_url": "https://www.oeko-tex.com/en/our-standards/oeko-tex-standard-100",
+        "final_url": "https://www.oeko-tex.com/en/our-standards/oeko-tex-standard-100",
+        "publisher_relation": "third_party",
+        "provenance": "discovered_public",
+        "medium": "website",
+        "access_boundary": "public_web",
+        "owner_hint": "certification body standard page fixture"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/observations/-",
+      "value": {
+        "observation_id": "observation-oekotex-cert-body-scope",
+        "run_id": "run-uq-us",
+        "source_id": "source-oekotex-cert-body-scope",
+        "capability": "source.open",
+        "concrete_tool": "fixture.static_source_open",
+        "observed_at": "2026-07-28",
+        "access_status": "opened",
+        "title": "OEKO-TEX STANDARD 100 scope fixture",
+        "raw_excerpt": "Certification body page describes a voluntary textile testing/certification program. It does not by itself establish a U.S. legal import requirement.",
+        "page_or_dom_locator": "fixture-visible-excerpt",
+        "extraction_method": "fixture_static",
+        "language": "en",
+        "translation_status": "original"
+      }
+    },
+    {
+      "op": "add",
+      "path": "/authority_profiles",
+      "value": [
+        {
+          "authority_profile_id": "auth-profile-oekotex-secondary",
+          "source_id": "source-oekotex-cert-body-scope",
+          "jurisdiction_type": "global_or_international",
+          "jurisdiction_role": "common_rule",
+          "jurisdiction_code": null,
+          "jurisdiction_name": "Global / program scope",
+          "institution_name": "OEKO-TEX",
+          "institution_name_local": null,
+          "institution_type": "certification_body",
+          "authority_level": "delegated_or_recognized_body",
+          "authority_basis_summary": "Opened certification body program page; visible page context supports program identity, not destination-market legal authority.",
+          "identity_evidence_ids": [
+            "auth-id-oekotex-secondary"
+          ],
+          "capability_ids": [
+            "auth-cap-oekotex-secondary"
+          ],
+          "known_limitations": [
+            "Does not create U.S. legal import requirement",
+            "Does not prove product has certificate"
+          ],
+          "verification_status": "secondary_reference_only",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_identity_evidence",
+      "value": [
+        {
+          "authority_identity_evidence_id": "auth-id-oekotex-secondary",
+          "authority_profile_id": "auth-profile-oekotex-secondary",
+          "source_id": "source-oekotex-cert-body-scope",
+          "observation_ids": [
+            "observation-oekotex-cert-body-scope"
+          ],
+          "evidence_type": "page_footer_or_about",
+          "visible_evidence_summary": "Opened certification body page describing the program scope.",
+          "locator": "fixture-visible-excerpt",
+          "supports_identity_as": "certification body / program reference",
+          "does_not_support": [
+            "U.S. regulator identity",
+            "Product certificate validity"
+          ],
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_capabilities",
+      "value": [
+        {
+          "authority_capability_id": "auth-cap-oekotex-secondary",
+          "authority_profile_id": "auth-profile-oekotex-secondary",
+          "fact_domains_supported": [
+            "certification_requirement"
+          ],
+          "fact_domains_not_supported": [
+            "import_tax",
+            "origin_proof_requirement",
+            "destination legal requirement"
+          ],
+          "supported_claim_types": [
+            "voluntary certification program scope reference"
+          ],
+          "unsupported_claim_types": [
+            "destination law requires this certificate",
+            "product is certified"
+          ],
+          "minimum_authority_level": "delegated_or_recognized_body",
+          "requires_freshness_record": true,
+          "requires_professional_confirmation": true,
+          "capability_basis": "Program page can explain a certification route only as secondary reference.",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_verification_records",
+      "value": [
+        {
+          "authority_verification_id": "auth-ver-oekotex-secondary",
+          "run_id": "run-uq-us",
+          "brief_version_id": "brief-uq-us-v1",
+          "source_id": "source-oekotex-cert-body-scope",
+          "observation_ids": [
+            "observation-oekotex-cert-body-scope"
+          ],
+          "authority_profile_id": "auth-profile-oekotex-secondary",
+          "fact_domain": "certification_requirement",
+          "jurisdiction_role": "common_rule",
+          "verification_status": "secondary_reference_only",
+          "verification_basis": "Certification body page opened; usable as program reference only, not destination-market official requirement.",
+          "can_support": [
+            "candidate voluntary certification program reference"
+          ],
+          "cannot_support": [
+            "U.S. law requires certificate",
+            "product has certificate",
+            "official import clearance condition"
+          ],
+          "next_verification_steps": [
+            "Find target-market regulator or customer/channel document if legal/channel requirement is needed",
+            "Ask supplier for certificate number and scope if user wants material review"
+          ],
+          "reviewer_skill": "Skill F - 交付复核",
+          "reviewed_at": "2026-07-28",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-oekotex-secondary-reference",
+        "sheet_name": "产品准入与合规要求",
+        "row_topic": "认证机构页面只作路线参考",
+        "user_visible_cells": {
+          "样本ID": "UQ-470177-US",
+          "要求类别": "certification_body_reference",
+          "要求名称": "OEKO-TEX program reference",
+          "目的国/地区": "美国",
+          "目标国认证/准入要求结论": "不写 required；只作候选认证路径参考",
+          "触发条件": "客户/渠道或品牌要求时可能参考；不是本行确认的法律强制",
+          "当前证据": "认证机构页面已打开；来源身份不是美国主管机关",
+          "官方/优先来源": "认证机构页面，非目标国主管机关",
+          "待补材料": "若业务需要，另查目标国主管来源/客户文件，并向供应商索取证书编号和范围",
+          "禁止升级": "不能写成美国法律强制；不能写产品已认证",
+          "用户认证材料状态": "user_material_status_unknown"
+        },
+        "status": "preliminary_reference",
+        "evidence_card_ids": [],
+        "gap_ids": [],
+        "conflict_ids": [],
+        "module_key": "destination_requirement",
+        "boundary_rule_ids": [
+          "EB-AUTH-02"
+        ],
+        "internal_refs_hidden": true,
+        "authority_verification_record_ids": [
+          "auth-ver-oekotex-secondary"
+        ]
+      }
+    }
+  ]
+}

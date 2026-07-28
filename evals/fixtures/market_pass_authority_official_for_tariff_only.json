@@ -1,0 +1,233 @@
+{
+  "extends": "market_pass_uniqlo_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "append",
+      "path": "/sources/-",
+      "value": {
+        "source_id": "source-usitc-authority-tariff-only",
+        "canonical_url": "https://hts.usitc.gov/",
+        "final_url": "https://hts.usitc.gov/",
+        "publisher_relation": "first_party",
+        "provenance": "discovered_public",
+        "medium": "website",
+        "access_boundary": "public_web",
+        "owner_hint": "USITC official HTS tariff lookup source"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/observations/-",
+      "value": {
+        "observation_id": "observation-usitc-authority-tariff-only",
+        "run_id": "run-uq-us",
+        "source_id": "source-usitc-authority-tariff-only",
+        "capability": "source.open",
+        "concrete_tool": "fixture.static_source_open",
+        "observed_at": "2026-07-28",
+        "access_status": "opened",
+        "title": "USITC HTS official lookup",
+        "raw_excerpt": "Official HTS lookup page for tariff schedule. It is a tariff/classification source and does not decide textile label certification compliance.",
+        "page_or_dom_locator": "fixture-visible-excerpt",
+        "extraction_method": "fixture_static",
+        "language": "en",
+        "translation_status": "original"
+      }
+    },
+    {
+      "op": "add",
+      "path": "/authority_profiles",
+      "value": [
+        {
+          "authority_profile_id": "auth-profile-usitc-tariff-only",
+          "source_id": "source-usitc-authority-tariff-only",
+          "jurisdiction_type": "country",
+          "jurisdiction_role": "import_customs",
+          "jurisdiction_code": "US",
+          "jurisdiction_name": "United States",
+          "institution_name": "U.S. International Trade Commission HTS",
+          "institution_name_local": null,
+          "institution_type": "tariff_schedule_authority",
+          "authority_level": "official_service_or_portal",
+          "authority_basis_summary": "Opened official portal link and page context for USITC HTS tariff lookup; visible institution identity supports tariff lookup only.",
+          "identity_evidence_ids": [
+            "auth-id-usitc-tariff-only"
+          ],
+          "capability_ids": [
+            "auth-cap-usitc-tariff-only"
+          ],
+          "known_limitations": [
+            "Does not support certification or labeling compliance",
+            "Does not support final customs entry classification"
+          ],
+          "verification_status": "verified_for_fact_domain",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_identity_evidence",
+      "value": [
+        {
+          "authority_identity_evidence_id": "auth-id-usitc-tariff-only",
+          "authority_profile_id": "auth-profile-usitc-tariff-only",
+          "source_id": "source-usitc-authority-tariff-only",
+          "observation_ids": [
+            "observation-usitc-authority-tariff-only"
+          ],
+          "evidence_type": "official_portal_link",
+          "visible_evidence_summary": "Opened official portal link and page context for USITC HTS tariff lookup.",
+          "locator": "fixture-visible-excerpt",
+          "supports_identity_as": "USITC HTS official tariff lookup source",
+          "does_not_support": [
+            "Certification authority",
+            "Final broker classification"
+          ],
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_capabilities",
+      "value": [
+        {
+          "authority_capability_id": "auth-cap-usitc-tariff-only",
+          "authority_profile_id": "auth-profile-usitc-tariff-only",
+          "fact_domains_supported": [
+            "import_tax"
+          ],
+          "fact_domains_not_supported": [
+            "certification_requirement",
+            "origin_proof_requirement",
+            "dangerous_goods_transport"
+          ],
+          "supported_claim_types": [
+            "tariff lookup source identity for candidate HTS path"
+          ],
+          "unsupported_claim_types": [
+            "textile label certification requirement",
+            "final duty rate"
+          ],
+          "minimum_authority_level": "official_service_or_portal",
+          "requires_freshness_record": true,
+          "requires_professional_confirmation": true,
+          "capability_basis": "USITC HTS official lookup supports tariff schedule lookup; capability limited to import_tax.",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "add",
+      "path": "/authority_verification_records",
+      "value": [
+        {
+          "authority_verification_id": "auth-ver-usitc-tariff-only",
+          "run_id": "run-uq-us",
+          "brief_version_id": "brief-uq-us-v1",
+          "source_id": "source-usitc-authority-tariff-only",
+          "observation_ids": [
+            "observation-usitc-authority-tariff-only"
+          ],
+          "authority_profile_id": "auth-profile-usitc-tariff-only",
+          "fact_domain": "import_tax",
+          "jurisdiction_role": "import_customs",
+          "verification_status": "verified_for_fact_domain",
+          "verification_basis": "Opened USITC official HTS lookup; identity visible; capability limited to import_tax lookup path.",
+          "can_support": [
+            "candidate tariff schedule lookup source for import_tax"
+          ],
+          "cannot_support": [
+            "不能当认证/标签主管来源",
+            "不能当最终税率",
+            "不能当最终报关归类"
+          ],
+          "next_verification_steps": [
+            "Reopen HTS source before declaration",
+            "Broker confirms final 10-digit code and duty basis"
+          ],
+          "reviewer_skill": "Skill F - 交付复核",
+          "reviewed_at": "2026-07-28",
+          "review_status": "passed"
+        }
+      ]
+    },
+    {
+      "op": "append",
+      "path": "/evidence_cards/-",
+      "value": {
+        "evidence_card_id": "card-usitc-authority-tariff-only",
+        "run_id": "run-uq-us",
+        "brief_version_id": "brief-uq-us-v1",
+        "producer_skill": "Skill C - 目的国准入与税费",
+        "reviewer_skill": "Skill F - 交付复核",
+        "field_domain": "进口税费",
+        "field_name": "官方税则查询入口身份",
+        "current_value": "USITC HTS 是本轮已打开的官方税则查询入口；只能当 import_tax 查询来源身份，不当认证来源。",
+        "status": "verified",
+        "source_refs": [
+          {
+            "source_id": "source-usitc-authority-tariff-only",
+            "observation_id": "observation-usitc-authority-tariff-only",
+            "relation": "supports"
+          }
+        ],
+        "source_type": "official_tariff_lookup",
+        "source_locator": "USITC HTS official lookup fixture",
+        "source_date": "2026-07-20",
+        "observed_at": "2026-07-28",
+        "applicability_scope": "仅支持美国 import_tax / HTS 查询入口身份；最终归类和税率仍需复核。",
+        "supports": [
+          "官方税则查询入口身份"
+        ],
+        "does_not_support": [
+          "不能当认证/标签主管来源",
+          "不能当最终税率"
+        ],
+        "boundary_rule_ids": [
+          "EB-AUTH-01"
+        ],
+        "authority_verification_record_ids": [
+          "auth-ver-usitc-tariff-only"
+        ],
+        "review_status": "passed"
+      }
+    },
+    {
+      "op": "append",
+      "path": "/matrix_rows/-",
+      "value": {
+        "matrix_row_id": "row-usitc-authority-tariff-only",
+        "sheet_name": "进口税费",
+        "row_topic": "官方税则来源身份边界",
+        "user_visible_cells": {
+          "样本ID": "UQ-470177-US",
+          "目的国": "美国",
+          "候选 HS/HTS": "6205.20.20（候选路径）",
+          "税率/金额": "不输出税率；只确认税则查询入口身份",
+          "适用条件": "用于 import_tax 查询入口；不能当认证/标签主管来源，认证/标签要求需另找主管来源",
+          "来源/依据": "USITC official HTS lookup opened fixture",
+          "缺口/下一步": "报关前重新打开并由报关专业方确认最终 10 位税号和税率"
+        },
+        "status": "verified",
+        "evidence_card_ids": [
+          "card-usitc-authority-tariff-only"
+        ],
+        "gap_ids": [
+          "gap-uq-final-htsus"
+        ],
+        "conflict_ids": [],
+        "module_key": "import_tax",
+        "boundary_rule_ids": [
+          "EB-AUTH-01"
+        ],
+        "internal_refs_hidden": true,
+        "row_type": "import_tax",
+        "authority_verification_record_ids": [
+          "auth-ver-usitc-tariff-only"
+        ]
+      }
+    }
+  ]
+}
