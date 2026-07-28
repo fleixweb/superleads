@@ -163,6 +163,24 @@
         "推荐客户 A",
         "采购概率 80%"
       ]
+    },
+    {
+      "name": "fail product market internal status tokens leaked",
+      "fixture": "evals/user_visible_outputs/fail_product_market_internal_status_tokens.md",
+      "route": "product_outbound_market_analysis",
+      "expected": "fail",
+      "min_tables": 6,
+      "expected_error_codes": [
+        "user_visible_internal_status_token"
+      ],
+      "must_contain": [
+        "先看贸易前提",
+        "目标销售国家/地区",
+        "依据状态",
+        "technical_docs_required",
+        "stale_needs_recheck",
+        "user_not_provided_but_required"
+      ]
     }
   ]
 }

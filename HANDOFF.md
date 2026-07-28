@@ -1,8 +1,8 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：`6ae7bf8 Update handoff after authority guardrails commit`
-- 当前状态：Slice AE 状态词压缩 / 用户可见状态映射文档已完成，待提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：`7caa2e4 Document user-visible status mapping`
+- 当前状态：Code Slice AE 状态投影工具 / 导出列 / 用户可见状态 eval 已完成实现与验证，待提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已完成
 
@@ -12,7 +12,8 @@
 - Slice AD 文档已提交：`22be247 Document open world authority source model`。
 - Code Slice AD 已提交：`1b3c040 Add open-world authority verification guardrails`。
 - 状态同步已提交：`6ae7bf8 Update handoff after authority guardrails commit`。
-- Slice AE 文档已完成：`spec/34-superleads-user-visible-status-mapping-slice-ae.md`，待提交。
+- Slice AE 文档已提交：`7caa2e4 Document user-visible status mapping`。
+- Code Slice AE 已完成：状态投影工具、导出列、人话状态 eval，待提交。
 
 ## Code Slice AD 已完成内容
 
@@ -53,25 +54,44 @@
 4. 冻结状态投影优先级：未执行、不适用、冲突、来源受限、时效过旧、权威未核实、缺材料等优先于 `verified`。
 5. 明确 Code Slice AE 只做状态投影与用户展示合同，不重构图谱、不新增真实来源、不扩国家库。
 
+
+## Code Slice AE 已完成内容
+
+1. `scripts/user_visible_status_projection.py`
+   - 新增内部状态到 11 个用户可见状态的纯投影工具。
+   - 支持 row status、corroboration、freshness、authority 的优先级合并。
+2. `scripts/export_product_market_workbook.py`
+   - CSV / Markdown 输出新增 `依据状态`、`依据说明`。
+   - COO / 原产地证明、认证 / 目的国准入分列 `规则结论` 和 `用户材料状态`。
+   - `SearchLog` 等内部术语替换为用户可懂的业务表述。
+3. `scripts/validate_superleads_user_visible_output.py`
+   - 产品市场分析必须出现 `依据状态` 和 Slice AE 用户可见状态。
+   - 阻断内部状态 token 外露。
+4. evals / fixtures
+   - 用户可见 output suite 从 8 条扩到 9 条。
+   - 更新产品市场导出断言和 Markdown delivery 断言。
+5. 文档
+   - 更新 `shared/references/status-labels.md`。
+   - 新增 `docs/validation/superleads-code-slice-ae-status-projection-20260729.md`。
+
 ## 已验证
 
 ```bash
-python3 -m py_compile scripts/validate_product_market_analysis.py scripts/export_product_market_workbook.py scripts/audit_product_market_analysis.py scripts/plan_product_market_sources.py  # passed
+python3 -m py_compile scripts/user_visible_status_projection.py scripts/export_product_market_workbook.py scripts/export_superleads_markdown.py scripts/validate_superleads_user_visible_output.py evals/run_product_market_analysis_evals.py evals/run_superleads_user_visible_output_evals.py evals/run_superleads_markdown_delivery_evals.py  # passed
 python3 evals/run_product_market_analysis_evals.py --suite all  # 74/74
-python3 evals/run_product_market_source_plan_evals.py --suite all  # 7/7
-python3 evals/run_superleads_user_visible_output_evals.py --suite all  # 8/8
+python3 evals/run_product_market_source_plan_evals.py --suite all  # 7/7（Code Slice AD 时通过，本轮未改 plan）
+python3 evals/run_superleads_user_visible_output_evals.py --suite all  # 9/9
 python3 evals/run_superleads_markdown_delivery_evals.py --suite all  # 5/5
-python3 evals/run_evals.py --suite default  # 98/98
-python3 evals/run_evals.py --suite all  # 684/684
-python3 evals/run_evals.py --suite deep  # 644/644
+python3 evals/run_evals.py --suite default  # 99/99
+python3 evals/run_evals.py --suite all  # 685/685
+python3 evals/run_evals.py --suite deep  # 645/645
 git diff --check  # passed
 ```
 
 ## 当前下一步建议
 
-1. 提交 Slice AE 文档。
-2. 进入 Code Slice AE：状态投影工具 / 导出列 / 用户可见状态 eval。
-3. 后续优先级：单一客户背调工程资产、批量客户开发内核复盘。
+1. 提交 Code Slice AE。
+2. 后续优先级：单一客户背调工程资产、批量客户开发内核复盘。
 
 ## 重要边界
 

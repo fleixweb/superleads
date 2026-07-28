@@ -47,6 +47,7 @@ ROUTE_REQUIRED: dict[str, list[str]] = {
         "出口申报国",
         "原产国 / 制造来源",
         "实际起运地 / 起运港",
+        "依据状态",
         "产品档案与触发项",
         "准入",
         "进口税费",
@@ -147,6 +148,58 @@ GENERIC_EVIDENCE_UPGRADES = [
     "wholesale 入口说明正在采购",
 ]
 
+PRODUCT_USER_VISIBLE_STATUSES = [
+    "已有明确依据",
+    "按已知数据计算",
+    "多来源方向一致",
+    "可作为线索",
+    "需补充资料",
+    "需权威/专业复核",
+    "资料过旧需复核",
+    "来源受限",
+    "说法冲突待复核",
+    "本轮未执行",
+    "暂不适用",
+]
+
+PRODUCT_INTERNAL_STATUS_TOKENS = [
+    "derived_calculation",
+    "preliminary_reference",
+    "business_confirmation_required",
+    "technical_docs_required",
+    "physical_verification_required",
+    "professional_confirmation_required",
+    "source_restricted",
+    "not_executed",
+    "not_applicable",
+    "not_provided",
+    "conflict_pending_review",
+    "multi_source_consistent",
+    "single_source_only",
+    "not_enough_independent_sources",
+    "conflict_present",
+    "current_enough_for_scope",
+    "date_unknown_recently_observed",
+    "stale_needs_recheck",
+    "date_unknown_needs_recheck",
+    "not_time_sensitive",
+    "verified_for_fact_domain",
+    "candidate_needs_check",
+    "secondary_reference_only",
+    "unable_to_verify",
+    "conflicting_identity",
+    "conditionally_required",
+    "normally_not_required",
+    "unable_to_verify",
+    "user_material_not_requested_yet",
+    "user_material_status_unknown",
+    "user_not_provided_but_required",
+    "user_not_provided_and_not_required_for_current_scenario",
+    "user_provided_needs_review",
+    "user_provided_valid_for_scope",
+    "user_provided_not_valid_for_scope",
+]
+
 NEGATION_MARKERS = (
     "不", "未", "非", "无", "勿", "禁止", "不得", "不能", "不可",
     "不是", "不等于", "无法", "不能推导", "不能替代", "不能写成", "不得写成",
@@ -235,6 +288,13 @@ def validate(text: str, route: str, *, min_tables: int = 3, extra_required: list
     for phrase in GENERIC_EVIDENCE_UPGRADES:
         if _phrase_matches(text, phrase, allow_negated=True):
             issues.append(_issue("user_visible_evidence_upgrade", f"evidence boundary upgrade present: {phrase}", phrase))
+
+    if route == "product_outbound_market_analysis":
+        if not any(status in text for status in PRODUCT_USER_VISIBLE_STATUSES):
+            issues.append(_issue("user_visible_status_missing", "product market output must expose at least one Slice AE user-visible status"))
+        for token in PRODUCT_INTERNAL_STATUS_TOKENS:
+            if _phrase_matches(text, token):
+                issues.append(_issue("user_visible_internal_status_token", f"internal product-market status token leaked: {token}", token))
 
     return issues
 

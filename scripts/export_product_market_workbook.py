@@ -11,12 +11,19 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from _superleads_common import has_text, is_safe_public_http_url
 from audit_product_market_analysis import audit_graph
+from user_visible_status_projection import (
+    humanize_enum_value,
+    market_row_status_basis,
+    project_base_status,
+    project_market_row_status,
+)
 from validate_product_market_analysis import _looks_like_internal_leak, ensure_list, load_market_fixture
 
 SHEET_COLUMNS: dict[str, list[str]] = {
@@ -25,92 +32,92 @@ SHEET_COLUMNS: dict[str, list[str]] = {
         "出口申报国（默认可改）", "原产国 / 制造来源（证据状态）",
         "实际起运地 / 起运港（待业务确认）", "卖方所在国/地区（如已知）",
         "目的节点（港口/机场/城市，如已知）", "已经有依据的信息", "还缺什么",
-        "本轮状态", "资料观察日期", "边界说明",
+        "本轮状态", "依据状态", "依据说明", "资料观察日期", "边界说明",
     ],
     "产品档案与触发项": [
-        "样本编号", "属性族", "属性", "当前值", "状态", "触发的核验路径",
+        "样本编号", "属性族", "属性", "当前值", "状态", "依据状态", "依据说明", "触发的核验路径",
         "来源/依据", "还缺什么 / 下一步核验", "不能推出什么",
     ],
     "长期需求与搜索趋势": [
         "样本编号", "关键词 / Topic", "语言 / 同义词", "国家/地区", "时间范围",
-        "搜索类型 / 类目", "趋势状态", "指标口径", "数据日期", "状态",
+        "搜索类型 / 类目", "趋势状态", "指标口径", "数据日期", "状态", "依据状态", "依据说明",
         "来源/依据", "不能推出什么",
     ],
     "公开市场资料与行业信息": [
         "样本编号", "来源名称", "来源类型", "指标或主题", "可见内容", "时间范围",
-        "地区", "状态", "来源 URL / 文件", "资料时效", "复核建议", "不能当最新结论", "不能推出什么",
+        "地区", "状态", "依据状态", "依据说明", "来源 URL / 文件", "资料时效", "复核建议", "不能当最新结论", "不能推出什么",
     ],
     "线上市场与价格参考": [
         "样本编号", "渠道/平台", "产品/规格", "公开标价 / 价格参考", "币种",
-        "税/运费/促销状态", "资料观察日期", "资料时效", "复核建议", "不能当最新结论", "状态", "来源 URL / 文件", "不能推出什么",
+        "税/运费/促销状态", "资料观察日期", "资料时效", "复核建议", "不能当最新结论", "状态", "依据状态", "依据说明", "来源 URL / 文件", "不能推出什么",
     ],
     "季节、节日与销售窗口": [
         "样本编号", "节点 / 窗口", "日期 / 周期", "国家/地区", "适用条件",
-        "影响口径", "状态", "来源/依据", "资料时效", "复核建议", "不能当最新结论", "不能推出什么",
+        "影响口径", "状态", "依据状态", "依据说明", "来源/依据", "资料时效", "复核建议", "不能当最新结论", "不能推出什么",
     ],
     "产品准入与合规要求": [
         "样本编号", "要求类别", "要求名称", "目标销售国家/地区",
         "原产国 / 出口国（不要混同）", "候选 HS/HTS（非最终归类）",
         "适用条件", "什么情况下需要", "可能接受的文件形式",
-        "目标国是否要求原产地证明", "用户现在有没有可用材料", "目前依据",
-        "资料时效", "复核建议", "不能当最新结论", "状态", "官方/优先依据",
+        "目标国是否要求原产地证明", "规则结论", "用户现在有没有可用材料", "用户材料状态", "目前依据",
+        "资料时效", "复核建议", "不能当最新结论", "状态", "依据状态", "依据说明", "官方/优先依据",
         "来源身份", "适用范围", "可以当作什么", "不能当作什么", "权威性核实",
         "需要用户/供应链补什么", "不能写成什么", "边界说明",
     ],
     "进口税费": [
         "样本编号", "目的国", "候选 HS/HTS（非最终归类）", "税号描述", "税种",
         "税率/金额（非最终税额）", "适用条件", "计算税基", "资料时效", "复核建议", "不能当最新结论",
-        "来源身份", "适用范围", "可以当作什么", "不能当作什么", "权威性核实", "状态",
+        "来源身份", "适用范围", "可以当作什么", "不能当作什么", "权威性核实", "状态", "依据状态", "依据说明",
         "来源/依据", "还缺什么 / 下一步核验",
     ],
     "出口国要求": [
         "样本编号", "出口申报国（默认可改）", "要求类别", "要求名称",
         "适用条件", "目前依据", "资料时效", "复核建议", "不能当最新结论",
-        "来源身份", "适用范围", "可以当作什么", "不能当作什么", "权威性核实", "状态",
+        "来源身份", "适用范围", "可以当作什么", "不能当作什么", "权威性核实", "状态", "依据状态", "依据说明",
         "来源/依据", "还缺什么 / 下一步核验",
     ],
     "运输方式、路线、港口与申报节点": [
         "样本编号", "运输方式", "实际起运地 / 起运港（待业务确认）",
         "目的节点（港口/机场/城市，如已知）", "适用条件", "运输时间口径（常见区间/未执行）",
         "海关/承运人预申报", "订舱/截单节点", "资料时效", "复核建议", "不能当最新结论",
-        "来源身份", "适用范围", "可以当作什么", "不能当作什么", "权威性核实", "状态", "来源/依据",
+        "来源身份", "适用范围", "可以当作什么", "不能当作什么", "权威性核实", "状态", "依据状态", "依据说明", "来源/依据",
         "还缺什么 / 下一步核验",
     ],
     "近期外部因素": [
         "样本编号", "因素类型", "因素名称", "地区", "时间", "可能影响对象",
-        "资料时效", "复核建议", "不能当最新结论", "状态", "来源/依据", "不能推出什么",
+        "资料时效", "复核建议", "不能当最新结论", "状态", "依据状态", "依据说明", "来源/依据", "不能推出什么",
     ],
     "信息来源与待确认事项": [
         "样本编号", "来源编号", "来源名称", "来源类型", "URL / 文件名",
-        "资料观察日期", "资料时效", "复核建议", "不能当最新结论", "支持字段", "状态", "待确认事项", "用户可见备注",
+        "资料观察日期", "资料时效", "复核建议", "不能当最新结论", "支持字段", "状态", "依据状态", "依据说明", "待确认事项", "用户可见备注",
     ],
 }
 
 SHEET_ORDER = list(SHEET_COLUMNS)
 
 STATUS_LABELS = {
-    "verified": "已核实",
-    "derived_calculation": "派生计算",
-    "candidate": "候选",
-    "preliminary_reference": "初步参考",
-    "business_confirmation_required": "待业务确认",
-    "technical_docs_required": "待技术资料确认",
-    "physical_verification_required": "待实物核验",
-    "professional_confirmation_required": "待专业确认",
+    "verified": "已有明确依据",
+    "derived_calculation": "按已知数据计算",
+    "candidate": "可作为线索",
+    "preliminary_reference": "可作为线索",
+    "business_confirmation_required": "需补充资料",
+    "technical_docs_required": "需补充资料",
+    "physical_verification_required": "需补充资料",
+    "professional_confirmation_required": "需权威/专业复核",
     "source_restricted": "来源受限",
-    "not_executed": "未执行",
-    "not_applicable": "不适用",
-    "not_provided": "未提供",
-    "conflict_pending_review": "有冲突待复核",
+    "not_executed": "本轮未执行",
+    "not_applicable": "暂不适用",
+    "not_provided": "需补充资料",
+    "conflict_pending_review": "说法冲突待复核",
 }
 
 CORROBORATION_STATUS_LABELS = {
-    "multi_source_consistent": "多来源一致指向",
-    "single_source_only": "单点来源线索",
-    "not_enough_independent_sources": "独立来源不足",
-    "conflict_present": "来源之间有冲突",
+    "multi_source_consistent": "多来源方向一致",
+    "single_source_only": "可作为线索",
+    "not_enough_independent_sources": "可作为线索",
+    "conflict_present": "说法冲突待复核",
     "source_restricted": "来源受限",
-    "not_executed": "未执行",
+    "not_executed": "本轮未执行",
 }
 
 FRESHNESS_STATUS_LABELS = {
@@ -174,19 +181,50 @@ AUTHORITY_FACT_DOMAIN_LABELS = {
 }
 
 ORIGIN_REQUIREMENT_LABELS = {
-    "required": "需要（按目标国规则/适用场景）",
-    "conditionally_required": "条件性需要（如优惠税率、海关要求、贸易救济等）",
-    "normally_not_required": "普通进口通常不要求单独 COO（但原产地标识/海关核验另看）",
-    "not_applicable": "不适用",
-    "unable_to_verify": "未能用权威来源核实",
+    "required": "目标国规则显示通常需要",
+    "conditionally_required": "满足条件时需要（条件性需要，如优惠税率、海关要求、贸易救济等）",
+    "normally_not_required": "当前场景通常不要求（普通进口通常不要求单独 COO）",
+    "not_applicable": "本场景暂不适用",
+    "unable_to_verify": "本轮未能核实目标国规则（未能用权威来源核实）",
 }
 
 ORIGIN_USER_MATERIAL_LABELS = {
-    "user_provided_valid_for_scope": "用户已提供；仅限当前订单/批次/范围初步可用",
-    "user_provided_needs_review": "用户已提供；仍需核验签章、编号、批次和适用范围",
-    "user_not_provided_but_required": "用户未提供；若触发上述规则，需要补",
-    "user_not_provided_and_not_required_for_current_scenario": "用户未提供；当前场景通常不要求单独 COO",
+    "user_provided_valid_for_scope": "用户已提供，范围初步匹配；仅限当前订单/批次/范围初步可用",
+    "user_provided_needs_review": "用户已提供，需核对范围；仍需核验签章、编号、批次和适用范围",
+    "user_not_provided_but_required": "当前未见用户材料，规则可能要求；用户未提供；若触发上述规则，需要补",
+    "user_not_provided_and_not_required_for_current_scenario": "当前未见用户材料，且本场景暂未触发要求；用户未提供；当前场景通常不要求单独 COO",
     "user_material_status_unknown": "用户材料状态未知",
+}
+
+DESTINATION_REQUIREMENT_LABELS = {
+    "required": "目标市场规则显示通常要求",
+    "conditionally_required": "满足条件时要求",
+    "normally_not_required": "当前场景通常不要求",
+    "not_applicable": "本场景暂不适用",
+    "unable_to_verify": "本轮未能核实目标市场规则",
+    "not_executed": "本轮未核验此项",
+}
+
+CERTIFICATION_USER_MATERIAL_LABELS = {
+    "user_material_not_requested_yet": "尚未向用户索取",
+    "user_material_status_unknown": "用户材料状态未知",
+    "user_not_provided_but_required": "当前未见用户材料，规则可能要求",
+    "user_not_provided_and_not_required_for_current_scenario": "当前未见用户材料，且本场景暂未触发要求",
+    "user_provided_needs_review": "用户已提供，需核对范围",
+    "user_provided_valid_for_scope": "用户已提供，范围初步匹配",
+    "user_provided_not_valid_for_scope": "用户已提供，但与本场景不匹配",
+}
+
+REQUIREMENT_FAMILY_LABELS = {
+    "certification": "认证",
+    "test_report": "测试报告",
+    "registration": "注册",
+    "labeling": "标签",
+    "packaging": "包装",
+    "import_permit": "进口许可",
+    "transport_document": "运输文件",
+    "channel_requirement": "渠道要求",
+    "other": "其它要求",
 }
 
 ORIGIN_EVIDENCE_LABELS = {
@@ -256,11 +294,38 @@ COLUMN_LABELS = {
     "触发条件": "什么情况下需要",
     "可接受文件": "可能接受的文件形式",
     "用户材料状态": "用户现在有没有可用材料",
+    "目标国认证/准入要求结论": "规则结论",
+    "目标市场要求": "规则结论",
+    "目标国要求": "规则结论",
+    "目的国要求": "规则结论",
+    "用户认证材料状态": "用户材料状态",
+    "用户现有材料": "用户材料状态",
+    "用户当前材料状态": "用户材料状态",
+    "要求项": "要求名称",
+    "用户现在要补什么": "需要用户/供应链补什么",
+    "为什么可能需要": "适用条件",
     "原产国/制造来源": "原产国 / 制造来源（证据状态）",
     "原产国/出口国": "原产国 / 出口国（不要混同）",
 }
 
 BLOCKED_ACCESS = {"blocked", "login_wall", "login_required", "forbidden", "inaccessible", "not_accessed"}
+ENUMISH_COLUMNS = {
+    "状态",
+    "本轮状态",
+    "依据状态",
+    "规则结论",
+    "用户材料状态",
+    "目标国是否要求原产地证明",
+    "用户现在有没有可用材料",
+    "要求类别",
+}
+INTERNAL_TERM_REPLACEMENTS = {
+    "EvidenceCard": "证据记录",
+    "SearchLog": "搜索结果记录",
+    "MatrixRow": "矩阵信息行",
+    "ClaimEvidence": "事实依据记录",
+    "Claim": "事实记录",
+}
 
 
 def _status_label(value: Any) -> str:
@@ -277,6 +342,9 @@ def _replace_enum_tokens(text: str) -> str:
         **STATUS_LABELS,
         **ORIGIN_REQUIREMENT_LABELS,
         **ORIGIN_USER_MATERIAL_LABELS,
+        **DESTINATION_REQUIREMENT_LABELS,
+        **CERTIFICATION_USER_MATERIAL_LABELS,
+        **REQUIREMENT_FAMILY_LABELS,
         **FRESHNESS_STATUS_LABELS,
         **AUTHORITY_STATUS_LABELS,
         **AUTHORITY_LEVEL_LABELS,
@@ -313,12 +381,34 @@ def _safe_url(value: Any) -> str:
 
 def _safe_cell(value: Any) -> str:
     text = _stringify(value)
-    return "用户可见内容已隐藏" if _looks_like_internal_leak(text) else text
+    if _looks_like_internal_leak(text):
+        return "用户可见内容已隐藏"
+    for raw, label in INTERNAL_TERM_REPLACEMENTS.items():
+        text = re.sub(rf"(?<![A-Za-z0-9_-]){re.escape(raw)}(?![A-Za-z0-9_-])", label, text)
+    return text
 
 
 def _safe_human_enum_cell(value: Any) -> str:
     raw = _stringify(value)
-    return _safe_cell(_replace_enum_tokens(raw))
+    mapped = humanize_enum_value(raw)
+    if mapped == raw:
+        mapped = _replace_enum_tokens(raw)
+    return _safe_cell(mapped)
+
+
+def _safe_specific_enum_cell(value: Any, labels: dict[str, str]) -> str:
+    raw = _stringify(value)
+    result = raw
+    for enum_value, label in sorted(labels.items(), key=lambda item: len(item[0]), reverse=True):
+        result = result.replace(enum_value, label)
+    return _safe_cell(result)
+
+
+def _safe_export_cell(key: str, value: Any) -> str:
+    safe_key = _display_key(key)
+    if safe_key in ENUMISH_COLUMNS or str(key or "").strip() in ENUMISH_COLUMNS:
+        return _safe_human_enum_cell(value)
+    return _safe_cell(value)
 
 
 def _corroboration_status_label(value: Any) -> str:
@@ -395,7 +485,7 @@ def _brief_origin_note(graph: dict[str, Any]) -> str:
 def _format_origin_from_premise(premise: dict[str, Any], graph: dict[str, Any]) -> str:
     country = _safe_cell(premise.get("origin_country_or_region") or "待确认")
     evidence = _origin_evidence_label(premise.get("origin_evidence_level"))
-    status = _status_label(premise.get("status"))
+    status = project_base_status(premise.get("status"))
     if country == "待确认":
         return f"待确认；{evidence}；状态：{status}"
     return f"{country}；{evidence}；状态：{status}；{_brief_origin_note(graph)}"
@@ -435,7 +525,8 @@ def _enrich_overview_row(exported: dict[str, str], graph: dict[str, Any]) -> Non
     exported.setdefault("实际起运地 / 起运港（待业务确认）", _format_departure_from_premise(premise))
     exported.setdefault("卖方所在国/地区（如已知）", _safe_cell(premise.get("seller_country_or_region") or "未提供"))
     exported.setdefault("目的节点（港口/机场/城市，如已知）", _safe_cell(premise.get("destination_node") or "未提供"))
-    exported.setdefault("本轮状态", _status_label(premise.get("status")))
+    exported.setdefault("本轮状态", project_base_status(premise.get("status")))
+    exported.setdefault("依据状态", project_base_status(premise.get("status")))
 
 
 def _trade_premise_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str, str]]:
@@ -446,7 +537,9 @@ def _trade_premise_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str,
         separation = premise.get("separation_check") if isinstance(premise.get("separation_check"), dict) else {}
         rows.append({
             "条目": "贸易前提拆分",
-            "状态": _status_label(premise.get("status")),
+            "状态": project_base_status(premise.get("status")),
+            "依据状态": project_base_status(premise.get("status")),
+            "依据说明": "出口申报国、原产国/制造来源、实际起运地和目的国已分开记录；缺口仍需业务文件确认",
             "样本编号": sample_id,
             "目标销售国家/地区": _safe_cell(premise.get("destination_country_or_region") or "未提供"),
             "出口申报国（默认可改）": _format_export_country_from_premise(premise, graph),
@@ -456,7 +549,7 @@ def _trade_premise_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str,
             "目的节点（港口/机场/城市，如已知）": _safe_cell(premise.get("destination_node") or "未提供"),
             "已经有依据的信息": "出口申报国、原产国/制造来源、实际起运地、目的国分开记录",
             "还缺什么": _safe_cell(premise.get("departure_node_basis") or "如涉及报关和运输，仍需订单/提单/订舱/报关文件确认"),
-            "本轮状态": _status_label(premise.get("status")),
+            "本轮状态": project_base_status(premise.get("status")),
             "边界说明": _safe_cell(separation.get("note") or "这些地理角色不能互相替代，也不能由工厂地址自动推出港口"),
         })
     return rows
@@ -464,6 +557,10 @@ def _trade_premise_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str,
 
 def _is_origin_proof_row(row: dict[str, Any]) -> bool:
     return row.get("row_type") == "origin_proof_requirement" or isinstance(row.get("origin_proof_requirement"), dict)
+
+
+def _is_certification_requirement_row(row: dict[str, Any]) -> bool:
+    return row.get("row_type") in {"certification_requirement", "destination_requirement"} or isinstance(row.get("certification_requirement"), dict)
 
 
 def _origin_proof_exported_row(
@@ -480,7 +577,6 @@ def _origin_proof_exported_row(
     candidate_hs = cells.get("候选 HS/HTS") or record.get("candidate_hs_hts")
     exported = {
         "条目": _safe_cell(row.get("row_topic") or "原产地证明 / COO"),
-        "状态": _status_label(row.get("status")),
         "样本编号": _safe_cell(record.get("sample_id") or cells.get("样本ID") or cells.get("样本编号")),
         "要求类别": _safe_cell(cells.get("要求类别") or "原产地证明 / COO"),
         "要求名称": _safe_cell(cells.get("要求名称") or "目标国原产地证明要求"),
@@ -489,8 +585,10 @@ def _origin_proof_exported_row(
         "候选 HS/HTS（非最终归类）": _safe_cell(candidate_hs),
         "什么情况下需要": _safe_cell(record.get("trigger_conditions") or cells.get("触发条件")),
         "可能接受的文件形式": _safe_cell(record.get("acceptable_documents") or cells.get("可接受文件") or "未能核实"),
-        "目标国是否要求原产地证明": _safe_human_enum_cell(requirement_value),
-        "用户现在有没有可用材料": _safe_human_enum_cell(user_material_value),
+        "目标国是否要求原产地证明": _safe_specific_enum_cell(requirement_value, ORIGIN_REQUIREMENT_LABELS),
+        "规则结论": _safe_specific_enum_cell(requirement_value, ORIGIN_REQUIREMENT_LABELS),
+        "用户现在有没有可用材料": _safe_specific_enum_cell(user_material_value, ORIGIN_USER_MATERIAL_LABELS),
+        "用户材料状态": _safe_specific_enum_cell(user_material_value, ORIGIN_USER_MATERIAL_LABELS),
         "目前依据": _safe_cell(cells.get("当前证据") or cells.get("目前依据")),
         "官方/优先依据": _safe_cell(cells.get("官方/优先来源") or cells.get("官方/优先依据")),
         "需要用户/供应链补什么": _safe_cell(cells.get("待补材料") or cells.get("需要用户/供应链补什么")),
@@ -500,6 +598,7 @@ def _origin_proof_exported_row(
     _apply_freshness_to_row(exported, row, freshness_records or {})
     _apply_corroboration_to_row(exported, row, corroboration_records or {})
     _apply_authority_to_row(exported, row, authority_ctx or {})
+    _apply_status_projection(exported, row, freshness_records or {}, corroboration_records or {}, authority_ctx or {})
     return exported
 
 
@@ -658,6 +757,80 @@ def _apply_corroboration_to_row(exported: dict[str, str], row: dict[str, Any], c
         exported["下一步核实"] = "；".join(next_steps)
 
 
+def _apply_status_projection(
+    exported: dict[str, str],
+    row: dict[str, Any],
+    freshness_records: dict[str, dict[str, Any]],
+    corroboration_records: dict[str, dict[str, Any]],
+    authority_ctx: dict[str, dict[str, dict[str, Any]]],
+) -> None:
+    authority_records = authority_ctx.get("records", {})
+    user_status = project_market_row_status(
+        row,
+        freshness_records=freshness_records,
+        corroboration_records=corroboration_records,
+        authority_records=authority_records,
+    )
+    exported["依据状态"] = user_status
+    exported["状态"] = user_status
+    exported["依据说明"] = _safe_cell(
+        market_row_status_basis(
+            row,
+            freshness_records=freshness_records,
+            corroboration_records=corroboration_records,
+            authority_records=authority_records,
+        )
+    )
+
+
+def _certification_exported_row(
+    row: dict[str, Any],
+    corroboration_records: dict[str, dict[str, Any]] | None = None,
+    freshness_records: dict[str, dict[str, Any]] | None = None,
+    authority_ctx: dict[str, dict[str, dict[str, Any]]] | None = None,
+) -> dict[str, str]:
+    cells = row.get("user_visible_cells") if isinstance(row.get("user_visible_cells"), dict) else {}
+    record = row.get("certification_requirement") if isinstance(row.get("certification_requirement"), dict) else {}
+    requirement_value = (
+        cells.get("目标国认证/准入要求结论")
+        or cells.get("目标市场要求")
+        or cells.get("目标国要求")
+        or cells.get("目的国要求")
+        or record.get("applicability_status")
+    )
+    user_material_value = (
+        cells.get("用户认证材料状态")
+        or cells.get("用户材料状态")
+        or cells.get("用户现有材料")
+        or cells.get("用户当前材料状态")
+        or record.get("user_material_status")
+    )
+    exported = {
+        "条目": _safe_cell(row.get("row_topic") or record.get("requirement_name") or "目标国认证/准入要求"),
+        "样本编号": _safe_cell(record.get("sample_id") or cells.get("样本ID") or cells.get("样本编号")),
+        "要求类别": _safe_human_enum_cell(cells.get("要求类别") or record.get("requirement_family")),
+        "要求名称": _safe_cell(cells.get("要求项") or cells.get("要求名称") or record.get("requirement_name")),
+        "目标销售国家/地区": _safe_cell(cells.get("目的国/地区") or record.get("destination_country_or_region")),
+        "候选 HS/HTS（非最终归类）": _safe_cell(cells.get("候选 HS/HTS") or record.get("candidate_hs_hts")),
+        "适用条件": _safe_cell(cells.get("为什么可能需要") or record.get("trigger_conditions")),
+        "什么情况下需要": _safe_cell(cells.get("触发条件") or record.get("trigger_conditions")),
+        "可能接受的文件形式": _safe_cell(record.get("accepted_evidence_or_documents") or cells.get("可接受文件")),
+        "规则结论": _safe_human_enum_cell(requirement_value),
+        "用户材料状态": _safe_human_enum_cell(user_material_value),
+        "用户现在有没有可用材料": _safe_human_enum_cell(user_material_value),
+        "目前依据": _safe_cell(cells.get("来源状态") or cells.get("当前证据") or cells.get("目前依据")),
+        "需要用户/供应链补什么": _safe_cell(cells.get("用户现在要补什么") or cells.get("待补材料") or cells.get("需要用户/供应链补什么")),
+        "不能推出什么": _safe_cell(cells.get("不能推出什么") or record.get("cannot_conclude")),
+        "不能写成什么": _safe_cell(cells.get("不能推出什么") or cells.get("禁止升级") or record.get("cannot_conclude")),
+        "边界说明": _safe_cell(record.get("limitation_note") or cells.get("边界说明")),
+    }
+    _apply_freshness_to_row(exported, row, freshness_records or {})
+    _apply_corroboration_to_row(exported, row, corroboration_records or {})
+    _apply_authority_to_row(exported, row, authority_ctx or {})
+    _apply_status_projection(exported, row, freshness_records or {}, corroboration_records or {}, authority_ctx or {})
+    return exported
+
+
 def _source_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     observations = _observation_by_source(graph)
@@ -671,7 +844,7 @@ def _source_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str, str]]:
         title = first_obs.get("title") if isinstance(first_obs, dict) else None
         observed_at = first_obs.get("observed_at") if isinstance(first_obs, dict) else None
         url = _safe_url(source.get("final_url") or source.get("canonical_url"))
-        status = "来源受限" if restricted else ("已打开" if opened else "已记录")
+        status = "来源受限" if restricted else ("已有明确依据" if opened else "可作为线索")
         rows.append({
             "条目": _safe_cell(title or f"公开来源 S{idx}"),
             "样本编号": sample_id,
@@ -685,6 +858,8 @@ def _source_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str, str]]:
             "不能当最新结论": "不能仅凭来源列表或目录维护日期写成最新法规、最新税率、最新价格或最新行情",
             "支持字段": "来源本身仅作可追溯入口；具体支持字段以各矩阵行为准",
             "状态": status,
+            "依据状态": status,
+            "依据说明": "来源表只说明来源入口和观察情况；具体事实以对应矩阵行为准",
             "待确认事项": "无额外事项" if opened and not restricted else "需打开或复核原始来源",
             "用户可见备注": "不含本地路径、哈希或内部对象 ID",
         })
@@ -708,7 +883,9 @@ def _gap_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str, str]]:
             "复核建议": "补齐材料或重新打开权威来源后再判断",
             "不能当最新结论": "不能把缺口行写成已满足、最新或最终结论",
             "支持字段": _safe_cell(" / ".join(str(item) for item in (gap.get("field_domain"), gap.get("field_name")) if has_text(item))),
-            "状态": _status_label(gap.get("status")),
+            "状态": project_base_status(gap.get("status")),
+            "依据状态": project_base_status(gap.get("status")),
+            "依据说明": "待确认事项本身不是事实结论，补材料或复核来源后才能升级",
             "待确认事项": _safe_cell(gap.get("user_visible_note") or gap.get("missing_item") or "待确认"),
             "用户可见备注": _safe_cell(gap.get("requested_from") or "需补材料后复核"),
         })
@@ -732,7 +909,9 @@ def _conflict_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str, str]
             "复核建议": "重新打开原始来源，按更新日期、适用范围和权威等级复核",
             "不能当最新结论": "不能从冲突来源中挑一个直接写成最新或最终",
             "支持字段": _safe_cell(" / ".join(str(item) for item in (conflict.get("field_domain"), conflict.get("field_name")) if has_text(item))),
-            "状态": _status_label(conflict.get("status")),
+            "状态": project_base_status(conflict.get("status")),
+            "依据状态": project_base_status(conflict.get("status")),
+            "依据说明": "来源或口径存在冲突，需人工复核，不能强行合并为确定结论",
             "待确认事项": _safe_cell(conflict.get("summary") or "来源之间不一致，需复核"),
             "用户可见备注": "保留冲突，不强行合并为结论",
         })
@@ -755,21 +934,26 @@ def build_sheets(graph: dict[str, Any]) -> dict[str, list[dict[str, str]]]:
             exported = _origin_proof_exported_row(row, corroboration_records, freshness_records, authority_ctx)
             sheets[sheet_name].append(exported)
             continue
+        if _is_certification_requirement_row(row):
+            exported = _certification_exported_row(row, corroboration_records, freshness_records, authority_ctx)
+            sheets[sheet_name].append(exported)
+            continue
         cells = row.get("user_visible_cells")
         visible_cells = cells if isinstance(cells, dict) else {}
-        exported: dict[str, str] = {"条目": _safe_cell(row.get("row_topic") or "未提供"), "状态": _status_label(row.get("status"))}
+        exported: dict[str, str] = {"条目": _safe_cell(row.get("row_topic") or "未提供")}
         for key, value in visible_cells.items():
             if not has_text(key):
                 continue
             safe_key = _safe_cell(_display_key(key))
             if safe_key == "用户可见内容已隐藏":
                 continue
-            exported[safe_key] = _safe_cell(value)
+            exported[safe_key] = _safe_export_cell(safe_key, value)
         if sheet_name == "市场事实总览":
             _enrich_overview_row(exported, graph)
         _apply_freshness_to_row(exported, row, freshness_records)
         _apply_corroboration_to_row(exported, row, corroboration_records)
         _apply_authority_to_row(exported, row, authority_ctx)
+        _apply_status_projection(exported, row, freshness_records, corroboration_records, authority_ctx)
         if "样本编号" in SHEET_COLUMNS[sheet_name] and not has_text(exported.get("样本编号")) and sample_id != "未提供":
             exported["样本编号"] = sample_id
         sheets[sheet_name].append(exported)

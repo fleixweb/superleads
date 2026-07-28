@@ -54,3 +54,23 @@ Inquiry statuses: `new`, `triaged`, `needs_entity_resolution`, `ready_for_follow
 - `需确认`: available material does not safely resolve the current direction.
 - `仅作参考`: a competitor, brand, seed, or other reference that is not a
   customer prospect in this Run.
+
+# Product Market User-Visible Status Projection (Slice AE)
+
+产品出海市场分析、批量客户开发、单一客户背调的用户可见交付层应优先使用以下 11 个状态词；内部枚举仍可保留给 schema、validator、audit 和 Skill 交接使用。
+
+| 用户可见状态 | 人话含义 |
+|---|---|
+| 已有明确依据 | 已打开/记录的来源能支持当前字段本身，且没有被时效、权威性、冲突或来源限制降级。 |
+| 按已知数据计算 | 用已核实数字按明示公式计算，只支持公式结果。 |
+| 多来源方向一致 | 多个独立弱来源指向同一方向，但不等于官方确认。 |
+| 可作为线索 | 有公开信号或参考来源，可用于下一步核验。 |
+| 需补充资料 | 缺用户、产品、技术、实物、订单或供应链材料。 |
+| 需权威/专业复核 | 需要主管机关、报关行、认证机构、承运人、律师、进口商等复核。 |
+| 资料过旧需复核 | 来源过旧、日期未知或超过事实域复核窗口。 |
+| 来源受限 | 来源未打开、付费墙、摘要页、登录墙或只能看到片段。 |
+| 说法冲突待复核 | 不同来源、日期或口径存在冲突。 |
+| 本轮未执行 | 本次没有采集或运行该模块；不能补样板事实。 |
+| 暂不适用 | 按当前产品档案或贸易路径暂未触发，不泛化到其它场景。 |
+
+投影优先级：未执行 / 不适用 / 冲突 / 来源受限 / 资料过旧 / 权威未核实 / 缺材料 优先于 `verified`。用户可见表格必须分开展示业务/规则结论、依据状态和用户材料状态。
