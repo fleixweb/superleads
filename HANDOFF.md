@@ -1,8 +1,8 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：`2e5d2ed Update handoff after route evals commit`
-- 当前状态：Code Slice AG 单一客户背调工程资产补齐已完成实现与完整验证，待提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：`c8477d3 Add customer background research guardrails`
+- 当前状态：Code Slice AG 单一客户背调工程资产补齐已提交；下一步进入 Slice AH 批量客户开发内核复盘与弱证据中间档设计；保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已完成
 
@@ -17,7 +17,7 @@
 - 状态同步已提交：`e966c27 Update handoff after status projection commit`。
 - Code Slice AF 已提交：`0f7666e Add Superleads route intent evals`。
 - 状态同步已提交：`2e5d2ed Update handoff after route evals commit`。
-- Code Slice AG 已完成，待提交：单一客户背调补 Skill 入口、专属 spec、专属 eval runner、6 条 graph fixtures、1 条用户可见 fail 样本，并强化轻验证与正式名单链路隔离。
+- Code Slice AG 已提交：`c8477d3 Add customer background research guardrails`。单一客户背调补 Skill 入口、专属 spec、专属 eval runner、6 条 graph fixtures、1 条用户可见 fail 样本，并强化轻验证与正式名单链路隔离。
 
 ## Code Slice AD 已完成内容
 
@@ -153,8 +153,8 @@ git diff --check  # passed
 
 ## 当前下一步建议
 
-1. 提交 Code Slice AG：单一客户背调工程资产补齐。
-2. 后续：Slice AH 批量客户开发内核复盘。
+1. 进入 Slice AH：批量客户开发内核复盘与弱证据中间档设计。
+2. 先做文档冻结，再进入 Code Slice AH，避免继续把批量客户开发锁死在“完整核查版 / 不可交付”的二值结构里。
 
 ## 重要边界
 

@@ -20,7 +20,7 @@
 - 状态同步已提交：`e966c27 Update handoff after status projection commit`。
 - Code Slice AF 三路线入口路由纠偏 / route eval 已完成并提交：`0f7666e Add Superleads route intent evals`。路由样例扩到 25 条，新增独立 route eval runner，混合任务可校验 `secondary_routes` / `route_order`。
 - 状态同步已提交：`2e5d2ed Update handoff after route evals commit`。
-- Code Slice AG 单一客户背调工程资产补齐已完成，待提交：补 Skill 入口、专属 spec、专属 eval runner、6 条 graph fixtures、1 条用户可见 fail 样本，并强化轻验证与正式名单链路隔离。
+- Code Slice AG 单一客户背调工程资产补齐已完成并提交：`c8477d3 Add customer background research guardrails`。补 Skill 入口、专属 spec、专属 eval runner、6 条 graph fixtures、1 条用户可见 fail 样本，并强化轻验证与正式名单链路隔离。
 
 
 ## Code Slice AG 已完成
@@ -148,8 +148,16 @@ git diff --check  # passed
 
 ## 当前下一步
 
-1. 提交 Code Slice AG：单一客户背调工程资产补齐。
-2. 后续再排：Slice AH 批量客户开发内核复盘。
+1. 进入 Slice AH：批量客户开发内核复盘与弱证据中间档设计。
+2. 先冻结文档，再进入 Code Slice AH。
+
+## Slice AH 待做
+
+1. 复盘批量客户开发当前产品边界：默认交付应是“候选客户池 / 初筛名单”，不是强制完整核查版。
+2. 设计弱证据中间档：允许多来源方向一致、可跟进线索、待人工确认项并列展示，不把弱证据升级成确定采购意愿。
+3. 明确用户可见字段：公司名、国家/地区、客户类型、相关性依据、联系入口、证据状态、待确认项。
+4. 继续禁止：推荐客户排序、采购概率、把公开入口写成采购负责人、把搜索摘要写成 Claim。
+5. 后续 Code Slice AH 再落 schema / validator / fixtures / eval。
 
 ## 当前阻塞 / 注意
 
