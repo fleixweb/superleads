@@ -1,8 +1,8 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：`7caa2e4 Document user-visible status mapping`
-- 当前状态：Code Slice AE 状态投影工具 / 导出列 / 用户可见状态 eval 已完成实现与验证，待提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：`b08f966 Add user-visible status projection`
+- 当前状态：Code Slice AE 状态投影工具 / 导出列 / 用户可见状态 eval 已提交；工作区干净；保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已完成
 
@@ -13,7 +13,7 @@
 - Code Slice AD 已提交：`1b3c040 Add open-world authority verification guardrails`。
 - 状态同步已提交：`6ae7bf8 Update handoff after authority guardrails commit`。
 - Slice AE 文档已提交：`7caa2e4 Document user-visible status mapping`。
-- Code Slice AE 已完成：状态投影工具、导出列、人话状态 eval，待提交。
+- Code Slice AE 已提交：`b08f966 Add user-visible status projection`。
 
 ## Code Slice AD 已完成内容
 
@@ -90,7 +90,7 @@ git diff --check  # passed
 
 ## 当前下一步建议
 
-1. 提交 Code Slice AE。
+1. 进入 Code Slice AF：三路线入口路由纠偏 / route eval。
 2. 后续优先级：单一客户背调工程资产、批量客户开发内核复盘。
 
 ## 重要边界

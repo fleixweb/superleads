@@ -16,7 +16,7 @@
 - Slice AD 开放世界权威来源识别模型已完成并提交：`22be247 Document open world authority source model`。
 - Code Slice AD 开放世界来源权威性防错闭环已完成并提交：`1b3c040 Add open-world authority verification guardrails`。
 - Slice AE 状态词压缩 / 用户可见状态映射已完成并提交：`7caa2e4 Document user-visible status mapping`。
-- Code Slice AE 状态投影工具 / 导出列 / 用户可见状态 eval 已完成，待提交：新增统一状态投影层、产品市场导出 `依据状态` / `依据说明`、用户可见内部状态 token 阻断。
+- Code Slice AE 状态投影工具 / 导出列 / 用户可见状态 eval 已完成并提交：`b08f966 Add user-visible status projection`。新增统一状态投影层、产品市场导出 `依据状态` / `依据说明`、用户可见内部状态 token 阻断。
 
 ## Code Slice AD 已完成
 
@@ -94,7 +94,7 @@ git diff --check  # passed
 
 ## 当前下一步
 
-1. 提交 Code Slice AE。
+1. 进入 Code Slice AF：三路线入口路由纠偏 / route eval。
 2. 后续再排：单一客户背调工程资产、批量客户开发内核复盘。
 
 ## 当前阻塞 / 注意
