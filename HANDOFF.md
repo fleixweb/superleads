@@ -1,8 +1,8 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：`b08f966 Add user-visible status projection`
-- 当前状态：Code Slice AE 状态投影工具 / 导出列 / 用户可见状态 eval 已提交；工作区干净；保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：`e966c27 Update handoff after status projection commit`
+- 当前状态：Code Slice AF 三路线入口路由纠偏 / route eval 已完成实现与完整验证，待提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已完成
 
@@ -14,6 +14,7 @@
 - 状态同步已提交：`6ae7bf8 Update handoff after authority guardrails commit`。
 - Slice AE 文档已提交：`7caa2e4 Document user-visible status mapping`。
 - Code Slice AE 已提交：`b08f966 Add user-visible status projection`。
+- 状态同步已提交：`e966c27 Update handoff after status projection commit`。
 
 ## Code Slice AD 已完成内容
 
@@ -74,6 +75,21 @@
    - 更新 `shared/references/status-labels.md`。
    - 新增 `docs/validation/superleads-code-slice-ae-status-projection-20260729.md`。
 
+## Code Slice AF 已完成内容
+
+1. `scripts/route_superleads_intake.py`
+   - 将入口意图区分为客户开发、单一客户背调、产品出海市场分析。
+   - 增加否定条件处理：`不做市场分析` / `不找客户` 不再误触发对应路线。
+   - 把“认证需求的进口商 / 需要 UL 的客户”识别为客户开发属性；把“产品出口某国是否需要认证 / SDS / UN38.3 / COO / 关税 / 清关文件”识别为产品出海市场分析。
+   - 混合任务输出 `secondary_routes` 和 `route_order`，但不自动执行第二阶段。
+2. evals
+   - `evals/cases/superleads_route_cases.json` 从 11 条扩到 25 条。
+   - 新增 `evals/run_superleads_route_evals.py`，可单独快速验证入口路由。
+   - 主 eval 的 route assertion 支持校验 `secondary_routes` / `route_order`。
+3. 文档
+   - 更新 `shared/references/route-map.md`、`shared/references/user-intake.md`、`skills/using-superleads/SKILL.md`、`docs/superleads-common-commands.md`。
+   - 新增 `docs/validation/superleads-code-slice-af-route-evals-20260729.md`。
+
 ## 已验证
 
 ```bash
@@ -85,13 +101,21 @@ python3 evals/run_superleads_markdown_delivery_evals.py --suite all  # 5/5
 python3 evals/run_evals.py --suite default  # 99/99
 python3 evals/run_evals.py --suite all  # 685/685
 python3 evals/run_evals.py --suite deep  # 645/645
+
+# Code Slice AF 验证
+python3 -m py_compile scripts/route_superleads_intake.py evals/run_superleads_route_evals.py evals/run_evals.py  # passed
+python3 evals/run_superleads_route_evals.py --suite all  # 25/25
+python3 evals/run_evals.py --suite default  # 113/113
+python3 evals/run_evals.py --suite all  # 699/699
+python3 evals/run_evals.py --suite deep  # 659/659
+python3 evals/run_product_market_analysis_evals.py --suite all  # 74/74
 git diff --check  # passed
 ```
 
 ## 当前下一步建议
 
-1. 进入 Code Slice AF：三路线入口路由纠偏 / route eval。
-2. 后续优先级：单一客户背调工程资产、批量客户开发内核复盘。
+1. 完整运行 Code Slice AF 验证并提交。
+2. 后续优先级：Code Slice AG 单一客户背调工程资产补齐；Slice AH 批量客户开发内核复盘。
 
 ## 重要边界
 

@@ -320,6 +320,15 @@ def run_route_assertion(py: str, case: dict[str, object]) -> dict[str, object]:
         actual_missing = list(actual.get("missing_fields", [])) if isinstance(actual.get("missing_fields"), list) else []
         if expected_missing != actual_missing:
             problems.append(f"missing_fields expected {expected_missing!r} got {actual_missing!r}")
+        for key, expected_key in (
+            ("secondary_routes", "expected_secondary_routes"),
+            ("route_order", "expected_route_order"),
+        ):
+            if expected_key in case:
+                expected_items = list(case.get(expected_key, []))
+                actual_items = list(actual.get(key, [])) if isinstance(actual.get(key), list) else []
+                if expected_items != actual_items:
+                    problems.append(f"{key} expected {expected_items!r} got {actual_items!r}")
         response = "\n".join(str(item) for item in actual.get("response_lines", []) if item is not None)
         for needle in case.get("response_must_contain", []) if isinstance(case.get("response_must_contain"), list) else []:
             if str(needle) not in response:

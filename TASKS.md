@@ -17,6 +17,31 @@
 - Code Slice AD 开放世界来源权威性防错闭环已完成并提交：`1b3c040 Add open-world authority verification guardrails`。
 - Slice AE 状态词压缩 / 用户可见状态映射已完成并提交：`7caa2e4 Document user-visible status mapping`。
 - Code Slice AE 状态投影工具 / 导出列 / 用户可见状态 eval 已完成并提交：`b08f966 Add user-visible status projection`。新增统一状态投影层、产品市场导出 `依据状态` / `依据说明`、用户可见内部状态 token 阻断。
+- 状态同步已提交：`e966c27 Update handoff after status projection commit`。
+- Code Slice AF 三路线入口路由纠偏 / route eval 已完成，待提交：路由样例扩到 25 条，新增独立 route eval runner，混合任务可校验 `secondary_routes` / `route_order`。
+
+## Code Slice AF 已完成
+
+1. 路由器
+   - `scripts/route_superleads_intake.py` 区分客户开发、单一客户背调、产品出海市场分析三类入口。
+   - 认证 / 合规词按语境分流：描述目标客户属性时走批量客户开发；询问产品进入目标市场要求时走产品出海市场分析。
+   - 增加否定条件处理，避免 `不做市场分析` / `不找客户` 反向误触发。
+   - 混合任务输出 `secondary_routes` / `route_order`，但不自动执行第二阶段。
+2. evals
+   - `evals/cases/superleads_route_cases.json` 扩到 25 条真实外贸入口样例。
+   - 新增 `evals/run_superleads_route_evals.py`。
+   - `evals/run_evals.py` route assertion 支持校验拆阶段字段。
+3. 文档
+   - 新增验证记录 `docs/validation/superleads-code-slice-af-route-evals-20260729.md`。
+   - 更新 route-map、user-intake、using-superleads Skill 和常用命令。
+4. 已验证
+   - `python3 -m py_compile scripts/route_superleads_intake.py evals/run_superleads_route_evals.py evals/run_evals.py` → passed。
+   - `python3 evals/run_superleads_route_evals.py --suite all` → 25/25。
+   - `python3 evals/run_evals.py --suite default` → 113/113。
+   - `python3 evals/run_evals.py --suite all` → 699/699。
+   - `python3 evals/run_evals.py --suite deep` → 659/659。
+   - `python3 evals/run_product_market_analysis_evals.py --suite all` → 74/74。
+   - `git diff --check` → passed。
 
 ## Code Slice AD 已完成
 
@@ -94,8 +119,8 @@ git diff --check  # passed
 
 ## 当前下一步
 
-1. 进入 Code Slice AF：三路线入口路由纠偏 / route eval。
-2. 后续再排：单一客户背调工程资产、批量客户开发内核复盘。
+1. 完整运行 Code Slice AF 验证并提交。
+2. 后续再排：Code Slice AG 单一客户背调工程资产补齐；Slice AH 批量客户开发内核复盘。
 
 ## 当前阻塞 / 注意
 

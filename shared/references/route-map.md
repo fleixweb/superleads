@@ -6,6 +6,8 @@ Default route: `using-superleads` → `scoping-lead-research` → `discovery` �
 
 产品出海市场分析入口：`产品/型号/产品资料 + 目标国家/地区 + 市场/准入/认证/测试/注册/标签/税费/出口/物流/COO/外部因素问题 → 产品出海市场分析`，路由为 `using-superleads` → `analyzing-product-outbound-market`。它使用 `ProductMarketAnalysisGraph`，不产生 Candidate、Lead、客户名单、推荐客户类型或市场进入建议；用户同时要求“分析市场再找客户”时拆成两步，先做产品出海市场分析，待用户确认后再另启批量客户开发。认证类问题先查目标市场要求，再单独核对用户是否已有匹配材料。
 
+路由细分：`开发某地市场`、`找需要 CE/UL/认证需求的进口商/客户` 属于批量客户开发，因为认证词是在描述目标客户属性；`出口某国是否需要 CE/UL/SDS/UN38.3/COO/关税/清关文件` 属于产品出海市场分析，因为用户在问产品进入目标市场的条件。用户明确 `找客户，并分析关税/准入/认证要求` 时，输出拆阶段顺序：先产品出海市场分析，再批量客户开发。用户明确 `不做市场分析` 或 `不找客户` 时，应尊重否定条件。
+
 `discovery` is the default discovery-first working phase, not a new required
 file or formal gate. It internally plans query expansion, records actual
 SearchLogs, discovers and de-duplicates Candidates, supplements public signals

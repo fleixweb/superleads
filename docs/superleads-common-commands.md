@@ -40,6 +40,7 @@
 | 场景 | 命令 |
 |---|---|
 | 编译关键脚本 | `python3 -m py_compile scripts/export_superleads_markdown.py evals/run_superleads_markdown_delivery_evals.py evals/run_evals.py` |
+| 三路线入口路由 eval | `python3 evals/run_superleads_route_evals.py --suite all` |
 | 三路线 Markdown 交付器 eval | `python3 evals/run_superleads_markdown_delivery_evals.py --suite all` |
 | 用户可见输出静态 eval | `python3 evals/run_superleads_user_visible_output_evals.py --suite all` |
 | 产品出海市场分析 eval | `python3 evals/run_product_market_analysis_evals.py --suite all` |

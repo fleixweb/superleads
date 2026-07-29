@@ -138,6 +138,193 @@
       "response_must_contain": [
         "批量客户开发"
       ]
+    },
+    {
+      "name": "market eu ce requirement question",
+      "text": "这个产品出口欧盟需要 CE 吗",
+      "expected_route": "product_outbound_market_analysis",
+      "expected_next_skill": "analyzing-product-outbound-market",
+      "expected_split_customer_development": false,
+      "expected_secondary_routes": [],
+      "expected_missing_fields": [],
+      "response_must_contain": [
+        "产品出海市场分析",
+        "准入",
+        "税费",
+        "不生成客户名单"
+      ]
+    },
+    {
+      "name": "market textile origin certificate question",
+      "text": "中国纺织品出口美国需要原产地证吗",
+      "expected_route": "product_outbound_market_analysis",
+      "expected_next_skill": "analyzing-product-outbound-market",
+      "expected_split_customer_development": false,
+      "expected_secondary_routes": [],
+      "expected_missing_fields": [],
+      "response_must_contain": [
+        "产品出海市场分析",
+        "默认出口申报国：中国",
+        "待确认"
+      ]
+    },
+    {
+      "name": "market saber customs documents question",
+      "text": "48V锂电池到沙特要 SABER 吗，清关还要什么文件",
+      "expected_route": "product_outbound_market_analysis",
+      "expected_next_skill": "analyzing-product-outbound-market",
+      "expected_split_customer_development": false,
+      "expected_secondary_routes": [],
+      "expected_missing_fields": [],
+      "response_must_contain": [
+        "产品出海市场分析",
+        "准入",
+        "出口要求"
+      ]
+    },
+    {
+      "name": "bulk certified-demand importers remains customer development",
+      "text": "帮我找有 CE 认证需求的欧洲进口商",
+      "expected_route": "bulk_customer_development",
+      "expected_next_skill": "scoping-lead-research",
+      "expected_split_customer_development": false,
+      "expected_secondary_routes": [],
+      "expected_missing_fields": [],
+      "response_must_contain": [
+        "批量客户开发"
+      ]
+    },
+    {
+      "name": "mixed importers plus tariff and access split",
+      "text": "帮我找美国锂电池进口商，并分析一下关税和准入要求",
+      "expected_route": "product_outbound_market_analysis",
+      "expected_next_skill": "analyzing-product-outbound-market",
+      "expected_split_customer_development": true,
+      "expected_secondary_routes": [
+        "bulk_customer_development"
+      ],
+      "expected_route_order": [
+        "product_outbound_market_analysis",
+        "bulk_customer_development"
+      ],
+      "expected_missing_fields": [],
+      "response_must_contain": [
+        "产品出海市场分析",
+        "第二阶段",
+        "批量客户开发"
+      ]
+    },
+    {
+      "name": "background reliability domain wording",
+      "text": "查一下 acmebattery.com 靠不靠谱",
+      "expected_route": "customer_background_research",
+      "expected_next_skill": "researching-customer-background",
+      "expected_split_customer_development": false,
+      "expected_secondary_routes": [],
+      "expected_missing_fields": [],
+      "response_must_contain": [
+        "客户背调报告",
+        "不扩展成批量找客户"
+      ]
+    },
+    {
+      "name": "background buyer or middleman with website",
+      "text": "这个公司是真买家还是中间商？官网 example.com",
+      "expected_route": "customer_background_research",
+      "expected_next_skill": "researching-customer-background",
+      "expected_split_customer_development": false,
+      "expected_secondary_routes": [],
+      "expected_missing_fields": [],
+      "response_must_contain": [
+        "客户背调报告"
+      ]
+    },
+    {
+      "name": "background linkedin website email ownership",
+      "text": "这个 LinkedIn / 官网 / 邮箱背后的公司是谁",
+      "expected_route": "customer_background_research",
+      "expected_next_skill": "researching-customer-background",
+      "expected_split_customer_development": false,
+      "expected_secondary_routes": [],
+      "expected_missing_fields": [],
+      "response_must_contain": [
+        "客户背调报告"
+      ]
+    },
+    {
+      "name": "bulk negated market analysis",
+      "text": "请找美国户外家具 retail chains，不要做市场分析",
+      "expected_route": "bulk_customer_development",
+      "expected_next_skill": "scoping-lead-research",
+      "expected_split_customer_development": false,
+      "expected_secondary_routes": [],
+      "expected_missing_fields": [],
+      "response_must_contain": [
+        "批量客户开发"
+      ]
+    },
+    {
+      "name": "market negated customer list",
+      "text": "只做产品出海市场分析，不找客户",
+      "expected_route": "product_outbound_market_analysis",
+      "expected_next_skill": "analyzing-product-outbound-market",
+      "expected_split_customer_development": false,
+      "expected_secondary_routes": [],
+      "expected_missing_fields": [
+        "target_country_or_region"
+      ],
+      "response_must_contain": [
+        "产品出海市场分析",
+        "不生成客户名单"
+      ]
+    },
+    {
+      "name": "bulk neutral packaging brake pads germany",
+      "text": "卖汽车刹车片，自有品牌和中性包装，找德国客户。",
+      "expected_route": "bulk_customer_development",
+      "expected_next_skill": "scoping-lead-research",
+      "expected_split_customer_development": false,
+      "expected_secondary_routes": [],
+      "expected_missing_fields": [],
+      "response_must_contain": [
+        "批量客户开发"
+      ]
+    },
+    {
+      "name": "bulk customer attribute needs ce certification",
+      "text": "帮我找需要 CE 认证的欧洲进口商",
+      "expected_route": "bulk_customer_development",
+      "expected_next_skill": "scoping-lead-research",
+      "expected_split_customer_development": false,
+      "expected_secondary_routes": [],
+      "expected_missing_fields": [],
+      "response_must_contain": [
+        "批量客户开发"
+      ]
+    },
+    {
+      "name": "bulk customer attribute needs ul certification",
+      "text": "找美国需要UL认证的进口商",
+      "expected_route": "bulk_customer_development",
+      "expected_next_skill": "scoping-lead-research",
+      "expected_split_customer_development": false,
+      "expected_secondary_routes": [],
+      "expected_missing_fields": [],
+      "response_must_contain": [
+        "批量客户开发"
+      ]
+    },
+    {
+      "name": "bulk explicitly rejects product market analysis",
+      "text": "我不要做产品出海市场分析，找美国客户",
+      "expected_route": "bulk_customer_development",
+      "expected_next_skill": "scoping-lead-research",
+      "expected_split_customer_development": false,
+      "expected_secondary_routes": [],
+      "expected_missing_fields": [],
+      "response_must_contain": [
+        "批量客户开发"
+      ]
     }
   ]
 }

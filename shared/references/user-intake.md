@@ -15,7 +15,7 @@ Start from the user's actual task:
 
 给出一个产品/型号/产品资料，并要求分析该产品出口或进入某个国家/地区的趋势、公开价格、准入合规、税费、出口要求、运输路线、COO/原产地证明或近期外部因素，进入“产品出海市场分析”入口。它不生成客户名单、不推荐客户类型、不判断是否值得进入，也不把线上渠道或价格参考变成批量客户开发范围。
 
-如果用户同时说“先分析市场再找客户”，先做产品出海市场分析；只有用户看完后明确要找客户，才另启批量客户开发。
+如果用户同时说“先分析市场再找客户”，先做产品出海市场分析；只有用户看完后明确要找客户，才另启批量客户开发。若用户说“找需要 CE/UL/某认证需求的进口商/客户”，这是目标客户属性，仍属于批量客户开发；若用户问“该产品出口/进入某国是否需要 CE/UL/SDS/UN38.3/COO、关税、标签、清关文件”，这是目标市场准入条件，属于产品出海市场分析。用户明确不做某条路线时，入口路由必须尊重否定条件。
 
 New customer development needs product/service plus at least one scope axis: country/region, customer type, channel, application, keyword, seed company, competitor, existing table, trade fair/PDF/web material.
 
