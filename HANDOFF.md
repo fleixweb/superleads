@@ -1,8 +1,8 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：`e966c27 Update handoff after status projection commit`
-- 当前状态：Code Slice AF 三路线入口路由纠偏 / route eval 已完成实现与完整验证，待提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：`0f7666e Add Superleads route intent evals`
+- 当前状态：Code Slice AF 三路线入口路由纠偏 / route eval 已提交；工作区干净；保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已完成
 
@@ -15,6 +15,7 @@
 - Slice AE 文档已提交：`7caa2e4 Document user-visible status mapping`。
 - Code Slice AE 已提交：`b08f966 Add user-visible status projection`。
 - 状态同步已提交：`e966c27 Update handoff after status projection commit`。
+- Code Slice AF 已提交：`0f7666e Add Superleads route intent evals`。
 
 ## Code Slice AD 已完成内容
 
@@ -114,8 +115,8 @@ git diff --check  # passed
 
 ## 当前下一步建议
 
-1. 完整运行 Code Slice AF 验证并提交。
-2. 后续优先级：Code Slice AG 单一客户背调工程资产补齐；Slice AH 批量客户开发内核复盘。
+1. 进入 Code Slice AG：单一客户背调工程资产补齐。
+2. 后续：Slice AH 批量客户开发内核复盘。
 
 ## 重要边界
 

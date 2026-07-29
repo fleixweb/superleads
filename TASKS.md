@@ -18,7 +18,7 @@
 - Slice AE 状态词压缩 / 用户可见状态映射已完成并提交：`7caa2e4 Document user-visible status mapping`。
 - Code Slice AE 状态投影工具 / 导出列 / 用户可见状态 eval 已完成并提交：`b08f966 Add user-visible status projection`。新增统一状态投影层、产品市场导出 `依据状态` / `依据说明`、用户可见内部状态 token 阻断。
 - 状态同步已提交：`e966c27 Update handoff after status projection commit`。
-- Code Slice AF 三路线入口路由纠偏 / route eval 已完成，待提交：路由样例扩到 25 条，新增独立 route eval runner，混合任务可校验 `secondary_routes` / `route_order`。
+- Code Slice AF 三路线入口路由纠偏 / route eval 已完成并提交：`0f7666e Add Superleads route intent evals`。路由样例扩到 25 条，新增独立 route eval runner，混合任务可校验 `secondary_routes` / `route_order`。
 
 ## Code Slice AF 已完成
 
@@ -119,8 +119,8 @@ git diff --check  # passed
 
 ## 当前下一步
 
-1. 完整运行 Code Slice AF 验证并提交。
-2. 后续再排：Code Slice AG 单一客户背调工程资产补齐；Slice AH 批量客户开发内核复盘。
+1. 进入 Code Slice AG：单一客户背调工程资产补齐。
+2. 后续再排：Slice AH 批量客户开发内核复盘。
 
 ## 当前阻塞 / 注意
 
