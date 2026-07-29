@@ -1,8 +1,8 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：`0f7666e Add Superleads route intent evals`
-- 当前状态：Code Slice AF 三路线入口路由纠偏 / route eval 已提交；工作区干净；保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：`2e5d2ed Update handoff after route evals commit`
+- 当前状态：Code Slice AG 单一客户背调工程资产补齐已完成实现与完整验证，待提交；保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已完成
 
@@ -16,6 +16,8 @@
 - Code Slice AE 已提交：`b08f966 Add user-visible status projection`。
 - 状态同步已提交：`e966c27 Update handoff after status projection commit`。
 - Code Slice AF 已提交：`0f7666e Add Superleads route intent evals`。
+- 状态同步已提交：`2e5d2ed Update handoff after route evals commit`。
+- Code Slice AG 已完成，待提交：单一客户背调补 Skill 入口、专属 spec、专属 eval runner、6 条 graph fixtures、1 条用户可见 fail 样本，并强化轻验证与正式名单链路隔离。
 
 ## Code Slice AD 已完成内容
 
@@ -91,6 +93,31 @@
    - 更新 `shared/references/route-map.md`、`shared/references/user-intake.md`、`skills/using-superleads/SKILL.md`、`docs/superleads-common-commands.md`。
    - 新增 `docs/validation/superleads-code-slice-af-route-evals-20260729.md`。
 
+
+## Code Slice AG 已完成内容
+
+1. `skills/researching-customer-background/agents/openai.yaml`
+   - 补齐 Codex / ChatGPT 可见入口：`单一客户背调`。
+2. `spec/35-superleads-customer-background-code-slice-ag.md`
+   - 冻结单客背调产品边界：一个指定对象 → 客户背调报告。
+   - 明确不生成批量客户池、不做推荐客户、不写采购概率、不把公开入口写成采购意愿。
+   - 明确 `Assessment` / `ScopeDecision` / `ReviewAttestation` / `DeliveryManifest` 不属于客户背调轻验证报告。
+3. `scripts/validate_research_graph.py`
+   - `customer_background_research` 阻断 Assessment、ScopeDecision、ReviewAttestation、DeliveryManifest。
+   - 保持搜索摘要不能解析主体、不可形成 Claim 的证据纪律。
+4. `scripts/background_report.py`
+   - 背调空表从全行 `未提供` 改为人话缺口说明。
+5. `scripts/validate_superleads_user_visible_output.py`
+   - 增加采购负责人 / 采购意愿升级短语阻断，例如 `Founder 就是采购负责人`、`已确认有采购需求`、`wholesale 页面说明有采购意愿`。
+6. evals
+   - 新增 `evals/run_customer_background_research_evals.py`。
+   - 新增 `evals/cases/customer_background_research_cases.json`，共 6 条。
+   - 新增 pass/fail graph fixtures：resolved、unresolved、无关候选不外泄、搜索摘要解析主体、Assessment 污染、Manifest 污染。
+   - 用户可见 output suite 从 9 条扩到 10 条。
+   - 主 eval `all` 从 699 条扩到 707 条，`deep` 从 659 条扩到 667 条，`default` 从 113 条扩到 115 条。
+7. 文档
+   - 新增 `docs/validation/superleads-code-slice-ag-customer-background-20260729.md`。
+
 ## 已验证
 
 ```bash
@@ -111,11 +138,22 @@ python3 evals/run_evals.py --suite all  # 699/699
 python3 evals/run_evals.py --suite deep  # 659/659
 python3 evals/run_product_market_analysis_evals.py --suite all  # 74/74
 git diff --check  # passed
+
+# Code Slice AG 验证
+python3 -m py_compile scripts/background_report.py scripts/export_superleads_markdown.py scripts/validate_research_graph.py scripts/validate_superleads_user_visible_output.py evals/run_customer_background_research_evals.py evals/run_evals.py  # passed
+python3 evals/run_customer_background_research_evals.py --suite all  # 6/6
+python3 evals/run_superleads_user_visible_output_evals.py --suite all  # 10/10
+python3 evals/run_superleads_markdown_delivery_evals.py --suite all  # 5/5
+python3 evals/run_evals.py --suite default  # 115/115
+python3 evals/run_evals.py --suite all  # 707/707
+python3 evals/run_evals.py --suite deep  # 667/667
+python3 evals/run_product_market_analysis_evals.py --suite all  # 74/74
+git diff --check  # passed
 ```
 
 ## 当前下一步建议
 
-1. 进入 Code Slice AG：单一客户背调工程资产补齐。
+1. 提交 Code Slice AG：单一客户背调工程资产补齐。
 2. 后续：Slice AH 批量客户开发内核复盘。
 
 ## 重要边界

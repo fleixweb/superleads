@@ -1,0 +1,100 @@
+{
+  "description": "Code Slice AG customer background research fixtures. These cases keep the single-customer background route isolated from bulk customer discovery, product market analysis, and formal-list delivery machinery.",
+  "cases": [
+    {
+      "name": "resolved Chilly's background graph validates and exports",
+      "fixture": "pass_customer_background_chillys_markdown.json",
+      "expected": "pass",
+      "validate": "pass",
+      "export_background": "pass",
+      "markdown_delivery": "pass",
+      "must_contain": [
+        "一句话先说清",
+        "公开信息不能证明当前采购需求或采购负责人",
+        "怎么联系、先找谁",
+        "信息从哪里来"
+      ],
+      "must_not_contain": [
+        "候选客户池",
+        "采购概率",
+        "推荐客户"
+      ],
+      "csv_must_contain": [
+        "CHILLY'S BOTTLES LIMITED",
+        "怎么联系、先找谁",
+        "信息从哪里来"
+      ]
+    },
+    {
+      "name": "unresolved domain-only background still exports gap tables",
+      "fixture": "pass_customer_background_unresolved_minimal.json",
+      "expected": "pass",
+      "validate": "pass",
+      "export_background": "pass",
+      "markdown_delivery": "pass",
+      "must_contain": [
+        "公司主体尚未确认",
+        "主体尚未解析；暂无可展示的关联信息",
+        "暂无可展示的公开联系入口",
+        "暂无可展示的来源记录"
+      ],
+      "must_not_contain": [
+        "| 未提供 | 未提供 | 未提供"
+      ],
+      "csv_must_contain": [
+        "公司主体尚未确认",
+        "主体尚未解析；暂无可展示的关联信息",
+        "暂无可展示的公开联系入口",
+        "暂无可展示的来源记录"
+      ]
+    },
+    {
+      "name": "unrelated bulk candidates do not leak into background report",
+      "fixture": "pass_customer_background_ignores_unrelated_candidates.json",
+      "expected": "pass",
+      "validate": "pass",
+      "export_background": "pass",
+      "markdown_delivery": "pass",
+      "must_contain": [
+        "CHILLY'S BOTTLES LIMITED",
+        "公开信息不能证明当前采购需求或采购负责人"
+      ],
+      "must_not_contain": [
+        "Unrelated Bulk Prospect LLC",
+        "unrelated-bulk.example",
+        "候选客户池"
+      ],
+      "csv_must_contain": [
+        "CHILLY'S BOTTLES LIMITED"
+      ]
+    },
+    {
+      "name": "search summary cannot resolve a customer background subject",
+      "fixture": "fail_customer_background_search_result_resolution.json",
+      "expected": "fail",
+      "validate": "fail",
+      "expected_error_codes": [
+        "background_resolution_observation_capability_not_checkable",
+        "background_resolution_source_search_result"
+      ]
+    },
+    {
+      "name": "customer background cannot create Assessment",
+      "fixture": "fail_customer_background_assessment_not_allowed.json",
+      "expected": "fail",
+      "validate": "fail",
+      "expected_error_codes": [
+        "background_assessment_not_allowed"
+      ]
+    },
+    {
+      "name": "customer background cannot create DeliveryManifest",
+      "fixture": "fail_customer_background_manifest_not_allowed.json",
+      "expected": "fail",
+      "validate": "fail",
+      "expected_error_codes": [
+        "background_delivery_manifest_not_allowed"
+      ]
+    }
+  ]
+}

@@ -25,6 +25,7 @@ CAPABILITY_CASES = ROOT / "evals" / "cases" / "capability_adapter_cases.json"
 SUPERLEADS_ROUTE_CASES = ROOT / "evals" / "cases" / "superleads_route_cases.json"
 USER_VISIBLE_OUTPUT_CASES = ROOT / "evals" / "cases" / "superleads_user_visible_output_cases.json"
 MARKDOWN_DELIVERY_EVALS = ROOT / "evals" / "run_superleads_markdown_delivery_evals.py"
+CUSTOMER_BACKGROUND_EVALS = ROOT / "evals" / "run_customer_background_research_evals.py"
 MODE_TO_STATUS = {
     "initial": "initial_lead_list",
     "standard": "standard_development_list",
@@ -622,6 +623,13 @@ def add_static_suite_tests(py: str, tests: list[tuple[str, list[str], int, list[
         tests.append((f"legacy anti-pattern file {legacy_file.name}", ["__LEGACY_CHECK__", str(legacy_file)], 0, []))
     add_superleads_route_tests(tests)
     add_user_visible_output_tests(tests)
+    if CUSTOMER_BACKGROUND_EVALS.exists():
+        tests.append((
+            "customer background research suite",
+            [py, str(CUSTOMER_BACKGROUND_EVALS), "--suite", "all"],
+            0,
+            [],
+        ))
     if MARKDOWN_DELIVERY_EVALS.exists():
         tests.append((
             "superleads generated Markdown delivery suite",

@@ -181,6 +181,22 @@
         "stale_needs_recheck",
         "user_not_provided_but_required"
       ]
+    },
+    {
+      "name": "fail customer background positive procurement person",
+      "fixture": "evals/user_visible_outputs/fail_customer_background_positive_procurement_person.md",
+      "route": "customer_background_research",
+      "expected": "fail",
+      "min_tables": 6,
+      "expected_error_codes": [
+        "user_visible_evidence_upgrade"
+      ],
+      "must_contain": [
+        "一句话先说清",
+        "客户一眼看懂",
+        "Founder 就是采购负责人",
+        "已确认有采购需求"
+      ]
     }
   ]
 }

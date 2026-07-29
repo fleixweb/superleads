@@ -19,6 +19,35 @@
 - Code Slice AE 状态投影工具 / 导出列 / 用户可见状态 eval 已完成并提交：`b08f966 Add user-visible status projection`。新增统一状态投影层、产品市场导出 `依据状态` / `依据说明`、用户可见内部状态 token 阻断。
 - 状态同步已提交：`e966c27 Update handoff after status projection commit`。
 - Code Slice AF 三路线入口路由纠偏 / route eval 已完成并提交：`0f7666e Add Superleads route intent evals`。路由样例扩到 25 条，新增独立 route eval runner，混合任务可校验 `secondary_routes` / `route_order`。
+- 状态同步已提交：`2e5d2ed Update handoff after route evals commit`。
+- Code Slice AG 单一客户背调工程资产补齐已完成，待提交：补 Skill 入口、专属 spec、专属 eval runner、6 条 graph fixtures、1 条用户可见 fail 样本，并强化轻验证与正式名单链路隔离。
+
+
+## Code Slice AG 已完成
+
+1. Skill / 文档
+   - 新增 `skills/researching-customer-background/agents/openai.yaml`，让单一客户背调在 Codex / ChatGPT 侧不再隐形。
+   - 新增 `spec/35-superleads-customer-background-code-slice-ag.md`，冻结单客背调边界、用户可见输出合同和禁止项。
+2. 轻验证边界
+   - `scripts/validate_research_graph.py` 阻断 `customer_background_research` 产生 Assessment、ScopeDecision、ReviewAttestation、DeliveryManifest。
+   - 搜索摘要仍不能解析主体，也不能支撑 Claim。
+3. 用户可见输出
+   - `scripts/background_report.py` 将空表从全行 `未提供` 改为人话缺口说明。
+   - `scripts/validate_superleads_user_visible_output.py` 新增采购负责人 / 采购意愿升级短语阻断。
+4. evals / fixtures
+   - 新增 `evals/run_customer_background_research_evals.py`。
+   - 新增 `evals/cases/customer_background_research_cases.json` 共 6 条：resolved、unresolved、无关候选不外泄、搜索摘要解析主体、Assessment 污染、Manifest 污染。
+   - 新增用户可见 fail 样本 `fail_customer_background_positive_procurement_person.md`。
+   - 主 eval 已纳入单客背调 suite。
+5. 已验证
+   - `python3 -m py_compile scripts/background_report.py scripts/export_superleads_markdown.py scripts/validate_research_graph.py scripts/validate_superleads_user_visible_output.py evals/run_customer_background_research_evals.py evals/run_evals.py` → passed。
+   - `python3 evals/run_customer_background_research_evals.py --suite all` → 6/6。
+   - `python3 evals/run_superleads_user_visible_output_evals.py --suite all` → 10/10。
+   - `python3 evals/run_superleads_markdown_delivery_evals.py --suite all` → 5/5。
+   - `python3 evals/run_evals.py --suite default` → 115/115。
+   - `python3 evals/run_evals.py --suite all` → 707/707。
+   - `python3 evals/run_evals.py --suite deep` → 667/667。
+   - `python3 evals/run_product_market_analysis_evals.py --suite all` → 74/74。
 
 ## Code Slice AF 已完成
 
@@ -119,7 +148,7 @@ git diff --check  # passed
 
 ## 当前下一步
 
-1. 进入 Code Slice AG：单一客户背调工程资产补齐。
+1. 提交 Code Slice AG：单一客户背调工程资产补齐。
 2. 后续再排：Slice AH 批量客户开发内核复盘。
 
 ## 当前阻塞 / 注意

@@ -1,0 +1,682 @@
+{
+  "runs": [
+    {
+      "run_id": "run_stage5_chillys_real",
+      "status": "collecting",
+      "created_at": "2026-07-19T10:00:00+08:00",
+      "updated_at": "2026-07-19T10:00:00+08:00",
+      "platform": "codex_cli",
+      "capabilities": {
+        "source.open": "available",
+        "registry.lookup": "available"
+      },
+      "capability_adapter_report": {
+        "platform": "codex_cli",
+        "adapter": {
+          "adapter_id": "codex_cli_shell_http_source_open",
+          "adapter_version": "1"
+        },
+        "detected_at": "2026-07-19T10:00:00+08:00",
+        "detection": "current_session_shell_http_success",
+        "host_tools": {
+          "shell_http": {
+            "status": "available",
+            "allowed_concrete_tools": [
+              "curl"
+            ],
+            "operations": {
+              "open_source": {
+                "status": "verified",
+                "request_method": "GET",
+                "original_url": "https://www.chillys.com/pages/terms",
+                "final_url": "https://www.chillys.com/pages/terms",
+                "http_status": 200,
+                "source_title": "Terms - Chilly's",
+                "raw_excerpt": "This website is operated by Chilly's Bottles Limited, a company incorporated in England and Wales with registration number 07326177.",
+                "excerpt_locator": "meta description / Overview"
+              }
+            }
+          }
+        },
+        "canonical_capabilities": {
+          "source.open": "available"
+        }
+      },
+      "brief_id": "brief_stage5_chillys_real",
+      "review_mode": "not_run"
+    }
+  ],
+  "briefs": [
+    {
+      "brief_id": "brief_stage5_chillys_real",
+      "task_mode": "customer_background_research",
+      "output_mode": "客户背调报告",
+      "contact_detail_level": "standard",
+      "background_research_target": {
+        "user_statement": "客户背调：英国 Chilly's / https://www.chillys.com/",
+        "anchors": [
+          {
+            "anchor_id": "anchor_chillys_brand",
+            "kind": "brand_name",
+            "literal": "Chilly's",
+            "candidate_id": null,
+            "source_id": null
+          },
+          {
+            "anchor_id": "anchor_chillys_website",
+            "kind": "website_or_domain",
+            "literal": "https://www.chillys.com/",
+            "candidate_id": null,
+            "source_id": null
+          }
+        ],
+        "subject_resolution_status": "resolved",
+        "primary_subject_entity_id": "ent_chillys_bottles_ltd",
+        "resolution_observation_ids": [
+          "obs_chillys_terms_identity",
+          "obs_companies_house_overview"
+        ]
+      }
+    }
+  ],
+  "plans": [],
+  "candidates": [
+    {
+      "candidate_id": "cand_unrelated_bulk_001",
+      "name": "Unrelated Bulk Prospect LLC",
+      "company_name": "Unrelated Bulk Prospect LLC",
+      "entity_id": "ent_unrelated_bulk_001",
+      "website": "https://unrelated-bulk.example",
+      "domain": "unrelated-bulk.example",
+      "country_or_region": "United States",
+      "source_hint": "leftover bulk candidate pool",
+      "source_url": "https://directory.example/unrelated-bulk",
+      "status": "candidate",
+      "note": "Must not appear in a single customer background report."
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "src_chillys_terms",
+      "canonical_url": "https://www.chillys.com/pages/terms",
+      "final_url": "https://www.chillys.com/pages/terms",
+      "publisher_relation": "first_party",
+      "provenance": "discovered_public",
+      "medium": "website",
+      "access_boundary": "public"
+    },
+    {
+      "source_id": "src_chillys_home",
+      "canonical_url": "https://www.chillys.com/",
+      "final_url": "https://www.chillys.com/",
+      "publisher_relation": "first_party",
+      "provenance": "discovered_public",
+      "medium": "website",
+      "access_boundary": "public"
+    },
+    {
+      "source_id": "src_chillys_mission",
+      "canonical_url": "https://www.chillys.com/pages/mission",
+      "final_url": "https://www.chillys.com/pages/mission",
+      "publisher_relation": "first_party",
+      "provenance": "discovered_public",
+      "medium": "website",
+      "access_boundary": "public"
+    },
+    {
+      "source_id": "src_chillys_wholesale",
+      "canonical_url": "https://www.chillys.com/pages/wholesale",
+      "final_url": "https://www.chillys.com/pages/wholesale",
+      "publisher_relation": "first_party",
+      "provenance": "discovered_public",
+      "medium": "website",
+      "access_boundary": "public"
+    },
+    {
+      "source_id": "src_companies_house_overview",
+      "canonical_url": "https://find-and-update.company-information.service.gov.uk/company/07326177",
+      "final_url": "https://find-and-update.company-information.service.gov.uk/company/07326177",
+      "publisher_relation": "third_party",
+      "provenance": "discovered_public",
+      "medium": "registry",
+      "access_boundary": "public"
+    },
+    {
+      "source_id": "src_companies_house_officers",
+      "canonical_url": "https://find-and-update.company-information.service.gov.uk/company/07326177/officers",
+      "final_url": "https://find-and-update.company-information.service.gov.uk/company/07326177/officers",
+      "publisher_relation": "third_party",
+      "provenance": "discovered_public",
+      "medium": "registry",
+      "access_boundary": "public"
+    },
+    {
+      "source_id": "src_similarweb_chillys",
+      "canonical_url": "https://www.similarweb.com/website/chillys.com/",
+      "final_url": "https://www.similarweb.com/website/chillys.com/",
+      "publisher_relation": "third_party",
+      "provenance": "discovered_public",
+      "medium": "website",
+      "access_boundary": "public"
+    }
+  ],
+  "observations": [
+    {
+      "observation_id": "obs_chillys_terms_identity",
+      "run_id": "run_stage5_chillys_real",
+      "source_id": "src_chillys_terms",
+      "candidate_id": null,
+      "entity_id": "ent_chillys_bottles_ltd",
+      "capability": "source.open",
+      "concrete_tool": "curl",
+      "observed_at": "2026-07-19T10:00:00+08:00",
+      "access_status": "ok",
+      "http_status": 200,
+      "title": "Terms - Chilly's",
+      "raw_excerpt": "OVERVIEW This website is operated by Chilly's Bottles Limited, a company incorporated in England and Wales with registration number 07326177 (\"Chilly's Bottles\"). Throughout the site, the terms \"we\", \"us\" and \"our\" refer to Chilly's Bottles. Registered UK address: 1a Royle Studios, 41 Wenlock Road London N1 7SG United Kingdom. Company number: 07326177. Chilly's Bottles Limited Email: support@chillysbottles.com. Copyright Registered in England and Wales with registration number 07326177.",
+      "page_or_dom_locator": "meta description + Contact Information",
+      "content_hash": "6f7ee2e5a2e5772e15c76795220663bcaf3cf094905245d40fbc1f64c47d6b4a",
+      "extraction_method": "manual_excerpt_from_public_get",
+      "tool_version": "curl 8",
+      "language": "en",
+      "translation_status": "original",
+      "derived_from_observation_id": null,
+      "snapshot_ref": null
+    },
+    {
+      "observation_id": "obs_chillys_home",
+      "run_id": "run_stage5_chillys_real",
+      "source_id": "src_chillys_home",
+      "candidate_id": null,
+      "entity_id": "ent_chillys_bottles_ltd",
+      "capability": "source.open",
+      "concrete_tool": "curl",
+      "observed_at": "2026-07-19T10:00:00+08:00",
+      "access_status": "ok",
+      "http_status": 200,
+      "title": "Reusable Water Bottles | Reusable Coffee Cups | Chilly's",
+      "raw_excerpt": "Reusable Water Bottles | Reusable Coffee Cups | Chilly's. Reusable Water Bottles from Chilly's, A Revolutionary Reusable Bottle That Keeps Drinks Ice Cold For Up To 24 Hours. Organization name Chilly's; url https://www.chillys.com/; address 1a Royle Studios, 41 Wenlock Road, London N1 7SG; contactPoint customer support email orders@chillys.com.",
+      "page_or_dom_locator": "title/meta description + Organization JSON-LD",
+      "content_hash": "f73590d74cea37eefad9d9d34263b7a7de83b2df30a748e2a47802e668bb545a",
+      "extraction_method": "manual_excerpt_from_public_get",
+      "tool_version": "curl 8",
+      "language": "en",
+      "translation_status": "original",
+      "derived_from_observation_id": null,
+      "snapshot_ref": null
+    },
+    {
+      "observation_id": "obs_chillys_mission",
+      "run_id": "run_stage5_chillys_real",
+      "source_id": "src_chillys_mission",
+      "candidate_id": null,
+      "entity_id": "ent_chillys_bottles_ltd",
+      "capability": "source.open",
+      "concrete_tool": "curl",
+      "observed_at": "2026-07-19T10:00:00+08:00",
+      "access_status": "ok",
+      "http_status": 200,
+      "title": "Mission - Chilly's",
+      "raw_excerpt": "Chilly's mission is to accelerate the adoption and everyday use of reusable products. We aim to do this through creating products for an active urban lifestyle, with the perfect balance of distinctive style and unrivalled performance. The Idea Chilly's was founded in 2010 by James Butterfield and Tim Bouscarle, with the aim of providing people with the ability to always have cold water on-the-go, without having to buy single-use plastic water bottles. The result was the Chilly's Bottle.",
+      "page_or_dom_locator": "Mission page body",
+      "content_hash": "0ce033bc664b4bdc9cd9ccdc5daea1ac8459c22df890e2744a712b0c27578a84",
+      "extraction_method": "manual_excerpt_from_public_get",
+      "tool_version": "curl 8",
+      "language": "en",
+      "translation_status": "original",
+      "derived_from_observation_id": null,
+      "snapshot_ref": null
+    },
+    {
+      "observation_id": "obs_chillys_wholesale",
+      "run_id": "run_stage5_chillys_real",
+      "source_id": "src_chillys_wholesale",
+      "candidate_id": null,
+      "entity_id": "ent_chillys_bottles_ltd",
+      "capability": "source.open",
+      "concrete_tool": "curl",
+      "observed_at": "2026-07-19T10:00:00+08:00",
+      "access_status": "ok",
+      "http_status": 200,
+      "title": "Wholesale - Chilly's",
+      "raw_excerpt": "Wholesale. To personalise products and add your logo click here for Co-Brand. Are you an existing wholesale customer? Please click here for the wholesale store. If you would like to enquire about stocking Chilly's products, please email the below with your name, contact information and detail about where you'd like to sell our products: UK Customers: uk-wholesale@chillys.com EU Customers: eu-wholesale@chillys.com.",
+      "page_or_dom_locator": "Wholesale page body",
+      "content_hash": "c42b1ee4cf0df9858a5d365f3dd27ca57be1f3f0586eb4187c5972876d08e76f",
+      "extraction_method": "manual_excerpt_from_public_get",
+      "tool_version": "curl 8",
+      "language": "en",
+      "translation_status": "original",
+      "derived_from_observation_id": null,
+      "snapshot_ref": null
+    },
+    {
+      "observation_id": "obs_companies_house_overview",
+      "run_id": "run_stage5_chillys_real",
+      "source_id": "src_companies_house_overview",
+      "candidate_id": null,
+      "entity_id": "ent_chillys_bottles_ltd",
+      "capability": "registry.lookup",
+      "concrete_tool": "companies_house_public_page",
+      "observed_at": "2026-07-19T10:00:00+08:00",
+      "access_status": "ok",
+      "http_status": 200,
+      "title": "CHILLY'S BOTTLES LIMITED overview - GOV.UK",
+      "raw_excerpt": "CHILLY'S BOTTLES LIMITED Company number 07326177. Registered office address 1a Royle Studios, 41 Wenlock Road, London, England, N1 7SG. Company status Active. Company type Private limited Company. Incorporated on 26 July 2010. Nature of business (SIC) 46499 - Wholesale of household goods (other than musical instruments) not elsewhere classified; 71121 - Engineering design activities for industrial process and production.",
+      "page_or_dom_locator": "Company overview",
+      "content_hash": "8ba9a6926d7fe4ea390571ccfc80487894bd308deabf78ed2fc4ad6dd207c04f",
+      "extraction_method": "manual_excerpt_from_public_get",
+      "tool_version": "curl 8",
+      "language": "en",
+      "translation_status": "original",
+      "derived_from_observation_id": null,
+      "snapshot_ref": null
+    },
+    {
+      "observation_id": "obs_chillys_officers",
+      "run_id": "run_stage5_chillys_real",
+      "source_id": "src_companies_house_officers",
+      "candidate_id": null,
+      "entity_id": "ent_chillys_bottles_ltd",
+      "capability": "registry.lookup",
+      "concrete_tool": "companies_house_public_page",
+      "observed_at": "2026-07-19T10:00:00+08:00",
+      "access_status": "ok",
+      "http_status": 200,
+      "title": "CHILLY'S BOTTLES LIMITED people - GOV.UK",
+      "raw_excerpt": "CHILLY'S BOTTLES LIMITED Officers: 2 officers / 0 resignations. BOUSCARLE, Timothy Claude Role Active Director. BUTTERFIELD, James Role Active Director.",
+      "page_or_dom_locator": "Officers list",
+      "content_hash": "de6aa6d79d85dd28fe0443a6eb8d27ead9c0d5bc3fc61d17613af41e6e4a678a",
+      "extraction_method": "manual_excerpt_from_public_get",
+      "tool_version": "curl 8",
+      "language": "en",
+      "translation_status": "original",
+      "derived_from_observation_id": null,
+      "snapshot_ref": null
+    },
+    {
+      "observation_id": "obs_similarweb_restricted",
+      "run_id": "run_stage5_chillys_real",
+      "source_id": "src_similarweb_chillys",
+      "candidate_id": null,
+      "entity_id": "ent_chillys_bottles_ltd",
+      "capability": "source.open",
+      "concrete_tool": "curl",
+      "observed_at": "2026-07-19T10:00:00+08:00",
+      "access_status": "forbidden",
+      "http_status": 403,
+      "title": "Similarweb chillys.com",
+      "raw_excerpt": "403 ERROR. The request could not be satisfied. Request blocked.",
+      "page_or_dom_locator": "HTTP response body",
+      "content_hash": "ffa338c7e028d211301b19620204c0bd182b8605c6064e3b8d81edede92ae9fe",
+      "extraction_method": "manual_excerpt_from_public_get",
+      "tool_version": "curl 8",
+      "language": "en",
+      "translation_status": "original",
+      "derived_from_observation_id": null,
+      "snapshot_ref": null
+    }
+  ],
+  "entities": [
+    {
+      "entity_id": "ent_chillys_bottles_ltd",
+      "name": "Chilly's",
+      "legal_name": "CHILLY'S BOTTLES LIMITED",
+      "website": "https://www.chillys.com/",
+      "domain": "chillys.com",
+      "country_or_region": "United Kingdom",
+      "customer_type": "single background subject"
+    },
+    {
+      "entity_id": "ent_chillys_brand_site",
+      "name": "Chillys brand/site anchor",
+      "legal_name": null,
+      "website": "https://www.chillys.com/",
+      "domain": "chillys.com",
+      "country_or_region": "United Kingdom",
+      "customer_type": "brand/site anchor"
+    },
+    {
+      "entity_id": "ent_unrelated_bulk_001",
+      "name": "Unrelated Bulk Prospect LLC",
+      "legal_name": "Unrelated Bulk Prospect LLC",
+      "website": "https://unrelated-bulk.example",
+      "domain": "unrelated-bulk.example",
+      "country_or_region": "United States",
+      "customer_type": "retailer"
+    }
+  ],
+  "entity_relationships": [
+    {
+      "entity_relationship_id": "rel_chillys_operator_brand_site",
+      "source_entity_id": "ent_chillys_bottles_ltd",
+      "target_entity_id": "ent_chillys_brand_site",
+      "relationship_type": "legal_entity_of",
+      "evidence_claim_ids": [
+        "claim_chillys_identity"
+      ],
+      "evidence_observation_ids": [
+        "obs_chillys_terms_identity"
+      ],
+      "confidence": "medium",
+      "resolution_status": "contextual",
+      "rationale": "Terms page identifies Chilly's Bottles Limited as the operator of the chillys.com website; brand/site anchor is kept separate from the legal Entity."
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "claim_chillys_identity",
+      "entity_id": "ent_chillys_bottles_ltd",
+      "claim_type": "company_identity",
+      "subject": "CHILLY'S BOTTLES LIMITED",
+      "predicate": "is",
+      "typed_value": {
+        "text": "Chilly's Bottles Limited"
+      },
+      "as_of": "2026-07-19",
+      "claim_scope": "current_source",
+      "support_status": "supported",
+      "contradiction_status": "none"
+    },
+    {
+      "claim_id": "claim_chillys_registered_in",
+      "entity_id": "ent_chillys_bottles_ltd",
+      "claim_type": "registration",
+      "subject": "CHILLY'S BOTTLES LIMITED",
+      "predicate": "is_registered_in",
+      "typed_value": {
+        "text": "England and Wales"
+      },
+      "as_of": "2026-07-19",
+      "claim_scope": "current_source",
+      "support_status": "supported",
+      "contradiction_status": "none"
+    },
+    {
+      "claim_id": "claim_chillys_address",
+      "entity_id": "ent_chillys_bottles_ltd",
+      "claim_type": "location",
+      "subject": "CHILLY'S BOTTLES LIMITED",
+      "predicate": "has_address",
+      "typed_value": {
+        "text": "1a Royle Studios, 41 Wenlock Road London N1 7SG"
+      },
+      "as_of": "2026-07-19",
+      "claim_scope": "current_source",
+      "support_status": "supported",
+      "contradiction_status": "none"
+    },
+    {
+      "claim_id": "claim_chillys_mission_reusable",
+      "entity_id": "ent_chillys_bottles_ltd",
+      "claim_type": "channel_role",
+      "subject": "Chilly's",
+      "predicate": "is",
+      "typed_value": {
+        "text": "accelerate the adoption and everyday use of reusable products"
+      },
+      "as_of": "2026-07-19",
+      "claim_scope": "current_source",
+      "support_status": "supported",
+      "contradiction_status": "none"
+    }
+  ],
+  "claim_evidence": [
+    {
+      "claim_evidence_id": "ce_chillys_identity",
+      "claim_id": "claim_chillys_identity",
+      "observation_id": "obs_chillys_terms_identity",
+      "relation": "supports",
+      "directness": "direct",
+      "source_authority": "first_party",
+      "independence_group": "chillys.com",
+      "freshness": "current",
+      "excerpt_pointer": "meta description + Contact Information",
+      "claim_field_anchors": {
+        "subject": "Chilly's Bottles Limited",
+        "predicate": "is",
+        "claim_type": "company",
+        "typed_value": "Chilly's Bottles Limited"
+      }
+    },
+    {
+      "claim_evidence_id": "ce_chillys_registered_in",
+      "claim_id": "claim_chillys_registered_in",
+      "observation_id": "obs_chillys_terms_identity",
+      "relation": "supports",
+      "directness": "direct",
+      "source_authority": "first_party",
+      "independence_group": "chillys.com",
+      "freshness": "current",
+      "excerpt_pointer": "footer / company registration line",
+      "claim_field_anchors": {
+        "subject": "Chilly's Bottles Limited",
+        "predicate": "registered in",
+        "claim_type": "registration",
+        "typed_value": "England and Wales"
+      }
+    },
+    {
+      "claim_evidence_id": "ce_chillys_address",
+      "claim_id": "claim_chillys_address",
+      "observation_id": "obs_chillys_terms_identity",
+      "relation": "supports",
+      "directness": "direct",
+      "source_authority": "first_party",
+      "independence_group": "chillys.com",
+      "freshness": "current",
+      "excerpt_pointer": "Contact Information",
+      "claim_field_anchors": {
+        "subject": "Chilly's Bottles Limited",
+        "predicate": "address",
+        "claim_type": "address",
+        "typed_value": "1a Royle Studios, 41 Wenlock Road London N1 7SG"
+      }
+    },
+    {
+      "claim_evidence_id": "ce_chillys_mission_reusable",
+      "claim_id": "claim_chillys_mission_reusable",
+      "observation_id": "obs_chillys_mission",
+      "relation": "supports",
+      "directness": "direct",
+      "source_authority": "first_party",
+      "independence_group": "chillys.com",
+      "freshness": "current",
+      "excerpt_pointer": "Mission page body",
+      "claim_field_anchors": {
+        "subject": "Chilly's",
+        "predicate": "is",
+        "claim_type": "mission",
+        "typed_value": "accelerate the adoption and everyday use of reusable products"
+      }
+    }
+  ],
+  "contact_points": [
+    {
+      "contact_id": "contact_chillys_support",
+      "contact_type": "department_email",
+      "normalized_value": "support@chillysbottles.com",
+      "source_literal": "support@chillysbottles.com",
+      "source_observation_id": "obs_chillys_terms_identity",
+      "source_type": "website",
+      "visibility_status": "public",
+      "last_seen_at": "2026-07-19T10:00:00+08:00",
+      "verification_status": "not_verified"
+    },
+    {
+      "contact_id": "contact_chillys_orders",
+      "contact_type": "department_email",
+      "normalized_value": "orders@chillys.com",
+      "source_literal": "orders@chillys.com",
+      "source_observation_id": "obs_chillys_home",
+      "source_type": "website",
+      "visibility_status": "public",
+      "last_seen_at": "2026-07-19T10:00:00+08:00",
+      "verification_status": "not_verified"
+    },
+    {
+      "contact_id": "contact_chillys_uk_wholesale",
+      "contact_type": "department_email",
+      "normalized_value": "uk-wholesale@chillys.com",
+      "source_literal": "uk-wholesale@chillys.com",
+      "source_observation_id": "obs_chillys_wholesale",
+      "source_type": "website",
+      "visibility_status": "public",
+      "last_seen_at": "2026-07-19T10:00:00+08:00",
+      "verification_status": "not_verified"
+    },
+    {
+      "contact_id": "contact_chillys_eu_wholesale",
+      "contact_type": "department_email",
+      "normalized_value": "eu-wholesale@chillys.com",
+      "source_literal": "eu-wholesale@chillys.com",
+      "source_observation_id": "obs_chillys_wholesale",
+      "source_type": "website",
+      "visibility_status": "public",
+      "last_seen_at": "2026-07-19T10:00:00+08:00",
+      "verification_status": "not_verified"
+    },
+    {
+      "contact_id": "contact_chillys_james_butterfield",
+      "contact_type": "person_name",
+      "normalized_value": "BUTTERFIELD, James",
+      "source_literal": "BUTTERFIELD, James",
+      "source_observation_id": "obs_chillys_officers",
+      "source_type": "registry",
+      "visibility_status": "public",
+      "last_seen_at": "2026-07-19T10:00:00+08:00",
+      "verification_status": "not_verified"
+    }
+  ],
+  "contact_claims": [
+    {
+      "contact_claim_id": "cc_chillys_support",
+      "contact_id": "contact_chillys_support",
+      "entity_id": "ent_chillys_bottles_ltd",
+      "person_id": null,
+      "person_name": null,
+      "job_title": null,
+      "department": null,
+      "relationship_type": "company_general",
+      "association_observation_id": "obs_chillys_terms_identity",
+      "association_claim_evidence_ids": [],
+      "source_context": "first-party terms/contact information",
+      "association_evidence_text": "Chilly's Bottles Limited Email: support@chillysbottles.com",
+      "association_locator": "Contact Information",
+      "association_confidence": "medium",
+      "is_role_based": true,
+      "is_personal_business": false,
+      "export_status": "export_with_source_note",
+      "user_status": "建议核查后使用",
+      "manual_check_note": "公开支持邮箱；不是采购负责人或采购意愿证据。"
+    },
+    {
+      "contact_claim_id": "cc_chillys_orders",
+      "contact_id": "contact_chillys_orders",
+      "entity_id": "ent_chillys_bottles_ltd",
+      "person_id": null,
+      "person_name": null,
+      "job_title": null,
+      "department": null,
+      "relationship_type": "company_general",
+      "association_observation_id": "obs_chillys_home",
+      "association_claim_evidence_ids": [],
+      "source_context": "first-party structured data customer support email",
+      "association_evidence_text": "Organization name Chilly's; url https://www.chillys.com/; address 1a Royle Studios, 41 Wenlock Road, London N1 7SG; contactPoint customer support email orders@chillys.com.",
+      "association_locator": "application/ld+json Organization",
+      "association_confidence": "medium",
+      "is_role_based": true,
+      "is_personal_business": false,
+      "export_status": "export_with_source_note",
+      "user_status": "建议核查后使用",
+      "manual_check_note": "客户支持入口；不是采购负责人或采购意愿证据。"
+    },
+    {
+      "contact_claim_id": "cc_chillys_uk_wholesale",
+      "contact_id": "contact_chillys_uk_wholesale",
+      "entity_id": "ent_chillys_bottles_ltd",
+      "person_id": null,
+      "person_name": null,
+      "job_title": null,
+      "department": null,
+      "relationship_type": "company_general",
+      "association_observation_id": "obs_chillys_wholesale",
+      "association_claim_evidence_ids": [],
+      "source_context": "first-party wholesale enquiry page",
+      "association_evidence_text": "If you would like to enquire about stocking Chilly's products, please email the below with your name, contact information and detail about where you'd like to sell our products: UK Customers: uk-wholesale@chillys.com EU Customers: eu-wholesale@chillys.com.",
+      "association_locator": "Wholesale page body",
+      "association_confidence": "high",
+      "is_role_based": true,
+      "is_personal_business": false,
+      "export_status": "ready",
+      "user_status": "可直接使用",
+      "manual_check_note": "UK wholesale/stocking enquiry入口；不代表采购职责或采购意愿。"
+    },
+    {
+      "contact_claim_id": "cc_chillys_eu_wholesale",
+      "contact_id": "contact_chillys_eu_wholesale",
+      "entity_id": "ent_chillys_bottles_ltd",
+      "person_id": null,
+      "person_name": null,
+      "job_title": null,
+      "department": null,
+      "relationship_type": "company_general",
+      "association_observation_id": "obs_chillys_wholesale",
+      "association_claim_evidence_ids": [],
+      "source_context": "first-party wholesale enquiry page",
+      "association_evidence_text": "If you would like to enquire about stocking Chilly's products, please email the below with your name, contact information and detail about where you'd like to sell our products: UK Customers: uk-wholesale@chillys.com EU Customers: eu-wholesale@chillys.com.",
+      "association_locator": "Wholesale page body",
+      "association_confidence": "high",
+      "is_role_based": true,
+      "is_personal_business": false,
+      "export_status": "ready",
+      "user_status": "可直接使用",
+      "manual_check_note": "EU wholesale/stocking enquiry入口；不代表采购职责或采购意愿。"
+    },
+    {
+      "contact_claim_id": "cc_chillys_james_butterfield",
+      "contact_id": "contact_chillys_james_butterfield",
+      "entity_id": "ent_chillys_bottles_ltd",
+      "person_id": null,
+      "person_name": "BUTTERFIELD, James",
+      "job_title": "Director",
+      "department": null,
+      "relationship_type": "public_officer",
+      "association_observation_id": "obs_chillys_officers",
+      "association_claim_evidence_ids": [],
+      "source_context": "Companies House public officer listing",
+      "association_evidence_text": "BUTTERFIELD, James Role Active Director",
+      "association_locator": "officers list",
+      "association_confidence": "medium",
+      "is_role_based": false,
+      "is_personal_business": false,
+      "export_status": "needs_manual_association_review",
+      "user_status": "待确认归属",
+      "manual_check_note": "公开创始/董事线索可作为桥接候选；不默认等于采购负责人。"
+    }
+  ],
+  "unassigned_contact_leads": [],
+  "hypotheses": [
+    {
+      "hypothesis_id": "hyp_chillys_background_angle",
+      "entity_id": "ent_chillys_bottles_ltd",
+      "basis_claim_ids": [
+        "claim_chillys_mission_reusable"
+      ],
+      "basis_contact_claim_ids": [
+        "cc_chillys_uk_wholesale",
+        "cc_chillys_eu_wholesale"
+      ],
+      "hypothesis_text": "可围绕已观察到的 reusable products mission 与 wholesale/stocking enquiry 入口准备待确认沟通角度。",
+      "unknowns": [
+        "公开页面未确认供应商准入流程",
+        "公开页面未确认采购负责人或当前采购需求"
+      ],
+      "suggested_action": "人工确认 wholesale/co-brand 入口是否适合供应商沟通。",
+      "next_verification_action": "向公开入口确认产品规格、供应商准入和当前负责入口。",
+      "expires_at": null,
+      "risk_notes": [
+        "不代表采购需求、采购量或采购意愿已确认"
+      ]
+    }
+  ]
+}

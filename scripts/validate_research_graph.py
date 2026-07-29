@@ -359,6 +359,7 @@ def _background_research_target_issues(
         return []
 
     issues: list[dict[str, str]] = []
+    brief_id = brief.get("brief_id")
     target = brief.get("background_research_target")
     target_path = f"{path}.background_research_target"
     if not isinstance(target, dict):
@@ -387,6 +388,22 @@ def _background_research_target_issues(
                 issues.append(issue("critical", "background_user_material_source_not_user_provided", "User-material anchor Source must have user_provided or manual_input provenance", f"{anchor_path}.source_id"))
         elif kind == "website_or_domain" and not is_safe_public_website_or_domain(anchor.get("literal")):
             issues.append(issue("critical", "background_website_or_domain_not_public", "Website/domain anchor must be a safe public HTTP(S) URL or plain public domain", f"{anchor_path}.literal"))
+
+    for collection_name, id_field, code in (
+        ("assessments", "assessment_id", "background_assessment_not_allowed"),
+        ("scope_decisions", "scope_decision_id", "background_scope_decision_not_allowed"),
+        ("review_attestations", "attestation_id", "background_review_attestation_not_allowed"),
+        ("delivery_manifests", "delivery_manifest_id", "background_delivery_manifest_not_allowed"),
+    ):
+        for item_idx, item in enumerate(ids.get(collection_name, {}).values()):
+            if not isinstance(item, dict) or item.get("brief_id") != brief_id:
+                continue
+            issues.append(issue(
+                "critical",
+                code,
+                "Customer background research uses a lightweight report projection and must not create formal-list audit/review/delivery objects",
+                f"{collection_name}[{item_idx}].{id_field}",
+            ))
 
     if target.get("subject_resolution_status") != "resolved":
         return issues

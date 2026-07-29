@@ -1,0 +1,47 @@
+{
+  "runs": [
+    {
+      "run_id": "run_bg_unresolved_001",
+      "status": "scoped",
+      "created_at": "2026-07-29T00:00:00Z",
+      "platform": "fixture",
+      "brief_id": "brief_bg_unresolved_001",
+      "review_mode": "not_run"
+    }
+  ],
+  "briefs": [
+    {
+      "brief_id": "brief_bg_unresolved_001",
+      "task_mode": "customer_background_research",
+      "output_mode": "客户背调报告",
+      "contact_detail_level": "standard",
+      "background_research_target": {
+        "user_statement": "帮我背调 Example Brand / example.com",
+        "anchors": [
+          {
+            "anchor_id": "anchor_example_domain",
+            "kind": "website_or_domain",
+            "literal": "https://example.com",
+            "candidate_id": null,
+            "source_id": null
+          }
+        ],
+        "subject_resolution_status": "unresolved",
+        "primary_subject_entity_id": null,
+        "resolution_observation_ids": []
+      }
+    }
+  ],
+  "plans": [],
+  "candidates": [],
+  "sources": [],
+  "observations": [],
+  "entities": [],
+  "entity_relationships": [],
+  "claims": [],
+  "claim_evidence": [],
+  "contact_points": [],
+  "contact_claims": [],
+  "unassigned_contact_leads": [],
+  "hypotheses": []
+}

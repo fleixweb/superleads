@@ -509,6 +509,21 @@ def _empty_row(message: str) -> list[dict[str, Any]]:
     return [{"说明": message}]
 
 
+def _background_placeholder_rows(rows: list[dict[str, Any]], message: str, headers: tuple[str, ...]) -> list[dict[str, Any]]:
+    """Project empty background workbook rows into the actual user-facing columns.
+
+    The generic Markdown table helper fills missing cells with ``未提供``.  For
+    a customer-background report that reads like a broken row instead of a
+    useful gap statement, so each empty sheet now keeps one plain-language row
+    in the first business column and marks the remaining columns as 待确认.
+    """
+    if not rows:
+        return [{headers[0]: message, **{header: "待确认" for header in headers[1:]}}]
+    if len(rows) == 1 and isinstance(rows[0], dict) and set(rows[0]) == {"说明"}:
+        return [{headers[0]: rows[0].get("说明") or message, **{header: "待确认" for header in headers[1:]}}]
+    return rows
+
+
 def build_background_report_sheets(scope: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     """Render the background scope in business language, with evidence kept separate."""
     projection = scope["projection"]
@@ -658,11 +673,31 @@ def build_background_report_sheets(scope: dict[str, Any]) -> dict[str, list[dict
 
     return {
         "客户一眼看懂": overview_rows,
-        "客户、品牌与关联方": relationship_rows or _empty_row("主体尚未解析；暂无可展示的关联信息。"),
-        "我们看到的业务机会": opportunity_rows or _empty_row("暂无可核实的公开业务信息；不能据此判断采购需求。"),
-        "怎么联系、先找谁": contact_rows or _empty_row("暂无可展示的公开联系入口；不展示未确认或不可导出的联系方式值。"),
-        "跟进前要注意什么": caution_rows or _empty_row("暂无额外待确认事项。"),
-        "信息从哪里来": evidence_rows or _empty_row("暂无可展示的来源记录。"),
+        "客户、品牌与关联方": _background_placeholder_rows(
+            relationship_rows,
+            "主体尚未解析；暂无可展示的关联信息。",
+            ("名称", "它是什么", "和客户的关系", "目前把握", "我们依据什么"),
+        ),
+        "我们看到的业务机会": _background_placeholder_rows(
+            opportunity_rows,
+            "暂无可核实的公开业务信息；不能据此判断采购需求。",
+            ("我们看到的情况", "对我们意味着什么", "建议怎么切入", "把握程度"),
+        ),
+        "怎么联系、先找谁": _background_placeholder_rows(
+            contact_rows,
+            "暂无可展示的公开联系入口；不展示未确认或不可导出的联系方式值。",
+            ("建议联系谁/哪里", "为什么先找这里", "联系时先问什么", "状态"),
+        ),
+        "跟进前要注意什么": _background_placeholder_rows(
+            caution_rows,
+            "暂无额外待确认事项。",
+            ("要注意的事", "可能影响", "建议动作", "目前状态"),
+        ),
+        "信息从哪里来": _background_placeholder_rows(
+            evidence_rows,
+            "暂无可展示的来源记录。",
+            ("上面哪条信息", "来源", "链接或材料", "看到的原话或位置", "时间", "状态"),
+        ),
     }
 
 
