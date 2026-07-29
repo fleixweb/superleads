@@ -21,6 +21,7 @@
 - Code Slice AF 三路线入口路由纠偏 / route eval 已完成并提交：`0f7666e Add Superleads route intent evals`。路由样例扩到 25 条，新增独立 route eval runner，混合任务可校验 `secondary_routes` / `route_order`。
 - 状态同步已提交：`2e5d2ed Update handoff after route evals commit`。
 - Code Slice AG 单一客户背调工程资产补齐已完成并提交：`c8477d3 Add customer background research guardrails`。补 Skill 入口、专属 spec、专属 eval runner、6 条 graph fixtures、1 条用户可见 fail 样本，并强化轻验证与正式名单链路隔离。
+- Slice AH 批量客户开发内核复盘已完成纠偏，待提交：更新 `spec/36-superleads-bulk-customer-development-slice-ah.md`，取消独立 L2 `初筛客户名单` 层级，改为发现候选池内部三分区，并把 `初筛客户名单` 标记为后续必须堵住的 validator 绕过口。
 
 
 ## Code Slice AG 已完成
@@ -148,16 +149,26 @@ git diff --check  # passed
 
 ## 当前下一步
 
-1. 进入 Slice AH：批量客户开发内核复盘与弱证据中间档设计。
-2. 先冻结文档，再进入 Code Slice AH。
+1. 提交 Slice AH 纠偏文档。
+2. 进入 Code Slice AH：先堵 `初筛客户名单` 绕过口，再优化 bulk Markdown 发现候选池展示。
 
-## Slice AH 待做
+## Slice AH 已完成
 
-1. 复盘批量客户开发当前产品边界：默认交付应是“候选客户池 / 初筛名单”，不是强制完整核查版。
-2. 设计弱证据中间档：允许多来源方向一致、可跟进线索、待人工确认项并列展示，不把弱证据升级成确定采购意愿。
-3. 明确用户可见字段：公司名、国家/地区、客户类型、相关性依据、联系入口、证据状态、待确认项。
-4. 继续禁止：推荐客户排序、采购概率、把公开入口写成采购负责人、把搜索摘要写成 Claim。
-5. 后续 Code Slice AH 再落 schema / validator / fixtures / eval。
+1. 复盘批量客户开发当前产品边界：默认弱证据交付是发现候选池，不是强制完整核查版，也不是独立“初筛客户名单”。
+2. 撤销旧结论：不把 `初筛客户名单` 实现为 L2 弱证据中间档；它当前是会绕过默认发现 Candidate 结构检查的危险枚举。
+3. 明确发现候选池内部三分区：可优先人工跟进 / 待确认 / 已排除或仅作参考。
+4. 明确用户可见字段：分区、候选客户、国家/地区、可能客户角色、当前看到的业务信号、业务相关性、依据状态、联系入口、待确认项、来源状态。
+5. 继续禁止：推荐客户排序、采购概率、把公开入口写成采购负责人、把搜索摘要写成 Claim。
+6. 后续 Code Slice AH 再落 validator / fixtures / bulk Markdown 展示 / 用户可见 eval。
+
+## Code Slice AH 待做
+
+1. 堵 `初筛客户名单` 绕过口：`validate_research_graph.py` 不得因 `output_mode=初筛客户名单` 跳过默认发现 Candidate 结构检查；建议显式拒绝或强制按发现候选池纪律检查。
+2. 增补 fail fixture：用 `output_mode=初筛客户名单` 破坏 dedupe / signal_summary / relevance / unknowns / source_restrictions 时必须 fail。
+3. 不新增 `initial_screening` exporter mode，不新增 delivery_status，不新增 audit 分支。
+4. bulk Markdown 补联系方式汇总、搜索覆盖与收敛、已排除 / 仅作参考、风险与说明。
+5. bulk 主表增加 `分区` 和 `依据状态`；用户可见 eval 检查依据状态、三分区、禁止推荐客户/采购概率/采购意愿。
+6. 回归 route、user-visible、markdown delivery、default/deep/all。
 
 ## 当前阻塞 / 注意
 

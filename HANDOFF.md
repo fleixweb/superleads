@@ -1,8 +1,8 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：`c8477d3 Add customer background research guardrails`
-- 当前状态：Code Slice AG 单一客户背调工程资产补齐已提交；下一步进入 Slice AH 批量客户开发内核复盘与弱证据中间档设计；保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：`991a1da Update handoff after customer background commit`
+- 当前状态：Slice AH 批量客户开发内核复盘已纠偏为“发现候选池内部分区 + 禁用/拒绝 `初筛客户名单` 绕过口”，待提交；下一步进入 Code Slice AH：先堵 `初筛客户名单` 绕过口，再优化 bulk Markdown 发现候选池展示；保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已完成
 
@@ -18,6 +18,7 @@
 - Code Slice AF 已提交：`0f7666e Add Superleads route intent evals`。
 - 状态同步已提交：`2e5d2ed Update handoff after route evals commit`。
 - Code Slice AG 已提交：`c8477d3 Add customer background research guardrails`。单一客户背调补 Skill 入口、专属 spec、专属 eval runner、6 条 graph fixtures、1 条用户可见 fail 样本，并强化轻验证与正式名单链路隔离。
+- Slice AH 已完成纠偏，待提交：更新 `spec/36-superleads-bulk-customer-development-slice-ah.md`，取消独立 L2 `初筛客户名单` 层级，改为发现候选池内部三分区，并将 `初筛客户名单` 标记为后续 Code Slice AH 必须堵住的 validator 绕过口。
 
 ## Code Slice AD 已完成内容
 
@@ -118,6 +119,20 @@
 7. 文档
    - 新增 `docs/validation/superleads-code-slice-ag-customer-background-20260729.md`。
 
+## Slice AH 已完成内容
+
+1. `spec/36-superleads-bulk-customer-development-slice-ah.md`
+   - 将批量客户开发重新定义为“用户当前卖什么 + 本次想找哪类海外客户 -> 发现候选池；用户明确要求正式核查时 -> 标准开发名单”。
+   - 撤销独立 L2 `初筛客户名单` 设计：`初筛客户名单` 当前是 schema 中的危险枚举，不是安全可交付层级。
+   - 明确后续 Code Slice AH 必须先堵 `validate_research_graph.py` 中 `初筛客户名单` 绕过默认发现 Candidate 结构检查的问题。
+   - 明确发现候选池内部三分区：可优先人工跟进 / 待确认 / 已排除或仅作参考。
+   - 明确 bulk Markdown 的真实缺口：缺联系方式汇总、搜索覆盖与收敛、已排除 / 仅作参考、依据状态列和三分区展示。
+   - 明确客户类型是开放文本，不用固定 ICP 或静态行业词典；多来源方向一致只提升线索可读性，不能升级为正式事实。
+2. `docs/validation/superleads-bulk-customer-development-slice-ah-checklist-20260730.md`
+   - 记录本轮文档纠偏验收范围和后续 Code Slice AH 建议。
+3. `meta/decision-log.md`
+   - 记录 Slice AH 纠偏决策：取消 L2 独立层，发现候选池内部分区，优先堵 `初筛客户名单` 绕过口。
+
 ## 已验证
 
 ```bash
@@ -153,8 +168,8 @@ git diff --check  # passed
 
 ## 当前下一步建议
 
-1. 进入 Slice AH：批量客户开发内核复盘与弱证据中间档设计。
-2. 先做文档冻结，再进入 Code Slice AH，避免继续把批量客户开发锁死在“完整核查版 / 不可交付”的二值结构里。
+1. 提交 Slice AH 纠偏文档。
+2. 进入 Code Slice AH：先堵 `初筛客户名单` 绕过口，再优化 bulk Markdown 发现候选池展示。
 
 ## 重要边界
 
