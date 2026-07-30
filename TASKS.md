@@ -22,9 +22,30 @@
 - 状态同步已提交：`2e5d2ed Update handoff after route evals commit`。
 - Code Slice AG 单一客户背调工程资产补齐已完成并提交：`c8477d3 Add customer background research guardrails`。补 Skill 入口、专属 spec、专属 eval runner、6 条 graph fixtures、1 条用户可见 fail 样本，并强化轻验证与正式名单链路隔离。
 - Slice AH 批量客户开发内核复盘纠偏已提交：`b0fdd53 Calibrate bulk discovery candidate pool`。取消独立 L2 `初筛客户名单` 层级，改为发现候选池内部三分区。
-- Code Slice AH 已完成，待提交：堵 `output_mode=初筛客户名单` 绕过口；bulk workbook / Markdown 新增 `分区`、`依据状态`；Markdown 补联系方式汇总、搜索覆盖与收敛、已排除/仅作参考、风险说明；用户可见 eval 阻断缺状态与缺表交付。当前又补了 `可能客户角色` 接入实体 `customer_type`、`observed` 上调为 `已有明确依据`，并新增 `采购意愿待确认` 的误杀回归样本。当前又补了 `可能客户角色` 接入实体 `customer_type`、`observed` 上调为 `已有明确依据`，并新增 `采购意愿待确认` 的误杀回归样本。
+- Code Slice AH 已提交：`26e788f Refine bulk discovery status projection`：堵 `output_mode=初筛客户名单` 绕过口；bulk workbook / Markdown 新增 `分区`、`依据状态`；Markdown 补联系方式汇总、搜索覆盖与收敛、已排除/仅作参考、风险说明；用户可见 eval 阻断缺状态与缺表交付。当前又补了 `可能客户角色` 接入实体 `customer_type`、`observed` 上调为 `已有明确依据`，并新增 `采购意愿待确认` 的误杀回归样本。
+- Code Slice AH-FIX 已收口并纳入本提交：修复 bulk 默认发现依据状态降级优先级；`observed + source_restricted` 投影为 `来源受限`，不再升级为 `已有明确依据`；新增用户可见 fail 样本、Markdown case、minimum gate 行级导出断言和验证文档。
 
 
+
+## Code Slice AH-FIX 已完成
+
+1. 依据状态降级优先级
+   - `scripts/export_workbook.py` 增加共享 `project_default_discovery_basis_status`。
+   - 默认发现先处理 `identity_pending` / `source_restricted` / `source_restrictions` / `insufficient_information` 等降级，再允许无降级的 `business_match.observed` 投影为 `已有明确依据`。
+   - `scripts/export_superleads_markdown.py` 的回退逻辑复用 workbook 共享函数，避免两份映射漂移。
+2. 回归保护
+   - `evals/fixtures/pass_default_discovery_candidate_pool.json` 的 `Beta Industrial Supplies` 行必须包含 `来源受限` 且不得含 `已有明确依据`。
+   - 新增用户可见 fail 样本 `fail_bulk_customer_source_restricted_promoted_basis.md`，命中 `bulk_basis_status_source_restricted_promoted`。
+   - bulk 用户可见样本 / Markdown delivery case 同时要求 `已有明确依据` 与 `来源受限`。
+3. 已验证
+   - `python3 evals/run_evals.py --suite default` → 121/121。
+   - `python3 evals/run_evals.py --suite deep` → 670/670。
+   - `python3 evals/run_evals.py --suite all` → 713/713。
+   - `python3 evals/run_superleads_user_visible_output_evals.py --suite all` → 13/13。
+   - `python3 evals/run_superleads_markdown_delivery_evals.py --suite all` → 5/5。
+   - `python3 evals/run_superleads_route_evals.py --suite all` → 25/25。
+   - `python3 evals/run_product_market_analysis_evals.py --suite all` → 74/74。
+   - `python3 evals/run_customer_background_research_evals.py --suite all` → 6/6。
 
 ## Code Slice AH 已完成
 
@@ -175,8 +196,9 @@ git diff --check  # passed
 
 ## 当前下一步
 
-1. 提交 Code Slice AH。
-2. 下一步可进入 Slice AI：批量客户开发路线的开放世界客户类型 / 来源覆盖计划校准，或先做 Code Slice AH 后状态同步。
+1. 不继续开自动 Slice。
+2. 进入真实使用 / 验收模式：只在真实交付或明确缺陷暴露后再开下一刀。
+3. 若只是状态文字滞后，优先 amend 当前提交，不再制造单独状态同步提交。
 
 ## Slice AH 已完成
 

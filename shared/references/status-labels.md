@@ -74,3 +74,9 @@ Inquiry statuses: `new`, `triaged`, `needs_entity_resolution`, `ready_for_follow
 | 暂不适用 | 按当前产品档案或贸易路径暂未触发，不泛化到其它场景。 |
 
 投影优先级：未执行 / 不适用 / 冲突 / 来源受限 / 资料过旧 / 权威未核实 / 缺材料 优先于 `verified`。用户可见表格必须分开展示业务/规则结论、依据状态和用户材料状态。
+
+批量客户开发的默认发现候选池同样遵守该优先级：同一 Candidate 的任一公开信号为
+`identity_pending` 时，`依据状态` 应显示 `说法冲突待复核`；任一公开信号为
+`source_restricted` 或 Candidate 记录了 `source_restrictions` 时，应显示 `来源受限`。
+只有在没有这些降级信号时，`business_match.status = observed` 才可投影为
+`已有明确依据`。

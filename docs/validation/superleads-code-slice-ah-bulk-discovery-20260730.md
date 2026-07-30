@@ -59,3 +59,43 @@ Code Slice AH 已完成。`初筛客户名单` 不再是可端到端绕过默认
 - `可能客户角色` 依赖实体级 `customer_type` / `customer_role` 等字段；无公开依据时仍可留空或写 `待确认`。
 - `依据状态` 现在通过统一人话投影层展示，`observed` 类公开信号在默认发现中优先呈现为 `已有明确依据`，以便区分“已被公开来源直接支持”和“仅作线索”。
 - `采购意愿待确认` 这类词语不应再被 bulk 路线的裸词禁用误杀；真正禁止的是把它写成已确认采购意愿或采购负责人已确认。
+
+## 20260730 复核发现的缺陷与修复
+
+复核发现：上一轮提交 `26e788f Refine bulk discovery status projection` 虽然把 `observed` 业务信号接入了 `已有明确依据`，但实现顺序错误：`business_match.status = observed` 先把行状态设为 `verified`，后续来源受限、主体待确认等降级检查被 `candidate` 分支短路。
+
+实际后果是目录级弱线索会被升级。例如 `shared/references/default-discovery-reference.example.json` 中 `Northshore Drinkware Distributors` 同时具备：
+
+- `business_relevance_status = possibly_related`
+- `signal_summary.business_match.status = observed`
+- `signal_summary.trade_record.status = source_restricted`
+- `source_restrictions = ["目录详情页需登录"]`
+
+修复方式：bulk 默认发现依据状态改为先扫描全部 `signal_summary` 兄弟信号和 `source_restrictions`，先处理 `identity_pending` / `source_restricted` / `insufficient_information` 等降级，再在无降级时才允许 `business_match.status = observed` 投影为 `已有明确依据`；Markdown 回退逻辑改为复用 workbook 共享函数。
+
+人工渲染核对后，Northshore 主表行为：
+
+```markdown
+| 待确认 | Northshore Drinkware Distributors | United Kingdom | 经销商 / 分销商 | drinkware distributor 目录条目；公开电话 | 可能相关 | 来源受限 | 442070002222（建议核查后使用） | 补开官网产品页确认保温杯；产品线是否包含 insulated bottle 待确认；目录详情页需登录 | 公开目录列表；搜索组:uk_directory；Northshore Drinkware Distributors；https://directory.example/northshore |
+```
+
+新增回归：
+
+- graph/export 断言：`Beta Industrial Supplies` 行必须为 `来源受限`，不得含 `已有明确依据`。
+- 用户可见 fail 样本：来源受限行若写成 `已有明确依据`，命中 `bulk_basis_status_source_restricted_promoted`。
+- bulk 用户可见样本和 Markdown delivery case 同时要求出现 `已有明确依据` 与 `来源受限`。
+
+本轮复核验证：
+
+```bash
+python3 -m py_compile scripts/export_workbook.py scripts/export_superleads_markdown.py scripts/validate_superleads_user_visible_output.py scripts/user_visible_status_projection.py  # passed
+python3 evals/run_evals.py --suite default  # 121/121
+python3 evals/run_evals.py --suite deep  # 670/670
+python3 evals/run_evals.py --suite all  # 713/713
+python3 evals/run_superleads_user_visible_output_evals.py --suite all  # 13/13
+python3 evals/run_superleads_markdown_delivery_evals.py --suite all  # 5/5
+python3 evals/run_superleads_route_evals.py --suite all  # 25/25
+python3 evals/run_product_market_analysis_evals.py --suite all  # 74/74
+python3 evals/run_customer_background_research_evals.py --suite all  # 6/6
+git diff --check  # passed
+```

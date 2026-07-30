@@ -354,28 +354,46 @@ def _candidate_signal_summary(candidate:dict[str,Any], relevance:str)->dict[str,
     return result
 
 
-def _initial_basis_status(candidate:dict[str,Any], relevance:str)->str:
+def default_discovery_relevance_label_to_raw(relevance_label: str) -> str:
+    return {
+        "直接相关": "directly_related",
+        "可能相关": "possibly_related",
+        "主体待确认": "identity_pending",
+        "信息不足": "insufficient_information",
+        "明确排除/不相关": "explicitly_excluded_or_unrelated",
+    }.get(relevance_label, relevance_label)
+
+
+def project_default_discovery_basis_status(candidate:dict[str,Any], relevance:str)->str:
+    relevance = default_discovery_relevance_label_to_raw(relevance)
     signal_summary = candidate.get("signal_summary") if isinstance(candidate.get("signal_summary"),dict) else {}
-    business_match = signal_summary.get("business_match") if isinstance(signal_summary,dict) else None
+    identity_status = str(candidate.get("identity_resolution_status") or "")
     row_status = "candidate"
-    if isinstance(business_match,dict):
-        status = business_match.get("status")
-        if status == "observed":
-            row_status = "verified"
-        elif status == "identity_pending":
-            row_status = "conflict_pending_review"
-        elif status == "source_restricted":
-            row_status = "source_restricted"
+    if relevance == "identity_pending" or identity_status in {"pending", "conflicted"}:
+        row_status = "conflict_pending_review"
+    signal_statuses = [
+        state.get("status")
+        for state in signal_summary.values()
+        if isinstance(state, dict)
+    ]
+    if row_status == "candidate" and any(status == "identity_pending" for status in signal_statuses):
+        row_status = "conflict_pending_review"
+    if row_status == "candidate" and (
+        any(status == "source_restricted" for status in signal_statuses)
+        or bool(candidate.get("source_restrictions"))
+    ):
+        row_status = "source_restricted"
+    if row_status == "candidate" and relevance == "insufficient_information":
+        row_status = "not_provided"
     if row_status == "candidate":
-        if relevance == "identity_pending":
-            row_status = "conflict_pending_review"
-        elif relevance == "insufficient_information":
-            row_status = "not_provided"
-        elif any(isinstance(state,dict) and state.get("status") == "identity_pending" for state in signal_summary.values()):
-            row_status = "conflict_pending_review"
-        elif any(isinstance(state,dict) and state.get("status") == "source_restricted" for state in signal_summary.values()):
-            row_status = "source_restricted"
+        business_match = signal_summary.get("business_match") if isinstance(signal_summary,dict) else None
+        if isinstance(business_match,dict) and business_match.get("status") == "observed":
+            row_status = "verified"
     return project_market_row_status({"status": row_status})
+
+
+def _initial_basis_status(candidate:dict[str,Any], relevance:str)->str:
+    return project_default_discovery_basis_status(candidate, relevance)
 
 
 def _initial_partition(relevance:str, basis_status:str)->str:

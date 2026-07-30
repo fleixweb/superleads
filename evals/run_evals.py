@@ -196,15 +196,36 @@ def run_export_assertions(py: str, fixture_path: str, tmp_path: Path, index: int
         for needle in needles if isinstance(needles, list) else []:
             if str(needle) in content:
                 sheet_absent_failures.append(f"{sheet}:{needle}")
-    ok = not missing and not present_missing and not sheet_present_failures and not sheet_absent_failures
+    row_assertion_failures: list[str] = []
+    for sheet, assertions in case.get("export_sheet_row_assertions", {}).items() if isinstance(case.get("export_sheet_row_assertions"), dict) else []:
+        content = sheet_text.get(str(sheet), "")
+        rows = content.splitlines()
+        for assertion in assertions if isinstance(assertions, list) else []:
+            if not isinstance(assertion, dict):
+                continue
+            matches = [str(item) for item in assertion.get("match", []) if item is not None] if isinstance(assertion.get("match"), list) else []
+            present = [str(item) for item in assertion.get("present", []) if item is not None] if isinstance(assertion.get("present"), list) else []
+            absent = [str(item) for item in assertion.get("absent", []) if item is not None] if isinstance(assertion.get("absent"), list) else []
+            matched_rows = [row for row in rows if all(needle in row for needle in matches)]
+            if not matched_rows:
+                row_assertion_failures.append(f"{sheet}:missing row {matches}")
+                continue
+            for needle in present:
+                if not any(needle in row for row in matched_rows):
+                    row_assertion_failures.append(f"{sheet}:{matches}:missing {needle}")
+            for needle in absent:
+                if any(needle in row for row in matched_rows):
+                    row_assertion_failures.append(f"{sheet}:{matches}:forbidden {needle}")
+    ok = not missing and not present_missing and not sheet_present_failures and not sheet_absent_failures and not row_assertion_failures
     result["ok"] = ok
     result["export_absent_failures"] = missing
     result["export_present_failures"] = present_missing
     result["export_sheet_present_failures"] = sheet_present_failures
     result["export_sheet_absent_failures"] = sheet_absent_failures
+    result["export_sheet_row_assertion_failures"] = row_assertion_failures
     if not ok:
         result["returncode"] = 1
-        result["output"] += f"\nexport assertion failed absent={missing} present_missing={present_missing} sheet_present={sheet_present_failures} sheet_absent={sheet_absent_failures}"
+        result["output"] += f"\nexport assertion failed absent={missing} present_missing={present_missing} sheet_present={sheet_present_failures} sheet_absent={sheet_absent_failures} row={row_assertion_failures}"
     return result
 
 
@@ -564,7 +585,7 @@ def add_case_tests(py: str, tests: list[tuple[str, list[str], int, list[str]]], 
             if suite != "default" and case.get("export_inquiry"):
                 expect = 0 if case["export_inquiry"] == "pass" else 1
                 tests.append((f"case {fixture} export_inquiry {case['export_inquiry']}", ["__EXPORT_INQUIRY__", path], expect, list(case.get("expected_error_codes", []))))
-            if case.get("export_absent") or case.get("export_present") or case.get("export_sheet_present") or case.get("export_sheet_absent"):
+            if case.get("export_absent") or case.get("export_present") or case.get("export_sheet_present") or case.get("export_sheet_absent") or case.get("export_sheet_row_assertions"):
                 tests.append((f"case {fixture} export assertions", ["__EXPORT_ASSERT__", path, json.dumps(case, ensure_ascii=False)], 0, []))
 
 

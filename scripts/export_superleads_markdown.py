@@ -29,11 +29,12 @@ from export_product_market_workbook import markdown_report as market_markdown_re
 from export_workbook import (
     build_sheets as build_lead_sheets,
     current_brief_id,
+    default_discovery_relevance_label_to_raw,
+    project_default_discovery_basis_status,
     hold_contact_values,
     redact_delivery_sheets,
     redact_local_paths,
 )
-from user_visible_status_projection import project_market_row_status
 from validate_product_market_analysis import load_market_fixture
 from validate_superleads_user_visible_output import validate as validate_user_visible_markdown
 
@@ -319,25 +320,8 @@ def _candidate_basis_status(candidate: dict[str, Any], row: dict[str, Any], rele
     explicit = _safe_text(row.get("依据状态"))
     if explicit != "未提供":
         return explicit
-    summary = candidate.get("signal_summary") if isinstance(candidate.get("signal_summary"), dict) else {}
-    business_match = summary.get("business_match") if isinstance(summary, dict) else None
-    row_status = "candidate"
-    if isinstance(business_match, dict):
-        business_status = business_match.get("status")
-        if business_status == "observed":
-            row_status = "verified"
-        elif business_status == "identity_pending":
-            row_status = "conflict_pending_review"
-        elif business_status == "source_restricted":
-            row_status = "source_restricted"
-    if row_status == "candidate":
-        if relevance_label in {"信息不足", "主体待确认"}:
-            row_status = "not_provided"
-        elif any(isinstance(state, dict) and state.get("status") == "identity_pending" for state in summary.values()):
-            row_status = "conflict_pending_review"
-        elif any(isinstance(state, dict) and state.get("status") == "source_restricted" for state in summary.values()):
-            row_status = "source_restricted"
-    return project_market_row_status({"status": row_status})
+    normalized_relevance = default_discovery_relevance_label_to_raw(relevance_label)
+    return project_default_discovery_basis_status(candidate, normalized_relevance)
 
 
 def _candidate_country(candidate: dict[str, Any], row: dict[str, Any]) -> str:

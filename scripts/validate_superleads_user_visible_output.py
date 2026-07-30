@@ -232,6 +232,20 @@ AFTER_NEGATION_MARKERS = (
 )
 
 ENGLISH_TOKEN_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_-]*$")
+BULK_SOURCE_RESTRICTED_MARKERS = (
+    "来源受限",
+    "需登录",
+    "登录墙",
+    "付费墙",
+    "未打开",
+    "未能打开",
+    "只能看到片段",
+    "摘要页",
+    "目录详情页需登录",
+    "403",
+    "401",
+    "429",
+)
 
 
 def _phrase_matches(text: str, phrase: str, *, allow_negated: bool = False) -> bool:
@@ -280,6 +294,69 @@ def _issue(code: str, message: str, value: str | None = None) -> dict[str, str]:
     return payload
 
 
+def _split_markdown_row(line: str) -> list[str]:
+    stripped = line.strip()
+    if not stripped.startswith("|") or not stripped.endswith("|"):
+        return []
+    body = stripped[1:-1]
+    cells: list[str] = []
+    current: list[str] = []
+    escaped = False
+    for char in body:
+        if char == "|" and not escaped:
+            cells.append("".join(current).strip().replace("\\|", "|"))
+            current = []
+            escaped = False
+            continue
+        current.append(char)
+        escaped = (char == "\\" and not escaped)
+        if char != "\\":
+            escaped = False
+    cells.append("".join(current).strip().replace("\\|", "|"))
+    return cells
+
+
+def _is_table_separator(line: str) -> bool:
+    stripped = line.strip()
+    return bool(stripped.startswith("|") and stripped.endswith("|") and re.fullmatch(r"\|[\s:\-|]+\|", stripped) and "---" in stripped)
+
+
+def _bulk_basis_status_consistency_issues(text: str) -> list[dict[str, str]]:
+    issues: list[dict[str, str]] = []
+    lines = text.splitlines()
+    index = 0
+    while index < len(lines) - 1:
+        if not (lines[index].strip().startswith("|") and _is_table_separator(lines[index + 1])):
+            index += 1
+            continue
+        headers = _split_markdown_row(lines[index])
+        if "业务相关性" not in headers or "依据状态" not in headers:
+            index += 2
+            continue
+        relevance_index = headers.index("业务相关性")
+        basis_index = headers.index("依据状态")
+        row_index = index + 2
+        while row_index < len(lines) and lines[row_index].strip().startswith("|"):
+            if _is_table_separator(lines[row_index]):
+                row_index += 1
+                continue
+            cells = _split_markdown_row(lines[row_index])
+            if len(cells) > max(relevance_index, basis_index):
+                basis = cells[basis_index]
+                row_text = " | ".join(cells)
+                has_restricted_marker = any(marker in row_text for marker in BULK_SOURCE_RESTRICTED_MARKERS)
+                negated_restricted = any(marker in row_text for marker in ("无来源受限", "未记录明显受限来源"))
+                if basis == "已有明确依据" and has_restricted_marker and not negated_restricted:
+                    issues.append(_issue(
+                        "bulk_basis_status_source_restricted_promoted",
+                        "bulk row with source-restricted material must not project basis status as 已有明确依据",
+                        cells[relevance_index],
+                    ))
+            row_index += 1
+        index = row_index
+    return issues
+
+
 def validate(text: str, route: str, *, min_tables: int = 3, extra_required: list[str] | None = None) -> list[dict[str, str]]:
     issues: list[dict[str, str]] = []
     required = ROUTE_REQUIRED.get(route)
@@ -314,6 +391,8 @@ def validate(text: str, route: str, *, min_tables: int = 3, extra_required: list
         if not any(status in text for status in PRODUCT_USER_VISIBLE_STATUSES):
             message = "output must expose at least one Slice AE user-visible status"
             issues.append(_issue("user_visible_status_missing", message))
+    if route == "bulk_customer_development":
+        issues.extend(_bulk_basis_status_consistency_issues(text))
     if route == "product_outbound_market_analysis":
         for token in PRODUCT_INTERNAL_STATUS_TOKENS:
             if _phrase_matches(text, token):

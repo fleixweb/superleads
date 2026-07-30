@@ -23,7 +23,8 @@
         "搜索覆盖与收敛",
         "风险与说明",
         "已有明确依据",
-        "需补充资料"
+        "需补充资料",
+        "来源受限"
       ],
       "must_not_contain": [
         "推荐客户",
@@ -137,6 +138,25 @@
       "must_contain": [
         "我理解你卖的是",
         "候选客户"
+      ]
+    },
+    {
+      "name": "fail bulk customer source restricted promoted basis",
+      "fixture": "evals/user_visible_outputs/fail_bulk_customer_source_restricted_promoted_basis.md",
+      "route": "bulk_customer_development",
+      "expected": "fail",
+      "min_tables": 7,
+      "expected_error_codes": [
+        "bulk_basis_status_source_restricted_promoted"
+      ],
+      "must_contain": [
+        "我理解你卖的是",
+        "候选客户",
+        "业务相关性",
+        "依据状态",
+        "可能相关",
+        "已有明确依据",
+        "来源受限"
       ]
     },
     {

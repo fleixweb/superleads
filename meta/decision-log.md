@@ -239,3 +239,9 @@
 - 决策：`初筛客户名单` 不作为本地部署可交付 output_mode；validator 对该值显式报 `initial_screening_output_mode_deprecated`，同时仍执行默认发现 Candidate 结构检查。
 - 原因：该枚举此前会让 `dedupe_basis`、`signal_summary`、`business_relevance_basis`、`unknowns`、`source_restrictions` 等默认发现纪律静默失效，并能被 audit/export 渲染成交付件。
 - 后果：批量客户开发中间状态统一回到 `发现候选池` 内部三分区和 `依据状态`；bulk Markdown 补齐联系方式汇总、搜索覆盖与收敛、已排除/仅作参考、风险说明；不新增 delivery_status、exporter mode 或 audit 分支。
+
+## 2026-07-30：Bulk 默认发现依据状态必须先降级再判 verified
+
+- 决策：批量客户开发 / 默认发现的 `依据状态` 投影必须先扫描 Candidate 的全部公开信号和 `source_restrictions`，优先处理主体待确认、来源受限、资料不足等降级，再在无降级时允许 `business_match.status = observed` 显示为 `已有明确依据`。
+- 原因：`26e788f` 曾先把 `observed` 写成 `verified`，导致同一 Candidate 的 `trade_record.source_restricted` 等兄弟信号被短路，目录级弱线索会被升级为 `已有明确依据`。
+- 后果：`observed + source_restricted` 应显示 `来源受限`，并可能从“可优先人工跟进”落入“待确认”；Markdown 用户可见检查新增行级阻断，防止来源受限行被写成 `已有明确依据`。
