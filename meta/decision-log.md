@@ -245,3 +245,9 @@
 - 决策：批量客户开发 / 默认发现的 `依据状态` 投影必须先扫描 Candidate 的全部公开信号和 `source_restrictions`，优先处理主体待确认、来源受限、资料不足等降级，再在无降级时允许 `business_match.status = observed` 显示为 `已有明确依据`。
 - 原因：`26e788f` 曾先把 `observed` 写成 `verified`，导致同一 Candidate 的 `trade_record.source_restricted` 等兄弟信号被短路，目录级弱线索会被升级为 `已有明确依据`。
 - 后果：`observed + source_restricted` 应显示 `来源受限`，并可能从“可优先人工跟进”落入“待确认”；Markdown 用户可见检查新增行级阻断，防止来源受限行被写成 `已有明确依据`。
+
+## 2026-07-31：真实业务正式交付必须由 graph 进入统一 Markdown exporter
+
+- 决策：Superleads 真实业务 Markdown 交付只有在已有保存的 graph JSON 且 `export_superleads_markdown.py` 成功返回后，才能称为正式交付；手写搜索整理表只能称为 research draft / source-collection note。
+- 原因：真实 UAT 发现 reference graph 导出已正确，但 Agent 在搜索真实客户后仍会手写报告，并把内部公开信号状态 `已观察`、`已观察；需确认`、`已观察；来源受限` 写进用户可见 `依据状态`，绕过统一状态投影。
+- 后果：用户可见 validator 阻断 `依据状态` 泄漏内部信号状态；正式调用冒烟检查纳入真实 UAT fail 样本；Skill 明确没有 graph/exporter JSON 成功结果时不得声称 `ok=true` 或 `issue_count=0`。

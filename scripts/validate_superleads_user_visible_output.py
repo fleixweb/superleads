@@ -221,6 +221,21 @@ PRODUCT_INTERNAL_STATUS_TOKENS = [
     "user_provided_not_valid_for_scope",
 ]
 
+BASIS_STATUS_INTERNAL_LEAK_VALUES = (
+    "已观察",
+    "未检索",
+    "主体待确认",
+    "已解析",
+)
+BASIS_STATUS_INTERNAL_COMPOSITES = (
+    "已观察；需确认",
+    "已观察；来源受限",
+    "已观察；待确认",
+    "已观察;需确认",
+    "已观察;来源受限",
+    "已观察;待确认",
+)
+
 NEGATION_MARKERS = (
     "不", "未", "非", "无", "勿", "禁止", "不得", "不能", "不可",
     "不是", "不等于", "无法", "不能推导", "不能替代", "不能写成", "不得写成",
@@ -357,6 +372,67 @@ def _bulk_basis_status_consistency_issues(text: str) -> list[dict[str, str]]:
     return issues
 
 
+def _is_internal_basis_status(value: str) -> bool:
+    normalized = re.sub(r"\s+", "", value.strip())
+    if not normalized:
+        return False
+    if any(composite in normalized for composite in BASIS_STATUS_INTERNAL_COMPOSITES):
+        return True
+    return any(token in normalized for token in BASIS_STATUS_INTERNAL_LEAK_VALUES)
+
+
+def _basis_status_internal_leak_issues(text: str) -> list[dict[str, str]]:
+    """Catch internal signal/status labels leaked into user-facing 依据状态.
+
+    The frozen Slice AE status words are the only user-facing basis-status
+    vocabulary.  Real-business UAT showed Agents hand-writing reports with
+    ``依据状态 = 已观察`` after looking at public signal status columns.  That
+    must fail even if the rest of the report looks plausible.
+    """
+    issues: list[dict[str, str]] = []
+    seen: set[str] = set()
+
+    def add_issue(value: str) -> None:
+        compact = re.sub(r"\s+", " ", value.strip())
+        if not compact or compact in seen:
+            return
+        seen.add(compact)
+        issues.append(_issue(
+            "user_visible_basis_status_internal_leak",
+            "依据状态 must use Slice AE user-visible status words, not internal public-signal status labels",
+            compact,
+        ))
+
+    lines = text.splitlines()
+    index = 0
+    while index < len(lines) - 1:
+        if not (lines[index].strip().startswith("|") and _is_table_separator(lines[index + 1])):
+            index += 1
+            continue
+        headers = _split_markdown_row(lines[index])
+        basis_indexes = [pos for pos, header in enumerate(headers) if header == "依据状态"]
+        row_index = index + 2
+        while row_index < len(lines) and lines[row_index].strip().startswith("|"):
+            if _is_table_separator(lines[row_index]):
+                row_index += 1
+                continue
+            cells = _split_markdown_row(lines[row_index])
+            for basis_index in basis_indexes:
+                if len(cells) > basis_index and _is_internal_basis_status(cells[basis_index]):
+                    add_issue(cells[basis_index])
+            for cell_index, cell in enumerate(cells[:-1]):
+                if cell == "依据状态" and _is_internal_basis_status(cells[cell_index + 1]):
+                    add_issue(cells[cell_index + 1])
+            row_index += 1
+        index = row_index
+
+    for line in lines:
+        match = re.match(r"^\s*(?:[-*]\s*)?依据状态\s*[:：]?\s+(.+?)\s*$", line)
+        if match and _is_internal_basis_status(match.group(1)):
+            add_issue(match.group(1))
+    return issues
+
+
 def validate(text: str, route: str, *, min_tables: int = 3, extra_required: list[str] | None = None) -> list[dict[str, str]]:
     issues: list[dict[str, str]] = []
     required = ROUTE_REQUIRED.get(route)
@@ -391,6 +467,7 @@ def validate(text: str, route: str, *, min_tables: int = 3, extra_required: list
         if not any(status in text for status in PRODUCT_USER_VISIBLE_STATUSES):
             message = "output must expose at least one Slice AE user-visible status"
             issues.append(_issue("user_visible_status_missing", message))
+    issues.extend(_basis_status_internal_leak_issues(text))
     if route == "bulk_customer_development":
         issues.extend(_bulk_basis_status_consistency_issues(text))
     if route == "product_outbound_market_analysis":

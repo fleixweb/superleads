@@ -84,6 +84,15 @@ customer development Markdown report starts with `# 批量客户开发` and cont
 `发现候选池样表（候选池不是正式开发名单）` with columns including `分区`,
 `业务相关性`, and `依据状态`.
 
+For real-business research, a formal Markdown delivery requires a saved graph
+JSON path and a successful `export_superleads_markdown.py` JSON result. If you
+only have live search notes, source snippets, or a manually synthesized table,
+label it as a research draft / source-collection note, not as a formal
+Superleads delivery, and do not claim `ok=true` or `issue_count=0`. Build or
+repair the graph first, then run the exporter. Never write `依据状态` as internal
+public-signal labels such as `已观察`, `未检索`, `主体待确认`, `已观察；需确认`,
+or `已观察；来源受限`.
+
 Keep the three user-visible routes separate:
 
 - Bulk customer development shows a candidate customer pool and pending checks.

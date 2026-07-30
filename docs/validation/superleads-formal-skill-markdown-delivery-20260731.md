@@ -50,3 +50,10 @@ git diff --check  # passed
 ## 结论
 
 正式 Skill 调用的 Markdown 交付路径已收口：当用户要 chat-readable 报告时，必须走统一 Markdown delivery；手工渲染 workbook sheet 不再是允许路径。
+
+
+## 2026-07-31 真实业务 UAT 复核补充
+
+后续真实业务黑盒调用又暴露一个新漂移：reference graph 导出正确，但 Agent 在真实搜索后可能手写客户池表格，并把内部公开信号状态 `已观察`、`已观察；需确认`、`已观察；来源受限` 写进用户可见 `依据状态`。
+
+该问题已在 `docs/validation/superleads-real-business-formal-delivery-20260731.md` 记录并修复：用户可见 validator 新增 `user_visible_basis_status_internal_leak`，正式调用冒烟脚本也会检查真实 UAT fail 样本。

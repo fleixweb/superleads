@@ -25,9 +25,31 @@
 - Code Slice AH 已提交：`26e788f Refine bulk discovery status projection`：堵 `output_mode=初筛客户名单` 绕过口；bulk workbook / Markdown 新增 `分区`、`依据状态`；Markdown 补联系方式汇总、搜索覆盖与收敛、已排除/仅作参考、风险说明；用户可见 eval 阻断缺状态与缺表交付。当前又补了 `可能客户角色` 接入实体 `customer_type`、`observed` 上调为 `已有明确依据`，并新增 `采购意愿待确认` 的误杀回归样本。
 - Code Slice AH-FIX 已收口并纳入本提交：修复 bulk 默认发现依据状态降级优先级；`observed + source_restricted` 投影为 `来源受限`，不再升级为 `已有明确依据`；新增用户可见 fail 样本、Markdown case、minimum gate 行级导出断言和验证文档。
 - 正式 Skill 调用 Markdown 交付收口已完成：本地 Skill 与插件缓存强制 chat-readable 报告走 `scripts/export_superleads_markdown.py`，禁止手工渲染 workbook sheet；新增 `scripts/check_superleads_formal_markdown_delivery.py`。
+- 真实业务 UAT 正式交付链路补强已完成：阻断 `依据状态=已观察/已观察；需确认/已观察；来源受限` 等内部状态泄漏；正式交付必须有 graph JSON 路径和 exporter JSON 成功结果。
 
 
 
+
+
+## 真实业务 UAT 正式交付链路补强已完成
+
+1. 用户可见 validator
+   - `scripts/validate_superleads_user_visible_output.py` 新增 `user_visible_basis_status_internal_leak`。
+   - 阻断 `依据状态` 列或 `依据状态 xxx` 行使用 `已观察`、`未检索`、`主体待确认`、`已解析`、`已观察；需确认`、`已观察；来源受限`。
+2. 回归样本
+   - 新增 `evals/user_visible_outputs/fail_bulk_customer_real_uat_internal_basis_status.md`。
+   - `evals/cases/superleads_user_visible_output_cases.json` 用户可见 suite 从 13/13 扩到 14/14。
+3. Skill / 插件缓存
+   - `using-superleads` / `exporting-lead-workbooks` 要求真实业务正式交付必须有保存的 graph JSON 和 exporter JSON 成功结果。
+   - 只有搜索笔记或手写表格时，只能称 research draft / source-collection note。
+   - 插件缓存 `~/.codex/plugins/cache/fleix/superleads/0.1.3/skills/...` 已同步。
+4. 已验证
+   - `python3 scripts/check_superleads_formal_markdown_delivery.py --fixture shared/references/default-discovery-reference.example.json` → passed, issue_count=0。
+   - `python3 evals/run_superleads_user_visible_output_evals.py --suite all` → 14/14。
+   - `python3 evals/run_superleads_markdown_delivery_evals.py --suite all` → 5/5。
+   - `python3 evals/run_evals.py --suite default` → 122/122。
+   - `python3 evals/run_evals.py --suite all` → 714/714。
+   - `python3 evals/run_evals.py --suite deep` → 671/671。
 
 ## 正式 Skill 调用 Markdown 交付收口已完成
 

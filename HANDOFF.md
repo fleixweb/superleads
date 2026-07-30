@@ -1,8 +1,8 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：本提交 `Enforce unified Superleads Markdown delivery in skills`
-- 当前状态：正式 Skill 调用 Markdown 交付已收口；本地 Skill 与插件缓存已同步为强制走 `scripts/export_superleads_markdown.py`，并新增正式调用冒烟检查脚本。无强制下一 Slice；等待真实缺陷或明确需求。保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：本提交 `Block internal basis status leaks in real UAT delivery`
+- 当前状态：真实业务正式 Markdown 交付链路已补强；用户可见 validator 会阻断 `依据状态=已观察/已观察；需确认/已观察；来源受限` 等内部信号状态泄漏，Skill 与插件缓存已同步为“无 graph JSON + exporter 成功结果不得称正式交付”。无强制下一 Slice；继续真实业务 UAT。保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已完成
 
@@ -22,6 +22,7 @@
 - Code Slice AH 已提交：`26e788f Refine bulk discovery status projection`：堵 `output_mode=初筛客户名单` 绕过口；bulk workbook / Markdown 新增 `分区`、`依据状态`；Markdown 补联系方式汇总、搜索覆盖与收敛、已排除/仅作参考、风险说明；用户可见 eval 阻断缺状态与缺表交付。当前又补了 `可能客户角色` 接入实体 `customer_type`、`observed` 上调为 `已有明确依据`，并新增 `采购意愿待确认` 的误杀回归样本。
 - Code Slice AH-FIX 已收口并纳入本提交：修复 `26e788f` 引入的依据状态升级缺陷；默认发现先扫描 `identity_pending` / `source_restricted` / `source_restrictions` / `insufficient_information` 等降级，再允许无降级的 `business_match.observed` 投影为 `已有明确依据`；新增 `bulk_basis_status_source_restricted_promoted` 用户可见 fail 样本和 `Beta Industrial Supplies` 行级导出断言。
 - 正式 Skill 调用 Markdown 交付收口已完成：`using-superleads` / `exporting-lead-workbooks` 明确禁止手工从 workbook/CSV 渲染 Markdown，要求 chat-readable 报告必须走 `export_superleads_markdown.py`；插件缓存 `~/.codex/plugins/cache/fleix/superleads/0.1.3` 已同步；新增 `scripts/check_superleads_formal_markdown_delivery.py` 验证缓存一致、统一导出器输出和 Northshore `来源受限`。
+- 真实业务 UAT 正式交付链路补强已完成：新增 `user_visible_basis_status_internal_leak`，阻断手写真实客户表把 `已观察` 等内部公开信号状态写作 `依据状态`；新增真实 UAT fail 样本并接入 user-visible eval；Skill / 插件缓存要求正式交付必须有保存的 graph JSON 和 exporter JSON 成功结果，否则只能称 research draft / source-collection note。
 
 ## Code Slice AD 已完成内容
 
@@ -221,6 +222,18 @@ python3 -m py_compile scripts/check_superleads_formal_markdown_delivery.py scrip
 python3 scripts/check_superleads_formal_markdown_delivery.py --fixture shared/references/default-discovery-reference.example.json  # passed, issue_count=0
 python3 evals/run_superleads_markdown_delivery_evals.py --suite all  # 5/5
 python3 evals/run_superleads_user_visible_output_evals.py --suite all  # 13/13
+git diff --check  # passed
+
+# 真实业务 UAT 正式交付链路补强验证
+python3 -m py_compile scripts/validate_superleads_user_visible_output.py scripts/check_superleads_formal_markdown_delivery.py scripts/export_superleads_markdown.py  # passed
+python3 scripts/check_superleads_formal_markdown_delivery.py --fixture shared/references/default-discovery-reference.example.json  # passed, issue_count=0
+python3 evals/run_superleads_user_visible_output_evals.py --suite all  # 14/14
+python3 evals/run_superleads_markdown_delivery_evals.py --suite all  # 5/5
+python3 evals/run_evals.py --suite default  # 122/122
+python3 evals/run_evals.py --suite all  # 714/714
+python3 evals/run_evals.py --suite deep  # 671/671
+python3 /home/fleix/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/using-superleads  # passed
+python3 /home/fleix/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/exporting-lead-workbooks  # passed
 git diff --check  # passed
 ```
 

@@ -24,12 +24,17 @@ SKILL_FILES = (
     "skills/using-superleads/SKILL.md",
     "skills/exporting-lead-workbooks/SKILL.md",
 )
+UAT_INTERNAL_BASIS_STATUS_SAMPLE = ROOT / "evals" / "user_visible_outputs" / "fail_bulk_customer_real_uat_internal_basis_status.md"
 REQUIRED_SKILL_SNIPPETS = (
     "export_superleads_markdown.py",
     "Do not hand-render Markdown",
     "Do not manually",
+    "saved graph",
+    "JSON path",
+    "research draft",
     "发现候选池样表",
     "依据状态",
+    "已观察；来源受限",
 )
 
 
@@ -150,6 +155,42 @@ def check_generated_markdown(fixture: Path) -> tuple[list[dict[str, str]], dict[
     return issues, payload, text
 
 
+def check_real_uat_regression_sample() -> list[dict[str, str]]:
+    issues: list[dict[str, str]] = []
+    if not UAT_INTERNAL_BASIS_STATUS_SAMPLE.exists():
+        return [_issue(
+            "formal_markdown_real_uat_fixture_missing",
+            f"missing real-UAT regression fixture: {UAT_INTERNAL_BASIS_STATUS_SAMPLE}",
+            str(UAT_INTERNAL_BASIS_STATUS_SAMPLE),
+        )]
+    cmd = [
+        sys.executable,
+        str(ROOT / "scripts" / "validate_superleads_user_visible_output.py"),
+        str(UAT_INTERNAL_BASIS_STATUS_SAMPLE),
+        "--route",
+        "bulk_customer_development",
+        "--min-tables",
+        "7",
+        "--format",
+        "json",
+    ]
+    proc = subprocess.run(cmd, cwd=str(ROOT), text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    if proc.returncode == 0:
+        issues.append(_issue(
+            "formal_markdown_real_uat_internal_basis_status_not_blocked",
+            "real-UAT hand-written report with 依据状态=已观察 unexpectedly passed",
+            str(UAT_INTERNAL_BASIS_STATUS_SAMPLE),
+        ))
+        return issues
+    if "user_visible_basis_status_internal_leak" not in proc.stdout:
+        issues.append(_issue(
+            "formal_markdown_real_uat_internal_basis_status_wrong_failure",
+            "real-UAT regression did not fail with user_visible_basis_status_internal_leak",
+            str(UAT_INTERNAL_BASIS_STATUS_SAMPLE),
+        ))
+    return issues
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fixture", type=Path, default=DEFAULT_FIXTURE)
@@ -160,6 +201,7 @@ def main() -> int:
 
     fixture = args.fixture if args.fixture.is_absolute() else ROOT / args.fixture
     issues = check_skill_instructions(args.cache_root, skip_cache=args.skip_cache)
+    issues.extend(check_real_uat_regression_sample())
     markdown_issues, export_payload, text = check_generated_markdown(fixture)
     issues.extend(markdown_issues)
     payload: dict[str, Any] = {
