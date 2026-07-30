@@ -685,14 +685,28 @@ def _search_log_issues(
     return issues
 
 
+DEFAULT_DISCOVERY_OUTPUT_MODES = {"发现候选池", "初筛客户名单"}
+DEPRECATED_INITIAL_SCREENING_OUTPUT_MODE = "初筛客户名单"
+
+
 def _default_discovery_candidate_structure_issues(graph: dict[str, Any]) -> list[dict[str, str]]:
-    """Require the reusable candidate-pool fields without burdening strict runs."""
+    """Require reusable candidate-pool fields for every non-formal bulk discovery mode."""
     run = current_run(graph)
     brief = current_brief(graph, run)
-    if not isinstance(brief, dict) or brief.get("output_mode") != "发现候选池":
+    if not isinstance(brief, dict):
+        return []
+    output_mode = brief.get("output_mode")
+    if output_mode not in DEFAULT_DISCOVERY_OUTPUT_MODES:
         return []
 
     issues: list[dict[str, str]] = []
+    if output_mode == DEPRECATED_INITIAL_SCREENING_OUTPUT_MODE:
+        issues.append(issue(
+            "critical",
+            "initial_screening_output_mode_deprecated",
+            "初筛客户名单 is not a separate local delivery mode; use 发现候选池 with visible partitions and candidate evidence status",
+            "briefs.output_mode",
+        ))
     expected_bindings = {
         "run_id": run.get("run_id") if isinstance(run, dict) else None,
         "brief_id": brief.get("brief_id"),

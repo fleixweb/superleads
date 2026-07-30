@@ -215,6 +215,12 @@
 - 原因：内部状态、互证状态、freshness 状态和 authority 状态继续增加后，如果直接暴露给用户，会降低业务可读性并造成“已核实但过期 / 已核实但权威未匹配”的误导。
 - 后果：产品市场导出不再把 `technical_docs_required`、`stale_needs_recheck`、`user_not_provided_but_required` 等内部 token 当作最终交付语言；用户可见 validator 新增内部状态 token 阻断；COO / 认证规则结论和用户材料状态继续分列。
 
+## 2026-07-30：Bulk 发现候选池依据状态上调
+
+- 决策：默认发现 / bulk Markdown 中，公开来源已直接支持的 `observed` 业务信号优先展示为 `已有明确依据`，并同步补出实体级 `customer_type` 到 `可能客户角色`。
+- 原因：如果把所有 observed 都压成 `可作为线索`，bulk 发现候选池会失去最基础的可区分度，用户无法快速分辨“已被公开来源直接支持”与“仅有弱线索”。
+- 后果：bulk 用户可见样本和验收文档要同步更新；`采购意愿待确认` 之类的业务待确认文本不应被裸词规则误杀，但真正的采购意愿确认仍不能被写成已确认采购需求或采购负责人已确认。
+
 
 ## 2026-07-29：Code Slice AF 收稳三路线入口路由
 
@@ -227,3 +233,9 @@
 - 决策：批量客户开发默认交付继续是“发现候选池”，不新增独立 L2 `初筛客户名单`；所谓初筛价值改为发现候选池内部的“可优先人工跟进 / 待确认 / 已排除或仅作参考”三分区和 `依据状态` 列。
 - 原因：实测发现 `初筛客户名单` 不是未实现的安全枚举，而是当前 `validate_research_graph.py` 默认发现 Candidate 结构检查的绕过口；将其实现成独立层会合法化并延迟修复这个 P0 问题。
 - 后果：后续 Code Slice AH 应先堵 `output_mode=初筛客户名单` 绕过口，再补 bulk Markdown 的联系方式汇总、搜索覆盖与收敛、已排除/仅作参考、风险说明、三分区和依据状态；不新增 delivery_status、exporter mode 或 audit 分支。
+
+## 2026-07-30：Code Slice AH 堵初筛绕过口并补齐 bulk Markdown 候选池展示
+
+- 决策：`初筛客户名单` 不作为本地部署可交付 output_mode；validator 对该值显式报 `initial_screening_output_mode_deprecated`，同时仍执行默认发现 Candidate 结构检查。
+- 原因：该枚举此前会让 `dedupe_basis`、`signal_summary`、`business_relevance_basis`、`unknowns`、`source_restrictions` 等默认发现纪律静默失效，并能被 audit/export 渲染成交付件。
+- 后果：批量客户开发中间状态统一回到 `发现候选池` 内部三分区和 `依据状态`；bulk Markdown 补齐联系方式汇总、搜索覆盖与收敛、已排除/仅作参考、风险说明；不新增 delivery_status、exporter mode 或 audit 分支。

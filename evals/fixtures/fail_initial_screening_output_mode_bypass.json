@@ -1,0 +1,30 @@
+{
+  "extends": "pass_default_discovery_candidate_pool.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/briefs/0/output_mode",
+      "value": "初筛客户名单"
+    },
+    {
+      "op": "remove",
+      "path": "/candidates/0/dedupe_basis"
+    },
+    {
+      "op": "remove",
+      "path": "/candidates/0/signal_summary"
+    },
+    {
+      "op": "remove",
+      "path": "/candidates/0/business_relevance_basis"
+    },
+    {
+      "op": "remove",
+      "path": "/candidates/0/unknowns"
+    },
+    {
+      "op": "remove",
+      "path": "/candidates/0/source_restrictions"
+    }
+  ]
+}

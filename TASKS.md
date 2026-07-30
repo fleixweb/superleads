@@ -21,8 +21,34 @@
 - Code Slice AF 三路线入口路由纠偏 / route eval 已完成并提交：`0f7666e Add Superleads route intent evals`。路由样例扩到 25 条，新增独立 route eval runner，混合任务可校验 `secondary_routes` / `route_order`。
 - 状态同步已提交：`2e5d2ed Update handoff after route evals commit`。
 - Code Slice AG 单一客户背调工程资产补齐已完成并提交：`c8477d3 Add customer background research guardrails`。补 Skill 入口、专属 spec、专属 eval runner、6 条 graph fixtures、1 条用户可见 fail 样本，并强化轻验证与正式名单链路隔离。
-- Slice AH 批量客户开发内核复盘已完成纠偏，待提交：更新 `spec/36-superleads-bulk-customer-development-slice-ah.md`，取消独立 L2 `初筛客户名单` 层级，改为发现候选池内部三分区，并把 `初筛客户名单` 标记为后续必须堵住的 validator 绕过口。
+- Slice AH 批量客户开发内核复盘纠偏已提交：`b0fdd53 Calibrate bulk discovery candidate pool`。取消独立 L2 `初筛客户名单` 层级，改为发现候选池内部三分区。
+- Code Slice AH 已完成，待提交：堵 `output_mode=初筛客户名单` 绕过口；bulk workbook / Markdown 新增 `分区`、`依据状态`；Markdown 补联系方式汇总、搜索覆盖与收敛、已排除/仅作参考、风险说明；用户可见 eval 阻断缺状态与缺表交付。当前又补了 `可能客户角色` 接入实体 `customer_type`、`observed` 上调为 `已有明确依据`，并新增 `采购意愿待确认` 的误杀回归样本。当前又补了 `可能客户角色` 接入实体 `customer_type`、`observed` 上调为 `已有明确依据`，并新增 `采购意愿待确认` 的误杀回归样本。
 
+
+
+## Code Slice AH 已完成
+
+1. 绕过口修复
+   - `scripts/validate_research_graph.py` 将 `初筛客户名单` 纳入默认发现 Candidate 结构检查，并显式报 `initial_screening_output_mode_deprecated`。
+   - 新增 `evals/fixtures/fail_initial_screening_output_mode_bypass.json`，复现旧绕过：`output_mode=初筛客户名单` + 删除 `dedupe_basis` / `signal_summary` / `business_relevance_basis` / `unknowns` / `source_restrictions`。
+   - 该 fixture 已纳入 default suite，validate / audit / export initial 均 fail。
+2. 默认发现展示
+   - `scripts/export_workbook.py` 的 `发现候选池` sheet 新增 `分区`、`依据状态`。
+   - `scripts/export_superleads_markdown.py` 的 bulk 路线补为 8 张表：方向、候选池、联系方式汇总、搜索覆盖与收敛、待确认事项、已排除 / 仅作参考、来源、风险说明。
+   - 主表新增 `国家/地区`、`可能客户角色`、`业务相关性`、`依据状态`，不做价值排序、不写推荐客户。
+3. 用户可见 eval
+   - bulk 路线要求出现 `依据状态`、可优先人工跟进、待确认、已排除 / 仅作参考、联系方式汇总、搜索覆盖与收敛、风险与说明。
+   - 新增 fail 样本 `fail_bulk_customer_missing_basis_status.md`。
+4. 已验证
+   - `python3 -m py_compile scripts/validate_research_graph.py scripts/export_workbook.py scripts/export_superleads_markdown.py scripts/validate_superleads_user_visible_output.py evals/run_evals.py evals/run_superleads_user_visible_output_evals.py evals/run_superleads_markdown_delivery_evals.py` → passed。
+   - `python3 evals/run_superleads_user_visible_output_evals.py --suite all` → 11/11。
+   - `python3 evals/run_superleads_markdown_delivery_evals.py --suite all` → 5/5。
+   - `python3 evals/run_evals.py --suite default` → 119/119。
+   - `python3 evals/run_evals.py --suite deep` → 668/668。
+   - `python3 evals/run_evals.py --suite all` → 711/711。
+   - `python3 evals/run_superleads_route_evals.py --suite all` → 25/25。
+   - `python3 evals/run_product_market_analysis_evals.py --suite all` → 74/74。
+   - `git diff --check` → passed。
 
 ## Code Slice AG 已完成
 
@@ -149,8 +175,8 @@ git diff --check  # passed
 
 ## 当前下一步
 
-1. 提交 Slice AH 纠偏文档。
-2. 进入 Code Slice AH：先堵 `初筛客户名单` 绕过口，再优化 bulk Markdown 发现候选池展示。
+1. 提交 Code Slice AH。
+2. 下一步可进入 Slice AI：批量客户开发路线的开放世界客户类型 / 来源覆盖计划校准，或先做 Code Slice AH 后状态同步。
 
 ## Slice AH 已完成
 
@@ -161,14 +187,11 @@ git diff --check  # passed
 5. 继续禁止：推荐客户排序、采购概率、把公开入口写成采购负责人、把搜索摘要写成 Claim。
 6. 后续 Code Slice AH 再落 validator / fixtures / bulk Markdown 展示 / 用户可见 eval。
 
-## Code Slice AH 待做
+## Code Slice AH 后续注意
 
-1. 堵 `初筛客户名单` 绕过口：`validate_research_graph.py` 不得因 `output_mode=初筛客户名单` 跳过默认发现 Candidate 结构检查；建议显式拒绝或强制按发现候选池纪律检查。
-2. 增补 fail fixture：用 `output_mode=初筛客户名单` 破坏 dedupe / signal_summary / relevance / unknowns / source_restrictions 时必须 fail。
-3. 不新增 `initial_screening` exporter mode，不新增 delivery_status，不新增 audit 分支。
-4. bulk Markdown 补联系方式汇总、搜索覆盖与收敛、已排除 / 仅作参考、风险与说明。
-5. bulk 主表增加 `分区` 和 `依据状态`；用户可见 eval 检查依据状态、三分区、禁止推荐客户/采购概率/采购意愿。
-6. 回归 route、user-visible、markdown delivery、default/deep/all。
+1. 仍不新增 `initial_screening` exporter mode，不新增 delivery_status，不新增 audit 分支。
+2. 不动 Candidate 的 `初筛线索` status；它是候选对象状态，不是 `初筛客户名单` output_mode。
+3. 后续若继续优化 bulk，应围绕开放世界客户类型、来源覆盖计划、查询收敛表达，不把弱证据升级成正式客户。
 
 ## 当前阻塞 / 注意
 

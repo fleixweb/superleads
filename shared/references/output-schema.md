@@ -66,9 +66,12 @@ them or that the product is fully compliant.
 发现候选池以 `directly_related` 和 `possibly_related` 为主体，并单独保留
 `identity_pending`、`insufficient_information` 和明确排除记录。默认输出展示：
 
+- 分区：可优先人工跟进 / 待确认 / 已排除或仅作参考
 - 发现来源与发现链接
 - 去重依据
+- 国家/地区与可能客户角色（客户类型为自由文本；无依据不猜）
 - 业务相关性状态与依据
+- 依据状态（复用 11 个用户可见状态词，例如已有明确依据、可作为线索、来源受限、说法冲突待复核）
 - 官网/联系方式、贸易、China、货描/HS 的统一状态
 - 主体匹配状态
 - 未知项、来源受限与下一步待验证

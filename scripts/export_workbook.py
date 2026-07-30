@@ -27,6 +27,7 @@ from _superleads_common import (
     user_provided_source_display,
     write_json,
 )
+from user_visible_status_projection import project_market_row_status
 from background_report import background_contact_values_to_redact, build_background_report_sheets, validate_background_report
 
 MODE_TO_STATUS={"initial":"initial_lead_list","standard":"standard_development_list","full":"full_review_package","inquiry":"inquiry_followup_queue"}
@@ -322,6 +323,21 @@ def _candidate_website_or_domain(candidate:dict[str,Any], entity:dict[str,Any])-
     return ""
 
 
+def _candidate_role(candidate:dict[str,Any], entity:dict[str,Any])->str:
+    raw = candidate.get("customer_role") or candidate.get("customer_type") or entity.get("customer_type") or candidate.get("channel_role")
+    if raw in {"distributor", "dealer", "distribution"}:
+        return "经销商 / 分销商"
+    if raw in {"wholesaler", "wholesale"}:
+        return "批发商"
+    if raw in {"retailer", "retail", "retail chain"}:
+        return "零售商 / 连锁"
+    if raw in {"manufacturer", "oem"}:
+        return "制造商 / OEM"
+    if raw in {"industrial supplier", "supplier"}:
+        return "工业供应商"
+    return str(raw) if raw else "待确认"
+
+
 def _candidate_signal_summary(candidate:dict[str,Any], relevance:str)->dict[str,tuple[str,str]]:
     signal_summary = candidate.get("signal_summary") if isinstance(candidate.get("signal_summary"),dict) else {}
     result = {
@@ -336,6 +352,38 @@ def _candidate_signal_summary(candidate:dict[str,Any], relevance:str)->dict[str,
     else:
         result["business_match"] = _status_and_detail(signal_summary.get("business_match"))
     return result
+
+
+def _initial_basis_status(candidate:dict[str,Any], relevance:str)->str:
+    signal_summary = candidate.get("signal_summary") if isinstance(candidate.get("signal_summary"),dict) else {}
+    business_match = signal_summary.get("business_match") if isinstance(signal_summary,dict) else None
+    row_status = "candidate"
+    if isinstance(business_match,dict):
+        status = business_match.get("status")
+        if status == "observed":
+            row_status = "verified"
+        elif status == "identity_pending":
+            row_status = "conflict_pending_review"
+        elif status == "source_restricted":
+            row_status = "source_restricted"
+    if row_status == "candidate":
+        if relevance == "identity_pending":
+            row_status = "conflict_pending_review"
+        elif relevance == "insufficient_information":
+            row_status = "not_provided"
+        elif any(isinstance(state,dict) and state.get("status") == "identity_pending" for state in signal_summary.values()):
+            row_status = "conflict_pending_review"
+        elif any(isinstance(state,dict) and state.get("status") == "source_restricted" for state in signal_summary.values()):
+            row_status = "source_restricted"
+    return project_market_row_status({"status": row_status})
+
+
+def _initial_partition(relevance:str, basis_status:str)->str:
+    if relevance == "explicitly_excluded_or_unrelated":
+        return "已排除 / 仅作参考"
+    if relevance in {"directly_related","possibly_related"} and basis_status in {"已有明确依据","多来源方向一致","可作为线索"}:
+        return "可优先人工跟进"
+    return "待确认"
 
 
 def initial_contact_rows(graph:dict[str,Any])->list[dict[str,Any]]:
@@ -428,15 +476,19 @@ def build_initial_sheets(graph:dict[str,Any], audit:dict[str,Any])->dict[str,lis
         signal_info = _candidate_signal_summary(candidate, relevance)
         source_labels, source_links = _candidate_refs(candidate, search_logs)
         default_note = "方向样本，等待确认后再扩展。" if sample_first else "发现线索保留待后续补证。"
+        basis_status = _initial_basis_status(candidate, relevance)
         row = {
+            "分区": _initial_partition(relevance, basis_status),
             "公司名称": candidate.get("company_name") or candidate.get("name") or entity.get("name") or entity.get("legal_name"),
             "国家/地区": candidate.get("country_or_region") or entity.get("country_or_region"),
+            "客户类型": _candidate_role(candidate, entity),
             "官网/域名": _candidate_website_or_domain(candidate, entity),
             "发现来源": source_labels or candidate.get("source_hint"),
             "发现链接": source_links,
             "去重依据": "；".join(str(item) for item in ensure_list(candidate,"dedupe_basis") if item),
             "方向状态": scope_status_user_label(decision.get("overall_status") if isinstance(decision,dict) else None),
             "业务相关性": business_relevance_user_label(relevance),
+            "依据状态": basis_status,
             "相关性依据": relevance_basis,
             "业务/产品关联信号状态": signal_info["business_match"][0],
             "业务/产品关联信号说明": signal_info["business_match"][1],

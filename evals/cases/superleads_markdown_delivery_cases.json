@@ -9,7 +9,7 @@
       "route": "auto",
       "expected_route": "bulk_customer_development",
       "expected": "pass",
-      "min_tables": 3,
+      "min_tables": 7,
       "must_contain": [
         "我理解你卖的是",
         "本次优先找",
@@ -18,7 +18,16 @@
         "发现候选池样表",
         "候选池不是正式开发名单",
         "联系入口不等于采购意愿",
-        "来源 / 来源状态"
+        "来源 / 来源状态",
+        "业务相关性",
+        "依据状态",
+        "可优先人工跟进",
+        "已排除 / 仅作参考",
+        "联系方式汇总",
+        "搜索覆盖与收敛",
+        "风险与说明",
+        "已有明确依据",
+        "需补充资料"
       ],
       "must_not_contain": [
         "推荐客户",
@@ -35,7 +44,7 @@
       "route": "auto",
       "expected_route": "bulk_customer_development",
       "expected": "pass",
-      "min_tables": 3,
+      "min_tables": 7,
       "must_contain": [
         "The Telegraph",
         "Photograph",
@@ -43,7 +52,12 @@
         "evaluation",
         "资料包",
         "检查",
-        "证据记录"
+        "证据记录",
+        "依据状态",
+        "联系方式汇总",
+        "搜索覆盖与收敛",
+        "已排除 / 仅作参考",
+        "风险与说明"
       ],
       "must_not_contain": [
         "The Tele资料包",

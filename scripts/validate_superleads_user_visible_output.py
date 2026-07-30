@@ -22,11 +22,17 @@ ROUTE_REQUIRED: dict[str, list[str]] = {
         "判断依据将重点看",
         "候选客户",
         "当前看到的业务信号",
-        "相关性状态",
+        "业务相关性",
+        "依据状态",
         "可用联系入口",
         "还要确认什么",
         "来源 / 来源状态",
         "候选池",
+        "可优先人工跟进",
+        "已排除 / 仅作参考",
+        "联系方式汇总",
+        "搜索覆盖与收敛",
+        "风险与说明",
         "待确认",
     ],
     "customer_background_research": [
@@ -154,6 +160,8 @@ GENERIC_EVIDENCE_UPGRADES = [
     "已确认采购负责人",
     "已确认有采购需求",
     "确定有采购需求",
+    "已确认采购意愿",
+    "确认有采购意愿",
     "wholesale 页面说明有采购意愿",
     "contact 页面说明有采购意愿",
     "supplier portal 说明有采购意愿",
@@ -302,9 +310,11 @@ def validate(text: str, route: str, *, min_tables: int = 3, extra_required: list
         if _phrase_matches(text, phrase, allow_negated=True):
             issues.append(_issue("user_visible_evidence_upgrade", f"evidence boundary upgrade present: {phrase}", phrase))
 
-    if route == "product_outbound_market_analysis":
+    if route in {"product_outbound_market_analysis", "bulk_customer_development"}:
         if not any(status in text for status in PRODUCT_USER_VISIBLE_STATUSES):
-            issues.append(_issue("user_visible_status_missing", "product market output must expose at least one Slice AE user-visible status"))
+            message = "output must expose at least one Slice AE user-visible status"
+            issues.append(_issue("user_visible_status_missing", message))
+    if route == "product_outbound_market_analysis":
         for token in PRODUCT_INTERNAL_STATUS_TOKENS:
             if _phrase_matches(text, token):
                 issues.append(_issue("user_visible_internal_status_token", f"internal product-market status token leaked: {token}", token))

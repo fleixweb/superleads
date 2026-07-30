@@ -7,20 +7,54 @@
       "fixture": "evals/user_visible_outputs/bulk_customer_development_us_generator_aftermarket.md",
       "route": "bulk_customer_development",
       "expected": "pass",
-      "min_tables": 3,
+      "min_tables": 7,
       "must_contain": [
         "我理解你卖的是",
         "本次优先找",
         "本次不纳入",
         "发现候选池样表",
         "候选池不是正式开发名单",
-        "联系入口不等于采购意愿"
+        "联系入口不等于采购意愿",
+        "业务相关性",
+        "依据状态",
+        "可优先人工跟进",
+        "已排除 / 仅作参考",
+        "联系方式汇总",
+        "搜索覆盖与收敛",
+        "风险与说明",
+        "已有明确依据",
+        "需补充资料"
       ],
       "must_not_contain": [
         "推荐客户",
         "采购概率",
         "产品出海市场分析",
         "客户背调报告"
+      ]
+    },
+    {
+      "name": "bulk customer development purchase intent pending pass",
+      "fixture": "evals/user_visible_outputs/pass_bulk_customer_purchase_intent_pending.md",
+      "route": "bulk_customer_development",
+      "expected": "pass",
+      "min_tables": 7,
+      "must_contain": [
+        "采购意愿待确认",
+        "候选池不是正式开发名单",
+        "依据状态",
+        "可优先人工跟进",
+        "待确认",
+        "来源受限",
+        "联系方式汇总",
+        "搜索覆盖与收敛",
+        "风险与说明",
+        "已有明确依据"
+      ],
+      "must_not_contain": [
+        "推荐客户",
+        "采购概率",
+        "客户背调报告",
+        "产品出海市场分析"
       ]
     },
     {
@@ -84,6 +118,21 @@
         "user_visible_route_crossed",
         "user_visible_internal_language",
         "user_visible_value_judgment"
+      ],
+      "must_contain": [
+        "我理解你卖的是",
+        "候选客户"
+      ]
+    },
+    {
+      "name": "fail bulk customer missing basis status",
+      "fixture": "evals/user_visible_outputs/fail_bulk_customer_missing_basis_status.md",
+      "route": "bulk_customer_development",
+      "expected": "fail",
+      "min_tables": 2,
+      "expected_error_codes": [
+        "user_visible_missing_required_text",
+        "user_visible_status_missing"
       ],
       "must_contain": [
         "我理解你卖的是",

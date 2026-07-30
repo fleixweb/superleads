@@ -33,6 +33,7 @@ from export_workbook import (
     redact_delivery_sheets,
     redact_local_paths,
 )
+from user_visible_status_projection import project_market_row_status
 from validate_product_market_analysis import load_market_fixture
 from validate_superleads_user_visible_output import validate as validate_user_visible_markdown
 
@@ -43,7 +44,7 @@ ROUTES = (
 )
 
 MIN_TABLES = {
-    "bulk_customer_development": 3,
+    "bulk_customer_development": 7,
     "customer_background_research": 6,
     "product_outbound_market_analysis": 7,
 }
@@ -246,6 +247,21 @@ def _first_nonempty(*values: Any) -> str:
     return "未提供"
 
 
+def _display_items(value: Any) -> list[str]:
+    raw = value
+    if isinstance(value, str):
+        stripped = value.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            try:
+                raw = json.loads(stripped)
+            except Exception:
+                raw = value
+    if isinstance(raw, list):
+        return [item for item in (_safe_text(item) for item in raw) if item and item != "未提供"]
+    text = _safe_text(raw)
+    return [text] if text and text != "未提供" else []
+
+
 def _contact_lookup(rows: list[dict[str, Any]]) -> dict[str, list[str]]:
     lookup: dict[str, list[str]] = {}
     for row in rows:
@@ -269,6 +285,101 @@ def _source_lookup(rows: list[dict[str, Any]]) -> dict[str, list[str]]:
             continue
         lookup.setdefault(name, []).append(combined)
     return lookup
+
+
+def _candidate_name(candidate: dict[str, Any]) -> str:
+    return _safe_text(candidate.get("company_name") or candidate.get("name") or candidate.get("candidate_id"))
+
+
+def _candidate_by_name(graph: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    result: dict[str, dict[str, Any]] = {}
+    entities = {item.get("entity_id"): item for item in ensure_list(graph, "entities") if isinstance(item, dict) and item.get("entity_id")}
+    for candidate in ensure_list(graph, "candidates"):
+        if not isinstance(candidate, dict):
+            continue
+        name = _candidate_name(candidate)
+        if name != "未提供":
+            enriched = dict(candidate)
+            entity = entities.get(candidate.get("entity_id"))
+            if isinstance(entity, dict):
+                enriched["entity"] = entity
+            result.setdefault(name, enriched)
+    return result
+
+
+def _bulk_partition(relevance: str, status: str) -> str:
+    if relevance in {"已排除", "不相关", "明确排除", "明确排除/不相关", "explicitly_excluded_or_unrelated"}:
+        return "已排除 / 仅作参考"
+    if relevance in {"直接相关", "可能相关", "directly_related", "possibly_related"} and status in {"已有明确依据", "多来源方向一致", "可作为线索"}:
+        return "可优先人工跟进"
+    return "待确认"
+
+
+def _candidate_basis_status(candidate: dict[str, Any], row: dict[str, Any], relevance_label: str) -> str:
+    explicit = _safe_text(row.get("依据状态"))
+    if explicit != "未提供":
+        return explicit
+    summary = candidate.get("signal_summary") if isinstance(candidate.get("signal_summary"), dict) else {}
+    business_match = summary.get("business_match") if isinstance(summary, dict) else None
+    row_status = "candidate"
+    if isinstance(business_match, dict):
+        business_status = business_match.get("status")
+        if business_status == "observed":
+            row_status = "verified"
+        elif business_status == "identity_pending":
+            row_status = "conflict_pending_review"
+        elif business_status == "source_restricted":
+            row_status = "source_restricted"
+    if row_status == "candidate":
+        if relevance_label in {"信息不足", "主体待确认"}:
+            row_status = "not_provided"
+        elif any(isinstance(state, dict) and state.get("status") == "identity_pending" for state in summary.values()):
+            row_status = "conflict_pending_review"
+        elif any(isinstance(state, dict) and state.get("status") == "source_restricted" for state in summary.values()):
+            row_status = "source_restricted"
+    return project_market_row_status({"status": row_status})
+
+
+def _candidate_country(candidate: dict[str, Any], row: dict[str, Any]) -> str:
+    return _first_nonempty(
+        row.get("国家/地区"),
+        candidate.get("country_or_region"),
+        candidate.get("country"),
+        candidate.get("target_country_or_region"),
+        "待确认",
+    )
+
+
+def _candidate_role(candidate: dict[str, Any], row: dict[str, Any]) -> str:
+    entity = candidate.get("entity") if isinstance(candidate.get("entity"), dict) else {}
+    raw = _first_nonempty(
+        row.get("可能客户角色"),
+        row.get("客户类型"),
+        candidate.get("customer_role"),
+        candidate.get("customer_type"),
+        entity.get("customer_type"),
+        candidate.get("channel_role"),
+    )
+    if raw in {"distributor", "dealer", "distribution"}:
+        return "经销商 / 分销商"
+    if raw in {"wholesaler", "wholesale"}:
+        return "批发商"
+    if raw in {"retailer", "retail", "retail chain"}:
+        return "零售商 / 连锁"
+    if raw in {"manufacturer", "oem"}:
+        return "制造商 / OEM"
+    if raw in {"industrial supplier", "supplier"}:
+        return "工业供应商"
+    return raw if raw != "未提供" else "待确认"
+
+
+def _rows_from_sheet(rows: list[dict[str, Any]], mapping: dict[str, str]) -> list[dict[str, Any]]:
+    result: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        result.append({target: _first_nonempty(*(row.get(src) for src in sources)) for target, sources in mapping.items()})
+    return result
 
 
 def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[str, Any]]]:
@@ -296,17 +407,21 @@ def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[st
 
     contacts = _contact_lookup(sheets.get("联系方式汇总", []))
     sources = _source_lookup(sheets.get("官网与来源链接", []))
+    candidates_by_name = _candidate_by_name(graph)
     candidate_rows: list[dict[str, Any]] = []
     for row in sheets.get("发现候选池", []):
         if not isinstance(row, dict):
             continue
         name = _safe_text(row.get("公司名称") or row.get("公司/线索名称") or row.get("候选客户") or row.get("说明"))
+        candidate = candidates_by_name.get(name, {})
         signal = _first_nonempty(
             row.get("已观察业务/产品/应用信号"),
             row.get("业务/产品关联信号说明"),
             row.get("相关性依据"),
             "公开业务信号待确认",
         )
+        relevance = _first_nonempty(row.get("业务相关性"), row.get("方向状态"), "待确认")
+        basis_status = _candidate_basis_status(candidate, row, relevance)
         contact_text = "；".join(contacts.get(name, [])) or _first_nonempty(row.get("官网/域名"), "待确认")
         source_text = "；".join(sources.get(name, [])) or _first_nonempty(row.get("发现来源"), row.get("发现链接"), "来源 / 来源状态待确认")
         confirm = "；".join(
@@ -318,12 +433,33 @@ def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[st
             if item != "未提供"
         ) or "采购角色、产品适配、区域和是否接受外部供应商资料待确认"
         candidate_rows.append({
+            "分区": _bulk_partition(relevance, basis_status),
             "候选客户": name,
+            "国家/地区": _candidate_country(candidate, row),
+            "可能客户角色": _candidate_role(candidate, row),
             "当前看到的业务信号": signal,
-            "相关性状态": _first_nonempty(row.get("业务相关性"), row.get("方向状态"), "待确认"),
+            "业务相关性": relevance,
+            "依据状态": basis_status,
             "可用联系入口": contact_text,
             "还要确认什么": confirm,
             "来源 / 来源状态": source_text,
+        })
+
+    excluded_rows: list[dict[str, Any]] = []
+    for row in sheets.get("已排除客户", []):
+        if not isinstance(row, dict):
+            continue
+        name = _safe_text(row.get("公司名称") or row.get("公司/线索名称") or row.get("候选客户") or row.get("说明"))
+        if name == "未提供" or name == "暂无明确排除记录":
+            name = _first_nonempty(row.get("说明"), "暂无明确排除记录")
+        candidate = candidates_by_name.get(name, {})
+        excluded_rows.append({
+            "分区": "已排除 / 仅作参考",
+            "对象": name,
+            "归入原因": _first_nonempty(row.get("用户排除项/已观察冲突"), row.get("相关性依据"), row.get("说明"), "命中排除或仅作参考边界"),
+            "依据状态": _candidate_basis_status(candidate, row, "明确排除/不相关") if candidate else "可作为线索",
+            "是否可由用户改判": "可以；若用户确认该类主体仍可开发，应重新进入发现候选池核查。",
+            "来源 / 来源状态": "；".join(sources.get(name, [])) or _first_nonempty(row.get("发现来源"), row.get("发现链接"), "来源 / 来源状态待确认"),
         })
 
     pending_rows: list[dict[str, Any]] = []
@@ -337,6 +473,37 @@ def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[st
             "状态": "待确认",
         })
 
+    contact_rows: list[dict[str, Any]] = []
+    for row in sheets.get("联系方式汇总", []):
+        if not isinstance(row, dict):
+            continue
+        contact_rows.append({
+            "对象": _first_nonempty(row.get("公司/线索名称"), row.get("公司名称"), row.get("主体"), "待确认对象"),
+            "联系方式": _first_nonempty(row.get("联系方式"), row.get("公开联系入口"), row.get("说明")),
+            "类型": _first_nonempty(row.get("联系方式类型"), row.get("类型"), "待确认"),
+            "可用状态": _first_nonempty(row.get("状态"), row.get("联系方式状态"), "待确认归属"),
+            "来源": _first_nonempty(row.get("来源说明"), row.get("来源"), "来源状态待确认"),
+        })
+
+    coverage_rows: list[dict[str, Any]] = []
+    for row in sheets.get("搜索覆盖与收敛", []):
+        if not isinstance(row, dict):
+            continue
+        coverage_rows.append({
+            "本轮查了哪些方向": _first_nonempty(row.get("查询组"), row.get("搜索方向"), "未记录搜索方向"),
+            "覆盖国家/语言/来源类型": "；".join(
+                _display_items(row.get("地域"))
+                + _display_items(row.get("语言"))
+                + _display_items(row.get("来源类别"))
+            ) or "覆盖范围待确认",
+            "新增/重复": f"新增 { _safe_text(row.get('新增唯一候选数')) }；重复 { _safe_text(row.get('重复候选数')) }",
+            "来源受限或未执行": "；".join(item for item in (
+                _safe_text(row.get("失败访问")),
+                _safe_text(row.get("受限来源")),
+            ) if item != "未提供") or "未记录明显受限来源",
+            "覆盖/收敛说明": _first_nonempty(row.get("覆盖/收敛说明"), "收敛只表示本轮查询组合下新增减少，不代表找全全网客户。"),
+        })
+
     source_rows: list[dict[str, Any]] = []
     for row in sheets.get("官网与来源链接", []):
         if not isinstance(row, dict):
@@ -346,6 +513,20 @@ def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[st
             "来源 / 来源状态": _first_nonempty(row.get("来源说明"), "公开入口待复核"),
             "链接": _safe_text(row.get("来源链接")),
         })
+
+    risk_rows: list[dict[str, Any]] = []
+    for row in sheets.get("风险与说明", []):
+        if not isinstance(row, dict):
+            continue
+        risk_rows.append({
+            "提示": _first_nonempty(row.get("提示级别"), "说明"),
+            "说明": _first_nonempty(row.get("说明"), "本轮公开发现可继续扩展；当前输出不宣称已覆盖全部企业。"),
+        })
+    risk_rows.extend([
+        {"提示": "交付边界", "说明": "候选池不是正式开发名单；公开业务信号只用于销售人工核查。"},
+        {"提示": "联系入口边界", "说明": "公开联系入口不等于采购意愿，公开职位不等于采购负责人。"},
+        {"提示": "弱证据边界", "说明": "多来源方向一致只能说明线索收敛，不能升级为已验证客户。"},
+    ])
 
     lines = [
         "# 批量客户开发",
@@ -357,11 +538,15 @@ def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[st
     _append_table(
         lines,
         "发现候选池样表（候选池不是正式开发名单）",
-        ["候选客户", "当前看到的业务信号", "相关性状态", "可用联系入口", "还要确认什么", "来源 / 来源状态"],
+        ["分区", "候选客户", "国家/地区", "可能客户角色", "当前看到的业务信号", "业务相关性", "依据状态", "可用联系入口", "还要确认什么", "来源 / 来源状态"],
         candidate_rows,
     )
+    _append_table(lines, "联系方式汇总", ["对象", "联系方式", "类型", "可用状态", "来源"], contact_rows)
+    _append_table(lines, "搜索覆盖与收敛", ["本轮查了哪些方向", "覆盖国家/语言/来源类型", "新增/重复", "来源受限或未执行", "覆盖/收敛说明"], coverage_rows)
     _append_table(lines, "待确认事项", ["对象", "待确认事项", "下一步", "状态"], pending_rows)
+    _append_table(lines, "已排除 / 仅作参考", ["分区", "对象", "归入原因", "依据状态", "是否可由用户改判", "来源 / 来源状态"], excluded_rows)
     _append_table(lines, "信息从哪里来", ["对象", "来源 / 来源状态", "链接"], source_rows)
+    _append_table(lines, "风险与说明", ["提示", "说明"], risk_rows)
     return "\n".join(lines).rstrip() + "\n", []
 
 

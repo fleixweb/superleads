@@ -38,6 +38,8 @@
 
 `website` 若填写：只接受**安全公开 HTTP(S) URL 或纯公开域名**（如 `example.com`），不自动补协议，不接受 userinfo / 敏感 query/fragment 参数 / 私网 / 非 HTTP(S)。`source_url`、`discovery_refs[].url`、信号 `items[].source_url`、SearchLog `result_url` 同样只接受安全公开 HTTP(S) URL。
 
+`初筛客户名单` 不是默认发现的安全独立层级；当前实现应以 `发现候选池` 承载默认弱证据交付，并在候选池内部用 `分区`、`依据状态` 和公开信号说明表达中间态。
+
 ---
 
 ## 业务相关性状态（五取一）

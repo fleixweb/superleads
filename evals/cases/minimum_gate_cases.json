@@ -30,6 +30,7 @@
       "fail_default_discovery_trade_same_name_auto_bound.json",
       "fail_default_discovery_trade_implies_china_relation.json",
       "fail_default_discovery_missing_dedupe_basis.json",
+      "fail_initial_screening_output_mode_bypass.json",
       "fail_public_source_spa_fragment_token.json",
       "fail_public_source_query_token.json",
       "fail_search_summary_claim.json",
@@ -388,6 +389,20 @@
       "validate": "fail",
       "expected_error_codes": [
         "default_discovery_candidate_dedupe_basis_missing"
+      ]
+    },
+    {
+      "fixture": "fail_initial_screening_output_mode_bypass.json",
+      "validate": "fail",
+      "audit": "fail",
+      "export_initial": "fail",
+      "expected_error_codes": [
+        "initial_screening_output_mode_deprecated",
+        "default_discovery_candidate_dedupe_basis_missing",
+        "default_discovery_candidate_signal_summary_missing",
+        "default_discovery_candidate_relevance_basis_missing",
+        "default_discovery_candidate_unknowns_missing",
+        "default_discovery_candidate_source_restrictions_missing"
       ]
     },
     {

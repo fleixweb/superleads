@@ -72,7 +72,9 @@ python3 scripts/export_product_market_workbook.py market-graph.json --output-dir
 
 - `needs_correction` blocks formal standard export.
 - 发现候选池 may include weak evidence but must show relevance status,
-  signal status, unknowns, and restrictions.
+  `分区`, `依据状态`, signal status, unknowns, and restrictions. For bulk
+  customer development, use `发现候选池` with internal sections rather than a
+  separate `初筛客户名单` output mode.
 - Candidate discovery and signal links are exported only when they are safe,
   credential-free public HTTP(S) URLs. Keep an available source label or
   restriction note when no safe link can be shown; never export or guess a
