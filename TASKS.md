@@ -24,8 +24,25 @@
 - Slice AH 批量客户开发内核复盘纠偏已提交：`b0fdd53 Calibrate bulk discovery candidate pool`。取消独立 L2 `初筛客户名单` 层级，改为发现候选池内部三分区。
 - Code Slice AH 已提交：`26e788f Refine bulk discovery status projection`：堵 `output_mode=初筛客户名单` 绕过口；bulk workbook / Markdown 新增 `分区`、`依据状态`；Markdown 补联系方式汇总、搜索覆盖与收敛、已排除/仅作参考、风险说明；用户可见 eval 阻断缺状态与缺表交付。当前又补了 `可能客户角色` 接入实体 `customer_type`、`observed` 上调为 `已有明确依据`，并新增 `采购意愿待确认` 的误杀回归样本。
 - Code Slice AH-FIX 已收口并纳入本提交：修复 bulk 默认发现依据状态降级优先级；`observed + source_restricted` 投影为 `来源受限`，不再升级为 `已有明确依据`；新增用户可见 fail 样本、Markdown case、minimum gate 行级导出断言和验证文档。
+- 正式 Skill 调用 Markdown 交付收口已完成：本地 Skill 与插件缓存强制 chat-readable 报告走 `scripts/export_superleads_markdown.py`，禁止手工渲染 workbook sheet；新增 `scripts/check_superleads_formal_markdown_delivery.py`。
 
 
+
+
+## 正式 Skill 调用 Markdown 交付收口已完成
+
+1. Skill 调用说明
+   - `skills/using-superleads/SKILL.md`：正式 Markdown 交付必须调用 `scripts/export_superleads_markdown.py`。
+   - `skills/exporting-lead-workbooks/SKILL.md`：禁止手工从 `export_workbook.py` CSV/workbook sheet 渲染 chat-facing Markdown。
+   - 插件缓存 `~/.codex/plugins/cache/fleix/superleads/0.1.3/skills/...` 已同步。
+2. 正式调用冒烟脚本
+   - 新增 `scripts/check_superleads_formal_markdown_delivery.py`。
+   - 检查 Skill 源文件与插件缓存一致、包含强制统一 Markdown delivery 说明。
+   - 实跑 `export_superleads_markdown.py --route bulk_customer_development`，确认 Northshore 为 `可能相关 / 来源受限`，且没有旧 raw workbook Markdown 主表。
+3. 已验证
+   - `python3 scripts/check_superleads_formal_markdown_delivery.py --fixture shared/references/default-discovery-reference.example.json` → passed, issue_count=0。
+   - `python3 evals/run_superleads_markdown_delivery_evals.py --suite all` → 5/5。
+   - `python3 evals/run_superleads_user_visible_output_evals.py --suite all` → 13/13。
 
 ## Code Slice AH-FIX 已完成
 

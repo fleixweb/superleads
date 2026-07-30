@@ -75,6 +75,15 @@ reviewed graph to the unified Markdown delivery layer:
 python3 scripts/export_superleads_markdown.py graph.json --route auto --output report.md --format json
 ```
 
+This is mandatory for formal Markdown delivery. Do not hand-render Markdown
+from `export_workbook.py` sheets. Do not manually convert workbook/CSV rows
+into a substitute Markdown report, and do not relabel signal-status columns as
+`依据状态`. If the unified Markdown command cannot be run or fails validation,
+report that failure and stop instead of fabricating a report. A valid bulk
+customer development Markdown report starts with `# 批量客户开发` and contains
+`发现候选池样表（候选池不是正式开发名单）` with columns including `分区`,
+`业务相关性`, and `依据状态`.
+
 Keep the three user-visible routes separate:
 
 - Bulk customer development shows a candidate customer pool and pending checks.

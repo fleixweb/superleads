@@ -1,8 +1,8 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：本提交 `Fix bulk discovery basis status downgrade priority`
-- 当前状态：Code Slice AH-FIX 已收口；bulk 默认发现 `依据状态` 降级优先级已修复，`observed + source_restricted` 先降为 `来源受限`，并已有 graph/export 与用户可见回归。无强制下一 Slice；等待真实缺陷或明确需求。保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：本提交 `Enforce unified Superleads Markdown delivery in skills`
+- 当前状态：正式 Skill 调用 Markdown 交付已收口；本地 Skill 与插件缓存已同步为强制走 `scripts/export_superleads_markdown.py`，并新增正式调用冒烟检查脚本。无强制下一 Slice；等待真实缺陷或明确需求。保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已完成
 
@@ -21,6 +21,7 @@
 - Slice AH 批量客户开发内核复盘纠偏已提交：`b0fdd53 Calibrate bulk discovery candidate pool`。取消独立 L2 `初筛客户名单` 层级，改为发现候选池内部三分区，并将 `初筛客户名单` 标记为 Code Slice AH 必须堵住的 validator 绕过口。
 - Code Slice AH 已提交：`26e788f Refine bulk discovery status projection`：堵 `output_mode=初筛客户名单` 绕过口；bulk workbook / Markdown 新增 `分区`、`依据状态`；Markdown 补联系方式汇总、搜索覆盖与收敛、已排除/仅作参考、风险说明；用户可见 eval 阻断缺状态与缺表交付。当前又补了 `可能客户角色` 接入实体 `customer_type`、`observed` 上调为 `已有明确依据`，并新增 `采购意愿待确认` 的误杀回归样本。
 - Code Slice AH-FIX 已收口并纳入本提交：修复 `26e788f` 引入的依据状态升级缺陷；默认发现先扫描 `identity_pending` / `source_restricted` / `source_restrictions` / `insufficient_information` 等降级，再允许无降级的 `business_match.observed` 投影为 `已有明确依据`；新增 `bulk_basis_status_source_restricted_promoted` 用户可见 fail 样本和 `Beta Industrial Supplies` 行级导出断言。
+- 正式 Skill 调用 Markdown 交付收口已完成：`using-superleads` / `exporting-lead-workbooks` 明确禁止手工从 workbook/CSV 渲染 Markdown，要求 chat-readable 报告必须走 `export_superleads_markdown.py`；插件缓存 `~/.codex/plugins/cache/fleix/superleads/0.1.3` 已同步；新增 `scripts/check_superleads_formal_markdown_delivery.py` 验证缓存一致、统一导出器输出和 Northshore `来源受限`。
 
 ## Code Slice AD 已完成内容
 
@@ -213,6 +214,13 @@ python3 evals/run_superleads_markdown_delivery_evals.py --suite all  # 5/5
 python3 evals/run_superleads_route_evals.py --suite all  # 25/25
 python3 evals/run_product_market_analysis_evals.py --suite all  # 74/74
 python3 evals/run_customer_background_research_evals.py --suite all  # 6/6
+git diff --check  # passed
+
+# 正式 Skill 调用 Markdown 交付收口验证
+python3 -m py_compile scripts/check_superleads_formal_markdown_delivery.py scripts/export_superleads_markdown.py scripts/validate_superleads_user_visible_output.py  # passed
+python3 scripts/check_superleads_formal_markdown_delivery.py --fixture shared/references/default-discovery-reference.example.json  # passed, issue_count=0
+python3 evals/run_superleads_markdown_delivery_evals.py --suite all  # 5/5
+python3 evals/run_superleads_user_visible_output_evals.py --suite all  # 13/13
 git diff --check  # passed
 ```
 
