@@ -1,8 +1,8 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：本提交 `Verify claimed Superleads Markdown output paths`
-- 当前状态：真实业务正式 Markdown 交付链路继续补强；除 graph JSON + exporter 成功结果外，用户声明的 Markdown 路径还必须与该 graph 重新导出的 exporter 输出逐字一致。单客背调 Markdown exporter 支持已纳入冒烟，Skill / 插件缓存同步禁止声称只支持 bulk。继续真实业务 UAT。保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：本提交 `Document claimed path check as real UAT gate`
+- 当前状态：真实业务 UAT 已把 claimed path 复核固定为验收门禁；除 graph JSON + exporter 成功结果外，用户声明的 Markdown 路径必须与该 graph 重新导出的 exporter 输出逐字一致。单客背调 Markdown exporter 支持已纳入冒烟，Skill / 插件缓存同步禁止声称只支持 bulk。继续真实业务 UAT。保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已完成
 
@@ -24,6 +24,7 @@
 - 正式 Skill 调用 Markdown 交付收口已完成：`using-superleads` / `exporting-lead-workbooks` 明确禁止手工从 workbook/CSV 渲染 Markdown，要求 chat-readable 报告必须走 `export_superleads_markdown.py`；插件缓存 `~/.codex/plugins/cache/fleix/superleads/0.1.3` 已同步；新增 `scripts/check_superleads_formal_markdown_delivery.py` 验证缓存一致、统一导出器输出和 Northshore `来源受限`。
 - 真实业务 UAT 正式交付链路补强已完成：新增 `user_visible_basis_status_internal_leak`，阻断手写真实客户表把 `已观察` 等内部公开信号状态写作 `依据状态`；新增真实 UAT fail 样本并接入 user-visible eval；Skill / 插件缓存要求正式交付必须有保存的 graph JSON 和 exporter JSON 成功结果，否则只能称 research draft / source-collection note。
 - 真实业务 UAT 声明路径复核补强已完成：`check_superleads_formal_markdown_delivery.py` 新增 `--claimed-graph/--claimed-markdown/--claimed-route`，精确比对用户声明报告与 exporter 输出；冒烟增加 `customer_background_research`，证明单客背调 Markdown 也走统一 exporter。
+- 真实业务 UAT 固定验收清单已完成：新增 `docs/validation/superleads-real-business-uat-checklist.md`；claimed path 复核被记录为每次真实业务 UAT 的固定 gate，而不是可选调试步骤。
 
 ## Code Slice AD 已完成内容
 

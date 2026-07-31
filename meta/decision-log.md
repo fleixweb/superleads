@@ -257,3 +257,9 @@
 - 决策：真实业务正式 Markdown 交付不仅要有 graph JSON 和 exporter `ok=true`，最终声明给用户的 Markdown 路径还必须是 `export_superleads_markdown.py` 为该 graph 写出的原始文件；不得用后处理/手写报告替换后复用 exporter 成功结果。
 - 原因：第二轮 UAT 发现英国保温杯场景 graph 可正确导出，但用户声明的 Markdown 路径不是 exporter 输出，仍缺正式字段并泄漏 `依据状态=已观察`；同时 Chilly’s 单客背调错误声称 Markdown exporter 只支持 bulk。
 - 后果：正式冒烟脚本新增 claimed graph/report 精确比对；单客背调 exporter 支持纳入冒烟；Skill 明确 `customer_background_research` 也必须走统一 Markdown exporter。
+
+## 2026-07-31：claimed path 复核进入真实业务 UAT 固定验收
+
+- 决策：`check_superleads_formal_markdown_delivery.py --claimed-graph ... --claimed-markdown ...` 不再只是事后排错命令，而是每次真实业务 UAT 正式 Markdown 交付的固定验收步骤。
+- 原因：真实 UAT 的关键风险已经从“graph 能不能导出”升级为“Agent 最终报给用户的路径是不是同一个 exporter 原始输出”；只有 claimed path 复核能拦住路径替换、后处理和手写 Markdown 冒充正式交付。
+- 后果：UAT 记录必须同时列出 exporter `ok/issue_count` 和 claimed path check `ok/issue_count`。命中 `formal_markdown_claimed_output_mismatch` 时直接判 UAT fail；没有 graph JSON 或 Markdown path 时只能称 draft / source-collection note。

@@ -5,6 +5,10 @@ This is not a live research eval.  It catches the failure mode where an Agent
 claims to "formally export" a Superleads report but hand-renders raw
 ``export_workbook.py`` sheets, causing workbook signal-status columns such as
 ``已观察`` to be mistaken for the user-facing ``依据状态``.
+
+For real-business UAT, pass ``--claimed-graph`` and ``--claimed-markdown``.
+That fixed gate re-runs ``export_superleads_markdown.py`` from the claimed
+graph and requires the claimed Markdown path to match byte-for-byte.
 """
 from __future__ import annotations
 
@@ -264,8 +268,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fixture", type=Path, default=DEFAULT_FIXTURE)
     parser.add_argument("--cache-root", type=Path, default=DEFAULT_CACHE_ROOT)
-    parser.add_argument("--claimed-graph", type=Path, help="Optional graph JSON path claimed by a real formal-call UAT run")
-    parser.add_argument("--claimed-markdown", type=Path, help="Optional Markdown path claimed by a real formal-call UAT run")
+    parser.add_argument("--claimed-graph", type=Path, help="Graph JSON path claimed by a real formal-call UAT run; pair with --claimed-markdown for the fixed UAT gate")
+    parser.add_argument("--claimed-markdown", type=Path, help="Markdown path claimed by a real formal-call UAT run; must exactly match a fresh exporter run from --claimed-graph")
     parser.add_argument("--claimed-route", choices=("auto", "bulk_customer_development", "customer_background_research", "product_outbound_market_analysis"), default="auto")
     parser.add_argument("--skip-cache", action="store_true")
     parser.add_argument("--format", choices=("json", "text"), default="json")

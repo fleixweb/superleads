@@ -106,3 +106,25 @@ python3 scripts/export_superleads_markdown.py /home/fleix/superleads_runs/chilly
 python3 scripts/check_superleads_formal_markdown_delivery.py --skip-cache --claimed-graph /home/fleix/superleads_runs/uk_drinkware_channels_20260731/uk_drinkware_channels_discovery_graph.json --claimed-markdown /home/fleix/superleads_runs/uk_drinkware_channels_20260731/uk_drinkware_channels_discovery_report.md --claimed-route bulk_customer_development --format json  # failed as expected: formal_markdown_claimed_output_mismatch
 git diff --check  # passed
 ```
+
+## 固定 UAT 验收步骤
+
+自本轮起，真实业务 UAT 必须固定执行 claimed path 复核：
+
+```bash
+python3 scripts/check_superleads_formal_markdown_delivery.py \
+  --claimed-graph "$GRAPH" \
+  --claimed-markdown "$MARKDOWN" \
+  --claimed-route auto \
+  --format json
+```
+
+验收口径：
+
+- `ok=true` 且 `issue_count=0` 才算通过。
+- 只记录 exporter `ok=true` 不算通过；必须同时验证最终 claimed Markdown path 与 claimed graph 的重新导出结果逐字一致。
+- 命中 `formal_markdown_claimed_output_mismatch` 时，真实 UAT 直接失败；不得手工修改报告后继续复用旧的 exporter 成功结果。
+- 如果没有保存 graph JSON 或 claimed Markdown 文件，只能称为 research draft / source-collection note，不能称为正式 Markdown 交付。
+- 三条路线都适用；单客背调用 `customer_background_research`，批量客户开发用 `bulk_customer_development`，不确定时先用 `auto`。
+
+详细清单见 `docs/validation/superleads-real-business-uat-checklist.md`。

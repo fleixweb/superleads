@@ -27,6 +27,7 @@
 - 正式 Skill 调用 Markdown 交付收口已完成：本地 Skill 与插件缓存强制 chat-readable 报告走 `scripts/export_superleads_markdown.py`，禁止手工渲染 workbook sheet；新增 `scripts/check_superleads_formal_markdown_delivery.py`。
 - 真实业务 UAT 正式交付链路补强已完成：阻断 `依据状态=已观察/已观察；需确认/已观察；来源受限` 等内部状态泄漏；正式交付必须有 graph JSON 路径和 exporter JSON 成功结果。
 - 真实业务 UAT 声明路径复核补强已完成：声明的 Markdown 路径必须与该 graph 的 exporter 输出逐字一致；单客背调 Markdown exporter 支持纳入冒烟。
+- 真实业务 UAT 固定验收清单已完成：claimed path 复核成为固定验收步骤；新增 `docs/validation/superleads-real-business-uat-checklist.md` 并更新常用命令和验证记录。
 
 
 
@@ -50,6 +51,19 @@
    - `python3 evals/run_superleads_user_visible_output_evals.py --suite all` → 14/14。
    - `python3 evals/run_superleads_markdown_delivery_evals.py --suite all` → 5/5。
    - `python3 /home/fleix/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/researching-customer-background` → passed。
+
+## 真实业务 UAT 固定验收清单已完成
+
+1. 固定门禁
+   - 所有真实业务 UAT 正式 Markdown 交付都必须执行 claimed path 复核。
+   - `exporter ok=true` 只证明 graph 可导出；还必须证明最终声明给用户的 Markdown 路径与同一 graph 的重新导出结果逐字一致。
+2. 文档
+   - 新增 `docs/validation/superleads-real-business-uat-checklist.md`。
+   - 更新 `docs/superleads-common-commands.md` 与 `docs/validation/superleads-real-business-formal-delivery-20260731.md`。
+3. 固定命令
+   - `python3 scripts/check_superleads_formal_markdown_delivery.py --claimed-graph "$GRAPH" --claimed-markdown "$MARKDOWN" --claimed-route auto --format json`。
+4. 失败口径
+   - `formal_markdown_claimed_output_mismatch` 直接判 UAT fail；不得手工改 Markdown 后复用旧 exporter 成功结果。
 
 ## 真实业务 UAT 正式交付链路补强已完成
 
