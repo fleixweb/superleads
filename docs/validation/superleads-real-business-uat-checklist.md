@@ -93,3 +93,27 @@ python3 evals/run_superleads_markdown_delivery_evals.py --suite all
 - 英国保温杯客户池曾出现：graph 可正确导出，但 claimed Markdown 路径不是 exporter 原始输出，命中 `formal_markdown_claimed_output_mismatch`。这类情况必须算 UAT fail。
 - 美国 generator parts 样本通过 claimed path check，可作为正向 UAT 样例。
 - Chilly’s 单客背调已确认统一 Markdown exporter 支持 `customer_background_research`；不得再声称 Markdown exporter 只支持 bulk。
+
+## 2026-08-01 单客背调 claimed path UAT
+
+Chilly’s Bottles / Chilly’s 的 `customer_background_research` 真实 UAT 已独立复核通过：
+
+| 项目 | 结果 |
+|---|---|
+| route | `customer_background_research` |
+| graph JSON | `/home/fleix/superleads_chillys_bottles_20260731/chillys_customer_background_uat_graph.json` |
+| Markdown | `/home/fleix/superleads_chillys_bottles_20260731/chillys_customer_background_uat_report.md` |
+| claimed path check | `ok=true` / `issue_count=0` |
+| 用户可见校验 | `ok=true` / `issue_count=0` / `table_count=7` |
+
+复核命令：
+
+```bash
+python3 scripts/check_superleads_formal_markdown_delivery.py \
+  --claimed-graph /home/fleix/superleads_chillys_bottles_20260731/chillys_customer_background_uat_graph.json \
+  --claimed-markdown /home/fleix/superleads_chillys_bottles_20260731/chillys_customer_background_uat_report.md \
+  --claimed-route customer_background_research \
+  --format json
+```
+
+该结果证明 claimed path 门禁不是 bulk-only。

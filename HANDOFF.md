@@ -1,8 +1,8 @@
 # Handoff
 
 - 分支：`master`
-- 最新提交：本提交 `Add claimed path UAT regression evals`
-- 当前状态：真实业务 UAT 已把 claimed path 复核固定为验收门禁，并接入 Markdown delivery 自动回归；除 graph JSON + exporter 成功结果外，用户声明的 Markdown 路径必须与该 graph 重新导出的 exporter 输出逐字一致。单客背调 Markdown exporter 支持已纳入冒烟，Skill / 插件缓存同步禁止声称只支持 bulk。继续真实业务 UAT。保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：本提交 `Record customer background claimed path UAT`
+- 当前状态：真实业务 UAT 已把 claimed path 复核固定为验收门禁，并接入 Markdown delivery 自动回归；除 graph JSON + exporter 成功结果外，用户声明的 Markdown 路径必须与该 graph 重新导出的 exporter 输出逐字一致。bulk 与 customer_background_research 两条路线均已用真实 UAT 路径独立复核通过；单客背调 Markdown exporter 支持已纳入冒烟，Skill / 插件缓存同步禁止声称只支持 bulk。继续真实业务 UAT。保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已完成
 
@@ -26,6 +26,7 @@
 - 真实业务 UAT 声明路径复核补强已完成：`check_superleads_formal_markdown_delivery.py` 新增 `--claimed-graph/--claimed-markdown/--claimed-route`，精确比对用户声明报告与 exporter 输出；冒烟增加 `customer_background_research`，证明单客背调 Markdown 也走统一 exporter。
 - 真实业务 UAT 固定验收清单已完成：新增 `docs/validation/superleads-real-business-uat-checklist.md`；claimed path 复核被记录为每次真实业务 UAT 的固定 gate，而不是可选调试步骤。
 - claimed path UAT 自动回归已完成：`evals/run_superleads_markdown_delivery_evals.py` 新增正向 exporter 原始输出通过、负向手工后处理 mismatch 失败两条回归；当前 Markdown delivery suite 为 7/7。
+- 单客背调 claimed path 真实 UAT 已完成：Chilly’s Bottles `customer_background_research` 路线使用 `/home/fleix/superleads_chillys_bottles_20260731/{chillys_customer_background_uat_graph.json,chillys_customer_background_uat_report.md}` 独立复核通过；claimed path check 与用户可见校验均 `ok=true` / `issue_count=0`。
 
 ## Code Slice AD 已完成内容
 

@@ -144,3 +144,24 @@ python3 scripts/check_superleads_formal_markdown_delivery.py \
 python3 -m py_compile evals/run_superleads_markdown_delivery_evals.py scripts/check_superleads_formal_markdown_delivery.py scripts/export_superleads_markdown.py  # passed
 python3 evals/run_superleads_markdown_delivery_evals.py --suite all  # 7/7
 ```
+
+## 2026-08-01 customer_background_research 真实 UAT
+
+单客背调路线用 Chilly’s Bottles 跑真实 UAT，验证 claimed path 门禁不只在 bulk 路线有效。
+
+| 项目 | 结果 |
+|---|---|
+| route | `customer_background_research` |
+| graph JSON | `/home/fleix/superleads_chillys_bottles_20260731/chillys_customer_background_uat_graph.json` |
+| Markdown | `/home/fleix/superleads_chillys_bottles_20260731/chillys_customer_background_uat_report.md` |
+| claimed path check | `ok=true` / `issue_count=0` |
+| user-visible validator | `ok=true` / `issue_count=0` / `table_count=7` |
+
+复验：
+
+```bash
+python3 scripts/check_superleads_formal_markdown_delivery.py --claimed-graph /home/fleix/superleads_chillys_bottles_20260731/chillys_customer_background_uat_graph.json --claimed-markdown /home/fleix/superleads_chillys_bottles_20260731/chillys_customer_background_uat_report.md --claimed-route customer_background_research --format json  # passed, issue_count=0
+python3 scripts/validate_superleads_user_visible_output.py /home/fleix/superleads_chillys_bottles_20260731/chillys_customer_background_uat_report.md --route customer_background_research --min-tables 6 --format json  # passed, issue_count=0, table_count=7
+```
+
+结论：`customer_background_research` 正式 Markdown 也可由统一 exporter 交付，并通过 claimed path 门禁；不得声称该门禁或 Markdown exporter 只适用于 bulk。

@@ -29,6 +29,7 @@
 - 真实业务 UAT 声明路径复核补强已完成：声明的 Markdown 路径必须与该 graph 的 exporter 输出逐字一致；单客背调 Markdown exporter 支持纳入冒烟。
 - 真实业务 UAT 固定验收清单已完成：claimed path 复核成为固定验收步骤；新增 `docs/validation/superleads-real-business-uat-checklist.md` 并更新常用命令和验证记录。
 - claimed path UAT 自动回归已完成：Markdown delivery eval 新增 claimed path 正向/负向回归，阻断手工后处理 Markdown 冒充 exporter 原始输出。
+- 单客背调 claimed path 真实 UAT 已完成：Chilly’s Bottles `customer_background_research` 路线 claimed graph/report 独立复核通过，证明 claimed path 门禁不是 bulk-only。
 
 
 
@@ -76,6 +77,20 @@
 3. 已验证
    - `python3 -m py_compile evals/run_superleads_markdown_delivery_evals.py scripts/check_superleads_formal_markdown_delivery.py scripts/export_superleads_markdown.py` → passed。
    - `python3 evals/run_superleads_markdown_delivery_evals.py --suite all` → 7/7。
+
+## 单客背调 claimed path 真实 UAT 已完成
+
+1. UAT 对象
+   - Chilly’s Bottles / Chilly’s。
+   - 路线：`customer_background_research`。
+2. 复核路径
+   - graph：`/home/fleix/superleads_chillys_bottles_20260731/chillys_customer_background_uat_graph.json`。
+   - Markdown：`/home/fleix/superleads_chillys_bottles_20260731/chillys_customer_background_uat_report.md`。
+3. 已验证
+   - `python3 scripts/check_superleads_formal_markdown_delivery.py --claimed-graph /home/fleix/superleads_chillys_bottles_20260731/chillys_customer_background_uat_graph.json --claimed-markdown /home/fleix/superleads_chillys_bottles_20260731/chillys_customer_background_uat_report.md --claimed-route customer_background_research --format json` → passed, issue_count=0。
+   - `python3 scripts/validate_superleads_user_visible_output.py /home/fleix/superleads_chillys_bottles_20260731/chillys_customer_background_uat_report.md --route customer_background_research --min-tables 6 --format json` → passed, issue_count=0，table_count=7。
+4. 结论
+   - claimed path 门禁已在 bulk 和 `customer_background_research` 两条路线真实 UAT 中通过。
 
 ## 真实业务 UAT 正式交付链路补强已完成
 
