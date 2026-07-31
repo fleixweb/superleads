@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CASES = ROOT / "evals" / "cases" / "superleads_markdown_delivery_cases.json"
 DELIVERER = ROOT / "scripts" / "export_superleads_markdown.py"
 VALIDATOR = ROOT / "scripts" / "validate_superleads_user_visible_output.py"
+FORMAL_CHECKER = ROOT / "scripts" / "check_superleads_formal_markdown_delivery.py"
 
 
 def run(cmd: list[str], expect: int) -> dict[str, Any]:
@@ -105,6 +106,93 @@ def _case(py: str, case: dict[str, Any], tmp_path: Path, index: int) -> dict[str
     }
 
 
+def _claimed_path_positive_case(py: str, tmp_path: Path) -> dict[str, Any]:
+    fixture = ROOT / "evals" / "fixtures" / "pass_default_discovery_candidate_pool.json"
+    out = tmp_path / "claimed_path_uat_positive.md"
+    delivery = run([
+        py,
+        str(DELIVERER),
+        str(fixture),
+        "--route",
+        "bulk_customer_development",
+        "--output",
+        str(out),
+        "--format",
+        "json",
+    ], 0)
+    claimed_check = run([
+        py,
+        str(FORMAL_CHECKER),
+        "--skip-cache",
+        "--claimed-graph",
+        str(fixture),
+        "--claimed-markdown",
+        str(out),
+        "--claimed-route",
+        "auto",
+        "--format",
+        "json",
+    ], 0) if out.exists() else {"ok": False, "output": "missing exported Markdown"}
+    parsed = _parse_json_output(str(claimed_check.get("output", "")))
+    problems: list[str] = []
+    if parsed and (parsed.get("ok") is not True or parsed.get("issue_count") != 0):
+        problems.append(f"claimed path check payload not clean: ok={parsed.get('ok')} issue_count={parsed.get('issue_count')}")
+    if problems:
+        claimed_check["ok"] = False
+        claimed_check["returncode"] = 1
+        claimed_check["output"] += "\nclaimed path positive assertion failed: " + "; ".join(problems)
+    return {
+        "name": "real UAT claimed path check passes for exporter output",
+        "fixture": str(fixture.relative_to(ROOT)),
+        "delivery": delivery,
+        "claimed_path_check": claimed_check,
+        "ok": bool(delivery.get("ok")) and bool(claimed_check.get("ok")),
+    }
+
+
+def _claimed_path_mismatch_case(py: str, tmp_path: Path) -> dict[str, Any]:
+    fixture = ROOT / "evals" / "fixtures" / "pass_default_discovery_candidate_pool.json"
+    original = tmp_path / "claimed_path_uat_original.md"
+    mutated = tmp_path / "claimed_path_uat_mutated.md"
+    delivery = run([
+        py,
+        str(DELIVERER),
+        str(fixture),
+        "--route",
+        "bulk_customer_development",
+        "--output",
+        str(original),
+        "--format",
+        "json",
+    ], 0)
+    if original.exists():
+        mutated.write_text(original.read_text(encoding="utf-8") + "\n<!-- manual post-processing drift -->\n", encoding="utf-8")
+    claimed_check = run([
+        py,
+        str(FORMAL_CHECKER),
+        "--skip-cache",
+        "--claimed-graph",
+        str(fixture),
+        "--claimed-markdown",
+        str(mutated),
+        "--claimed-route",
+        "auto",
+        "--format",
+        "json",
+    ], 1) if mutated.exists() else {"ok": False, "output": "missing mutated Markdown"}
+    if "formal_markdown_claimed_output_mismatch" not in str(claimed_check.get("output", "")):
+        claimed_check["ok"] = False
+        claimed_check["returncode"] = 0
+        claimed_check["output"] += "\nclaimed path mismatch assertion failed: missing formal_markdown_claimed_output_mismatch"
+    return {
+        "name": "real UAT claimed path check rejects post-processed Markdown",
+        "fixture": str(fixture.relative_to(ROOT)),
+        "delivery": delivery,
+        "claimed_path_check": claimed_check,
+        "ok": bool(delivery.get("ok")) and bool(claimed_check.get("ok")),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--suite", choices=["all"], default="all")
@@ -115,6 +203,8 @@ def main() -> int:
         tmp_path = Path(tmp)
         for index, case in enumerate(_load_cases(), start=1):
             results.append(_case(py, case, tmp_path, index))
+        results.append(_claimed_path_positive_case(py, tmp_path))
+        results.append(_claimed_path_mismatch_case(py, tmp_path))
     total = len(results)
     passed = sum(1 for result in results if result.get("ok"))
     summary = {"suite": args.suite, "total": total, "passed": passed, "failed": total - passed, "results": results}

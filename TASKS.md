@@ -28,6 +28,7 @@
 - 真实业务 UAT 正式交付链路补强已完成：阻断 `依据状态=已观察/已观察；需确认/已观察；来源受限` 等内部状态泄漏；正式交付必须有 graph JSON 路径和 exporter JSON 成功结果。
 - 真实业务 UAT 声明路径复核补强已完成：声明的 Markdown 路径必须与该 graph 的 exporter 输出逐字一致；单客背调 Markdown exporter 支持纳入冒烟。
 - 真实业务 UAT 固定验收清单已完成：claimed path 复核成为固定验收步骤；新增 `docs/validation/superleads-real-business-uat-checklist.md` 并更新常用命令和验证记录。
+- claimed path UAT 自动回归已完成：Markdown delivery eval 新增 claimed path 正向/负向回归，阻断手工后处理 Markdown 冒充 exporter 原始输出。
 
 
 
@@ -64,6 +65,17 @@
    - `python3 scripts/check_superleads_formal_markdown_delivery.py --claimed-graph "$GRAPH" --claimed-markdown "$MARKDOWN" --claimed-route auto --format json`。
 4. 失败口径
    - `formal_markdown_claimed_output_mismatch` 直接判 UAT fail；不得手工改 Markdown 后复用旧 exporter 成功结果。
+
+## claimed path UAT 自动回归已完成
+
+1. 回归位置
+   - `evals/run_superleads_markdown_delivery_evals.py`。
+2. 新增覆盖
+   - exporter 原始输出作为 claimed Markdown：通过。
+   - exporter 输出后追加手工内容再作为 claimed Markdown：失败，并要求错误码包含 `formal_markdown_claimed_output_mismatch`。
+3. 已验证
+   - `python3 -m py_compile evals/run_superleads_markdown_delivery_evals.py scripts/check_superleads_formal_markdown_delivery.py scripts/export_superleads_markdown.py` → passed。
+   - `python3 evals/run_superleads_markdown_delivery_evals.py --suite all` → 7/7。
 
 ## 真实业务 UAT 正式交付链路补强已完成
 

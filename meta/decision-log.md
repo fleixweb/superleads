@@ -262,4 +262,4 @@
 
 - 决策：`check_superleads_formal_markdown_delivery.py --claimed-graph ... --claimed-markdown ...` 不再只是事后排错命令，而是每次真实业务 UAT 正式 Markdown 交付的固定验收步骤。
 - 原因：真实 UAT 的关键风险已经从“graph 能不能导出”升级为“Agent 最终报给用户的路径是不是同一个 exporter 原始输出”；只有 claimed path 复核能拦住路径替换、后处理和手写 Markdown 冒充正式交付。
-- 后果：UAT 记录必须同时列出 exporter `ok/issue_count` 和 claimed path check `ok/issue_count`。命中 `formal_markdown_claimed_output_mismatch` 时直接判 UAT fail；没有 graph JSON 或 Markdown path 时只能称 draft / source-collection note。
+- 后果：UAT 记录必须同时列出 exporter `ok/issue_count` 和 claimed path check `ok/issue_count`。命中 `formal_markdown_claimed_output_mismatch` 时直接判 UAT fail；没有 graph JSON 或 Markdown path 时只能称 draft / source-collection note。Markdown delivery eval 已包含正向 claimed path 通过和后处理 mismatch 失败回归。

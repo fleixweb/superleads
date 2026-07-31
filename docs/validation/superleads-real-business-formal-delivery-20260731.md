@@ -128,3 +128,19 @@ python3 scripts/check_superleads_formal_markdown_delivery.py \
 - 三条路线都适用；单客背调用 `customer_background_research`，批量客户开发用 `bulk_customer_development`，不确定时先用 `auto`。
 
 详细清单见 `docs/validation/superleads-real-business-uat-checklist.md`。
+
+## 2026-07-31 claimed path 自动回归
+
+为避免 claimed path 复核只停留在文档，本轮把它接入 `evals/run_superleads_markdown_delivery_evals.py`：
+
+| 回归项 | 期望 |
+|---|---|
+| 统一 exporter 写出的 Markdown 作为 claimed path | `check_superleads_formal_markdown_delivery.py --claimed-graph ... --claimed-markdown ...` 通过 |
+| exporter 输出后被手工追加内容再作为 claimed path | `check_superleads_formal_markdown_delivery.py` 失败，错误码包含 `formal_markdown_claimed_output_mismatch` |
+
+复验：
+
+```bash
+python3 -m py_compile evals/run_superleads_markdown_delivery_evals.py scripts/check_superleads_formal_markdown_delivery.py scripts/export_superleads_markdown.py  # passed
+python3 evals/run_superleads_markdown_delivery_evals.py --suite all  # 7/7
+```

@@ -40,6 +40,21 @@ python3 scripts/check_superleads_formal_markdown_delivery.py \
 - `customer_background_research`
 - `product_outbound_market_analysis`
 
+## 自动回归
+
+claimed path 门禁已接入 Markdown delivery eval：
+
+```bash
+python3 evals/run_superleads_markdown_delivery_evals.py --suite all
+```
+
+该 suite 除三路线 Markdown 生成外，还包含两条真实 UAT claimed path 回归：
+
+| 回归项 | 期望 |
+|---|---|
+| exporter 原始输出作为 claimed Markdown | 通过，`ok=true` / `issue_count=0` |
+| exporter 输出后追加手工内容再作为 claimed Markdown | 失败，错误码包含 `formal_markdown_claimed_output_mismatch` |
+
 ## 通过标准
 
 必须同时满足：
