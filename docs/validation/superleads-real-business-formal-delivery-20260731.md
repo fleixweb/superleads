@@ -61,3 +61,48 @@ git diff --check  # passed
 ## 结论
 
 本轮没有新增 output mode、delivery status、exporter mode 或 audit 分支；只把真实业务正式交付链路继续收紧：真实搜索后的手写表格不能冒充正式交付，`依据状态` 不能再泄漏内部公开信号状态。
+
+## 2026-07-31 真实 UAT 第二轮复核
+
+第二轮新窗口 UAT 结果：
+
+| 场景 | 复核结果 | 说明 |
+|---|---|---|
+| 英国保温杯客户池 | 不通过 | graph validate / audit 均通过，且 graph 能由 exporter 生成合格报告；但用户声明的 Markdown 路径不是该 exporter 输出，仍是另一份手写/后处理报告，缺正式字段并含 `依据状态=已观察` |
+| 美国 generator parts | 通过 | graph validate / audit 通过；声明的 Markdown 路径与 exporter 输出一致；用户可见 validator 通过 |
+| Chilly’s 单客背调 | 不通过 | graph 实际可由 `export_superleads_markdown.py --route customer_background_research` 成功导出，脚本返回 `ok=true`；新窗口错误声称 Markdown exporter 仅支持 bulk，导致未生成 Markdown |
+
+本轮新增修复：
+
+| 位置 | 改动 |
+|---|---|
+| `scripts/check_superleads_formal_markdown_delivery.py` | 新增 `--claimed-graph` / `--claimed-markdown` / `--claimed-route`，将真实 UAT 声明的 Markdown 路径与从声明 graph 新跑出的 exporter 输出做 SHA-256 精确比对 |
+| `scripts/check_superleads_formal_markdown_delivery.py` | 冒烟检查增加 `customer_background_research` fixture，证明统一 Markdown exporter 支持单客背调 |
+| `skills/using-superleads/SKILL.md` | 明确最终回答里的 claimed Markdown path 必须是 exporter 为 claimed graph 写出的原文件，不得后处理替换后复用 `ok=true` |
+| `skills/exporting-lead-workbooks/SKILL.md` | 增加真实 UAT 校验命令示例：`--claimed-graph graph.json --claimed-markdown report.md --claimed-route auto` |
+| `skills/researching-customer-background/SKILL.md` | 明确客户背调 Markdown 正式交付使用 `export_superleads_markdown.py --route customer_background_research`，不要声称 exporter 只支持 bulk |
+
+已实测：
+
+```bash
+python3 scripts/check_superleads_formal_markdown_delivery.py --skip-cache --claimed-graph /home/fleix/superleads_runs/uk_drinkware_channels_20260731/uk_drinkware_channels_discovery_graph.json --claimed-markdown /home/fleix/superleads_runs/uk_drinkware_channels_20260731/uk_drinkware_channels_discovery_report.md --claimed-route bulk_customer_development --format json  # fails with formal_markdown_claimed_output_mismatch
+python3 scripts/check_superleads_formal_markdown_delivery.py --skip-cache --claimed-graph /home/fleix/superleads_us_generator_parts/graph.json --claimed-markdown /home/fleix/superleads_us_generator_parts/report.md --claimed-route bulk_customer_development --format json  # passed, issue_count=0
+python3 scripts/export_superleads_markdown.py /home/fleix/superleads_runs/chillys_bottles_2026-07-31/chillys_background_graph.json --route customer_background_research --output /tmp/chillys_reexport.md --format json  # passed, issue_count=0
+```
+
+
+本轮提交前复验：
+
+```bash
+python3 -m py_compile scripts/check_superleads_formal_markdown_delivery.py scripts/export_superleads_markdown.py scripts/validate_superleads_user_visible_output.py  # passed
+python3 /home/fleix/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/using-superleads  # passed
+python3 /home/fleix/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/exporting-lead-workbooks  # passed
+python3 /home/fleix/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/researching-customer-background  # passed
+python3 scripts/check_superleads_formal_markdown_delivery.py --fixture shared/references/default-discovery-reference.example.json --format json  # passed, issue_count=0；含 bulk 与 customer_background_research 冒烟
+python3 evals/run_superleads_user_visible_output_evals.py --suite all  # 14/14
+python3 evals/run_superleads_markdown_delivery_evals.py --suite all  # 5/5
+python3 scripts/check_superleads_formal_markdown_delivery.py --skip-cache --claimed-graph /home/fleix/superleads_us_generator_parts/graph.json --claimed-markdown /home/fleix/superleads_us_generator_parts/report.md --claimed-route bulk_customer_development --format json  # passed, issue_count=0
+python3 scripts/export_superleads_markdown.py /home/fleix/superleads_runs/chillys_bottles_2026-07-31/chillys_background_graph.json --route customer_background_research --output /tmp/chillys_reexport.md --format json  # passed, issue_count=0
+python3 scripts/check_superleads_formal_markdown_delivery.py --skip-cache --claimed-graph /home/fleix/superleads_runs/uk_drinkware_channels_20260731/uk_drinkware_channels_discovery_graph.json --claimed-markdown /home/fleix/superleads_runs/uk_drinkware_channels_20260731/uk_drinkware_channels_discovery_report.md --claimed-route bulk_customer_development --format json  # failed as expected: formal_markdown_claimed_output_mismatch
+git diff --check  # passed
+```

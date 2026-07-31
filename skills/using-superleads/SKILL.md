@@ -93,6 +93,13 @@ repair the graph first, then run the exporter. Never write `依据状态` as int
 public-signal labels such as `已观察`, `未检索`, `主体待确认`, `已观察；需确认`,
 or `已观察；来源受限`.
 
+When reporting a formal run, the claimed Markdown path must be the exact file
+written by `export_superleads_markdown.py` for the claimed graph JSON. Do not
+post-process, rewrite, or replace that file with a manually edited report while
+still quoting the exporter's `ok=true` / `issue_count=0` result. If a user asks
+for verification, compare the claimed Markdown path against a fresh exporter
+run from the claimed graph.
+
 Keep the three user-visible routes separate:
 
 - Bulk customer development shows a candidate customer pool and pending checks.

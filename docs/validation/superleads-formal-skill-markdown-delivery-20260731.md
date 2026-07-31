@@ -57,3 +57,10 @@ git diff --check  # passed
 后续真实业务黑盒调用又暴露一个新漂移：reference graph 导出正确，但 Agent 在真实搜索后可能手写客户池表格，并把内部公开信号状态 `已观察`、`已观察；需确认`、`已观察；来源受限` 写进用户可见 `依据状态`。
 
 该问题已在 `docs/validation/superleads-real-business-formal-delivery-20260731.md` 记录并修复：用户可见 validator 新增 `user_visible_basis_status_internal_leak`，正式调用冒烟脚本也会检查真实 UAT fail 样本。
+
+
+## 2026-07-31 声明路径精确复核补充
+
+真实 UAT 发现：Agent 可能用 graph 成功运行 exporter，却把另一个手写/后处理 Markdown 路径报给用户，同时复用 `ok=true` / `issue_count=0`。本轮已在正式冒烟脚本中新增 `--claimed-graph` / `--claimed-markdown` / `--claimed-route`，用于将声明路径与从声明 graph 新跑出的 exporter 输出做精确比对。
+
+同轮还确认 `export_superleads_markdown.py --route customer_background_research` 支持单客背调；Skill 已禁止声称 Markdown exporter 只支持 bulk。

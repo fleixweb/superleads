@@ -43,6 +43,7 @@
 | 三路线入口路由 eval | `python3 evals/run_superleads_route_evals.py --suite all` |
 | 三路线 Markdown 交付器 eval | `python3 evals/run_superleads_markdown_delivery_evals.py --suite all` |
 | 正式 Skill 调用 Markdown 冒烟检查 | `python3 scripts/check_superleads_formal_markdown_delivery.py --fixture shared/references/default-discovery-reference.example.json` |
+| 正式 Skill 调用声明路径复核 | `python3 scripts/check_superleads_formal_markdown_delivery.py --claimed-graph graph.json --claimed-markdown report.md --claimed-route auto` |
 | 用户可见输出静态 eval | `python3 evals/run_superleads_user_visible_output_evals.py --suite all` |
 | 产品出海市场分析 eval | `python3 evals/run_product_market_analysis_evals.py --suite all` |
 | Source Plan eval | `python3 evals/run_product_market_source_plan_evals.py --suite all` |

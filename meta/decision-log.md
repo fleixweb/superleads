@@ -251,3 +251,9 @@
 - 决策：Superleads 真实业务 Markdown 交付只有在已有保存的 graph JSON 且 `export_superleads_markdown.py` 成功返回后，才能称为正式交付；手写搜索整理表只能称为 research draft / source-collection note。
 - 原因：真实 UAT 发现 reference graph 导出已正确，但 Agent 在搜索真实客户后仍会手写报告，并把内部公开信号状态 `已观察`、`已观察；需确认`、`已观察；来源受限` 写进用户可见 `依据状态`，绕过统一状态投影。
 - 后果：用户可见 validator 阻断 `依据状态` 泄漏内部信号状态；正式调用冒烟检查纳入真实 UAT fail 样本；Skill 明确没有 graph/exporter JSON 成功结果时不得声称 `ok=true` 或 `issue_count=0`。
+
+## 2026-07-31：正式交付声明路径必须与 exporter 输出逐字一致
+
+- 决策：真实业务正式 Markdown 交付不仅要有 graph JSON 和 exporter `ok=true`，最终声明给用户的 Markdown 路径还必须是 `export_superleads_markdown.py` 为该 graph 写出的原始文件；不得用后处理/手写报告替换后复用 exporter 成功结果。
+- 原因：第二轮 UAT 发现英国保温杯场景 graph 可正确导出，但用户声明的 Markdown 路径不是 exporter 输出，仍缺正式字段并泄漏 `依据状态=已观察`；同时 Chilly’s 单客背调错误声称 Markdown exporter 只支持 bulk。
+- 后果：正式冒烟脚本新增 claimed graph/report 精确比对；单客背调 exporter 支持纳入冒烟；Skill 明确 `customer_background_research` 也必须走统一 Markdown exporter。

@@ -26,10 +26,30 @@
 - Code Slice AH-FIX 已收口并纳入本提交：修复 bulk 默认发现依据状态降级优先级；`observed + source_restricted` 投影为 `来源受限`，不再升级为 `已有明确依据`；新增用户可见 fail 样本、Markdown case、minimum gate 行级导出断言和验证文档。
 - 正式 Skill 调用 Markdown 交付收口已完成：本地 Skill 与插件缓存强制 chat-readable 报告走 `scripts/export_superleads_markdown.py`，禁止手工渲染 workbook sheet；新增 `scripts/check_superleads_formal_markdown_delivery.py`。
 - 真实业务 UAT 正式交付链路补强已完成：阻断 `依据状态=已观察/已观察；需确认/已观察；来源受限` 等内部状态泄漏；正式交付必须有 graph JSON 路径和 exporter JSON 成功结果。
+- 真实业务 UAT 声明路径复核补强已完成：声明的 Markdown 路径必须与该 graph 的 exporter 输出逐字一致；单客背调 Markdown exporter 支持纳入冒烟。
 
 
 
 
+
+
+## 真实业务 UAT 声明路径复核补强已完成
+
+1. 声明路径精确复核
+   - `scripts/check_superleads_formal_markdown_delivery.py` 新增 `--claimed-graph`、`--claimed-markdown`、`--claimed-route`。
+   - 对声明 graph 重新运行 `export_superleads_markdown.py`，并与声明 Markdown 路径做 SHA-256/文本精确比对。
+   - 英国保温杯第二轮 UAT 报告命中 `formal_markdown_claimed_output_mismatch`。
+2. 单客背调 exporter 冒烟
+   - 冒烟脚本新增 `customer_background_research` fixture。
+   - 确认 `export_superleads_markdown.py --route customer_background_research` 可输出 `# 单一客户背调` 和“怎么联系、先找谁”。
+3. Skill / 插件缓存
+   - `using-superleads` / `exporting-lead-workbooks` 要求最终声明路径必须是 exporter 原始输出。
+   - `researching-customer-background` 明确不要声称 Markdown exporter 只支持 bulk。
+4. 已验证
+   - `python3 scripts/check_superleads_formal_markdown_delivery.py --fixture shared/references/default-discovery-reference.example.json --format json` → passed, issue_count=0。
+   - `python3 evals/run_superleads_user_visible_output_evals.py --suite all` → 14/14。
+   - `python3 evals/run_superleads_markdown_delivery_evals.py --suite all` → 5/5。
+   - `python3 /home/fleix/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/researching-customer-background` → passed。
 
 ## 真实业务 UAT 正式交付链路补强已完成
 

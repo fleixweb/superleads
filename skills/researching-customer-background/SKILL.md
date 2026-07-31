@@ -135,6 +135,11 @@ Superleads 的主路径不变：
 python3 scripts/export_superleads_markdown.py graph.json --route customer_background_research --output report.md --format json
 ```
 
+客户背调 Markdown 正式交付必须有已保存的 graph JSON 和 Markdown exporter 返回的
+`ok=true`。不要声称 `export_superleads_markdown.py` 或 Markdown exporter 只支持
+批量客户开发；它支持 `customer_background_research`。如果该命令失败，返回失败
+payload 或改交付 CSV/XLSX，不要把手写研究摘要称为正式 Markdown 报告。
+
 如需 CSV / XLSX 交接，可使用 `python3 scripts/export_workbook.py graph.json --output-dir out --mode background --format csv` 导出同样的六张表。两类导出都只展示当前背景对象、其证据支持的关联主体与线索，不会输出无关批量客户或正式名单内容。
 
 表述规则：

@@ -9,6 +9,7 @@ claims to "formally export" a Superleads report but hand-renders raw
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import subprocess
 import sys
@@ -19,23 +20,43 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_FIXTURE = ROOT / "shared" / "references" / "default-discovery-reference.example.json"
+BACKGROUND_FIXTURE = ROOT / "evals" / "fixtures" / "pass_customer_background_chillys_markdown.json"
 DEFAULT_CACHE_ROOT = Path.home() / ".codex" / "plugins" / "cache" / "fleix" / "superleads" / "0.1.3"
-SKILL_FILES = (
-    "skills/using-superleads/SKILL.md",
-    "skills/exporting-lead-workbooks/SKILL.md",
-)
+SKILL_FILE_SNIPPETS = {
+    "skills/using-superleads/SKILL.md": (
+        "export_superleads_markdown.py",
+        "Do not hand-render Markdown",
+        "Do not manually",
+        "saved graph",
+        "JSON path",
+        "research draft",
+        "claimed Markdown path",
+        "发现候选池样表",
+        "依据状态",
+        "已观察；来源受限",
+    ),
+    "skills/exporting-lead-workbooks/SKILL.md": (
+        "export_superleads_markdown.py",
+        "Do not hand-render Markdown",
+        "Do not manually",
+        "saved graph",
+        "JSON path",
+        "research draft",
+        "claimed Markdown path",
+        "customer_background_research",
+        "发现候选池样表",
+        "依据状态",
+        "已观察；来源受限",
+    ),
+    "skills/researching-customer-background/SKILL.md": (
+        "export_superleads_markdown.py",
+        "customer_background_research",
+        "graph JSON",
+        "Markdown exporter",
+        "不要声称",
+    ),
+}
 UAT_INTERNAL_BASIS_STATUS_SAMPLE = ROOT / "evals" / "user_visible_outputs" / "fail_bulk_customer_real_uat_internal_basis_status.md"
-REQUIRED_SKILL_SNIPPETS = (
-    "export_superleads_markdown.py",
-    "Do not hand-render Markdown",
-    "Do not manually",
-    "saved graph",
-    "JSON path",
-    "research draft",
-    "发现候选池样表",
-    "依据状态",
-    "已观察；来源受限",
-)
 
 
 def _issue(code: str, message: str, path: str | None = None) -> dict[str, str]:
@@ -49,15 +70,19 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _sha256_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
 def check_skill_instructions(cache_root: Path, *, skip_cache: bool) -> list[dict[str, str]]:
     issues: list[dict[str, str]] = []
-    for rel in SKILL_FILES:
+    for rel, required_snippets in SKILL_FILE_SNIPPETS.items():
         source = ROOT / rel
         if not source.exists():
             issues.append(_issue("formal_markdown_skill_source_missing", f"missing source skill: {rel}", rel))
             continue
         source_text = _read(source)
-        for snippet in REQUIRED_SKILL_SNIPPETS:
+        for snippet in required_snippets:
             if snippet not in source_text:
                 issues.append(_issue("formal_markdown_skill_instruction_missing", f"source skill lacks required snippet: {snippet}", rel))
         if skip_cache:
@@ -69,19 +94,19 @@ def check_skill_instructions(cache_root: Path, *, skip_cache: bool) -> list[dict
         cached_text = _read(cached)
         if cached_text != source_text:
             issues.append(_issue("formal_markdown_plugin_cache_stale", f"cached skill differs from repo source: {rel}", str(cached)))
-        for snippet in REQUIRED_SKILL_SNIPPETS:
+        for snippet in required_snippets:
             if snippet not in cached_text:
                 issues.append(_issue("formal_markdown_plugin_cache_instruction_missing", f"cached skill lacks required snippet: {snippet}", str(cached)))
     return issues
 
 
-def _run_export(fixture: Path, output: Path) -> tuple[dict[str, Any], str]:
+def _run_export(fixture: Path, output: Path, *, route: str) -> tuple[dict[str, Any], str]:
     cmd = [
         sys.executable,
         str(ROOT / "scripts" / "export_superleads_markdown.py"),
         str(fixture),
         "--route",
-        "bulk_customer_development",
+        route,
         "--output",
         str(output),
         "--format",
@@ -109,7 +134,7 @@ def check_generated_markdown(fixture: Path) -> tuple[list[dict[str, str]], dict[
     issues: list[dict[str, str]] = []
     with tempfile.TemporaryDirectory() as tmp:
         output = Path(tmp) / "formal-superleads-bulk.md"
-        payload, text = _run_export(fixture, output)
+        payload, text = _run_export(fixture, output, route="bulk_customer_development")
     if payload.get("returncode") != 0 or not payload.get("ok"):
         issues.append(_issue("formal_markdown_export_failed", "export_superleads_markdown.py did not produce a valid report"))
         return issues, payload, text
@@ -155,6 +180,50 @@ def check_generated_markdown(fixture: Path) -> tuple[list[dict[str, str]], dict[
     return issues, payload, text
 
 
+def check_customer_background_export_support() -> tuple[list[dict[str, str]], dict[str, Any]]:
+    issues: list[dict[str, str]] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        output = Path(tmp) / "formal-superleads-background.md"
+        payload, text = _run_export(BACKGROUND_FIXTURE, output, route="customer_background_research")
+    if payload.get("returncode") != 0 or not payload.get("ok"):
+        issues.append(_issue(
+            "formal_markdown_background_export_failed",
+            "export_superleads_markdown.py must support customer_background_research",
+            str(BACKGROUND_FIXTURE),
+        ))
+        return issues, payload
+    for needle in ("# 单一客户背调", "怎么联系、先找谁", "客户、品牌与关联方"):
+        if needle not in text:
+            issues.append(_issue("formal_markdown_background_required_text_missing", f"background Markdown missing: {needle}"))
+    return issues, payload
+
+
+def check_claimed_export_output(graph: Path, markdown: Path, *, route: str) -> list[dict[str, str]]:
+    issues: list[dict[str, str]] = []
+    if not graph.exists():
+        return [_issue("formal_markdown_claimed_graph_missing", f"claimed graph JSON does not exist: {graph}", str(graph))]
+    if not markdown.exists():
+        return [_issue("formal_markdown_claimed_markdown_missing", f"claimed Markdown report does not exist: {markdown}", str(markdown))]
+    with tempfile.TemporaryDirectory() as tmp:
+        expected_path = Path(tmp) / "expected.md"
+        payload, expected_text = _run_export(graph, expected_path, route=route)
+    if payload.get("returncode") != 0 or not payload.get("ok"):
+        issues.append(_issue(
+            "formal_markdown_claimed_graph_export_failed",
+            "claimed graph could not be exported by export_superleads_markdown.py",
+            str(graph),
+        ))
+        return issues
+    claimed_text = _read(markdown)
+    if claimed_text != expected_text:
+        issues.append(_issue(
+            "formal_markdown_claimed_output_mismatch",
+            "claimed Markdown path does not exactly match export_superleads_markdown.py output for the claimed graph",
+            f"{markdown} claimed_sha256={_sha256_text(claimed_text)} expected_sha256={_sha256_text(expected_text)}",
+        ))
+    return issues
+
+
 def check_real_uat_regression_sample() -> list[dict[str, str]]:
     issues: list[dict[str, str]] = []
     if not UAT_INTERNAL_BASIS_STATUS_SAMPLE.exists():
@@ -195,6 +264,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fixture", type=Path, default=DEFAULT_FIXTURE)
     parser.add_argument("--cache-root", type=Path, default=DEFAULT_CACHE_ROOT)
+    parser.add_argument("--claimed-graph", type=Path, help="Optional graph JSON path claimed by a real formal-call UAT run")
+    parser.add_argument("--claimed-markdown", type=Path, help="Optional Markdown path claimed by a real formal-call UAT run")
+    parser.add_argument("--claimed-route", choices=("auto", "bulk_customer_development", "customer_background_research", "product_outbound_market_analysis"), default="auto")
     parser.add_argument("--skip-cache", action="store_true")
     parser.add_argument("--format", choices=("json", "text"), default="json")
     args = parser.parse_args()
@@ -204,6 +276,15 @@ def main() -> int:
     issues.extend(check_real_uat_regression_sample())
     markdown_issues, export_payload, text = check_generated_markdown(fixture)
     issues.extend(markdown_issues)
+    background_issues, background_payload = check_customer_background_export_support()
+    issues.extend(background_issues)
+    if args.claimed_graph or args.claimed_markdown:
+        if not (args.claimed_graph and args.claimed_markdown):
+            issues.append(_issue("formal_markdown_claimed_pair_incomplete", "--claimed-graph and --claimed-markdown must be provided together"))
+        else:
+            claimed_graph = args.claimed_graph if args.claimed_graph.is_absolute() else ROOT / args.claimed_graph
+            claimed_markdown = args.claimed_markdown if args.claimed_markdown.is_absolute() else ROOT / args.claimed_markdown
+            issues.extend(check_claimed_export_output(claimed_graph, claimed_markdown, route=args.claimed_route))
     payload: dict[str, Any] = {
         "ok": not issues,
         "issue_count": len(issues),
@@ -216,6 +297,13 @@ def main() -> int:
             "route": export_payload.get("route"),
             "stage": export_payload.get("stage"),
             "issue_count": export_payload.get("issue_count"),
+        },
+        "background_export": {
+            "ok": bool(background_payload.get("ok")),
+            "returncode": background_payload.get("returncode"),
+            "route": background_payload.get("route"),
+            "stage": background_payload.get("stage"),
+            "issue_count": background_payload.get("issue_count"),
         },
         "northshore_row": _line_containing(text, "Northshore Drinkware Distributors"),
     }
