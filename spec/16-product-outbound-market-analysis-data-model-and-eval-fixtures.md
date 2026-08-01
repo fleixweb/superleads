@@ -78,6 +78,23 @@
 | `analysis_modules_requested` | 是 | 趋势、价格、准入、税费、出口、物流、外部因素等 |
 | `business_decision_policy` | 是 | 固定为“只给客观参考，不做进入建议” |
 
+### 3.2.1 Source-planning Brief 规范字段名
+
+面向不同 AI 工具或 CLI 调用时，首轮用户输入可以很少，但写入 source plan 的 Brief 字段名必须稳定。常见别名如 `hs_code`、`hts_code`、`hs_or_hts_candidates`、`destination_country`、`origin_country` 可以作为用户线索，但在进入 `scripts/plan_product_market_sources.py` 前应映射到下列规范字段；不得因字段名近似而静默丢弃用户已经给出的 HTS、原产国或目标国家。
+
+| 规范字段 | 可承载什么 | 首轮是否阻断 |
+|---|---|---|
+| `product_name` | 产品名、品类名、用途描述，或由 HS/HTS 推出的用户可懂产品对象 | 是；产品名、品类、用途描述、URL/PDF/图片线索或 HS/HTS 任一可启动首轮 |
+| `target_country_or_region` / `destination_country_or_region` | 目标销售 / 进口市场 | 是；没有目标国家/地区只能先询问 |
+| `candidate_hs_hts` | 用户给出的候选 HS/HTS/HTSUS/TARIC 等税号线索 | 否；缺失时税费和归类保持候选缺口 |
+| `export_declaration_country` | 出口申报国；默认可为中国且必须可见可改 | 否；缺失时可用中国默认口径启动，但要明示可替换 |
+| `origin_country_or_region` | 用户明确作为海关原产国 / origin country 给出的前提 | 否；缺失时税费、COO、贸易救济保留待确认 |
+| `manufacturing_country_clue` | Made in、production、manufacturing、COO 字样等生产/标识线索 | 否；只作线索，不得消除原产国缺口，也不得触发出口国或 COO 证明结论 |
+| `departure_country_or_region` / `departure_node` | 起运国、起运港、机场、场站 | 否；不得猜港口 |
+| `destination_node` | 目的港、机场、城市或交付节点 | 否；可先按目的国分析 |
+| `product_trigger_tags` | 电池、带电、无线、食品接触、儿童、纺织、化学品、危险品等触发项 | 否；未知时写待确认，不反推不触发 |
+| `model_or_sku` / `manufacturer_or_brand` | 型号、SKU、品牌、制造商 | 否；缺失时做品类级分析，不要求用户首轮补齐 |
+
 ### 3.3 `ProductSubject`
 
 | 字段 | 必填 | 说明 |
@@ -98,7 +115,7 @@
 | `trade_premise_id` | 是 | 贸易前提 ID |
 | `seller_country_or_region` | 否 | 卖方所在国 |
 | `export_declaration_country` | 是 | 出口申报国 |
-| `origin_country_or_region` | 否 | 原产国或公开制造来源 |
+| `origin_country_or_region` | 否 | 海关原产国前提；Made in / production 线索不自动写入此字段 |
 | `origin_evidence_level` | 是 | L0-L4，沿用原产地证据等级 |
 | `departure_country_or_region` | 否 | 实际起运国 |
 | `departure_node` | 否 | 港口/机场/口岸/仓库 |

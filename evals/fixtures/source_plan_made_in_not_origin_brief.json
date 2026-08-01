@@ -1,0 +1,14 @@
+{
+  "brief_id": "source-brief-made-in-not-origin",
+  "product_name": "蓝牙音箱",
+  "made_in_country": "Vietnam",
+  "destination_country_or_region": "US",
+  "analysis_modules_requested": [
+    "destination_compliance",
+    "origin_proof_requirement",
+    "import_tax",
+    "logistics",
+    "market_reports"
+  ],
+  "business_decision_policy": "Made in / production clue must not satisfy customs-origin proof or suppress origin gap warnings."
+}

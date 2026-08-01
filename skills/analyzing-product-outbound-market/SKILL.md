@@ -9,7 +9,7 @@ description: "Use when the user asks for objective outbound market analysis for 
 
 Route and run the Superleads product outbound market analysis path:
 
-`产品版本 + 目标国家/地区 + 贸易前提 -> 产品出海市场分析 -> 客观市场与准入信息矩阵`
+`产品 / 品类 / 候选 HS-HTS + 目标国家/地区 + 贸易前提 -> 产品出海市场分析 -> 客观市场与准入信息矩阵`
 
 This skill is parallel to bulk customer development and single-customer background research. It does not create Leads, customer lists, recommended customer types, market-entry advice, recommended prices, or best shipping choices.
 
@@ -30,17 +30,21 @@ Read these only as needed:
 ## Intake workflow
 
 1. Confirm the route in human terms: `我理解你要做的是：产品出海市场分析。`
-2. Capture the minimum Brief:
+2. Model the Brief internally; do not turn these fields into a user questionnaire:
    - product name / model / version;
    - target country or region;
    - export declaration country, defaulting visibly to China only when the user did not set another country;
    - origin country, departure node, destination node, and trade term if known;
    - product triggers: battery, powered, magnetic, liquid, powder, chemical, dangerous goods, skin contact, food contact, child use, textile, animal/plant material, agricultural/cold-chain, bulk/breakbulk/RoRo/oversized, dual-use/export-control sensitivity.
    - optional user materials: certificates, test reports, SDS, UN38.3, labels, BOM, registration files, invoices, packing lists, or COO. These help scope matching; they are not prerequisites for analyzing destination requirements.
-3. Ask at most three short questions only when missing information changes the route or blocks useful analysis. Target country and product identity are the first two blocking questions.
-4. If the user also asks to find customers, split the job into two stages: do product market analysis first; only start customer development after the user separately confirms.
-5. If the user asks whether the market is worth entering, translate it into objective analysis and state that the business decision is theirs.
-6. If the user asks about certification without having certificates, do not block on the missing certificates. First analyze what the destination market may require, then list which user/supplier/professional materials are needed to verify applicability.
+3. Ask at most three short questions only when missing information changes the route or blocks useful analysis. The only first-pass blocking questions are product identity and target country/region. A product name, category, use description, URL/PDF/image clue, or HS/HTS code is enough to start category-level analysis; a missing model/version lowers precision but does not stop the run.
+4. First-pass intake must not ask the user for IOR/importer of record, Incoterms/trade term, transaction value or quantity, expected entry date, customs broker, BOM, product photos, actual departure port, original certificates, test reports, SDS, or UN38.3. Ask for these only when the user explicitly requests final duty, formal customs filing, clearance readiness, or actual shipment arrangement.
+5. If the user also asks to find customers, split the job into two stages: do product market analysis first; only start customer development after the user separately confirms.
+6. If the user asks whether the market is worth entering, translate it into objective analysis and state that the business decision is theirs.
+7. If the user asks about certification without having certificates, do not block on the missing certificates. First analyze what the destination market may require, then list which user/supplier/professional materials are needed to verify applicability.
+8. Category-level analysis changes only the object granularity. It does not lower the evidence standard: every user-visible fact still needs current-run source support, visible gap/conflict status, or an explicit not-executed row; never use category-level analysis to output final classification, final duty, no-certification, general-cargo, clearance-ready, or transportability conclusions.
+
+Canonical source-planning Brief field names are: `product_name`, `target_country_or_region` / `destination_country_or_region`, `candidate_hs_hts`, `export_declaration_country`, `origin_country_or_region`, `manufacturing_country_clue`, `departure_country_or_region`, `departure_node`, `destination_node`, `product_trigger_tags`, `model_or_sku`, and `manufacturer_or_brand`. Treat other common words such as `hs_code` or `hts_code` as user clues to map into the canonical field before running source planning. Do not map `made_in_country`, `production_country`, `manufacturing_country`, or `coo_country` into `origin_country_or_region`; keep them as manufacturing clues unless the user explicitly states a customs-origin premise.
 
 ## Evidence workflow
 

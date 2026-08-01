@@ -30,8 +30,8 @@ If the user asks for market analysis and customer discovery together, split the 
 
 ```text
 我理解你要做的是：产品出海市场分析。
-本轮对象：{产品版本} → {目的国/地区}。
-默认出口申报国：{默认/用户指定出口国}；原产国/起运地如果资料不足，会保留待确认。
+本轮对象：{产品/品类/候选 HS-HTS} → {目的国/地区}。
+默认出口申报国/原产口径：{默认中国/用户指定国家或地区}；如果这个默认不对，告诉我替换即可。
 我会按趋势、公开价格参考、准入合规、进口税费、出口要求、运输路线和近期外部因素整理成表格；认证会先查目标市场可能要求什么，再单独看你有没有对应材料；不输出是否值得进入，也不生成客户名单。
 ```
 
@@ -45,8 +45,8 @@ If the user asks for market analysis and customer discovery together, split the 
 ## First response, missing product version
 
 ```text
-可以做，但现在产品还不够具体。
-请尽量给产品型号、材质/成分、用途、规格，或者直接给产品页/PDF；否则只能先做“待确认项清单”，不能给准入、税费和物流的确定路径。
+可以做。现在资料适合先做品类级 / 候选税号级市场分析。
+我会先整理目标市场趋势、公开价格参考、准入合规、税费、出口要求、物流和外部因素；缺型号、材料、BOM、证书或起运港时会写成条件和待确认项，不会直接给最终归类、最终税率、已合规或可清关结论。
 ```
 
 ## Certification / compliance reminder
@@ -68,7 +68,11 @@ Use this short reminder when product details are thin:
 
 ## Default assumptions
 
-- Default export declaration country can be China, but the user may set any country/region.
+- Default export declaration country and first-pass origin/manufacturing scope can be China, but the user may set any country/region; this is a visible analysis premise, not a customs origin ruling.
+- If a field is only `Made in` / production / manufacturing / COO wording, keep it as a manufacturing clue. Do not use it to clear the customs-origin gap, choose an export country, or assert COO / proof-of-origin readiness.
+- Product name, category, use description, product URL/PDF, image clue, or HS/HTS code can start first-pass category-level analysis. A missing model/version lowers precision; it does not force the assistant to stop at a pending-material checklist.
+- First-pass blocking questions are only product identity and target country/region. Do not ask for IOR/importer of record, Incoterms/trade term, transaction value/quantity, expected entry date, customs broker, BOM, product photos, actual departure port, original certificates, test reports, SDS, or UN38.3 unless the user explicitly asks for final duty, formal customs filing, clearance readiness, or actual shipment arrangement.
+- Category-level analysis changes the object granularity only. It never lowers the evidence standard: do not turn candidate HS/HTS, missing certificates, missing BOM, or missing departure port into final classification, final duty, no-certification, general-cargo, clearance-ready, or transportability conclusions.
 - Origin country, departure node, final HS/HTS, COO/proof-of-origin applicability, certification requirement applicability, user certification-material status, packaging, logistics time, and customs pre-filing nodes remain conditional unless supported by opened sources or user documents.
 - Certification analysis starts with destination-market requirements. User certificates, test reports, SDS, UN38.3, labels, BOM, registrations, or declarations are optional materials for scope matching, not prerequisites for analyzing what the target market may require.
 - Online B2B/B2C channels and platform prices are market references only; they do not define traditional B2B customer scope.

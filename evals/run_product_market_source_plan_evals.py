@@ -38,6 +38,16 @@ def _assert_absent(text: str, needles: list[str]) -> list[str]:
     return [str(needle) for needle in needles if str(needle) in text]
 
 
+def _query_strings_text(payload: dict[str, Any]) -> str:
+    strings: list[str] = []
+    for step in payload.get("query_plan", []) if isinstance(payload.get("query_plan"), list) else []:
+        if not isinstance(step, dict):
+            continue
+        for query in step.get("query_strings", []) if isinstance(step.get("query_strings"), list) else []:
+            strings.append(str(query))
+    return "\n".join(strings)
+
+
 def _parse_json(text: str) -> tuple[dict[str, Any] | None, str | None]:
     try:
         payload = json.loads(text)
@@ -65,6 +75,23 @@ def _assert_plan_json(payload: dict[str, Any], case: dict[str, Any]) -> list[str
     for pack_id in case.get("must_not_select_pack_ids", []) if isinstance(case.get("must_not_select_pack_ids"), list) else []:
         if pack_id in selected:
             problems.append(f"unexpected selected pack {pack_id}")
+    summary = payload.get("brief_summary") if isinstance(payload.get("brief_summary"), dict) else {}
+    expected_summary = case.get("brief_summary_must_equal")
+    if isinstance(expected_summary, dict):
+        for key, expected in expected_summary.items():
+            if summary.get(key) != expected:
+                problems.append(f"brief_summary.{key} expected {expected!r} got {summary.get(key)!r}")
+    warning_codes = {
+        item.get("code")
+        for item in payload.get("warnings", [])
+        if isinstance(item, dict)
+    } if isinstance(payload.get("warnings"), list) else set()
+    for code in case.get("warning_codes_must_contain", []) if isinstance(case.get("warning_codes_must_contain"), list) else []:
+        if code not in warning_codes:
+            problems.append(f"missing warning code {code}")
+    for code in case.get("warning_codes_must_not_contain", []) if isinstance(case.get("warning_codes_must_not_contain"), list) else []:
+        if code in warning_codes:
+            problems.append(f"unexpected warning code {code}")
     templates = {item.get("template_id") for item in payload.get("query_plan", []) if isinstance(item, dict)} if isinstance(payload.get("query_plan"), list) else set()
     for template_id in case.get("must_include_template_ids", []) if isinstance(case.get("must_include_template_ids"), list) else []:
         if template_id not in templates:
@@ -113,6 +140,11 @@ def _assert_plan_json(payload: dict[str, Any], case: dict[str, Any]) -> list[str
             problems.append(f"query_plan[{idx}] allowed_output not source_or_query_plan_only")
         if not step.get("blocked_outputs"):
             problems.append(f"query_plan[{idx}] missing blocked_outputs")
+    query_text = _query_strings_text(payload)
+    missing_queries = _assert_contains(query_text, list(case.get("query_strings_must_contain", []))) if case.get("query_strings_must_contain") else []
+    forbidden_queries = _assert_absent(query_text, list(case.get("query_strings_must_not_contain", []))) if case.get("query_strings_must_not_contain") else []
+    problems.extend([f"missing query text {item!r}" for item in missing_queries])
+    problems.extend([f"forbidden query text present {item!r}" for item in forbidden_queries])
     return problems
 
 

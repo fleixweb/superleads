@@ -5,6 +5,115 @@
   "registry": "shared/source_packs/product_market_seed_packs.json",
   "cases": [
     {
+      "name": "hts code alias starts first pass source plan",
+      "fixture": "source_plan_hts_alias_us_china_brief.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "must_select_pack_ids": [
+        "seed_us_market_access_general",
+        "seed_us_import_tax_general",
+        "seed_us_origin_proof_general",
+        "seed_cn_export_general",
+        "seed_transpacific_logistics_general",
+        "seed_market_signal_global_to_us"
+      ],
+      "must_include_template_ids": [
+        "qt_us_market_access_by_trigger",
+        "qt_us_duty_by_candidate_hs",
+        "qt_us_origin_proof_requirement",
+        "qt_cn_export_country_requirements",
+        "qt_logistics_route_nodes",
+        "qt_market_signal_terms",
+        "qt_external_factor_watch"
+      ],
+      "output_must_contain": [
+        "source_plan_only",
+        "9504.50.0000",
+        "candidate_hs_hts",
+        "候选 HS/HTS 9504.50.0000",
+        "market_source_plan_product_identity_from_hs_hts",
+        "missing_required_fields",
+        "not_evidence"
+      ],
+      "output_must_not_contain": [
+        "<candidate_hs_hts:待确认>",
+        "<product_name:待确认>",
+        "最终税率为",
+        "已合规",
+        "可出运",
+        "建议进入",
+        "推荐价格"
+      ],
+      "query_strings_must_contain": [
+        "United States official product safety labeling requirements 9504.50.0000",
+        "Google Trends 9504.50.0000 United States 2004 present"
+      ],
+      "query_strings_must_not_contain": [
+        "US official product safety labeling requirements",
+        "Google Trends 9504.50.0000 US 2004 present",
+        "候选 HS/HTS",
+        "用户提供的产品资料线索"
+      ]
+    },
+    {
+      "name": "made in country clue does not satisfy customs origin",
+      "fixture": "source_plan_made_in_not_origin_brief.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "must_select_pack_ids": [
+        "seed_us_market_access_general",
+        "seed_us_import_tax_general",
+        "seed_us_origin_proof_general",
+        "seed_market_signal_global_to_us",
+        "seed_product_original_sources"
+      ],
+      "must_not_select_pack_ids": [
+        "seed_vn_export_general",
+        "seed_transpacific_logistics_general"
+      ],
+      "must_include_template_ids": [
+        "qt_us_market_access_by_trigger",
+        "qt_us_duty_by_candidate_hs",
+        "qt_us_origin_proof_requirement",
+        "qt_market_signal_terms",
+        "qt_product_original_docs"
+      ],
+      "brief_summary_must_equal": {
+        "target_country_or_region": "United States",
+        "origin_country_or_region": null,
+        "manufacturing_country_clue": "Vietnam"
+      },
+      "warning_codes_must_contain": [
+        "market_source_plan_origin_country_unknown",
+        "market_source_plan_manufacturing_clue_not_origin_proof"
+      ],
+      "query_strings_must_contain": [
+        "United States official product safety labeling requirements 蓝牙音箱",
+        "Google Trends 蓝牙音箱 United States 2004 present"
+      ],
+      "query_strings_must_not_contain": [
+        "US official product safety labeling requirements",
+        "Google Trends 蓝牙音箱 US 2004 present",
+        "蓝牙音箱 Vietnam",
+        "origin marking 蓝牙音箱 Vietnam"
+      ],
+      "output_must_contain": [
+        "source_plan_only",
+        "market_source_plan_origin_country_unknown",
+        "market_source_plan_manufacturing_clue_not_origin_proof",
+        "not_evidence"
+      ],
+      "output_must_not_contain": [
+        "\"origin_country_or_region\": \"Vietnam\"",
+        "US target + China/Vietnam trade premise",
+        "seed_vn_export_general",
+        "最终税率为",
+        "已合规",
+        "可出运",
+        "建议进入"
+      ]
+    },
+    {
       "name": "xingheng vietnam lithium to us source plan",
       "fixture": "source_plan_xingheng_lithium_us_brief.json",
       "expected_returncode": 0,

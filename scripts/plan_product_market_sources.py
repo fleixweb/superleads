@@ -53,6 +53,123 @@ COUNTRY_TO_PACK = {
     "Vietnam": {"export": ["seed_vn_export_general"]},
 }
 
+BRIEF_FIELD_ALIASES = {
+    "product_name": [
+        "product_name",
+        "display_name",
+        "product",
+        "product_category",
+        "category",
+        "product_family",
+        "product_description",
+        "use_description",
+        "用途描述",
+        "产品",
+        "品类",
+    ],
+    "target_country_or_region": [
+        "target_country_or_region",
+        "destination_country_or_region",
+        "target_country",
+        "destination_country",
+        "target_market",
+        "destination_market",
+        "sales_country",
+        "import_country",
+        "目的国",
+        "目标国家",
+        "目标市场",
+    ],
+    "destination_country_or_region": [
+        "destination_country_or_region",
+        "target_country_or_region",
+        "destination_country",
+        "target_country",
+        "target_market",
+        "destination_market",
+        "sales_country",
+        "import_country",
+        "目的国",
+        "目标国家",
+        "目标市场",
+    ],
+    "candidate_hs_hts": [
+        "candidate_hs_hts",
+        "candidate_hs",
+        "candidate_hts",
+        "hs_code",
+        "hts_code",
+        "htsus",
+        "hts",
+        "hs",
+        "hs_or_hts",
+        "hs_or_hts_candidates",
+        "tariff_code",
+        "commodity_code",
+        "customs_code",
+        "税号",
+        "海关编码",
+        "HTScode",
+    ],
+    "export_declaration_country": [
+        "export_declaration_country",
+        "default_export_declaration_country",
+        "export_country",
+        "出口国",
+        "出口申报国",
+    ],
+    "origin_country_or_region": [
+        "origin_country_or_region",
+        "origin_country",
+        "customs_origin_country",
+        "customs_origin_country_or_region",
+        "country_of_origin",
+        "country_of_origin_or_region",
+        "原产国",
+        "原产地",
+        "海关原产国",
+    ],
+    "manufacturing_country_clue": [
+        "manufacturing_country_clue",
+        "production_country",
+        "manufacturing_country",
+        "made_in_country",
+        "coo_country",
+        "制造来源",
+        "生产国",
+        "生产/制造来源",
+    ],
+    "departure_country_or_region": [
+        "departure_country_or_region",
+        "departure_country",
+        "ship_from_country",
+        "origin_shipping_country",
+        "起运国",
+        "发货国",
+    ],
+    "departure_node": [
+        "departure_node",
+        "departure_port",
+        "origin_port",
+        "ship_from_port",
+        "loading_port",
+        "port_of_loading",
+        "起运港",
+        "装运港",
+    ],
+    "destination_node": [
+        "destination_node",
+        "destination_port",
+        "port_of_discharge",
+        "delivery_city",
+        "目的港",
+        "目的城市",
+    ],
+    "model_or_sku": ["model_or_sku", "model", "sku", "version", "型号", "规格"],
+    "manufacturer_or_brand": ["manufacturer_or_brand", "manufacturer", "brand", "maker", "品牌", "制造商"],
+    "product_trigger_tags": ["product_trigger_tags", "trigger_tags", "tags"],
+}
+
 COMMON_TRIGGER_PACKS = {
     "lithium_battery": ["seed_lithium_battery_common_rules", "seed_transpacific_logistics_general"],
     "battery_standalone": ["seed_lithium_battery_common_rules", "seed_transpacific_logistics_general"],
@@ -215,10 +332,54 @@ def _maybe_brief_from_graph(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def _brief_value(brief: dict[str, Any], *names: str) -> Any:
+    candidates: list[str] = []
+    seen: set[str] = set()
     for name in names:
+        for candidate in [name, *BRIEF_FIELD_ALIASES.get(name, [])]:
+            if candidate not in seen:
+                seen.add(candidate)
+                candidates.append(candidate)
+    for name in candidates:
         if name in brief and brief[name] not in (None, ""):
             return brief[name]
     return None
+
+
+def _candidate_hs_hts(brief: dict[str, Any]) -> str:
+    return _norm(_brief_value(brief, "candidate_hs_hts", "candidate_hs", "candidate_hts"))
+
+
+def _brief_origin_country(brief: dict[str, Any]) -> str | None:
+    """Return only explicit customs-origin fields, not Made in/manufacturing clues."""
+    return _country(_brief_value(brief, "origin_country_or_region", "origin_country"))
+
+
+def _brief_manufacturing_country_clue(brief: dict[str, Any]) -> str | None:
+    """Return production/Made-in clues that must not satisfy customs-origin gaps."""
+    return _country(_brief_value(brief, "manufacturing_country_clue"))
+
+
+def _brief_product_identity(brief: dict[str, Any]) -> str:
+    product = _brief_value(brief, "product_name", "display_name", "product")
+    if product is not None:
+        return _norm(product)
+    candidate_hs = _candidate_hs_hts(brief)
+    if candidate_hs:
+        return f"候选 HS/HTS {candidate_hs}"
+    if _brief_value(brief, "product_source_urls", "source_urls", "user_files", "image_clue", "product_image"):
+        return "用户提供的产品资料线索"
+    return ""
+
+
+def _brief_product_query_term(brief: dict[str, Any]) -> str:
+    """Return a search-safe product term, separated from the user-facing identity label."""
+    product = _brief_value(brief, "product_name", "display_name", "product")
+    if product is not None:
+        return _norm(product)
+    candidate_hs = _candidate_hs_hts(brief)
+    if candidate_hs:
+        return candidate_hs
+    return ""
 
 
 def _brief_product_tags(brief: dict[str, Any]) -> list[str]:
@@ -359,9 +520,9 @@ def _select_pack_ids(brief: dict[str, Any], registry: dict[str, Any]) -> tuple[l
     tags = _brief_product_tags(brief)
     target = _country(_brief_value(brief, "target_country_or_region", "destination_country_or_region"))
     export_country = _country(_brief_value(brief, "export_declaration_country", "default_export_declaration_country"))
-    origin_country = _country(_brief_value(brief, "origin_country_or_region", "origin_country", "production_country"))
+    origin_country = _brief_origin_country(brief)
     departure_country = _country(_brief_value(brief, "departure_country_or_region", "departure_country"))
-    candidate_hs = _norm(_brief_value(brief, "candidate_hs_hts", "candidate_hs", "candidate_hts"))
+    candidate_hs = _candidate_hs_hts(brief)
     requested_modules = set(_str_list(_brief_value(brief, "analysis_modules_requested", "modules_requested")))
 
     selected: list[str] = []
@@ -470,19 +631,38 @@ def _inputs_used_for_template(template: dict[str, Any], brief: dict[str, Any]) -
         "origin_country_or_region": "origin_country_or_region",
         "departure_country_or_region": "departure_country_or_region",
     }
+    country_slots = {
+        "target_country_or_region",
+        "destination_country_or_region",
+        "export_declaration_country",
+        "origin_country_or_region",
+        "departure_country_or_region",
+    }
     used: dict[str, Any] = {}
     for slot in _str_list(template.get("term_slots")) + _str_list(template.get("required_brief_fields")):
         key = aliases.get(slot, slot)
-        value = _brief_value(brief, key, slot)
+        if slot == "product_name":
+            value = _brief_product_query_term(brief)
+        elif key == "origin_country_or_region":
+            value = _brief_origin_country(brief)
+        else:
+            value = _brief_value(brief, key, slot)
         if value is None and slot == "product_trigger_tags":
             value = _brief_product_tags(brief)
         if value is None and slot == "target_country_or_region":
             value = _country(_brief_value(brief, "destination_country_or_region"))
+        if value is not None and (slot in country_slots or key in country_slots):
+            value = _country(value)
         if value is not None:
             used[slot] = value
     # Always include these visible trade roles when known so the plan does not merge them.
     for key in ("target_country_or_region", "export_declaration_country", "origin_country_or_region", "departure_country_or_region", "departure_node", "destination_node", "candidate_hs_hts"):
-        value = _brief_value(brief, key)
+        if key == "origin_country_or_region":
+            value = _brief_origin_country(brief)
+        else:
+            value = _brief_value(brief, key)
+        if key in country_slots:
+            value = _country(value)
         if value is not None:
             used.setdefault(key, value)
     return used
@@ -512,8 +692,8 @@ def _manual_authority_discovery_steps(brief: dict[str, Any]) -> list[dict[str, A
     if not target or target == "United States":
         return []
 
-    product = _brief_value(brief, "product_name", "display_name", "product") or "<product:待确认>"
-    candidate_hs = _brief_value(brief, "candidate_hs_hts", "candidate_hs", "candidate_hts") or "<candidate_hs:待确认>"
+    product = _brief_product_query_term(brief) or "<product:待确认>"
+    candidate_hs = _candidate_hs_hts(brief) or "<candidate_hs:待确认>"
     tags = set(_brief_product_tags(brief))
     requested = set(_str_list(_brief_value(brief, "analysis_modules_requested", "modules_requested")))
     steps: list[dict[str, Any]] = []
@@ -658,7 +838,7 @@ def _manual_gap_steps(brief: dict[str, Any], selected_pack_ids: list[str], templ
             "template_id": "manual_destination_source_pack_gap",
             "query_group_id": "destination_pack_gap",
             "purpose": f"目标国家/地区 {target} 暂无内置目的国 Source Pack，先生成人工计划入口清单。",
-            "inputs_used": {"target_country_or_region": target, "product_name": _brief_value(brief, "product_name", "display_name", "product")},
+            "inputs_used": {"target_country_or_region": target, "product_name": _brief_product_identity(brief)},
             "query_strings": [f"{target} official customs import requirements <product/HS>", f"{target} official tariff lookup <candidate HS>"],
             "source_entry_ids": [],
             "required_source_priority": ["primary_official"],
@@ -674,7 +854,7 @@ def _manual_gap_steps(brief: dict[str, Any], selected_pack_ids: list[str], templ
             "boundary_note": NOT_EVIDENCE_NOTE,
         })
     logistics_requested = "logistics" in set(_str_list(_brief_value(brief, "analysis_modules_requested", "modules_requested")))
-    origin_country = _country(_brief_value(brief, "origin_country_or_region", "origin_country", "production_country"))
+    origin_country = _brief_origin_country(brief)
     departure_country = _country(_brief_value(brief, "departure_country_or_region", "departure_country"))
     if logistics_requested and not _transpacific_pack_applies(target, export_country, departure_country, origin_country):
         steps.append({
@@ -683,7 +863,7 @@ def _manual_gap_steps(brief: dict[str, Any], selected_pack_ids: list[str], templ
             "template_id": "manual_logistics_lane_pack_gap",
             "query_group_id": "logistics_pack_gap",
             "purpose": "当前起运国/目的国组合暂无可直接套用的物流 Source Pack，先生成人工物流来源计划。",
-            "inputs_used": {"target_country_or_region": target, "export_declaration_country": export_country, "departure_country_or_region": departure_country, "origin_country_or_region": origin_country, "product_name": _brief_value(brief, "product_name", "display_name", "product")},
+            "inputs_used": {"target_country_or_region": target, "export_declaration_country": export_country, "departure_country_or_region": departure_country, "origin_country_or_region": origin_country, "product_name": _brief_product_identity(brief)},
             "query_strings": ["official customs pre filing requirements <destination country> <transport mode>", "public port carrier route guidance <departure country> <destination country> <cargo condition>"],
             "source_entry_ids": [],
             "required_source_priority": ["primary_official", "commercial_reference"],
@@ -705,7 +885,7 @@ def _manual_gap_steps(brief: dict[str, Any], selected_pack_ids: list[str], templ
             "template_id": "manual_export_source_pack_gap",
             "query_group_id": "export_pack_gap",
             "purpose": f"出口申报国 {export_country} 暂无内置出口国 Source Pack，先生成人工计划入口清单。",
-            "inputs_used": {"export_declaration_country": export_country, "target_country_or_region": target, "product_name": _brief_value(brief, "product_name", "display_name", "product")},
+            "inputs_used": {"export_declaration_country": export_country, "target_country_or_region": target, "product_name": _brief_product_identity(brief)},
             "query_strings": [f"{export_country} official customs export requirements <product/HS>", f"{export_country} export control official list <product/HS>"],
             "source_entry_ids": [],
             "required_source_priority": ["primary_official"],
@@ -786,12 +966,18 @@ def build_query_plan(brief_payload: dict[str, Any], registry: dict[str, Any]) ->
     missing_required: list[str] = []
     if not _brief_value(brief, "target_country_or_region", "destination_country_or_region"):
         missing_required.append("target_country_or_region")
-    if not _brief_value(brief, "product_name", "display_name", "product"):
+    if not _brief_product_identity(brief):
         missing_required.append("product_name")
+    elif not _norm(_brief_value(brief, "product_name", "display_name", "product")) and _candidate_hs_hts(brief):
+        warnings.append({"code": "market_source_plan_product_identity_from_hs_hts", "message": "本轮以用户给出的候选 HS/HTS 作为产品身份线索启动；仍不能替代最终归类或 SKU 资料。"})
     if not _brief_value(brief, "export_declaration_country", "default_export_declaration_country"):
         warnings.append({"code": "market_source_plan_export_country_visible_default_needed", "message": "出口申报国未设置；未来 UI 应显示默认出口国并允许用户改，不从原产地自动推断。"})
-    if not _brief_value(brief, "origin_country_or_region", "origin_country", "production_country"):
+    origin_country = _brief_origin_country(brief)
+    manufacturing_country_clue = _brief_manufacturing_country_clue(brief)
+    if not origin_country:
         warnings.append({"code": "market_source_plan_origin_country_unknown", "message": "原产国/制造来源未知；税费、COO、贸易救济和标签查询只能保留原产地缺口。"})
+        if manufacturing_country_clue:
+            warnings.append({"code": "market_source_plan_manufacturing_clue_not_origin_proof", "message": f"只看到 Made in/生产制造来源线索 {manufacturing_country_clue}；未作为海关原产国、出口申报国或 COO 证明使用。"})
     if not _brief_value(brief, "departure_node"):
         warnings.append({"code": "market_source_plan_departure_node_unknown", "message": "实际起运地/港口/机场未知；物流计划不得猜默认港口。"})
 
@@ -810,14 +996,15 @@ def build_query_plan(brief_payload: dict[str, Any], registry: dict[str, Any]) ->
             "boundary_note": registry.get("execution_boundary", {}).get("boundary_note"),
         },
         "brief_summary": {
-            "product_name": _brief_value(brief, "product_name", "display_name", "product"),
+            "product_name": _brief_product_identity(brief),
             "target_country_or_region": _country(_brief_value(brief, "target_country_or_region", "destination_country_or_region")),
             "export_declaration_country": _country(_brief_value(brief, "export_declaration_country", "default_export_declaration_country")),
-            "origin_country_or_region": _country(_brief_value(brief, "origin_country_or_region", "origin_country", "production_country")),
+            "origin_country_or_region": origin_country,
+            "manufacturing_country_clue": manufacturing_country_clue,
             "departure_country_or_region": _country(_brief_value(brief, "departure_country_or_region", "departure_country")),
             "departure_node": _brief_value(brief, "departure_node"),
             "destination_node": _brief_value(brief, "destination_node"),
-            "candidate_hs_hts": _brief_value(brief, "candidate_hs_hts", "candidate_hs", "candidate_hts"),
+            "candidate_hs_hts": _candidate_hs_hts(brief),
             "product_trigger_tags": tags,
             "roles_separated": True,
         },

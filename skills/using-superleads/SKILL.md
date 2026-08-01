@@ -31,11 +31,11 @@ Read `../../shared/references/user-intake.md` for intake modes and minimum resea
 When routing to product outbound market analysis, respond in user-facing Chinese with four short lines:
 
 `我理解你要做的是：产品出海市场分析。`
-`本轮对象：{产品/型号} → {目的国/地区}。`
-`默认出口申报国：{用户指定/中国默认}；原产国、起运地、最终税号和技术文件不足时会保留待确认。`
+`本轮对象：{产品/品类/候选 HS-HTS} → {目的国/地区}。`
+`默认出口申报国/原产口径：{用户指定/中国默认}；缺型号、起运地、最终税号或技术文件时会保留为条件和待确认项，不会先要求补齐。`
 `我会整理趋势、公开价格参考、准入/认证要求、税费、出口要求、物流和外部因素；不生成客户名单，也不判断是否值得进入。`
 
-Ask at most three short questions only if the product or target country/region is missing or if export/origin assumptions would materially change the analysis.
+Ask at most three short questions only if the product identity or target country/region is missing. Do not ask for export/origin details as a first-pass blocker; if the user did not specify them, show the China default as visible and replaceable.
 
 ## 本次方向
 

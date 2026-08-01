@@ -384,7 +384,12 @@ def _safe_cell(value: Any) -> str:
     if _looks_like_internal_leak(text):
         return "用户可见内容已隐藏"
     for raw, label in INTERNAL_TERM_REPLACEMENTS.items():
-        text = re.sub(rf"(?<![A-Za-z0-9_-]){re.escape(raw)}(?![A-Za-z0-9_-])", label, text)
+        text = re.sub(
+            rf"(?<![A-Za-z0-9_-]){re.escape(raw)}(?![A-Za-z0-9_-])",
+            label,
+            text,
+            flags=re.IGNORECASE,
+        )
     return text
 
 
@@ -506,6 +511,39 @@ def _format_export_country_from_premise(premise: dict[str, Any], graph: dict[str
     if not has_text(country):
         return "未提供"
     return f"{_safe_cell(country)}（本轮出口申报国；默认值可由用户设置）"
+
+
+def _raw_export_country_from_premise(premise: dict[str, Any] | None, graph: dict[str, Any]) -> str:
+    run = _current_run(graph)
+    if isinstance(premise, dict) and has_text(premise.get("export_declaration_country")):
+        return _safe_cell(premise.get("export_declaration_country"))
+    if isinstance(run, dict) and has_text(run.get("default_export_declaration_country")):
+        return _safe_cell(run.get("default_export_declaration_country"))
+    return ""
+
+
+def _origin_export_scope_for_preamble(premise: dict[str, Any] | None, graph: dict[str, Any]) -> str:
+    export_country = _raw_export_country_from_premise(premise, graph)
+    origin_country = ""
+    if isinstance(premise, dict) and has_text(premise.get("origin_country_or_region")):
+        origin_country = _safe_cell(premise.get("origin_country_or_region"))
+    if export_country and origin_country:
+        if export_country.strip().lower() == origin_country.strip().lower():
+            return f"{export_country}（原产/出口口径；如实际不是该国家/地区可替换）"
+        return f"出口申报国：{export_country}；原产/制造来源：{origin_country}（两者分开保留）"
+    if export_country:
+        return f"出口申报国：{export_country}；原产/制造来源待确认"
+    if origin_country:
+        return f"原产/制造来源：{origin_country}；出口申报国可按中国默认口径或用户口径设置"
+    return "未提供；首轮可按中国默认出口口径启动，需向用户可见可改"
+
+
+def _departure_scope_for_preamble(premise: dict[str, Any] | None) -> str:
+    if isinstance(premise, dict) and has_text(premise.get("departure_node")):
+        return _safe_cell(premise.get("departure_node"))
+    if isinstance(premise, dict) and has_text(premise.get("departure_country_or_region")):
+        return f"未指定具体港口/机场，本轮不猜（起运国家/地区：{_safe_cell(premise.get('departure_country_or_region'))}）"
+    return "未指定，本轮不猜"
 
 
 def _first_trade_premise(graph: dict[str, Any]) -> dict[str, Any] | None:
@@ -991,13 +1029,6 @@ def _brief_markdown_summary(graph: dict[str, Any]) -> list[str]:
     premise = _first_trade_premise(graph)
     if not isinstance(brief, dict) and not isinstance(premise, dict):
         return []
-    export_country = None
-    if isinstance(premise, dict):
-        export_country = _format_export_country_from_premise(premise, graph)
-    elif isinstance(run, dict):
-        export_country = run.get("default_export_declaration_country")
-    origin_text = _format_origin_from_premise(premise, graph) if isinstance(premise, dict) else "待确认"
-    departure_text = _format_departure_from_premise(premise) if isinstance(premise, dict) else "待业务确认"
     destination = (
         premise.get("destination_country_or_region")
         if isinstance(premise, dict)
@@ -1006,15 +1037,17 @@ def _brief_markdown_summary(graph: dict[str, Any]) -> list[str]:
         else None
     )
     not_executed = _not_executed_modules(graph)
+    origin_export_scope = _origin_export_scope_for_preamble(premise, graph)
+    departure_scope = _departure_scope_for_preamble(premise)
     lines = [
-        "## 先看这几个贸易前提",
+        "## 先看贸易前提（本轮默认贸易口径）",
         "",
-        "| 项目 | 本轮写法 | 为什么要分开 |",
+        "| 项目 | 本轮写法 | 对用户意味着什么 |",
         "| --- | --- | --- |",
-        f"| 目标销售国家/地区 | {_md_escape(destination or '未提供')} | 决定进口准入、税费、节假日、市场信号口径 |",
-        f"| 出口申报国 | {_md_escape(export_country or '未提供')} | 默认值可由用户设置，不能自动等同原产国或起运港 |",
-        f"| 原产国 / 制造来源 | {_md_escape(origin_text)} | 影响原产地规则、贸易救济和税费，但需看证据等级 |",
-        f"| 实际起运地 / 起运港 | {_md_escape(departure_text)} | 影响订舱、运输路线和预申报，不能由工厂地址猜港口 |",
+        f"| 本轮默认贸易口径 | 原产/出口国：{_md_escape(origin_export_scope)}；目标市场：{_md_escape(destination or '未提供')} | 用最少输入先做市场、准入、税费、出口与物流分析；不是要求先补报关资料 |",
+        f"| 实际起运港 | {_md_escape(departure_scope)} | 不影响首轮市场分析；正式订舱、申报或运输安排前再确认 |",
+        "| 如果默认口径不对 | 直接告诉我实际出口国、原产国或目标市场，我会替换口径继续分析 | 适配非中国出口国、多国生产或转口贸易路径 |",
+        "| 本轮结论边界 | 品类级 / 候选税号级分析；不输出最终归类、最终税率、已合规或可清关 | 保持不确定，但不停止研究 |",
         "",
     ]
     if not_executed:
