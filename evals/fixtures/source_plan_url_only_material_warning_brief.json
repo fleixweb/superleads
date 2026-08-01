@@ -1,0 +1,14 @@
+{
+  "task": "product_outbound_market_analysis",
+  "product_source_urls": [
+    "https://example.com/product-page"
+  ],
+  "destination_country_or_region": "US",
+  "analysis_modules_requested": [
+    "destination_compliance",
+    "origin_proof_requirement",
+    "import_tax",
+    "market_reports"
+  ],
+  "business_decision_policy": "URL-only material can start a source-opening plan but must warn that search terms require opening the material first."
+}

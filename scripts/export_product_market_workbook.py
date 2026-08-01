@@ -388,7 +388,6 @@ def _safe_cell(value: Any) -> str:
             rf"(?<![A-Za-z0-9_-]){re.escape(raw)}(?![A-Za-z0-9_-])",
             label,
             text,
-            flags=re.IGNORECASE,
         )
     return text
 

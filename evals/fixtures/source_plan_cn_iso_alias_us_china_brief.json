@@ -1,0 +1,18 @@
+{
+  "task": "product_outbound_market_analysis",
+  "product_name": "电子游戏机",
+  "hs_code": "9504.50.0000",
+  "destination_country_or_region": "US",
+  "origin_country": "CN",
+  "export_declaration_country": "CN",
+  "analysis_modules_requested": [
+    "destination_compliance",
+    "origin_proof_requirement",
+    "import_tax",
+    "export_requirements",
+    "logistics",
+    "market_reports",
+    "external_factors"
+  ],
+  "business_decision_policy": "ISO-2 country aliases must normalize before source-pack selection."
+}

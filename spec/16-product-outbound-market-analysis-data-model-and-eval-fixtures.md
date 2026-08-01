@@ -85,10 +85,10 @@
 | 规范字段 | 可承载什么 | 首轮是否阻断 |
 |---|---|---|
 | `product_name` | 产品名、品类名、用途描述，或由 HS/HTS 推出的用户可懂产品对象 | 是；产品名、品类、用途描述、URL/PDF/图片线索或 HS/HTS 任一可启动首轮 |
-| `target_country_or_region` / `destination_country_or_region` | 目标销售 / 进口市场 | 是；没有目标国家/地区只能先询问 |
+| `target_country_or_region` / `destination_country_or_region` | 目标销售 / 进口市场；常见 ISO-2 / ISO-3 / 中文别名可先规范化 | 是；没有目标国家/地区只能先询问 |
 | `candidate_hs_hts` | 用户给出的候选 HS/HTS/HTSUS/TARIC 等税号线索 | 否；缺失时税费和归类保持候选缺口 |
-| `export_declaration_country` | 出口申报国；默认可为中国且必须可见可改 | 否；缺失时可用中国默认口径启动，但要明示可替换 |
-| `origin_country_or_region` | 用户明确作为海关原产国 / origin country 给出的前提 | 否；缺失时税费、COO、贸易救济保留待确认 |
+| `export_declaration_country` | 出口申报国；默认可为中国且必须可见可改；`CN` / `CHN` 等常见代码需规范化后再选出口国 Source Pack | 否；缺失时可用中国默认口径启动，但要明示可替换 |
+| `origin_country_or_region` | 用户明确作为海关原产国 / origin country 给出的前提；常见 ISO-2 / ISO-3 / 中文别名可先规范化 | 否；缺失时税费、COO、贸易救济保留待确认 |
 | `manufacturing_country_clue` | Made in、production、manufacturing、COO 字样等生产/标识线索 | 否；只作线索，不得消除原产国缺口，也不得触发出口国或 COO 证明结论 |
 | `departure_country_or_region` / `departure_node` | 起运国、起运港、机场、场站 | 否；不得猜港口 |
 | `destination_node` | 目的港、机场、城市或交付节点 | 否；可先按目的国分析 |

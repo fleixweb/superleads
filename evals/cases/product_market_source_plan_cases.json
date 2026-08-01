@@ -51,8 +51,114 @@
       "query_strings_must_not_contain": [
         "US official product safety labeling requirements",
         "Google Trends 9504.50.0000 US 2004 present",
+        "9504.50.0000 9504.50.0000",
         "候选 HS/HTS",
         "用户提供的产品资料线索"
+      ]
+    },
+    {
+      "name": "cn iso country alias keeps china export and transpacific packs",
+      "fixture": "source_plan_cn_iso_alias_us_china_brief.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "must_select_pack_ids": [
+        "seed_us_market_access_general",
+        "seed_us_import_tax_general",
+        "seed_us_origin_proof_general",
+        "seed_cn_export_general",
+        "seed_transpacific_logistics_general",
+        "seed_market_signal_global_to_us",
+        "seed_product_original_sources"
+      ],
+      "must_include_template_ids": [
+        "qt_us_market_access_by_trigger",
+        "qt_us_duty_by_candidate_hs",
+        "qt_us_origin_proof_requirement",
+        "qt_cn_export_country_requirements",
+        "qt_logistics_route_nodes",
+        "qt_market_signal_terms",
+        "qt_external_factor_watch",
+        "qt_product_original_docs"
+      ],
+      "brief_summary_must_equal": {
+        "target_country_or_region": "United States",
+        "export_declaration_country": "China",
+        "origin_country_or_region": "China"
+      },
+      "warning_codes_must_not_contain": [
+        "market_source_pack_export_country_missing",
+        "market_source_plan_country_code_unrecognized"
+      ],
+      "query_strings_must_contain": [
+        "United States official product safety labeling requirements 电子游戏机",
+        "China customs export requirements 9504.50.0000 电子游戏机 United States",
+        "United States customs pre filing ocean air cargo"
+      ],
+      "query_strings_must_not_contain": [
+        "CN official customs export requirements",
+        "US official product safety labeling requirements",
+        "Google Trends 电子游戏机 US 2004 present"
+      ],
+      "output_must_contain": [
+        "source_plan_only",
+        "export_declaration_country=China -> export-country pack",
+        "US target + China/Vietnam trade premise -> transpacific logistics pack",
+        "not_evidence"
+      ],
+      "output_must_not_contain": [
+        "出口申报国 CN 暂无内置出口国 Source Pack",
+        "目标国家/地区 US 暂无内置目的国 Source Pack",
+        "最终税率为",
+        "已合规",
+        "可出运",
+        "建议进入"
+      ]
+    },
+    {
+      "name": "url only product material warns before effective search terms",
+      "fixture": "source_plan_url_only_material_warning_brief.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "must_select_pack_ids": [
+        "seed_us_market_access_general",
+        "seed_us_import_tax_general",
+        "seed_us_origin_proof_general",
+        "seed_market_signal_global_to_us",
+        "seed_product_original_sources"
+      ],
+      "must_include_template_ids": [
+        "qt_us_market_access_by_trigger",
+        "qt_us_duty_by_candidate_hs",
+        "qt_us_origin_proof_requirement",
+        "qt_market_signal_terms",
+        "qt_product_original_docs"
+      ],
+      "brief_summary_must_equal": {
+        "product_name": "用户提供的产品资料线索",
+        "target_country_or_region": "United States"
+      },
+      "warning_codes_must_contain": [
+        "market_source_plan_product_identity_from_source_material"
+      ],
+      "query_strings_must_contain": [
+        "United States official product safety labeling requirements <product_name:待确认>"
+      ],
+      "query_strings_must_not_contain": [
+        "用户提供的产品资料线索",
+        "US official product safety labeling requirements"
+      ],
+      "output_must_contain": [
+        "source_plan_only",
+        "market_source_plan_product_identity_from_source_material",
+        "产品身份仅来自 URL/文件/图片",
+        "不是向用户索取资料清单",
+        "not_evidence"
+      ],
+      "output_must_not_contain": [
+        "最终税率为",
+        "已合规",
+        "可出运",
+        "建议进入"
       ]
     },
     {

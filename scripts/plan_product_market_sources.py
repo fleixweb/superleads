@@ -27,17 +27,46 @@ NOT_EVIDENCE_NOTE = "not_evidence: Source Pack 和 Query Plan 只是来源/查�
 COUNTRY_ALIASES = {
     "us": "United States",
     "usa": "United States",
+    "840": "United States",
     "u.s.": "United States",
     "u.s.a.": "United States",
     "america": "United States",
     "美国": "United States",
     "united states": "United States",
+    "united states of america": "United States",
+    "cn": "China",
+    "chn": "China",
+    "156": "China",
     "china": "China",
     "prc": "China",
+    "people's republic of china": "China",
+    "peoples republic of china": "China",
     "中国": "China",
+    "vn": "Vietnam",
+    "vnm": "Vietnam",
+    "704": "Vietnam",
     "vietnam": "Vietnam",
     "viet nam": "Vietnam",
     "越南": "Vietnam",
+    "de": "Germany",
+    "deu": "Germany",
+    "276": "Germany",
+    "germany": "Germany",
+    "deutschland": "Germany",
+    "德国": "Germany",
+    "in": "India",
+    "ind": "India",
+    "356": "India",
+    "india": "India",
+    "印度": "India",
+    "gb": "United Kingdom",
+    "gbr": "United Kingdom",
+    "uk": "United Kingdom",
+    "826": "United Kingdom",
+    "united kingdom": "United Kingdom",
+    "great britain": "United Kingdom",
+    "britain": "United Kingdom",
+    "英国": "United Kingdom",
 }
 
 COUNTRY_TO_PACK = {
@@ -262,6 +291,16 @@ def _country(value: Any) -> str | None:
     return COUNTRY_ALIASES.get(text.casefold(), text)
 
 
+def _looks_like_unmapped_country_code(raw_value: Any, normalized_value: str | None) -> bool:
+    raw = _norm(raw_value)
+    if not raw or not normalized_value:
+        return False
+    compact = re.sub(r"[\s._-]+", "", raw)
+    if not re.fullmatch(r"[A-Za-z]{2,3}|\d{3}", compact):
+        return False
+    return _country(raw) == raw
+
+
 def _as_list(value: Any) -> list[Any]:
     if value is None:
         return []
@@ -380,6 +419,14 @@ def _brief_product_query_term(brief: dict[str, Any]) -> str:
     if candidate_hs:
         return candidate_hs
     return ""
+
+
+def _brief_has_only_source_material_identity(brief: dict[str, Any]) -> bool:
+    if _norm(_brief_value(brief, "product_name", "display_name", "product")):
+        return False
+    if _candidate_hs_hts(brief):
+        return False
+    return bool(_brief_value(brief, "product_source_urls", "source_urls", "user_files", "image_clue", "product_image"))
 
 
 def _brief_product_tags(brief: dict[str, Any]) -> list[str]:
@@ -518,10 +565,13 @@ def validate_registry(registry: dict[str, Any]) -> list[dict[str, str]]:
 
 def _select_pack_ids(brief: dict[str, Any], registry: dict[str, Any]) -> tuple[list[str], list[dict[str, str]], list[str]]:
     tags = _brief_product_tags(brief)
-    target = _country(_brief_value(brief, "target_country_or_region", "destination_country_or_region"))
-    export_country = _country(_brief_value(brief, "export_declaration_country", "default_export_declaration_country"))
+    raw_target = _brief_value(brief, "target_country_or_region", "destination_country_or_region")
+    raw_export_country = _brief_value(brief, "export_declaration_country", "default_export_declaration_country")
+    raw_departure_country = _brief_value(brief, "departure_country_or_region", "departure_country")
+    target = _country(raw_target)
+    export_country = _country(raw_export_country)
     origin_country = _brief_origin_country(brief)
-    departure_country = _country(_brief_value(brief, "departure_country_or_region", "departure_country"))
+    departure_country = _country(raw_departure_country)
     candidate_hs = _candidate_hs_hts(brief)
     requested_modules = set(_str_list(_brief_value(brief, "analysis_modules_requested", "modules_requested")))
 
@@ -533,6 +583,8 @@ def _select_pack_ids(brief: dict[str, Any], registry: dict[str, Any]) -> tuple[l
         selected.extend(COUNTRY_TO_PACK[target]["destination"])
         route_notes.append(f"target_country_or_region={target} -> destination/import/origin-proof/market-signal packs")
     elif target:
+        if _looks_like_unmapped_country_code(raw_target, target):
+            warnings.append({"code": "market_source_plan_country_code_unrecognized", "message": f"目标国家/地区 {raw_target} 看起来像国家代码但未完成规范化；需确认后再判断是否有内置目的国 Source Pack。"})
         warnings.append({"code": "market_source_pack_destination_missing", "message": f"目标国家/地区 {target} 暂无内置目的国 Source Pack；只能保留人工 Query Plan。"})
     else:
         warnings.append({"code": "market_source_plan_missing_target_country", "message": "缺少目标销售国家/地区；目的国准入、税费、COO 和市场信号查询只能停在计划缺口。"})
@@ -541,6 +593,8 @@ def _select_pack_ids(brief: dict[str, Any], registry: dict[str, Any]) -> tuple[l
         selected.extend(COUNTRY_TO_PACK[export_country]["export"])
         route_notes.append(f"export_declaration_country={export_country} -> export-country pack")
     elif export_country:
+        if _looks_like_unmapped_country_code(raw_export_country, export_country):
+            warnings.append({"code": "market_source_plan_country_code_unrecognized", "message": f"出口申报国 {raw_export_country} 看起来像国家代码但未完成规范化；需确认后再判断是否有内置出口国 Source Pack。"})
         warnings.append({"code": "market_source_pack_export_country_missing", "message": f"出口申报国 {export_country} 暂无内置出口国 Source Pack；只能保留人工 Query Plan。"})
     elif origin_country:
         warnings.append({"code": "market_export_country_unconfirmed", "message": f"只看到原产/制造来源 {origin_country}，不能自动当成出口申报国；出口国要求查询需用户确认。"})
@@ -678,6 +732,17 @@ def _fill_blueprint(template: str, inputs: dict[str, Any]) -> str:
             return f"<{key}:待确认>"
         return str(value)
     return re.sub(r"\{([A-Za-z0-9_]+)\}", repl, template)
+
+
+def _clean_query_string(query: str) -> str:
+    """Normalize a planned query without inventing missing terms."""
+    tokens = _norm(query).split(" ")
+    deduped: list[str] = []
+    for token in tokens:
+        if deduped and token == deduped[-1]:
+            continue
+        deduped.append(token)
+    return " ".join(deduped)
 
 
 def _manual_authority_discovery_steps(brief: dict[str, Any]) -> list[dict[str, Any]]:
@@ -937,7 +1002,7 @@ def build_query_plan(brief_payload: dict[str, Any], registry: dict[str, Any]) ->
             if not should_run:
                 continue
             inputs = _inputs_used_for_template(template, brief)
-            query_strings = [_fill_blueprint(item, inputs) for item in _str_list(template.get("query_blueprints"))]
+            query_strings = [_clean_query_string(_fill_blueprint(item, inputs)) for item in _str_list(template.get("query_blueprints"))]
             step = {
                 "query_plan_id": f"qp_{len(query_plan)+1:03d}_{template_id}",
                 "pack_id": pack_id,
@@ -970,6 +1035,8 @@ def build_query_plan(brief_payload: dict[str, Any], registry: dict[str, Any]) ->
         missing_required.append("product_name")
     elif not _norm(_brief_value(brief, "product_name", "display_name", "product")) and _candidate_hs_hts(brief):
         warnings.append({"code": "market_source_plan_product_identity_from_hs_hts", "message": "本轮以用户给出的候选 HS/HTS 作为产品身份线索启动；仍不能替代最终归类或 SKU 资料。"})
+    elif _brief_has_only_source_material_identity(brief):
+        warnings.append({"code": "market_source_plan_product_identity_from_source_material", "message": "产品身份仅来自 URL/文件/图片等用户材料线索；需先打开来源并提取产品名、品类或型号后，再形成有效检索词。当前含占位符的查询只作来源打开计划，不是向用户索取资料清单。"})
     if not _brief_value(brief, "export_declaration_country", "default_export_declaration_country"):
         warnings.append({"code": "market_source_plan_export_country_visible_default_needed", "message": "出口申报国未设置；未来 UI 应显示默认出口国并允许用户改，不从原产地自动推断。"})
     origin_country = _brief_origin_country(brief)

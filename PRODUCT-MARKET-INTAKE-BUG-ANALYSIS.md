@@ -431,3 +431,57 @@ sed -n '143,155p' spec/10-product-outbound-market-analysis-contract.md
 python3 -m py_compile scripts/plan_product_market_sources.py evals/run_product_market_source_plan_evals.py
 python3 evals/run_product_market_source_plan_evals.py --suite all
 ```
+
+---
+
+## 10. 再复核追加：ISO 国家代码、重复检索词和 URL-only 线索
+
+Claude 在 `18d4550` 后继续复核，发现 1 个高优先级既有缺陷和 2 个低优先级体验问题。本轮已复现并修复。
+
+### 10.1 高：ISO-2 / ISO-3 国家代码必须先规范化再选 Source Pack
+
+复现：
+
+```json
+{"product_name":"电子游戏机","candidate_hs_hts":"9504.50.0000","origin_country":"CN","export_declaration_country":"CN","destination_country_or_region":"US"}
+```
+
+旧行为：
+
+- `export_declaration_country = "CN"`
+- 只选 5 个 pack；丢失 `seed_cn_export_general` 与 `seed_transpacific_logistics_general`
+- 出现 `market_source_pack_export_country_missing`
+
+修复：
+
+- `COUNTRY_ALIASES` 补常见 ISO-2 / ISO-3 / numeric aliases：`CN/CHN`、`VN/VNM`、`DE/DEU`、`IN/IND`、`GB/GBR/UK` 等。
+- 对仍未归一化的 2/3 字母或 3 位数字国家代码，增加 `market_source_plan_country_code_unrecognized`，把“可能是代码没识别”和“真实没有内置 pack”区分开。
+- 新增 fixture `source_plan_cn_iso_alias_us_china_brief.json`，断言 `CN + US` 会选中中国出口 Pack 和跨太平洋物流 Pack。
+
+### 10.2 低：HTS-only 查询串去重
+
+旧行为：
+
+- `USITC HTS 9504.50.0000 9504.50.0000 ...`
+- `CBP proof of origin rules ... 9504.50.0000 9504.50.0000`
+
+修复：
+
+- 新增 `_clean_query_string()`，只去掉相邻重复 token，不发明缺失词。
+- 在 `source_plan_hts_alias_us_china_brief.json` 中补 `query_strings_must_not_contain: "9504.50.0000 9504.50.0000"`。
+
+### 10.3 低：URL-only 可启动来源打开计划，但要显式 warning
+
+旧行为：URL-only brief 通过 product identity 判定，但检索式大量出现 `<product_name:待确认>` / `<candidate_hs_hts:待确认>`，下游模型可能再次误读为“先向用户要资料”。
+
+修复：
+
+- 新增 `market_source_plan_product_identity_from_source_material` warning。
+- 明确说明：产品身份仅来自 URL/文件/图片线索时，应先打开来源提取产品名、品类或型号；含占位符的查询只作来源打开计划，不是用户前置资料清单。
+- 新增 fixture `source_plan_url_only_material_warning_brief.json`。
+
+### 10.4 遗留误伤：`_safe_cell` 不再大小写不敏感替换 `claim`
+
+旧行为：`scripts/export_product_market_workbook.py` 中内部术语替换使用 `re.IGNORECASE`，会把普通来源原文中的小写英文 `claim` 替换成“事实记录”。
+
+修复：只按内部 CamelCase token 精确替换，例如 `Claim`、`ClaimEvidence`，不再替换普通英文小写 `claim`。
