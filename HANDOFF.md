@@ -27,6 +27,7 @@
 - 真实业务 UAT 固定验收清单已完成：新增 `docs/validation/superleads-real-business-uat-checklist.md`；claimed path 复核被记录为每次真实业务 UAT 的固定 gate，而不是可选调试步骤。
 - claimed path UAT 自动回归已完成：`evals/run_superleads_markdown_delivery_evals.py` 新增正向 exporter 原始输出通过、负向手工后处理 mismatch 失败两条回归；当前 Markdown delivery suite 为 7/7。
 - 单客背调 claimed path 真实 UAT 已完成：Chilly’s Bottles `customer_background_research` 路线使用 `/home/fleix/superleads_chillys_bottles_20260731/{chillys_customer_background_uat_graph.json,chillys_customer_background_uat_report.md}` 独立复核通过；claimed path check 与用户可见校验均 `ok=true` / `issue_count=0`。
+- 插件发布/安装链路 UAT 已完成：版本从 `0.1.3` bump 到 `0.1.4`，通过 `codex plugin add superleads@fleix --json` 生成 `/home/fleix/.codex/plugins/cache/fleix/superleads/0.1.4`；新缓存包含 `skills/analyzing-product-outbound-market/`、`shared/references/product-outbound-market-intake.md` 和 `spec/`。新增 `scripts/check_superleads_plugin_distribution.py` 与 `evals/run_superleads_plugin_distribution_evals.py`，已接入 `evals/run_evals.py`，覆盖 skill 缺失和 Skill 相对引用死链两类回归。
 
 ## Code Slice AD 已完成内容
 

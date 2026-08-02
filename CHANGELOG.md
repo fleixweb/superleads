@@ -10,6 +10,14 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 - **MINOR**: adds capabilities without breaking existing research graphs.
 - **PATCH**: fixes bugs or changes copy.
 
+
+## [0.1.4] - 2026-08-02
+
+### Fixed
+
+- Bump the plugin release so Codex installs the product outbound market analysis runtime Skill and references instead of reusing the stale 0.1.3 cache.
+- Add plugin distribution integrity checks for missing runtime Skills and dead Skill references into shared/spec files.
+
 ## [0.1.3] - 2026-07-20
 
 ### Changed

@@ -25,7 +25,11 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_FIXTURE = ROOT / "shared" / "references" / "default-discovery-reference.example.json"
 BACKGROUND_FIXTURE = ROOT / "evals" / "fixtures" / "pass_customer_background_chillys_markdown.json"
-DEFAULT_CACHE_ROOT = Path.home() / ".codex" / "plugins" / "cache" / "fleix" / "superleads" / "0.1.3"
+try:
+    DEFAULT_PLUGIN_VERSION = json.loads((ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")).get("version", "0.1.4")
+except Exception:  # pragma: no cover - defensive fallback for partial checkouts
+    DEFAULT_PLUGIN_VERSION = "0.1.4"
+DEFAULT_CACHE_ROOT = Path.home() / ".codex" / "plugins" / "cache" / "fleix" / "superleads" / str(DEFAULT_PLUGIN_VERSION)
 SKILL_FILE_SNIPPETS = {
     "skills/using-superleads/SKILL.md": (
         "export_superleads_markdown.py",

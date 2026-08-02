@@ -30,6 +30,7 @@
 - 真实业务 UAT 固定验收清单已完成：claimed path 复核成为固定验收步骤；新增 `docs/validation/superleads-real-business-uat-checklist.md` 并更新常用命令和验证记录。
 - claimed path UAT 自动回归已完成：Markdown delivery eval 新增 claimed path 正向/负向回归，阻断手工后处理 Markdown 冒充 exporter 原始输出。
 - 单客背调 claimed path 真实 UAT 已完成：Chilly’s Bottles `customer_background_research` 路线 claimed graph/report 独立复核通过，证明 claimed path 门禁不是 bulk-only。
+- 插件发布/安装链路 UAT 已完成：根因确认为 `0.1.3` 缓存由 2026-07-20 源树生成、版本未 bump 导致 2026-07-27 后新增的产品出海市场分析 Skill / intake reference / spec 未进入运行时；版本已 bump 到 `0.1.4` 并重新安装，新增插件分发完整性校验并纳入 `evals/run_evals.py`。
 
 
 
