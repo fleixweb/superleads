@@ -1,5 +1,13 @@
 # Tasks
 
+## 2026-08-10 已完成：批量 Markdown 恢复公开联系人
+
+- 批量 Markdown 联系方式汇总扩为七列，显示联系人 / 公开职业线索、待确认原因和来源链接；保留人员型联系方式归位规则。
+- 保持 `export_workbook.py`、标准开发名单、单客背调、产品出海市场分析及 `tmp/stage5_chillys/` 不变；`hold_no_source` / `hold_inferred` 仍不显示原值。
+- 默认发现 pass fixture 增加带来源观察的 `Jordan Lee / Sales Manager` 人员线索；新增 hold 值脱敏回归 case，未新增 fixture 文件或 runner。
+- 联系采集与研究计划 Skill 增加具体公开联系人查询模板，插件版本 bump `0.1.7` 并同步运行时缓存。
+- 验证记录：`docs/validation/superleads-bulk-contact-person-visibility-20260810.md`。
+
 ## 2026-08-10 已完成：单客背调疑似进出口记录
 
 - `shared/schemas/research-graph.schema.json` 仅新增可选顶层 `suspected_trade_records` 数组；记录字段禁止必填 `entity_id`，并保留 `additionalProperties: false`。

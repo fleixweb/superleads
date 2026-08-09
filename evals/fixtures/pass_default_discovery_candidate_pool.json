@@ -509,7 +509,7 @@
       "concrete_tool": "fixture",
       "observed_at": "2026-07-18T00:00:00Z",
       "access_status": "ok",
-      "raw_excerpt": "Alpha Distributor distributes sample product. Contact sales@alpha.example",
+      "raw_excerpt": "Alpha Distributor distributes sample product. Contact sales@alpha.example. Alpha Distributor publicly lists Jordan Lee as Sales Manager.",
       "extraction_method": "fixture",
       "language": "en",
       "translation_status": "original",
@@ -596,6 +596,17 @@
       "last_seen_at": "2026-07-18T00:00:00Z"
     },
     {
+      "contact_id": "contact_alpha_person_001",
+      "contact_type": "person_name",
+      "normalized_value": "Jordan Lee",
+      "source_literal": "Jordan Lee",
+      "source_observation_id": "obs_alpha_001",
+      "source_type": "website",
+      "visibility_status": "public",
+      "verification_status": "not_verified",
+      "last_seen_at": "2026-07-18T00:00:00Z"
+    },
+    {
       "contact_id": "contact_beta_001",
       "contact_type": "phone",
       "normalized_value": "442070001111",
@@ -632,6 +643,23 @@
       "user_status": "可直接使用",
       "is_role_based": false,
       "is_personal_business": false
+    },
+    {
+      "contact_claim_id": "cc_alpha_person_001",
+      "contact_id": "contact_alpha_person_001",
+      "entity_id": "ent_alpha_001",
+      "relationship_type": "public_person_role_clue",
+      "association_observation_id": "obs_alpha_001",
+      "source_context": "官网公开团队页",
+      "association_evidence_text": "Alpha Distributor publicly lists Jordan Lee as Sales Manager.",
+      "association_confidence": "medium",
+      "export_status": "needs_manual_association_review",
+      "user_status": "待确认归属",
+      "person_name": "Jordan Lee",
+      "job_title": "Sales Manager",
+      "manual_check_note": "公开职位线索可见，但需自行核实是否属于该公司及当前职责。",
+      "is_role_based": false,
+      "is_personal_business": true
     },
     {
       "contact_claim_id": "cc_beta_001",

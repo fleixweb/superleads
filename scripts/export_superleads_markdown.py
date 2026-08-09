@@ -461,12 +461,45 @@ def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[st
     for row in sheets.get("联系方式汇总", []):
         if not isinstance(row, dict):
             continue
+        contact_type = _first_nonempty(row.get("联系方式类型"), row.get("类型"), "待确认")
+        contact_value = _first_nonempty(row.get("联系方式"), row.get("公开联系入口"), "待确认")
+        person_parts = [
+            value for value in (
+                _safe_text(row.get("联系人")),
+                _safe_text(row.get("职位/部门")),
+            )
+            if value != "未提供"
+        ]
+        person_clue = "；".join(person_parts) or "未记录"
+        if contact_type in {"person_name", "job_title"}:
+            # Names/titles are role clues, not usable contact endpoints.
+            if person_clue == "未记录" and contact_value != "未提供":
+                person_clue = contact_value
+            contact_value = "未记录可用入口"
+        status = _first_nonempty(row.get("状态"), row.get("联系方式状态"), "待确认归属")
+        pending_reason = _first_nonempty(
+            row.get("归属状态说明"),
+            row.get("归属证据/待确认原因"),
+            "无",
+        )
+        if status == "待确认归属" and pending_reason == "无":
+            pending_reason = "需自行核实是否属于该公司"
+        source_note = _first_nonempty(row.get("来源说明"), row.get("来源"))
+        source_link = _safe_text(row.get("来源链接"))
+        if source_note == "未提供" and source_link != "未提供":
+            source_text = source_link
+        elif source_note != "未提供" and source_link != "未提供":
+            source_text = f"{source_note}；{source_link}"
+        else:
+            source_text = source_note if source_note != "未提供" else "来源状态待确认"
         contact_rows.append({
-            "对象": _first_nonempty(row.get("公司/线索名称"), row.get("公司名称"), row.get("主体"), "待确认对象"),
-            "联系方式": _first_nonempty(row.get("联系方式"), row.get("公开联系入口"), row.get("说明")),
-            "类型": _first_nonempty(row.get("联系方式类型"), row.get("类型"), "待确认"),
-            "可用状态": _first_nonempty(row.get("状态"), row.get("联系方式状态"), "待确认归属"),
-            "来源": _first_nonempty(row.get("来源说明"), row.get("来源"), "来源状态待确认"),
+            "对象": _first_nonempty(row.get("公司/线索名称"), row.get("公司名称"), row.get("主体"), "待确认归属线索"),
+            "联系人 / 公开职业线索": person_clue,
+            "联系方式": contact_value,
+            "类型": contact_type,
+            "可用状态": status,
+            "待确认原因": pending_reason,
+            "来源 / 链接": source_text,
         })
 
     coverage_rows: list[dict[str, Any]] = []
@@ -525,7 +558,12 @@ def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[st
         ["分区", "候选客户", "国家/地区", "可能客户角色", "当前看到的业务信号", "业务相关性", "依据状态", "可用联系入口", "还要确认什么", "来源 / 来源状态"],
         candidate_rows,
     )
-    _append_table(lines, "联系方式汇总", ["对象", "联系方式", "类型", "可用状态", "来源"], contact_rows)
+    _append_table(
+        lines,
+        "联系方式汇总",
+        ["对象", "联系人 / 公开职业线索", "联系方式", "类型", "可用状态", "待确认原因", "来源 / 链接"],
+        contact_rows,
+    )
     _append_table(lines, "搜索覆盖与收敛", ["本轮查了哪些方向", "覆盖国家/语言/来源类型", "新增/重复", "来源受限或未执行", "覆盖/收敛说明"], coverage_rows)
     _append_table(lines, "待确认事项", ["对象", "待确认事项", "下一步", "状态"], pending_rows)
     _append_table(lines, "已排除 / 仅作参考", ["分区", "对象", "归入原因", "依据状态", "是否可由用户改判", "来源 / 来源状态"], excluded_rows)

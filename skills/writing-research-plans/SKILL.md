@@ -26,6 +26,21 @@ Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/c
 6. Claim evidence requirements only for explicit deep-check tasks, including which claims need first-party or high-authority sources.
 7. Stop conditions and downgrade strategy when tools or evidence are missing.
 
+For `contact_collection_targets`, include concrete, object-anchored queries when
+public people or role clues are requested:
+
+- `site:linkedin.com/in "<公司名>"`
+- `"<公司名>" founder OR owner OR CEO OR "managing director" OR "purchasing manager"`
+- `"<公司名>" 邮箱 OR 联系方式 OR contact OR "get in touch"`
+- `"<公司名>" + <展会名> / <行业协会> / <公开目录站>`
+- `"<人名>" "<公司名>"` for same-person cross-checking
+- Public Facebook / Instagram / X / YouTube company and personal pages
+
+Collect public founders, shareholders, general managers, sales staff, and
+technical leads as well as purchasing contacts. A job title is a role clue only;
+it never establishes purchasing authority. Queries must stay tied to the
+current object and do not become product-plus-country batch discovery.
+
 ## Current-direction coverage
 
 When the Brief has a customer selection contract, bind the Plan to that Brief

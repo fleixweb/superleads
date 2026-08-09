@@ -1,5 +1,14 @@
 # Handoff
 
+## 2026-08-10 批量 Markdown 公开联系人显示
+
+- `scripts/export_superleads_markdown.py` 的批量“联系方式汇总”扩为七列：对象、联系人 / 公开职业线索、联系方式、类型、可用状态、待确认原因、来源 / 链接。
+- `person_name` / `job_title` 类型不再把人名或职位放入联系方式列；`needs_manual_association_review` 与 `UnassignedContactLead` 保留值并标为待确认归属，`hold_no_source` / `hold_inferred` 继续全字段脱敏。
+- 现有默认发现 pass fixture 增加 Alpha 的公开人员线索，并接入生成式 Markdown 断言；新增既有 hold fixture 的 Markdown 脱敏回归。
+- `collecting-contact-intelligence` 与 `writing-research-plans` 增加以公司/人员为锚点的 LinkedIn、官网、展会、行业协会和公开社媒查询模板；公开职位仅作为角色线索，不等于采购权。
+- 插件版本 bump 到 `0.1.7`，运行时缓存为 `/home/fleix/.codex/plugins/cache/fleix/superleads/0.1.7`。
+- 详细范围与验证记录见 `docs/validation/superleads-bulk-contact-person-visibility-20260810.md`。
+
 ## 2026-08-10 疑似进出口记录能力
 
 - 单客背调新增可选根节点数组 `suspected_trade_records`，独立于 `Claim`、`ClaimEvidence`、`Assessment` 和 `DeliveryManifest`；主体只用 `subject_match_level` 表达，不自动绑定 `entity_id`。

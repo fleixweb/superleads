@@ -24,6 +24,14 @@
         "可优先人工跟进",
         "已排除 / 仅作参考",
         "联系方式汇总",
+        "联系人 / 公开职业线索",
+        "待确认原因",
+        "Jordan Lee",
+        "Sales Manager",
+        "未记录可用入口",
+        "待确认归属",
+        "公开职位线索可见，但需自行核实是否属于该公司及当前职责。",
+        "https://alpha.example/contact",
         "搜索覆盖与收敛",
         "风险与说明",
         "已有明确依据",
@@ -35,7 +43,8 @@
         "客户背调报告",
         "产品出海市场分析",
         "EvidenceCard",
-        "SearchLog"
+        "SearchLog",
+        "| Jordan Lee | person_name |"
       ]
     },
     {
@@ -67,6 +76,22 @@
         "EvidenceCard",
         " graph ",
         " eval "
+      ]
+    },
+    {
+      "name": "bulk Markdown redacts held contact values",
+      "fixture": "evals/fixtures/pass_hold_inferred_filtered_export.json",
+      "route": "bulk_customer_development",
+      "expected": "pass",
+      "min_tables": 7,
+      "must_contain": [
+        "联系方式汇总",
+        "待确认归属"
+      ],
+      "must_not_contain": [
+        "sales@example.com",
+        "不可导出",
+        "hold_inferred"
       ]
     },
     {
