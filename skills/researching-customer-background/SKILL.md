@@ -95,16 +95,43 @@ Superleads 的主路径不变：
 ### E. Similarweb、海关与第三方材料
 
 - 先尝试读取实际可正常访问的公开公司页、免费档或公开 SEO 页面。
+- 围绕当前背调对象主动构造贸易数据查询，不把这一覆盖族写成被动“先尝试读取”。至少执行英文与中文两侧的对象锚定查询：
+  - `"<公司名>" importer OR consignee OR "bill of lading"`
+  - `"<公司名>" import records`、`"<公司名>" shipment records`、`"<公司名>" customs data`
+  - `site:<公开贸易数据聚合站公司页域名> "<公司名>"`
+  - `"<公司名>" supplier "<产品词>"`
+  - `"<公司名>" 提单`、`"<公司名>" 进口记录`、`"<公司名>" 采购商`
+- 搜索结果摘要里可见的对方名称、日期、品名/HS、起运地或目的地，按第 4 节字段合同记为独立的“疑似进出口记录”；不能因为详情页打不开就丢弃这些字段。摘要不是 `Observation`、`Claim` 或 `ClaimEvidence`。
 - 记录实际可见原文、来源 URL、页面定位、页面日期（若可见）和观察日期。
 - 遇到 403、Cloudflare、登录墙、付费墙、动态空页或无法打开页面，标记 `source_restricted`；不绕过访问限制、不换代理、不尝试规避反爬。
+- 打不开贸易数据详情页时，仍保留搜索摘要可见部分，`visibility=search_snippet_only` 或 `detail_restricted`，并在报告里明确“详情受限”。
 - 用户提供的海关导出、Similarweb 报告、截图、Excel、PDF 等，记录为“用户提供第三方材料信号”。
 - 公开 teaser 和用户材料都不能外推为完整贸易数据、真实总采购量、当前采购周期、采购力、从中国采购事实或采购意愿。
 
 ### F. 围绕该对象的全网交叉核验
 
 - 查询必须锚定指定对象，例如公司名、品牌、域名、地址、公开电话、公开邮箱，结合产品、母公司、商标、关键人员或角色。
+- 贸易数据查询也必须锚定当前背调对象，不得扩展成“产品 + 国家找一批同类客户”。
 - 不执行“产品 + 国家找一批同类客户”的扩展查询；这属于主路径批量发现。
 - 发现竞争对手、兄弟品牌、母公司、工厂或分销商时，默认记录为关联实体或线索，不批量输出为新客户。
+
+## 疑似进出口记录字段合同
+
+贸易摘要必须写入根节点可选数组 `suspected_trade_records`，只在
+`task_mode=customer_background_research` 使用；不要复用 `hypotheses`，也不要放入
+`Claim`、`ClaimEvidence`、`Assessment` 或 `DeliveryManifest`。记录不包含必填
+`entity_id`，主体关联只通过 `subject_match_level` 表达。
+
+每条记录保留以下字段：
+
+- `record_id`、`direction`（`import` / `export` / `unknown`）、`counterparty_name_verbatim`；
+- `record_date`（不可见写 `date_not_visible`）、`product_or_hs_verbatim`、`origin_or_destination_verbatim`（可选）；
+- `subject_match_level`（`name_exact_address_match` / `name_exact_address_differs` / `partial_match` / `unknown`）；
+- `aggregator_source_name`、`aggregator_source_url`（公开 URL、无凭据）；
+- `visibility`（`search_snippet_only` / `public_page_opened` / `detail_restricted`）；
+- `status`（`suspected_identity_pending` / `not_searched` / `searched_not_found` / `source_restricted`）；
+- `cannot_conclude` 固定写明不能推出采购量、采购周期、采购意愿、从中国采购事实；
+- `next_step_for_user` 固定写“请用你自己的海关数据渠道按上述字段核实”。
 
 ## 联系人与桥接边界
 
@@ -118,7 +145,7 @@ Superleads 的主路径不变：
 
 ## 客户背调报告研究草稿
 
-默认交付给用户的是业务人员能直接读懂、能据此行动的 Markdown 表格，不使用 `Claim`、`Hypothesis`、`EntityRelationship`、`Observation`、`bridge candidate` 等内部术语作为表头或正文。先给一句不超过两句的白话判断，再按以下六张表输出；没有记录时保留表格并明确写“暂未找到/待确认”，不要用长段落代替表格：
+默认交付给用户的是业务人员能直接读懂、能据此行动的 Markdown 表格，不使用 `Claim`、`Hypothesis`、`EntityRelationship`、`Observation`、`bridge candidate` 等内部术语作为表头或正文。先给一句不超过两句的白话判断，再按以下六张固定表输出；只有存在 `suspected_trade_records` 时才追加第七张条件表，不输出空的贸易记录表：
 
 1. **客户一眼看懂**：这是谁、公开在做什么、值不值得继续跟、能不能开始联系、下一步怎么做。
 2. **客户、品牌与关联方**：名称、它是什么、和客户的关系、目前把握、我们依据什么。
@@ -126,6 +153,7 @@ Superleads 的主路径不变：
 4. **怎么联系、先找谁**：建议联系谁/哪里、为什么先找这里、联系时先问什么、状态。
 5. **跟进前要注意什么**：要注意的事、可能影响、建议动作、目前状态。
 6. **信息从哪里来**：上面哪条信息、来源、链接或材料、看到的原话或位置、时间、状态。
+7. **疑似进出口记录（第三方聚合，待核实）**（条件表）：仅展示公开摘要抓到的疑似记录字段，详情 URL 和原文摘录仍集中放在“信息从哪里来”。
 
 对话表格每张最多六列。URL、原文摘录和复杂来源定位只放在最后的“信息从哪里来”；前五张表不堆砌证据细节。
 
@@ -140,7 +168,7 @@ python3 scripts/export_superleads_markdown.py graph.json --route customer_backgr
 批量客户开发；它支持 `customer_background_research`。如果该命令失败，返回失败
 payload 或改交付 CSV/XLSX，不要把手写研究摘要称为正式 Markdown 报告。
 
-如需 CSV / XLSX 交接，可使用 `python3 scripts/export_workbook.py graph.json --output-dir out --mode background --format csv` 导出同样的六张表。两类导出都只展示当前背景对象、其证据支持的关联主体与线索，不会输出无关批量客户或正式名单内容。
+如需 CSV / XLSX 交接，可使用 `python3 scripts/export_workbook.py graph.json --output-dir out --mode background --format csv` 导出同样的六张固定表；有 `suspected_trade_records` 时同步追加同名条件 sheet。两类导出都只展示当前背景对象、其证据支持的关联主体与线索，不会输出无关批量客户或正式名单内容。
 
 表述规则：
 
@@ -149,6 +177,10 @@ payload 或改交付 CSV/XLSX，不要把手写研究摘要称为正式 Markdown
 - Founder、Owner、老板等只能作为转接线索，不能写成采购负责人。
 - 历史材料必须标为“历史信息，需确认现在是否仍有效”。
 - 搜索摘要、访问受限页面和用户提供的第三方材料只能作为线索或材料信号，不得写成已确认的公司事实。
+- 疑似进出口记录永远只能写“疑似”，不得升级为已确认记录；`subject_match_level` 不是 `name_exact_address_match` 时，用户可见状态必须写“疑似，主体待确认”。
+- 必须写明来源是第三方贸易数据聚合站公开摘要，**非官方海关记录**；详情受限时只保留摘要可见字段。
+- 用户下一步统一写“请用你自己的海关数据渠道按上述字段核实”，不得建议购买或推荐任何数据服务商。
+- `not_searched` 必须显示“本轮未检索”，`searched_not_found` 必须显示“已检索未见”，不得合并成“暂未找到”。
 - “值不值得继续跟”是基于当前可核实信息的跟进建议，不等于采购意愿、客户价值、报价或谈判结论。
 
 V1 不承诺自动网页截图存档。用户提供的截图可以作为材料来源，但不能因为 OCR 或截图内容直接升级为独立公开事实。

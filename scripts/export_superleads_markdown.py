@@ -652,6 +652,13 @@ def build_background_markdown(graph: dict[str, Any]) -> tuple[str | None, list[d
     ]
     _append_table(lines, "怎么联系、先找谁", ["建议联系谁/哪里", "为什么先找这里", "联系时先问什么", "状态"], contact_rows)
     _append_table(lines, "跟进前要注意什么", ["要注意的事", "可能影响", "建议动作", "当前状态"], _background_caution_rows(sheets.get("跟进前要注意什么", [])))
+    if "疑似进出口记录（第三方聚合，待核实）" in sheets:
+        _append_table(
+            lines,
+            "疑似进出口记录（第三方聚合，待核实）",
+            ["方向（原文口径）", "对方名称（原文）", "日期", "品名 / HS（原文）", "起运 / 目的地（原文）", "来源 / 状态 / 边界"],
+            sheets["疑似进出口记录（第三方聚合，待核实）"],
+        )
     _append_table(lines, "信息从哪里来", ["上面哪条信息", "来源", "链接或材料", "看到的原话或位置", "时间", "状态"], sheets.get("信息从哪里来", []))
     return "\n".join(lines).rstrip() + "\n", []
 

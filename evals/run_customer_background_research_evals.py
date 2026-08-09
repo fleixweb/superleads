@@ -68,6 +68,7 @@ def _export_background(py: str, fixture: Path, tmp_path: Path, index: int, case:
         "跟进前要注意什么.csv",
         "信息从哪里来.csv",
     }
+    required_sheets.update(str(item) for item in case.get("conditional_csv_sheets", []) if isinstance(item, str))
     produced = {path.name for path in out_dir.glob("*.csv")}
     problems: list[str] = []
     if produced != required_sheets:
@@ -84,6 +85,30 @@ def _export_background(py: str, fixture: Path, tmp_path: Path, index: int, case:
         result["ok"] = False
         result["returncode"] = 1
         result["output"] += "\n" + "; ".join(problems)
+        return result
+
+    xlsx_needles = [str(item) for item in case.get("xlsx_must_contain", []) if isinstance(item, str)]
+    if xlsx_needles:
+        xlsx_dir = tmp_path / f"background_xlsx_{index}"
+        xlsx_result = _run([py, str(WORKBOOK), str(fixture), "--output-dir", str(xlsx_dir), "--mode", "background", "--format", "xlsx"], 0)
+        xlsx_files = list(xlsx_dir.glob("*.xlsx"))
+        xlsx_text = ""
+        if xlsx_files:
+            try:
+                from openpyxl import load_workbook  # type: ignore
+                workbook = load_workbook(xlsx_files[0], read_only=True, data_only=True)
+                xlsx_text = "\n".join(
+                    f"{sheet}\n" + "\n".join(" | ".join(str(cell or "") for cell in row) for row in workbook[sheet].iter_rows(values_only=True))
+                    for sheet in workbook.sheetnames
+                )
+            except Exception as exc:
+                xlsx_result["ok"] = False
+                xlsx_result["output"] += f"\nXLSX read failed: {exc}"
+        missing_xlsx = _assert_contains(xlsx_text, xlsx_needles)
+        if missing_xlsx or not xlsx_result.get("ok"):
+            result["ok"] = False
+            result["returncode"] = 1
+            result["output"] += f"\nXLSX assertions failed missing={missing_xlsx}\n{xlsx_result.get('output', '')}"
     return result
 
 

@@ -352,6 +352,13 @@ def build_background_projection(graph: dict[str, Any]) -> tuple[dict[str, Any] |
         "unassigned_contact_leads": copy.deepcopy(unassigned),
         "hypotheses": copy.deepcopy(hypotheses),
     }
+    suspected_trade_records = [
+        copy.deepcopy(item)
+        for item in ensure_list(graph, "suspected_trade_records")
+        if isinstance(item, dict)
+    ]
+    if suspected_trade_records:
+        projection["suspected_trade_records"] = suspected_trade_records
     return {
         **context,
         "projection": projection,
@@ -524,6 +531,49 @@ def _background_placeholder_rows(rows: list[dict[str, Any]], message: str, heade
     return rows
 
 
+def _suspected_trade_record_status(record: dict[str, Any]) -> str:
+    """Project restricted third-party trade clues without upgrading identity."""
+    status = str(record.get("status") or "")
+    visibility = str(record.get("visibility") or "")
+    status_label = {
+        "not_searched": "本轮未检索",
+        "searched_not_found": "已检索未见",
+        "source_restricted": "详情受限",
+        "suspected_identity_pending": "疑似，主体待确认",
+    }.get(status, "疑似，主体待确认")
+    if status not in {"not_searched", "searched_not_found"}:
+        match_level = str(record.get("subject_match_level") or "unknown")
+        if status == "source_restricted":
+            status_label = "疑似，主体待确认；详情受限"
+        elif match_level != "name_exact_address_match":
+            status_label = "疑似，主体待确认"
+        if visibility == "search_snippet_only":
+            status_label += "；搜索摘要可见"
+    return "；".join(
+        item for item in (
+            "第三方贸易数据聚合站公开摘要，非官方海关记录",
+            status_label,
+            str(record.get("cannot_conclude") or "不能推出采购量、采购周期、采购意愿、从中国采购事实"),
+            str(record.get("next_step_for_user") or "请用你自己的海关数据渠道按上述字段核实"),
+        ) if item
+    )
+
+
+def _suspected_trade_record_rows(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    direction_labels = {"import": "import", "export": "export", "unknown": "unknown"}
+    rows: list[dict[str, Any]] = []
+    for record in records:
+        rows.append({
+            "方向（原文口径）": direction_labels.get(str(record.get("direction") or "unknown"), str(record.get("direction") or "unknown")),
+            "对方名称（原文）": record.get("counterparty_name_verbatim") or "未提供",
+            "日期": record.get("record_date") or "date_not_visible",
+            "品名 / HS（原文）": record.get("product_or_hs_verbatim") or "未提供",
+            "起运 / 目的地（原文）": record.get("origin_or_destination_verbatim") or "未提供",
+            "来源 / 状态 / 边界": _suspected_trade_record_status(record),
+        })
+    return rows
+
+
 def build_background_report_sheets(scope: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     """Render the background scope in business language, with evidence kept separate."""
     projection = scope["projection"]
@@ -639,6 +689,21 @@ def build_background_report_sheets(scope: dict[str, Any]) -> dict[str, list[dict
         "状态": row.get("状态"),
     } for row in raw_evidence_rows]
 
+    trade_records = [
+        item for item in ensure_list(projection, "suspected_trade_records")
+        if isinstance(item, dict)
+    ]
+    trade_record_rows = _suspected_trade_record_rows(trade_records)
+    for record in trade_records:
+        evidence_rows.append({
+            "上面哪条信息": f"疑似进出口记录：{record.get('record_id') or '未提供'}",
+            "来源": f"{record.get('aggregator_source_name') or '第三方贸易数据聚合站'}；第三方贸易数据聚合站公开摘要，非官方海关记录",
+            "链接或材料": record.get("aggregator_source_url") or "",
+            "看到的原话或位置": "摘要可见字段按原文保留；详情页不可访问时不补写详情。",
+            "时间": record.get("record_date") or "date_not_visible",
+            "状态": _suspected_trade_record_status(record),
+        })
+
     business_signals = [str(row.get("我们看到的情况")) for row in opportunity_rows if row.get("把握程度") != "待确认"]
     usable_contacts = [row for row in raw_contact_rows if row.get("联系方式状态") == "可直接使用"]
     if resolution_status != "resolved":
@@ -671,7 +736,7 @@ def build_background_report_sheets(scope: dict[str, Any]) -> dict[str, list[dict
     if any(observation.get("access_status") in BLOCKED_ACCESS for observation in observations.values()):
         overview_rows.append({"你最关心的事": "信息有没有缺口", "目前了解到的情况": "部分来源无法访问，未把受限内容当作公司事实。", "结论": "见“跟进前要注意什么”"})
 
-    return {
+    result = {
         "客户一眼看懂": overview_rows,
         "客户、品牌与关联方": _background_placeholder_rows(
             relationship_rows,
@@ -699,6 +764,9 @@ def build_background_report_sheets(scope: dict[str, Any]) -> dict[str, list[dict
             ("上面哪条信息", "来源", "链接或材料", "看到的原话或位置", "时间", "状态"),
         ),
     }
+    if trade_record_rows:
+        result["疑似进出口记录（第三方聚合，待核实）"] = trade_record_rows
+    return result
 
 
 def _safe_entity_url(entity: dict[str, Any]) -> str:

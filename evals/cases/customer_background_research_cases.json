@@ -95,6 +95,38 @@
       "expected_error_codes": [
         "background_delivery_manifest_not_allowed"
       ]
+    },
+    {
+      "name": "suspected trade records export as a conditional background table",
+      "fixture": "pass_customer_background_suspected_trade_records.json",
+      "expected": "pass",
+      "validate": "pass",
+      "export_background": "pass",
+      "markdown_delivery": "pass",
+      "must_contain": [
+        "疑似进出口记录（第三方聚合，待核实）",
+        "疑似，主体待确认",
+        "第三方贸易数据聚合站公开摘要，非官方海关记录",
+        "请用你自己的海关数据渠道按上述字段核实",
+        "详情受限"
+      ],
+      "must_not_contain": [
+        "ClaimEvidence",
+        "该客户从中国采购"
+      ],
+      "csv_must_contain": [
+        "疑似进出口记录（第三方聚合，待核实）",
+        "疑似，主体待确认",
+        "第三方贸易数据聚合站公开摘要，非官方海关记录",
+        "请用你自己的海关数据渠道按上述字段核实"
+      ],
+      "conditional_csv_sheets": [
+        "疑似进出口记录（第三方聚合，待核实）.csv"
+      ],
+      "xlsx_must_contain": [
+        "疑似进出口记录（第三方聚合，待核实）",
+        "疑似，主体待确认"
+      ]
     }
   ]
 }

@@ -168,6 +168,9 @@ GENERIC_EVIDENCE_UPGRADES = [
     "supplier portal 说明有采购意愿",
     "公开联系入口说明有采购意愿",
     "wholesale 入口说明正在采购",
+    "从中国采购",
+    "海关数据显示",
+    "年进口量",
 ]
 
 PRODUCT_USER_VISIBLE_STATUSES = [

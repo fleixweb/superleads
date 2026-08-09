@@ -1,5 +1,14 @@
 # Tasks
 
+## 2026-08-10 已完成：单客背调疑似进出口记录
+
+- `shared/schemas/research-graph.schema.json` 仅新增可选顶层 `suspected_trade_records` 数组；记录字段禁止必填 `entity_id`，并保留 `additionalProperties: false`。
+- `skills/researching-customer-background/SKILL.md` 覆盖族 E 增加中英文主动查询模板、摘要字段抓取、详情受限处理；覆盖族 F 明确贸易查询必须锚定当前对象；报告改为六张固定表 + 一张条件表并补措辞红线。
+- `scripts/background_report.py` 将记录投影为六列条件表，并把完整 URL 放入“信息从哪里来”；`not_searched` / `searched_not_found` 分别显示“本轮未检索” / “已检索未见”。
+- `scripts/export_superleads_markdown.py`、`scripts/export_workbook.py --mode background` 同步输出条件表；无记录时与改动前保持六张表。
+- 复用 `user_visible_evidence_upgrade` 错误码，追加阻断“从中国采购”“海关数据显示”“年进口量”。新增 1 个 pass graph fixture、1 个 fail 用户可见样本并接入现有 cases/runner。
+- 插件版本 bump `0.1.6` 并同步缓存；保留 `tmp/stage5_chillys/`。
+
 ## 已完成
 
 - 2026-08-10 Source Capability Gate / 0.1.5：正式客户开发、单客背调、产品出海市场分析统一要求当前 Run 同时具备 `search.web` 和一个来源打开能力；缺失时硬停并提示切换环境，资料初审保留为非正式独立路径。修复产品链接 + 目标国风险问法路由、电水壶误入锂电 Pack、市场报告顶部合并原产/出口国标签；补齐插件公开 URL 与 hooks 分发/命令目标回归。`evals/run_evals.py --suite all` 为 716/716。

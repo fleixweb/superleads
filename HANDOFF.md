@@ -1,8 +1,16 @@
 # Handoff
 
+## 2026-08-10 疑似进出口记录能力
+
+- 单客背调新增可选根节点数组 `suspected_trade_records`，独立于 `Claim`、`ClaimEvidence`、`Assessment` 和 `DeliveryManifest`；主体只用 `subject_match_level` 表达，不自动绑定 `entity_id`。
+- 覆盖族 E 现在主动执行英文/中文贸易记录查询模板，保留搜索摘要中可见的名称、日期、品名/HS、起运/目的地字段；详情打不开时标 `详情受限`，不绕过登录墙、付费墙或反爬。
+- 背景报告在有记录时条件追加 `疑似进出口记录（第三方聚合，待核实）`，Markdown / CSV / XLSX 字段顺序一致；无记录时仍保持原六张固定表，不输出空占位表。
+- 版本已 bump 到 `0.1.6`，运行时缓存为 `/home/fleix/.codex/plugins/cache/fleix/superleads/0.1.6`；插件分发完整性 eval 通过。
+- 详细范围与验证记录见 `docs/validation/superleads-customer-background-suspected-trade-records-20260810.md`。
+
 - 分支：`master`
-- 最新提交：本提交 `Record customer background claimed path UAT`
-- 当前状态：Source Capability Gate / `0.1.5` 已在工作区完成并通过全量回归。正式客户开发、单客背调、产品出海市场分析统一要求 `search.web` + 至少一个来源打开能力；缺失时硬停并提示切换环境，资料初审是单独的非正式路径。产品链接风险入口、电水壶锂电误触发、贸易前提合并标签、插件 URL 与 hooks 打包检查均已修复。下一步只在真实来源能力环境执行电水壶中国出口美国的 30 分钟 UAT；不要实现 Observation -> EvidenceCard -> MatrixRow 编译器、国家包或新 validator/error code，直到该 UAT 给出真实缺陷。保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 最新提交：本次 `Add suspected trade record capture to customer background`
+- 当前状态：Source Capability Gate / `0.1.6` 已在工作区完成并通过全量回归。正式客户开发、单客背调、产品出海市场分析统一要求 `search.web` + 至少一个来源打开能力；缺失时硬停并提示切换环境，资料初审是单独的非正式路径。产品链接风险入口、电水壶锂电误触发、贸易前提合并标签、插件 URL 与 hooks 打包检查均已修复。单客背调现可承载公开摘要中的疑似进出口记录，但仍要求第三方来源、主体待确认和用户自行核实。保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已完成
 

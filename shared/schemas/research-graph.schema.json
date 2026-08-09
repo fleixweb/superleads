@@ -563,6 +563,56 @@
     "scope_decisions": {
       "type": "array",
       "items": {"$ref": "scope-decision.schema.json"}
+    },
+    "suspected_trade_records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "record_id",
+          "direction",
+          "counterparty_name_verbatim",
+          "record_date",
+          "product_or_hs_verbatim",
+          "subject_match_level",
+          "aggregator_source_name",
+          "aggregator_source_url",
+          "visibility",
+          "status",
+          "cannot_conclude",
+          "next_step_for_user"
+        ],
+        "properties": {
+          "record_id": {"type": "string", "minLength": 1},
+          "direction": {"type": "string", "enum": ["import", "export", "unknown"]},
+          "counterparty_name_verbatim": {"type": "string", "minLength": 1},
+          "record_date": {"type": "string", "minLength": 1},
+          "product_or_hs_verbatim": {"type": "string", "minLength": 1},
+          "origin_or_destination_verbatim": {"type": "string"},
+          "subject_match_level": {
+            "type": "string",
+            "enum": [
+              "name_exact_address_match",
+              "name_exact_address_differs",
+              "partial_match",
+              "unknown"
+            ]
+          },
+          "aggregator_source_name": {"type": "string", "minLength": 1},
+          "aggregator_source_url": {"type": "string", "minLength": 1},
+          "visibility": {
+            "type": "string",
+            "enum": ["search_snippet_only", "public_page_opened", "detail_restricted"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["suspected_identity_pending", "not_searched", "searched_not_found", "source_restricted"]
+          },
+          "cannot_conclude": {"type": "string", "minLength": 1},
+          "next_step_for_user": {"type": "string", "minLength": 1}
+        }
+      }
     }
   },
   "required": [
