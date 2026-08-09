@@ -278,8 +278,9 @@ def run_normalize_chain(py: str, fixture_path: str, tmp_path: Path, index: int) 
 
 
 def run_preflight_assertion(py: str, input_path: str, case: dict[str, object]) -> dict[str, object]:
+    base_cmd = [py, str(SCRIPTS / "preflight_capabilities.py"), "--input", input_path, "--format", "json"]
     proc = subprocess.run(
-        [py, str(SCRIPTS / "preflight_capabilities.py"), "--input", input_path, "--format", "json"],
+        base_cmd,
         cwd=str(ROOT), text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
     )
@@ -303,13 +304,39 @@ def run_preflight_assertion(py: str, input_path: str, case: dict[str, object]) -
         adapter_issues = actual.get("adapter_report", {}).get("issues", []) if isinstance(actual, dict) and isinstance(actual.get("adapter_report"), dict) else []
         if not any(isinstance(item, dict) and item.get("code") == code for item in adapter_issues):
             missing.append(f"adapter code {code}")
+    if "expected_formal_research_status" in case:
+        actual_status = actual.get("formal_research_status") if isinstance(actual, dict) else None
+        if actual_status != case.get("expected_formal_research_status"):
+            missing.append(
+                f"formal_research_status={case.get('expected_formal_research_status')} (got {actual_status})"
+            )
+    for code in case.get("expected_formal_research_codes", []) if isinstance(case.get("expected_formal_research_codes"), list) else []:
+        formal_issues = actual.get("formal_research_issues", []) if isinstance(actual, dict) else []
+        if not any(isinstance(item, dict) and item.get("code") == code for item in formal_issues):
+            missing.append(f"formal research code {code}")
+    for needle in case.get("formal_research_message_must_contain", []) if isinstance(case.get("formal_research_message_must_contain"), list) else []:
+        formal_message = actual.get("formal_research_message", "") if isinstance(actual, dict) else ""
+        if str(needle) not in str(formal_message):
+            missing.append(f"formal research message {needle!r}")
+    if "expected_require_formal_research_returncode" in case:
+        require_proc = subprocess.run(
+            [*base_cmd, "--require-formal-research"],
+            cwd=str(ROOT), text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+        )
+        expected_require_returncode = int(case["expected_require_formal_research_returncode"])
+        if require_proc.returncode != expected_require_returncode:
+            missing.append(
+                "--require-formal-research returncode="
+                f"{expected_require_returncode} (got {require_proc.returncode})"
+            )
     if "expected_adapter_valid" in case:
         actual_valid = actual.get("adapter_report", {}).get("valid") if isinstance(actual, dict) and isinstance(actual.get("adapter_report"), dict) else None
         if actual_valid is not case.get("expected_adapter_valid"):
             missing.append(f"adapter valid={case.get('expected_adapter_valid')} (got {actual_valid})")
     ok = proc.returncode == expected_returncode and actual is not None and not missing
     return {
-        "cmd": [py, str(SCRIPTS / "preflight_capabilities.py"), "--input", input_path, "--format", "json"],
+        "cmd": base_cmd,
         "returncode": proc.returncode if ok else 1,
         "expected": expected_returncode,
         "ok": ok,

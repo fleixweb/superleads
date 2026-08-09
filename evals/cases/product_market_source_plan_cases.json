@@ -5,6 +5,15 @@
   "registry": "shared/source_packs/product_market_seed_packs.json",
   "cases": [
     {
+      "name": "generic electrical product does not select lithium battery pack",
+      "fixture": "source_plan_electric_kettle_us_brief.json",
+      "expected_returncode": 0,
+      "expected_ok": true,
+      "must_not_select_pack_ids": ["seed_lithium_battery_common_rules"],
+      "output_must_contain": ["source_plan_only", "not_evidence"],
+      "output_must_not_contain": ["最终税率为", "已合规", "可出运"]
+    },
+    {
       "name": "hts code alias starts first pass source plan",
       "fixture": "source_plan_hts_alias_us_china_brief.json",
       "expected_returncode": 0,

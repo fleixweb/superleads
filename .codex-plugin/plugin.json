@@ -1,6 +1,6 @@
 {
   "name": "superleads",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Foreign-trade customer discovery Skill Suite with public signals and optional deep verification.",
   "author": {
     "name": "Fleix"
@@ -22,6 +22,9 @@
     "longDescription": "Superleads is a general-purpose foreign-trade Skill Suite for discovery-first overseas candidate pools, public contact organization, and user-requested deep verification without hard-coded industry ICP defaults.",
     "developerName": "Fleix",
     "category": "Productivity",
+    "websiteURL": "https://github.com/fleixweb/superleads",
+    "privacyPolicyURL": "https://github.com/fleixweb/superleads/blob/master/docs/PRIVACY.md",
+    "termsOfServiceURL": "https://github.com/fleixweb/superleads/blob/master/docs/TERMS.md",
     "capabilities": [
       "Research",
       "Files",

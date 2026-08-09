@@ -2,9 +2,14 @@
 
 - 分支：`master`
 - 最新提交：本提交 `Record customer background claimed path UAT`
-- 当前状态：真实业务 UAT 已把 claimed path 复核固定为验收门禁，并接入 Markdown delivery 自动回归；除 graph JSON + exporter 成功结果外，用户声明的 Markdown 路径必须与该 graph 重新导出的 exporter 输出逐字一致。bulk 与 customer_background_research 两条路线均已用真实 UAT 路径独立复核通过；单客背调 Markdown exporter 支持已纳入冒烟，Skill / 插件缓存同步禁止声称只支持 bulk。继续真实业务 UAT。保留 `tmp/stage5_chillys/`，无关目录不处理。
+- 当前状态：Source Capability Gate / `0.1.5` 已在工作区完成并通过全量回归。正式客户开发、单客背调、产品出海市场分析统一要求 `search.web` + 至少一个来源打开能力；缺失时硬停并提示切换环境，资料初审是单独的非正式路径。产品链接风险入口、电水壶锂电误触发、贸易前提合并标签、插件 URL 与 hooks 打包检查均已修复。下一步只在真实来源能力环境执行电水壶中国出口美国的 30 分钟 UAT；不要实现 Observation -> EvidenceCard -> MatrixRow 编译器、国家包或新 validator/error code，直到该 UAT 给出真实缺陷。保留 `tmp/stage5_chillys/`，无关目录不处理。
 
 ## 已完成
+
+- Source Capability Gate / `0.1.5` 已完成：`preflight_capabilities.py --require-formal-research` 在缺少 `search.web` 或 `source.open` / `browser.render` / `document.extract` 时以稳定状态和用户可见换环境话术失败；技能、策略、README 与常用命令不再把 `research_plan_only` 或候选池描述成无来源能力时的正式交付。用户已提供材料只允许明确标注为 `资料初审`。
+- 已修复产品 URL + 目标国 + 风险入口到产品出海市场分析的路由，通用 `electrical` 不再触发锂电 Source Pack，市场报告顶部始终将出口申报国和原产国 / 制造来源分开显示。
+- 插件版本升至 `0.1.5`；新增公开隐私/条款页和 manifest URL。插件分发 eval 现在复制 `hooks/`，验证 manifest 声明的 hook 配置和它引用的 Unix/Windows 命令目标；故意删除 hook 配置或脚本会失败。
+- 已验证：`python3 -m py_compile`（相关脚本）、route `26/26`、source-plan `12/12`、Markdown delivery `7/7`、plugin distribution `6/6`、`python3 evals/run_evals.py --suite default`、`python3 evals/run_evals.py --suite all` `716/716`（183 秒）、`git diff --check`。系统通用 plugin validator 与本项目既有 Codex hooks 规则冲突，故以仓库分发回归为准。
 
 - Slice AA / Code Slice AA 已提交：`b3145fc Calibrate weak-evidence delivery guardrails`。
 - Code Slice AB 已提交：`2073a98 Add weak-source corroboration records`。

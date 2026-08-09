@@ -18,6 +18,7 @@ from _superleads_common import (
 CAPABILITY_RULES={
 "search.web":("发现候选池 / 搜索记录","不能支撑 Claim"),"source.open":("Observation","可形成来源记录"),"browser.render":("Observation","可形成来源记录"),"document.extract":("Observation","可形成文档来源记录"),"image.inspect":("Observation / Candidate clue","OCR 与视觉线索；不能支撑正式 Claim 或 ready 联系方式"),"mail.read":("Inquiry / source-note contact","只读入站邮件摘录；不能支撑正式 Claim、Assessment 或 ready 联系方式"),"source.capture":("Observation","保存摘录、定位、哈希"),"url.canonicalize":("Source / Entity","只做归一化"),"entity.dedupe":("Provisional Entity","不等于最终身份判定"),"translate.text":("Observation transform","必须保留原文"),"company.enrich":("Candidate clue / contextual","不能单独支撑主表"),"email.verify":("contact quality","不证明来源"),"domain.check":("technical Observation","不证明公司归属"),"social.visible.read":("Observation","不自动证明采购权"),"registry.lookup":("Observation","可支撑实体类 Claim"),"trademark.lookup":("Observation","可支撑品牌/商标类 Claim"),"maps.lookup":("Observation","可支撑地图联系方式/地址类 Claim"),"memory.recall":("Plan priority","不能进 Claim / Assessment")}
 AVAILABLE={True,"true","available","yes","present","enabled"}; UNAVAILABLE={False,"false","unavailable","no","missing","disabled"}
+FORMAL_RESEARCH_MESSAGE = "本轮环境无法联网检索并打开可记录来源，不能完成 Superleads 正式外贸研究。请切换到具备 Web Search 和来源打开能力的 Agent/环境后重试。若只需整理已有资料，可以继续，但那不是市场分析或客户开发报告。"
 
 def normalize_status(raw: Any) -> str:
     value=raw.strip().lower() if isinstance(raw,str) else raw
@@ -114,10 +115,35 @@ def preflight(payload: dict[str,Any]|None) -> dict[str,Any]:
     capabilities={cap:{"status":normalize_status(provided.get(cap)),"highest_layer":layer,"rule":rule} for cap,(layer,rule) in CAPABILITY_RULES.items()}
     source_capable=any(capabilities[c]["status"]=="available" for c in ("source.open","browser.render","document.extract"))
     search_capable=capabilities["search.web"]["status"]=="available"
-    if source_capable: max_output="standard_development_list"; notes=[]
-    elif search_capable: max_output="initial_lead_list"; notes=["No opened-source capability detected; stay in discovery candidate pool mode and do not create Claims or a formal development list."]
-    else: max_output="research_plan_only"; notes=["No search or source-opening capability detected; prepare a research plan or use user-provided materials only."]
-    result = {"checked_at":datetime.now(timezone.utc).replace(microsecond=0).isoformat(),"capabilities":capabilities,"max_output_without_manual_sources":max_output,"downgrade_notes":notes}
+    formal_issues: list[dict[str, str]] = []
+    if not search_capable:
+        formal_issues.append({
+            "code": "formal_research_search_capability_missing",
+            "message": "Formal research requires an available search.web capability.",
+        })
+    if not source_capable:
+        formal_issues.append({
+            "code": "formal_research_source_open_capability_missing",
+            "message": "Formal research requires source.open, browser.render, or document.extract.",
+        })
+    formal_ready = not formal_issues
+    if formal_ready:
+        max_output = "formal_research_ready"
+        notes: list[str] = []
+        formal_message = "已具备搜索与来源打开能力，可以进入正式外贸研究；仍须按 Source/Observation/evidence/audit 门禁交付。"
+    else:
+        max_output = "formal_research_blocked"
+        notes = [FORMAL_RESEARCH_MESSAGE]
+        formal_message = FORMAL_RESEARCH_MESSAGE
+    result = {
+        "checked_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+        "capabilities": capabilities,
+        "max_output_without_manual_sources": max_output,
+        "formal_research_status": "ready" if formal_ready else "blocked",
+        "formal_research_issues": formal_issues,
+        "formal_research_message": formal_message,
+        "downgrade_notes": notes,
+    }
     if adapter_result is not None:
         result["adapter_report"] = {
             "recognized": adapter_result["recognized"],
@@ -138,12 +164,12 @@ def preflight(payload: dict[str,Any]|None) -> dict[str,Any]:
     return result
 
 def main()->int:
-    p=argparse.ArgumentParser(); p.add_argument("--input"); p.add_argument("--output"); p.add_argument("--format",choices=["text","json"],default="text"); a=p.parse_args()
+    p=argparse.ArgumentParser(); p.add_argument("--input"); p.add_argument("--output"); p.add_argument("--require-formal-research", action="store_true"); p.add_argument("--format",choices=["text","json"],default="text"); a=p.parse_args()
     result=preflight(load_json(a.input) if a.input else None)
     if a.output: write_json(a.output,result)
     if a.format=="json": print(json.dumps(result,ensure_ascii=False,indent=2))
     else:
         print(f"max_output_without_manual_sources: {result['max_output_without_manual_sources']}")
         for note in result["downgrade_notes"]: print(f"downgrade: {note}")
-    return 0
+    return 0 if not a.require_formal_research or result["formal_research_status"] == "ready" else 1
 if __name__=="__main__": raise SystemExit(main())

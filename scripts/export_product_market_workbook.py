@@ -528,13 +528,16 @@ def _origin_export_scope_for_preamble(premise: dict[str, Any] | None, graph: dic
         origin_country = _safe_cell(premise.get("origin_country_or_region"))
     if export_country and origin_country:
         if export_country.strip().lower() == origin_country.strip().lower():
-            return f"{export_country}（原产/出口口径；如实际不是该国家/地区可替换）"
-        return f"出口申报国：{export_country}；原产/制造来源：{origin_country}（两者分开保留）"
+            return (
+                f"出口申报国：{export_country}（默认可改）；"
+                f"原产国 / 制造来源：{origin_country}（本轮两者值相同，仍分开记录）"
+            )
+        return f"出口申报国：{export_country}；原产国 / 制造来源：{origin_country}（两者分开保留）"
     if export_country:
-        return f"出口申报国：{export_country}；原产/制造来源待确认"
+        return f"出口申报国：{export_country}；原产国 / 制造来源：待确认"
     if origin_country:
-        return f"原产/制造来源：{origin_country}；出口申报国可按中国默认口径或用户口径设置"
-    return "未提供；首轮可按中国默认出口口径启动，需向用户可见可改"
+        return f"出口申报国：待确认；原产国 / 制造来源：{origin_country}"
+    return "出口申报国：待确认；原产国 / 制造来源：待确认"
 
 
 def _departure_scope_for_preamble(premise: dict[str, Any] | None) -> str:
@@ -1043,7 +1046,7 @@ def _brief_markdown_summary(graph: dict[str, Any]) -> list[str]:
         "",
         "| 项目 | 本轮写法 | 对用户意味着什么 |",
         "| --- | --- | --- |",
-        f"| 本轮默认贸易口径 | 原产/出口国：{_md_escape(origin_export_scope)}；目标市场：{_md_escape(destination or '未提供')} | 用最少输入先做市场、准入、税费、出口与物流分析；不是要求先补报关资料 |",
+        f"| 本轮默认贸易口径 | {_md_escape(origin_export_scope)}；目标市场：{_md_escape(destination or '未提供')} | 用最少输入先做市场、准入、税费、出口与物流分析；不是要求先补报关资料 |",
         f"| 实际起运港 | {_md_escape(departure_scope)} | 不影响首轮市场分析；正式订舱、申报或运输安排前再确认 |",
         "| 如果默认口径不对 | 直接告诉我实际出口国、原产国或目标市场，我会替换口径继续分析 | 适配非中国出口国、多国生产或转口贸易路径 |",
         "| 本轮结论边界 | 品类级 / 候选税号级分析；不输出最终归类、最终税率、已合规或可清关 | 保持不确定，但不停止研究 |",

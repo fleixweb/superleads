@@ -26,7 +26,7 @@ def _run(cmd: list[str], expect: int) -> dict[str, Any]:
 
 def _copy_distribution(target: Path) -> None:
     target.mkdir(parents=True, exist_ok=True)
-    for rel in (".codex-plugin", "skills", "shared", "spec"):
+    for rel in (".codex-plugin", "hooks", "skills", "shared", "spec"):
         src = ROOT / rel
         if src.is_dir():
             shutil.copytree(src, target / rel)
@@ -67,6 +67,10 @@ def _assert_result(result: dict[str, Any], *, expected_codes: list[str] | None =
             problems.append("product-market skill not reported in positive payload")
         if int(payload.get("checked_skill_relative_reference_count", 0) or 0) <= 0:
             problems.append("no skill relative references were checked")
+        if payload.get("manifest_hook_path") != "./hooks/codex-hooks.json":
+            problems.append("manifest-declared hook path was not reported")
+        if int(payload.get("checked_hook_command_target_count", 0) or 0) <= 0:
+            problems.append("no manifest hook command targets were checked")
     codes = [item.get("code") for item in payload.get("issues", []) if isinstance(item, dict)]
     for code in expected_codes or []:
         if code not in codes and code not in str(result.get("output", "")):
@@ -115,6 +119,28 @@ def run_suite() -> dict[str, Any]:
         )
         dead_ref_result["name"] = "dead Skill spec reference is caught"
         results.append(dead_ref_result)
+
+        missing_hook = tmp_path / "missing_hook"
+        _copy_distribution(missing_hook)
+        (missing_hook / "hooks" / "codex-hooks.json").unlink()
+        missing_hook_result = _assert_result(
+            _checker(py, missing_hook, 1),
+            expected_codes=["plugin_distribution_manifest_hook_missing"],
+            require_ok_payload=False,
+        )
+        missing_hook_result["name"] = "missing manifest-declared hook is caught"
+        results.append(missing_hook_result)
+
+        missing_hook_command_target = tmp_path / "missing_hook_command_target"
+        _copy_distribution(missing_hook_command_target)
+        (missing_hook_command_target / "hooks" / "session-start").unlink()
+        missing_hook_command_target_result = _assert_result(
+            _checker(py, missing_hook_command_target, 1),
+            expected_codes=["plugin_distribution_hook_command_target_missing"],
+            require_ok_payload=False,
+        )
+        missing_hook_command_target_result["name"] = "missing hook command target is caught"
+        results.append(missing_hook_command_target_result)
 
     passed = sum(1 for item in results if item.get("ok"))
     failed = [item for item in results if not item.get("ok")]

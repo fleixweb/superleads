@@ -23,7 +23,8 @@ Read these only as needed:
 - `../../spec/14-product-outbound-market-analysis-evidence-boundary-rules.md` for forbidden evidence upgrades.
 - `../../spec/24-product-outbound-market-analysis-origin-proof-requirements.md` when COO / proof of origin appears.
 - `../../spec/29-product-outbound-market-analysis-certification-requirement-calibration.md` when certification, test, registration, labeling, packaging, SDS, UN38.3, or compliance-file requirements appear.
-- Plan source collection with `../../scripts/plan_product_market_sources.py` before any real search/open step. Its output is `source_plan_only`, not evidence.
+- Run `../../scripts/preflight_capabilities.py --require-formal-research` before a formal analysis. It requires `search.web` plus `source.open`, `browser.render`, or `document.extract`; if blocked, give the prescribed switch-environment message and do not issue a market report or source plan as a substitute delivery.
+- Plan source collection with `../../scripts/plan_product_market_sources.py` before any real search/open step. Its output is `source_plan_only`, an internal execution artifact rather than evidence or a formal user delivery.
 - Validate and audit existing graphs with `../../scripts/validate_product_market_analysis.py` and `../../scripts/audit_product_market_analysis.py`.
 - Export reviewed graphs with `../../scripts/export_product_market_workbook.py`.
 
@@ -53,6 +54,11 @@ Use `ProductMarketAnalysisGraph`, not Candidate / Claim / Assessment. Every user
 Keep these statuses visible instead of filling blanks: `verified`, `derived_calculation`, `candidate`, `preliminary_reference`, `business_confirmation_required`, `technical_docs_required`, `physical_verification_required`, `professional_confirmation_required`, `source_restricted`, `not_executed`, `not_applicable`, `not_provided`, `conflict_pending_review`.
 
 Search summaries, Source Packs, previous Skill summaries, and model summaries are leads for where to look, not facts.
+
+If formal source capability is unavailable, stop before this workflow. You may
+perform a clearly labeled `资料初审` of files or text the user already supplied,
+but it is not a product outbound market analysis and must not be exported as
+one.
 
 Before collecting live sources, use the Source Pack registry to generate a Query Plan. The plan may list packs, source entries, query strings, required authority levels, and observation requirements; it must not create EvidenceCards, MatrixRows, tax rates, certification conclusions, logistics times, trends, prices, or market-entry judgments.
 

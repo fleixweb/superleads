@@ -2,5 +2,6 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.plugin-eval/
 out/
 tmp/

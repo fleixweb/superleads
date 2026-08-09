@@ -3,6 +3,15 @@
   "router": "scripts/route_superleads_intake.py",
   "cases": [
     {
+      "name": "product URL plus target-market risk routes to market analysis",
+      "text": "我有产品链接 https://example.com/electric-kettle，美国有什么风险？",
+      "expected_route": "product_outbound_market_analysis",
+      "expected_next_skill": "analyzing-product-outbound-market",
+      "expected_split_customer_development": false,
+      "expected_missing_fields": [],
+      "response_must_contain": ["产品出海市场分析", "美国"]
+    },
+    {
       "name": "direct product outbound market analysis",
       "text": "做一个产品出海市场分析：48V20Ah LiFePO4 电池包，越南原产，出口美国。",
       "expected_route": "product_outbound_market_analysis",

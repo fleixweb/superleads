@@ -14,6 +14,16 @@
 
 说明：统一 Markdown 交付器只渲染已经审核过的工作簿 / 矩阵投影。它不搜索、不新增事实、不判断客户会不会买、不判断产品值不值得进入某市场、不推荐报价，也不把候选税号写成最终税率。
 
+## 先检查正式研究能力
+
+三条正式路线（批量客户开发、单一客户背调、产品出海市场分析）都需要本轮环境同时具备 `search.web` 和至少一种来源打开能力：`source.open`、`browser.render` 或 `document.extract`。
+
+```bash
+python3 scripts/preflight_capabilities.py --require-formal-research --format json
+```
+
+该命令返回非零时，不交付客户池、背调报告、市场报告或“仅计划”替代品；请切换到带 Web Search 和来源打开能力的 Agent/环境。只有对用户已提供文件或文本做的 `资料初审` 可以继续，且不得称为公开来源研究或正式报告。
+
 ## CSV / XLSX 表格交付
 
 | 场景 | 命令 | 说明 |
@@ -24,7 +34,9 @@
 | 自动选择 XLSX / CSV | `python3 scripts/export_workbook.py graph.json report.xlsx --mode initial --format auto` | 环境支持 XLSX 时写 Excel，否则按脚本能力回退 |
 | 产品出海市场分析 CSV + Markdown | `python3 scripts/export_product_market_workbook.py market-graph.json --output-dir out --format csv --markdown market-report.md --manifest manifest.json` | 输出产品市场分析 12 张 CSV、可选 Markdown 和 manifest |
 
-## 产品出海市场分析来源计划与手工来源链路
+## 产品出海市场分析内部来源计划与手工来源链路
+
+下列命令用于已通过能力门禁后的内部执行、回归或已有来源整理；`source_plan_only` 不是用户交付物。
 
 | 场景 | 命令 | 边界 |
 |---|---|---|

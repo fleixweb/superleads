@@ -24,7 +24,7 @@ MARKET_TOPIC_MARKERS = (
 )
 MARKET_FACT_DOMAIN_MARKERS = (
     "趋势", "google trends", "公开价格", "价格区间", "价格带",
-    "能不能做", "好不好卖", "市场怎么样",
+    "能不能做", "好不好卖", "市场怎么样", "风险", "风险判断",
     "淡旺季", "节假日", "认证", "标签要求", "包装要求", "准入", "关税", "税率",
     "进口税", "vat", "gst", "hts", "htsus", "hs code", "taric", "反倾销", "301",
     "物流", "运输", "海运", "空运", "快递", "铁路", "陆运", "散杂", "滚装", "清关",
@@ -248,6 +248,8 @@ def _market_response(text: str, split_customer_development: bool) -> list[str]:
     ]
     if split_customer_development:
         lines.append("你提到找客户的部分建议放到第二阶段，等你看完市场分析后再单独启动批量客户开发。")
+    if _has_concrete_subject_anchor(text) and re.search(r"https?://|www\.", text, re.IGNORECASE):
+        lines.append("已识别到产品链接；本轮先把它作为产品资料线索，型号、规格和适用条件仍需从打开来源核对。")
     return lines
 
 
@@ -259,6 +261,7 @@ def classify(text: str) -> dict[str, Any]:
     has_country = contains_any(text, COUNTRY_HINTS)
     direct_market = "产品出海市场分析" in _strip_patterns(text, NEGATED_MARKET_PATTERNS)
     market_intent = _has_market_intent(text)
+    has_product_material = has_product or (market_intent and _has_concrete_subject_anchor(text))
 
     if has_background and not direct_market:
         missing_fields = [] if _has_concrete_subject_anchor(text) else ["target_subject"]
@@ -295,7 +298,7 @@ def classify(text: str) -> dict[str, Any]:
         missing_fields: list[str] = []
         if not has_country:
             missing_fields.append("target_country_or_region")
-        if not has_product:
+        if not has_product_material:
             missing_fields.append("product_identity")
         return {
             "route": "product_outbound_market_analysis",
@@ -328,7 +331,7 @@ def classify(text: str) -> dict[str, Any]:
         missing_fields: list[str] = []
         if not has_country:
             missing_fields.append("target_country_or_region")
-        if not has_product and not direct_market:
+        if not has_product_material and not direct_market:
             missing_fields.append("product_identity")
         return {
             "route": "product_outbound_market_analysis",

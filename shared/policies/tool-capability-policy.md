@@ -21,7 +21,19 @@
 | `maps.lookup` | Observation | Can support map address/phone claims. |
 | `memory.recall` | Plan priority | Never enters Claim or Assessment evidence. |
 
-When a tool is missing, degrade output level instead of fabricating evidence. If no source-opening capability exists, provide a research plan or discovery candidate pool only.
+Formal public-source foreign-trade research requires both `search.web` and at
+least one source-opening capability: `source.open`, `browser.render`, or
+`document.extract`. If either prerequisite is missing, stop formal customer
+development, customer background research, and product-market analysis. Tell
+the user to switch to an Agent/environment with Web Search and source-opening
+capability. Do not present a research plan, discovery candidate pool, or
+market report as a substitute delivery.
+
+An internal source plan may still be produced for later execution, but is not a
+user-facing formal deliverable. Reviewing only materials the user already
+provided is allowed as a limited materials-review task; label it as such and do
+not call it public-source market analysis, customer development, or a formal
+research report.
 
 ## Codex CLI Native Web Search
 
@@ -79,8 +91,10 @@ redirect to defend against DNS rebinding.
   ceiling. It never bypasses the Source, Observation, formal evidence,
   identity, review, audit, freshness, contact, or delivery gates.
 - If the tool is absent, fails, has no verified `search` operation, or only
-  returns summaries, record the gap and use `research_plan_only` or
-  `initial_lead_list` as applicable.
+  returns summaries, record the gap and stop formal research. A
+  `research_plan_only` artifact is internal preparation for a later
+  source-capable session, never a formal user delivery. A discovery candidate
+  pool likewise requires the formal source-capability prerequisite.
 
 This policy does not bind Superleads to a model, provider, platform API, or
 external tool server. It does not change the `mail.read` contract below.

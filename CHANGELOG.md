@@ -10,6 +10,14 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 - **MINOR**: adds capabilities without breaking existing research graphs.
 - **PATCH**: fixes bugs or changes copy.
 
+## [0.1.5] - 2026-08-10
+
+### Fixed
+
+- Require both Web Search and source opening before any formal Superleads research route; unavailable capability now stops with an environment-switch message instead of treating a source plan or candidate pool as delivery.
+- Route product-link-plus-market-risk intake to product market analysis, remove the generic `electrical` lithium-battery trigger, and keep export declaration country separate from origin/manufacturing source in the market-report preamble.
+- Add public plugin website, privacy, and terms URLs; package and validate manifest-declared hook configuration and its referenced command targets during plugin distribution regression tests.
+
 
 ## [0.1.4] - 2026-08-02
 

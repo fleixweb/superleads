@@ -204,7 +204,6 @@ COMMON_TRIGGER_PACKS = {
     "battery_standalone": ["seed_lithium_battery_common_rules", "seed_transpacific_logistics_general"],
     "battery_installed": ["seed_lithium_battery_common_rules", "seed_transpacific_logistics_general"],
     "dangerous_goods": ["seed_lithium_battery_common_rules", "seed_transpacific_logistics_general"],
-    "electrical": ["seed_lithium_battery_common_rules"],
     "textile": ["seed_textile_apparel_common_rules"],
     "apparel": ["seed_textile_apparel_common_rules"],
     "cotton": ["seed_textile_apparel_common_rules"],

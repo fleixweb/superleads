@@ -21,6 +21,7 @@ DEFAULT_REQUIRED_FILES = (
     Path("shared/references/product-outbound-market-intake.md"),
 )
 RELATIVE_REFERENCE_RE = re.compile(r"\.\./\.\./(?:spec|shared)/[A-Za-z0-9._/\-]+")
+HOOK_COMMAND_TARGET_RE = re.compile(r"(?:\$\{PLUGIN_ROOT\}|%PLUGIN_ROOT%)[/\\]([^\"'\s]+)")
 
 
 def _issue(code: str, message: str, **extra: str) -> dict[str, str]:
@@ -82,6 +83,113 @@ def _scan_skill_references(plugin_root: Path) -> tuple[list[dict[str, str]], int
                     resolved=str(target.relative_to(plugin_root)),
                 ))
     return issues, checked
+
+
+def _hook_command_values(value: Any) -> list[str]:
+    commands: list[str] = []
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key in {"command", "commandWindows"} and isinstance(item, str):
+                commands.append(item)
+            commands.extend(_hook_command_values(item))
+    elif isinstance(value, list):
+        for item in value:
+            commands.extend(_hook_command_values(item))
+    return commands
+
+
+def _check_manifest_hook(plugin_root: Path) -> tuple[list[dict[str, str]], str | None, int]:
+    manifest_path = plugin_root / ".codex-plugin" / "plugin.json"
+    if not manifest_path.exists():
+        return [
+            _issue(
+                "plugin_distribution_manifest_missing",
+                "plugin distribution lacks .codex-plugin/plugin.json",
+                path=str(manifest_path.relative_to(plugin_root)),
+            )
+        ], None, 0
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return [
+            _issue(
+                "plugin_distribution_manifest_invalid",
+                f"failed to parse plugin manifest: {exc}",
+                path=str(manifest_path.relative_to(plugin_root)),
+            )
+        ], None, 0
+    if not isinstance(manifest, dict):
+        return [
+            _issue(
+                "plugin_distribution_manifest_invalid",
+                "plugin manifest must be a JSON object",
+                path=str(manifest_path.relative_to(plugin_root)),
+            )
+        ], None, 0
+    hook_path = manifest.get("hooks")
+    if hook_path is None:
+        return [], None, 0
+    if not isinstance(hook_path, str) or not hook_path.startswith("./"):
+        return [
+            _issue(
+                "plugin_distribution_manifest_hook_invalid",
+                "manifest hooks path must be a plugin-relative string starting with './'",
+                path=str(manifest_path.relative_to(plugin_root)),
+            )
+        ], None, 0
+    target = plugin_root / hook_path
+    target_resolved = target.resolve(strict=False)
+    if not _is_relative_to(target_resolved, plugin_root.resolve()):
+        return [
+            _issue(
+                "plugin_distribution_manifest_hook_escapes_root",
+                "manifest hooks path escapes the plugin root",
+                path=str(manifest_path.relative_to(plugin_root)),
+                hook_path=hook_path,
+            )
+        ], hook_path, 0
+    if not target.exists() or not target.is_file():
+        return [
+            _issue(
+                "plugin_distribution_manifest_hook_missing",
+                f"manifest-declared hook is missing from plugin distribution: {hook_path}",
+                path=hook_path,
+            )
+        ], hook_path, 0
+    try:
+        hook_config = json.loads(target.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return [
+            _issue(
+                "plugin_distribution_manifest_hook_config_invalid",
+                f"failed to parse manifest-declared hook config: {exc}",
+                path=hook_path,
+            )
+        ], hook_path, 0
+
+    issues: list[dict[str, str]] = []
+    checked_targets = 0
+    for command in _hook_command_values(hook_config):
+        for match in HOOK_COMMAND_TARGET_RE.finditer(command):
+            checked_targets += 1
+            rel = match.group(1).replace("\\", "/")
+            command_target = plugin_root / rel
+            command_target_resolved = command_target.resolve(strict=False)
+            if not _is_relative_to(command_target_resolved, plugin_root.resolve()):
+                issues.append(_issue(
+                    "plugin_distribution_hook_command_target_escapes_root",
+                    "hook command target escapes the plugin root",
+                    path=hook_path,
+                    target=rel,
+                ))
+            elif not command_target.exists() or not command_target.is_file():
+                issues.append(_issue(
+                    "plugin_distribution_hook_command_target_missing",
+                    f"hook command target is missing from plugin distribution: {rel}",
+                    path=hook_path,
+                    target=rel,
+                ))
+    return issues, hook_path, checked_targets
 
 
 def check_distribution(
@@ -166,6 +274,9 @@ def check_distribution(
                 path=rel.as_posix(),
             ))
 
+    manifest_hook_issues, manifest_hook_path, checked_hook_command_target_count = _check_manifest_hook(plugin_root)
+    issues.extend(manifest_hook_issues)
+
     reference_issues, reference_count = _scan_skill_references(plugin_root)
     issues.extend(reference_issues)
 
@@ -182,6 +293,8 @@ def check_distribution(
         "checked_skill_relative_reference_count": reference_count,
         "required_skills": list(required_skills),
         "required_files": [path.as_posix() for path in required_files],
+        "manifest_hook_path": manifest_hook_path,
+        "checked_hook_command_target_count": checked_hook_command_target_count,
     }
 
 
