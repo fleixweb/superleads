@@ -1,5 +1,15 @@
 # Handoff
 
+## 2026-08-10 产品出海市场分析按请求范围输出
+
+- `analysis_modules_requested` 现在驱动 CSV 与 Markdown 的选表：缺失、空、未知、旧 `product_profile` 标记或大于单项范围的请求都输出完整十二表；明确的单项输出三张固定表和对应模块表。
+- `SHEET_MODULE_KEYS` 在一处兼容 `certification`、`destination_compliance`、`origin_proof_requirement`、`market_signal` 等新旧词；source planner 也把 `certification` 映射到既有准入/COO 查询组。单项不再把未请求模块加入“本轮未执行项”，并在开头写明本轮范围和未覆盖项目。
+- 单项固定“信息来源与待确认事项”仅保留可见模块、产品档案或贸易前提实际引用的来源、Gap 和 Conflict，避免泄漏税费或物流待确认项；既有用户可见校验会识别范围声明，不再要求未覆盖模块的税费/运输文案。
+- 完整报告的空表改为说明“本轮未执行该项采集”“已采集但未找到可用公开来源”“按当前产品档案暂不适用”或“来源受限，未能读取”；现有证据边界未放宽。
+- 新增 `market_pass_scope_certification.json` 与现有 runner 断言：认证单项不会输出税费、物流、趋势等表，CSV 与 Markdown 都只保留四张表；完整报告的空表原因也有回归覆盖。
+- Skill 和 intake 写入模块选择规则；插件版本 bump 到 `0.1.8`，已通过 `codex plugin add superleads@fleix --json` 同步到 `/home/fleix/.codex/plugins/cache/fleix/superleads/0.1.8`。
+- 验证记录：`docs/validation/superleads-product-market-report-scope-20260810.md`。未新增 schema、validator 脚本、错误码或 runner，未改批量客户开发、单客背调或 `tmp/stage5_chillys/`。
+
 ## 2026-08-10 批量 Markdown 公开联系人显示
 
 - `scripts/export_superleads_markdown.py` 的批量“联系方式汇总”扩为七列：对象、联系人 / 公开职业线索、联系方式、类型、可用状态、待确认原因、来源 / 链接。

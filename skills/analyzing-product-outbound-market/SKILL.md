@@ -45,6 +45,41 @@ Read these only as needed:
 7. If the user asks about certification without having certificates, do not block on the missing certificates. First analyze what the destination market may require, then list which user/supplier/professional materials are needed to verify applicability.
 8. Category-level analysis changes only the object granularity. It does not lower the evidence standard: every user-visible fact still needs current-run source support, visible gap/conflict status, or an explicit not-executed row; never use category-level analysis to output final classification, final duty, no-certification, general-cargo, clearance-ready, or transportability conclusions.
 
+### Requested analysis scope
+
+Set the existing Brief field `analysis_modules_requested` before writing the
+source plan. It is the sole scope selector for the report; do not add another
+scope field.
+
+- An overall request such as “产品出海市场分析”, “出口某国分析”, or “进入某国市场分析” uses the complete report: include every module. Missing or empty `analysis_modules_requested`, an unrecognised value, or any uncertain intent also defaults to the complete report.
+- A clearly single-item request may select only the relevant module(s):
+  - certification, tests, registration, labels, SDS, UN38.3, CE, UL, SABER -> `certification`;
+  - tariff, duty, tax rate, HS/HTS tax question -> `import_tax`;
+  - COO / proof of origin -> `certification` (the origin-proof row is included in that table);
+  - clearance, shipping, transport, pre-filing -> `logistics`;
+  - export declaration, inspection, export controls -> `export_requirements`;
+  - trends, prices, or “好不好卖” -> `google_trends`, `online_price`, and `market_reports`.
+- Keep existing planner vocabulary such as `destination_compliance`,
+  `origin_proof_requirement`, and `market_signal` when they are already present
+  in a Brief; exporters map those legacy keys to the corresponding table.
+
+The three fixed tables are always included: `市场事实总览`, `产品档案与触发项`,
+and `信息来源与待确认事项`. A scoped report is not a partial complete report:
+it renders only the selected module tables plus these fixed tables. Its opening
+must state the boundary, for example:
+
+```text
+本轮范围：只做了「目标国准入与认证要求」一项。
+未覆盖：进口税费、出口国要求、物流与申报、市场趋势与价格、季节窗口、近期外部因素。
+需要哪一项可以继续要求。
+```
+
+The complete report renders all twelve tables in the order below. Empty tables
+must explain whether collection was not run, ran without a usable public source,
+was not applicable to the current product triggers, or was source-restricted;
+do not use an unexplained “本表暂无矩阵行”. In a scoped report, unrequested
+modules are omitted rather than listed as individual not-executed items.
+
 Canonical source-planning Brief field names are: `product_name`, `target_country_or_region` / `destination_country_or_region`, `candidate_hs_hts`, `export_declaration_country`, `origin_country_or_region`, `manufacturing_country_clue`, `departure_country_or_region`, `departure_node`, `destination_node`, `product_trigger_tags`, `model_or_sku`, and `manufacturer_or_brand`. Treat other common words such as `hs_code` or `hts_code` as user clues to map into the canonical field before running source planning. Do not map `made_in_country`, `production_country`, `manufacturing_country`, or `coo_country` into `origin_country_or_region`; keep them as manufacturing clues unless the user explicitly states a customs-origin premise.
 
 ## Evidence workflow
@@ -73,7 +108,8 @@ Do not infer either object from the other.
 
 ## Output shape
 
-Prefer tables over long prose. The default report groups information into:
+Prefer tables over long prose. Complete reports group information into these
+twelve tables:
 
 1. 市场事实总览
 2. 产品档案与触发项

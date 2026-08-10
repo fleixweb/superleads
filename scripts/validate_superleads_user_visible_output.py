@@ -442,6 +442,13 @@ def validate(text: str, route: str, *, min_tables: int = 3, extra_required: list
     required = ROUTE_REQUIRED.get(route)
     if required is None:
         return [_issue("user_visible_unknown_route", f"unknown route: {route}", route)]
+    if route == "product_outbound_market_analysis" and "本轮范围：" in text:
+        # A scoped report must retain the fixed tables and name its boundary,
+        # but must not be forced to mention unrelated tax or logistics work.
+        required = [
+            phrase for phrase in required
+            if phrase not in {"进口税费", "运输方式"}
+        ] + ["本轮范围：", "未覆盖："]
 
     table_count = _count_markdown_tables(text)
     if table_count < min_tables:

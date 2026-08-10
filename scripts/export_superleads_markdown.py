@@ -725,12 +725,6 @@ def _market_not_executed_modules(graph: dict[str, Any]) -> list[str]:
             if key and key not in seen:
                 seen.add(key)
                 modules.append(key)
-    brief = _current_market_brief(graph)
-    requested = {str(item) for item in ensure_list(brief, "analysis_modules_requested") if item}
-    for module in PRODUCT_BASE_MODULES:
-        if module not in requested and module not in seen:
-            seen.add(module)
-            modules.append(module)
     return modules
 
 
@@ -834,7 +828,12 @@ def main() -> int:
 
     validation_issues: list[dict[str, Any]] = []
     if not args.skip_user_visible_validation:
-        validation_issues = validate_user_visible_markdown(text, actual_route, min_tables=MIN_TABLES[actual_route])
+        min_tables = MIN_TABLES[actual_route]
+        # A scoped market report intentionally has fewer module tables; its
+        # fixed tables and requested module still need a real Markdown shape.
+        if actual_route == "product_outbound_market_analysis" and "本轮范围：" in text:
+            min_tables = 4
+        validation_issues = validate_user_visible_markdown(text, actual_route, min_tables=min_tables)
     all_issues = list(issues) + [
         _issue_payload(str(item.get("code", "markdown_delivery_validation_failed")), str(item.get("message", item)))
         for item in validation_issues

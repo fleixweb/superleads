@@ -44,6 +44,38 @@
       ]
     },
     {
+      "fixture": "market_pass_scope_certification.json",
+      "market_validate": "pass",
+      "market_audit": "pass",
+      "market_export_csv": "pass",
+      "market_export_markdown": "pass",
+      "market_export_present": [
+        "本轮范围：只做了「目标国准入与认证要求」一项。",
+        "未覆盖：进口税费、出口国要求、物流与申报、市场趋势与价格、季节窗口、近期外部因素。",
+        "市场事实总览",
+        "产品档案与触发项",
+        "产品准入与合规要求",
+        "信息来源与待确认事项",
+        "用最少输入先做本轮范围内的客观核验"
+      ],
+      "market_export_absent": [
+        "\"sheet_name\": \"长期需求与搜索趋势\"",
+        "\"sheet_name\": \"公开市场资料与行业信息\"",
+        "\"sheet_name\": \"线上市场与价格参考\"",
+        "\"sheet_name\": \"季节、节日与销售窗口\"",
+        "\"sheet_name\": \"进口税费\"",
+        "\"sheet_name\": \"出口国要求\"",
+        "\"sheet_name\": \"运输方式、路线、港口与申报节点\"",
+        "\"sheet_name\": \"近期外部因素\"",
+        "本轮未执行项",
+        "进口税费 / 最终 HTSUS / 最终税率",
+        "运输方式、路线、港口与申报节点 / 包装资料",
+        "运输方式、路线、港口与申报节点 / 起运节点",
+        "HTS candidate path",
+        "先做市场、准入、税费、出口与物流分析"
+      ]
+    },
+    {
       "fixture": "market_pass_uniqlo_minimum_boundary.json",
       "market_validate": "pass",
       "market_audit": "pass",

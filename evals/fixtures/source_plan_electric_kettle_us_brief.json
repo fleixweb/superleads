@@ -4,6 +4,6 @@
   "target_country_or_region": "United States",
   "export_declaration_country": "China",
   "product_trigger_tags": ["electrical"],
-  "analysis_modules_requested": ["destination_compliance", "logistics"],
+  "analysis_modules_requested": ["certification"],
   "business_decision_policy": "Generic electrical products must not activate lithium battery transport planning without a battery trigger."
 }

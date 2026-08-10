@@ -231,6 +231,10 @@ COMMON_TRIGGER_PACKS = {
 
 MODULE_TO_QUERY_GROUPS = {
     "product_profile": {"product_original_sources"},
+    # ``certification`` is the user-facing single-item scope.  The source
+    # registry still uses its established query-group ids, so keep this alias
+    # here rather than renaming packs or old fixtures.
+    "certification": {"destination_compliance", "origin_proof_requirement"},
     "destination_compliance": {"destination_compliance", "origin_proof_requirement"},
     "origin_proof_requirement": {"origin_proof_requirement"},
     "import_tax": {"import_tax", "origin_proof_requirement"},
@@ -634,7 +638,7 @@ def _select_pack_ids(brief: dict[str, Any], registry: dict[str, Any]) -> tuple[l
                 warnings.append({"code": "market_source_pack_logistics_lane_missing", "message": "当前贸易前提不满足中国/越南至美国物流 Pack；物流只能保留人工查询计划或待补路线 Pack。"})
         if requested_modules & {"google_trends", "online_price", "market_reports", "season_holiday", "external_factors"} and target == "United States":
             selected.append("seed_market_signal_global_to_us")
-        if requested_modules & {"destination_compliance", "origin_proof_requirement"} and target == "United States":
+        if requested_modules & {"certification", "destination_compliance", "origin_proof_requirement"} and target == "United States":
             selected.extend(["seed_us_market_access_general", "seed_us_origin_proof_general"])
         if requested_modules & {"import_tax"} and target == "United States":
             selected.append("seed_us_import_tax_general")
@@ -812,7 +816,7 @@ def _manual_authority_discovery_steps(brief: dict[str, Any]) -> list[dict[str, A
             "boundary_note": NOT_EVIDENCE_NOTE + " 开放世界国家/地区必须先核实机构身份、事实域、管辖范围和时效，再生成 AuthorityVerificationRecord。",
         })
 
-    if requested & {"destination_compliance", "origin_proof_requirement"} or not requested:
+    if requested & {"certification", "destination_compliance", "origin_proof_requirement"} or not requested:
         add(
             "destination_market_access",
             "authority_discovery_destination_compliance",

@@ -248,12 +248,76 @@ NOT_EXECUTED_MODULE_LABELS = {
     "logistics": "运输方式 / 路线 / 预申报",
 }
 
-SHEET_MODULE_KEYS = {
-    "长期需求与搜索趋势": {"google_trends"},
-    "线上市场与价格参考": {"online_price"},
+# ``analysis_modules_requested`` has existed in the graph schema since the
+# first market-analysis slice, while source plans used a few different names.
+# Keep both vocabularies here so the workbook and Markdown exporters make the
+# same scope decision without changing any fixture or source-plan keys.
+SHEET_MODULE_KEYS: dict[str, set[str]] = {
+    "市场事实总览": set(),
+    "产品档案与触发项": set(),
+    "长期需求与搜索趋势": {"google_trends", "market_signal"},
+    "公开市场资料与行业信息": {"market_reports", "market_signal", "product_original_sources"},
+    "线上市场与价格参考": {"online_price", "market_signal"},
     "季节、节日与销售窗口": {"season_holiday"},
+    "产品准入与合规要求": {"certification", "destination_compliance", "origin_proof_requirement"},
+    "进口税费": {"import_tax"},
+    "出口国要求": {"export_requirements"},
+    "运输方式、路线、港口与申报节点": {"logistics"},
     "近期外部因素": {"external_factors"},
-    "公开市场资料与行业信息": {"market_reports"},
+    "信息来源与待确认事项": set(),
+}
+
+FIXED_SHEETS: tuple[str, ...] = (
+    "市场事实总览",
+    "产品档案与触发项",
+    "信息来源与待确认事项",
+)
+
+_SCOPE_GROUPS: tuple[tuple[str, frozenset[str]], ...] = (
+    ("目标国准入与认证要求", frozenset({"certification", "destination_compliance", "origin_proof_requirement"})),
+    ("进口税费", frozenset({"import_tax"})),
+    ("出口国要求", frozenset({"export_requirements"})),
+    ("物流与申报", frozenset({"logistics"})),
+    ("市场趋势与价格", frozenset({"google_trends", "online_price", "market_reports", "market_signal", "product_original_sources"})),
+    ("季节窗口", frozenset({"season_holiday"})),
+    ("近期外部因素", frozenset({"external_factors"})),
+)
+
+# The set is deliberately broader than the visible table list: these are
+# valid query-group ids which may be present in a Brief but collapse into one
+# visible table (for example origin proof is a row in the compliance table).
+MARKET_MODULE_KEYS: frozenset[str] = frozenset({
+    "certification",
+    "destination_compliance",
+    "origin_proof_requirement",
+    "import_tax",
+    "export_requirements",
+    "logistics",
+    "google_trends",
+    "online_price",
+    "season_holiday",
+    "external_factors",
+    "market_reports",
+    "market_signal",
+    "product_original_sources",
+})
+
+_SCOPE_ALIASES: dict[str, str] = {
+    # Current user-facing keys.
+    "certification": "certification",
+    "google_trends": "google_trends",
+    "online_price": "online_price",
+    "market_reports": "market_reports",
+    # Source-plan / legacy keys retained for backwards compatibility.
+    "destination_compliance": "destination_compliance",
+    "origin_proof_requirement": "origin_proof_requirement",
+    "import_tax": "import_tax",
+    "export_requirements": "export_requirements",
+    "logistics": "logistics",
+    "season_holiday": "season_holiday",
+    "external_factors": "external_factors",
+    "market_signal": "market_signal",
+    "product_original_sources": "product_original_sources",
 }
 
 COLUMN_LABELS = {
@@ -465,6 +529,83 @@ def _not_executed_modules(graph: dict[str, Any] | None) -> list[str]:
     return modules
 
 
+def requested_market_modules(graph: dict[str, Any] | None) -> set[str] | None:
+    """Return an explicit market scope, or ``None`` for a complete report.
+
+    The brief field is also used by legacy source-plan fixtures.  Those
+    fixtures include the fixed ``product_profile`` marker; retaining it as a
+    complete-report marker keeps their output stable while newly authored
+    briefs can request one or a few visible modules directly.  Any missing,
+    empty, unknown, or ambiguous request is intentionally treated as complete
+    rather than silently dropping tables.
+    """
+    if not isinstance(graph, dict):
+        return None
+    brief = _current_brief(graph)
+    if not isinstance(brief, dict):
+        return None
+    raw = brief.get("analysis_modules_requested")
+    if not isinstance(raw, list) or not raw:
+        return None
+
+    tokens = {
+        str(item).strip().lower()
+        for item in raw
+        if item is not None and str(item).strip()
+    }
+    if not tokens or "product_profile" in tokens:
+        return None
+
+    unknown = tokens.difference(_SCOPE_ALIASES)
+    if unknown:
+        return None
+    normalized = {_SCOPE_ALIASES[token] for token in tokens}
+    if not normalized or normalized == set(MARKET_MODULE_KEYS):
+        return None
+    # One or two modules is the normal single-item shape.  The explicit
+    # trend/price/market-material trio is one business question that spans
+    # three tables; every other larger request defaults to the full report.
+    market_signal_trio = {"google_trends", "online_price", "market_reports"}
+    if len(normalized) > 2 and normalized != market_signal_trio:
+        return None
+    return normalized
+
+
+def is_complete_market_scope(graph: dict[str, Any] | None) -> bool:
+    """Whether the graph should render the complete twelve-sheet report."""
+    return requested_market_modules(graph) is None
+
+
+def selected_sheet_order(graph: dict[str, Any] | None = None) -> list[str]:
+    """Return the visible sheet order for this graph's requested scope."""
+    requested = requested_market_modules(graph)
+    if requested is None:
+        return list(SHEET_ORDER)
+    return [
+        sheet_name
+        for sheet_name in SHEET_ORDER
+        if sheet_name in FIXED_SHEETS or SHEET_MODULE_KEYS.get(sheet_name, set()) & requested
+    ]
+
+
+def _market_scope_declaration(graph: dict[str, Any]) -> list[str]:
+    """Render the user-visible boundary for an explicit single-item report."""
+    requested = requested_market_modules(graph)
+    if requested is None:
+        return []
+    requested_groups = [label for label, keys in _SCOPE_GROUPS if requested & keys]
+    uncovered = [label for label, keys in _SCOPE_GROUPS if not requested & keys]
+    if not requested_groups:
+        return []
+    scope_text = "、".join(requested_groups)
+    return [
+        f"本轮范围：只做了「{scope_text}」一项。",
+        f"未覆盖：{'、'.join(uncovered)}。",
+        "需要哪一项可以继续要求。",
+        "",
+    ]
+
+
 def _module_label(module: str) -> str:
     return NOT_EXECUTED_MODULE_LABELS.get(module, module)
 
@@ -472,6 +613,71 @@ def _module_label(module: str) -> str:
 def _sheet_not_executed(sheet_name: str, graph: dict[str, Any] | None) -> bool:
     modules = set(_not_executed_modules(graph))
     return bool(modules & SHEET_MODULE_KEYS.get(sheet_name, set()))
+
+
+def _sheet_run_modules(graph: dict[str, Any] | None, field_names: tuple[str, ...]) -> set[str]:
+    if not isinstance(graph, dict):
+        return set()
+    modules: set[str] = set()
+    for run in ensure_list(graph, "runs"):
+        if not isinstance(run, dict):
+            continue
+        for field_name in field_names:
+            for module in ensure_list(run, field_name):
+                value = str(module or "").strip()
+                if value:
+                    modules.add(value)
+    return modules
+
+
+def _sheet_not_applicable(sheet_name: str, graph: dict[str, Any] | None) -> bool:
+    modules = _sheet_run_modules(graph, ("not_applicable_modules", "inapplicable_modules"))
+    return bool(modules & SHEET_MODULE_KEYS.get(sheet_name, set()))
+
+
+def _sheet_has_status(sheet_name: str, graph: dict[str, Any] | None, statuses: set[str]) -> bool:
+    """Check graph records that can explain an empty visible sheet."""
+    if not isinstance(graph, dict):
+        return False
+    for key in ("matrix_rows", "evidence_cards", "gaps"):
+        for record in ensure_list(graph, key):
+            if not isinstance(record, dict):
+                continue
+            record_sheet = str(record.get("sheet_name") or record.get("field_domain") or "")
+            if record_sheet == sheet_name and str(record.get("status") or "") in statuses:
+                return True
+    return False
+
+
+def _sheet_source_restricted(sheet_name: str, graph: dict[str, Any] | None) -> bool:
+    """Detect restricted source attempts relevant to an otherwise empty sheet."""
+    if not isinstance(graph, dict):
+        return False
+    if _sheet_has_status(sheet_name, graph, {"source_restricted", "unable_to_verify"}):
+        return True
+    module_keys = SHEET_MODULE_KEYS.get(sheet_name, set())
+    run_restricted_modules = _sheet_run_modules(
+        graph,
+        ("source_restricted_modules", "restricted_modules", "unable_to_verify_modules"),
+    )
+    if run_restricted_modules & module_keys:
+        return True
+    for search_log in ensure_list(graph, "search_logs"):
+        if not isinstance(search_log, dict):
+            continue
+        query_group = str(search_log.get("query_group_id") or "").strip()
+        restricted_refs = ensure_list(search_log, "restricted_source_refs")
+        failed_refs = ensure_list(search_log, "failed_source_refs")
+        result_refs = ensure_list(search_log, "result_refs")
+        result_restricted = any(
+            isinstance(ref, dict) and str(ref.get("result_use") or "") in {
+                "failed_or_restricted_locator", "source_restricted",
+            }
+            for ref in result_refs
+        )
+        if query_group in module_keys and (restricted_refs or failed_refs or result_restricted):
+            return True
+    return False
 
 
 def _origin_evidence_label(value: Any) -> str:
@@ -871,11 +1077,17 @@ def _certification_exported_row(
     return exported
 
 
-def _source_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str, str]]:
+def _source_rows(
+    graph: dict[str, Any],
+    sample_id: str,
+    allowed_source_ids: set[str] | None = None,
+) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     observations = _observation_by_source(graph)
     for idx, source in enumerate(ensure_list(graph, "sources"), start=1):
         if not isinstance(source, dict):
+            continue
+        if allowed_source_ids is not None and str(source.get("source_id") or "") not in allowed_source_ids:
             continue
         source_observations = observations.get(str(source.get("source_id")), [])
         opened = any(obs.get("access_status") == "opened" for obs in source_observations if isinstance(obs, dict))
@@ -906,10 +1118,65 @@ def _source_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str, str]]:
     return rows
 
 
-def _gap_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str, str]]:
+def _field_domain_is_visible(field_domain: Any, visible_sheets: set[str]) -> bool:
+    """Whether a field domain belongs to a currently visible market sheet."""
+    value = str(field_domain or "").strip()
+    if value in visible_sheets:
+        return True
+    module_key = _SCOPE_ALIASES.get(value.lower())
+    if module_key is None:
+        return False
+    return any(module_key in SHEET_MODULE_KEYS.get(sheet_name, set()) for sheet_name in visible_sheets)
+
+
+def _visible_source_ids(graph: dict[str, Any], visible_sheets: set[str]) -> set[str]:
+    """Trace sources supporting the selected tables, fixed product data, or premise."""
+    evidence_card_ids: set[str] = set()
+    authority_verification_ids: set[str] = set()
+
+    for row in ensure_list(graph, "matrix_rows"):
+        if not isinstance(row, dict) or str(row.get("sheet_name") or "") not in visible_sheets:
+            continue
+        evidence_card_ids.update(str(item) for item in ensure_list(row, "evidence_card_ids") if has_text(item))
+        authority_verification_ids.update(
+            str(item) for item in ensure_list(row, "authority_verification_record_ids") if has_text(item)
+        )
+
+    # Product profile and trade premise are fixed tables.  Their linked
+    # EvidenceCards remain relevant in a scoped report.
+    for attribute in ensure_list(graph, "attributes"):
+        if isinstance(attribute, dict):
+            evidence_card_ids.update(str(item) for item in ensure_list(attribute, "evidence_card_ids") if has_text(item))
+    for premise in ensure_list(graph, "trade_premises"):
+        if isinstance(premise, dict):
+            evidence_card_ids.update(str(item) for item in ensure_list(premise, "evidence_card_ids") if has_text(item))
+
+    source_ids: set[str] = set()
+    for card in ensure_list(graph, "evidence_cards"):
+        if not isinstance(card, dict) or str(card.get("evidence_card_id") or "") not in evidence_card_ids:
+            continue
+        for source_ref in ensure_list(card, "source_refs"):
+            if isinstance(source_ref, dict) and has_text(source_ref.get("source_id")):
+                source_ids.add(str(source_ref["source_id"]))
+
+    for record in ensure_list(graph, "authority_verification_records"):
+        if not isinstance(record, dict) or str(record.get("authority_verification_id") or "") not in authority_verification_ids:
+            continue
+        if has_text(record.get("source_id")):
+            source_ids.add(str(record["source_id"]))
+    return source_ids
+
+
+def _gap_rows(
+    graph: dict[str, Any],
+    sample_id: str,
+    visible_sheets: set[str] | None = None,
+) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     for idx, gap in enumerate(ensure_list(graph, "gaps"), start=1):
         if not isinstance(gap, dict):
+            continue
+        if visible_sheets is not None and not _field_domain_is_visible(gap.get("field_domain"), visible_sheets):
             continue
         rows.append({
             "条目": _safe_cell(gap.get("field_name") or gap.get("missing_item") or f"待确认事项 G{idx}"),
@@ -932,10 +1199,16 @@ def _gap_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str, str]]:
     return rows
 
 
-def _conflict_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str, str]]:
+def _conflict_rows(
+    graph: dict[str, Any],
+    sample_id: str,
+    visible_sheets: set[str] | None = None,
+) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     for idx, conflict in enumerate(ensure_list(graph, "conflicts"), start=1):
         if not isinstance(conflict, dict):
+            continue
+        if visible_sheets is not None and not _field_domain_is_visible(conflict.get("field_domain"), visible_sheets):
             continue
         rows.append({
             "条目": _safe_cell(conflict.get("field_name") or f"冲突待复核 C{idx}"),
@@ -959,7 +1232,9 @@ def _conflict_rows(graph: dict[str, Any], sample_id: str) -> list[dict[str, str]
 
 
 def build_sheets(graph: dict[str, Any]) -> dict[str, list[dict[str, str]]]:
-    sheets: dict[str, list[dict[str, str]]] = {sheet: [] for sheet in SHEET_ORDER}
+    sheets: dict[str, list[dict[str, str]]] = {
+        sheet: [] for sheet in selected_sheet_order(graph)
+    }
     matrix_rows = [row for row in ensure_list(graph, "matrix_rows") if isinstance(row, dict)]
     sample_id = _first_sample_id(matrix_rows)
     corroboration_records = _corroboration_by_id(graph)
@@ -1003,11 +1278,20 @@ def build_sheets(graph: dict[str, Any]) -> dict[str, list[dict[str, str]]]:
         sheets["市场事实总览"][0:0] = trade_rows
 
     # The final sheet is explicitly allowed to include safe Source / Gap /
-    # Conflict fields.  These rows do not introduce market facts; they expose
-    # where the matrix came from and what remains to be checked.
-    sheets["信息来源与待确认事项"].extend(_source_rows(graph, sample_id))
-    sheets["信息来源与待确认事项"].extend(_gap_rows(graph, sample_id))
-    sheets["信息来源与待确认事项"].extend(_conflict_rows(graph, sample_id))
+    # Conflict fields. In a single-item report, retain only records that
+    # support a visible table or the fixed product/premise tables; otherwise
+    # a fixed final sheet would disclose unrequested tax or logistics work.
+    if is_complete_market_scope(graph):
+        sheets["信息来源与待确认事项"].extend(_source_rows(graph, sample_id))
+        sheets["信息来源与待确认事项"].extend(_gap_rows(graph, sample_id))
+        sheets["信息来源与待确认事项"].extend(_conflict_rows(graph, sample_id))
+    else:
+        visible_sheets = set(sheets)
+        sheets["信息来源与待确认事项"].extend(
+            _source_rows(graph, sample_id, _visible_source_ids(graph, visible_sheets))
+        )
+        sheets["信息来源与待确认事项"].extend(_gap_rows(graph, sample_id, visible_sheets))
+        sheets["信息来源与待确认事项"].extend(_conflict_rows(graph, sample_id, visible_sheets))
     return sheets
 
 
@@ -1038,15 +1322,23 @@ def _brief_markdown_summary(graph: dict[str, Any]) -> list[str]:
         if isinstance(brief, dict)
         else None
     )
-    not_executed = _not_executed_modules(graph)
+    # In an explicit single-item report, unrequested modules are outside the
+    # scope rather than work that was attempted and failed; do not list them
+    # as per-module "未执行" declarations.
+    not_executed = _not_executed_modules(graph) if is_complete_market_scope(graph) else []
     origin_export_scope = _origin_export_scope_for_preamble(premise, graph)
     departure_scope = _departure_scope_for_preamble(premise)
+    scope_purpose = (
+        "用最少输入先做市场、准入、税费、出口与物流分析；不是要求先补报关资料"
+        if is_complete_market_scope(graph)
+        else "用最少输入先做本轮范围内的客观核验；不是完整市场分析，也不是要求先补报关资料"
+    )
     lines = [
         "## 先看贸易前提（本轮默认贸易口径）",
         "",
         "| 项目 | 本轮写法 | 对用户意味着什么 |",
         "| --- | --- | --- |",
-        f"| 本轮默认贸易口径 | {_md_escape(origin_export_scope)}；目标市场：{_md_escape(destination or '未提供')} | 用最少输入先做市场、准入、税费、出口与物流分析；不是要求先补报关资料 |",
+        f"| 本轮默认贸易口径 | {_md_escape(origin_export_scope)}；目标市场：{_md_escape(destination or '未提供')} | {scope_purpose} |",
         f"| 实际起运港 | {_md_escape(departure_scope)} | 不影响首轮市场分析；正式订舱、申报或运输安排前再确认 |",
         "| 如果默认口径不对 | 直接告诉我实际出口国、原产国或目标市场，我会替换口径继续分析 | 适配非中国出口国、多国生产或转口贸易路径 |",
         "| 本轮结论边界 | 品类级 / 候选税号级分析；不输出最终归类、最终税率、已合规或可清关 | 保持不确定，但不停止研究 |",
@@ -1173,18 +1465,26 @@ def _authority_markdown_summary(sheets: dict[str, list[dict[str, str]]]) -> list
 
 def _empty_sheet_note(sheet_name: str, graph: dict[str, Any] | None = None) -> str:
     if _sheet_not_executed(sheet_name, graph):
-        return "本轮未执行；不形成趋势、价格、旺季或最新影响结论。"
-    return "本表暂无矩阵行。"
+        return "本轮未执行该项采集。"
+    if _sheet_not_applicable(sheet_name, graph) or _sheet_has_status(sheet_name, graph, {"not_applicable"}):
+        return "按当前产品档案暂不适用。"
+    if _sheet_source_restricted(sheet_name, graph):
+        return "来源受限，未能读取。"
+    return "已采集但未找到可用公开来源。"
 
 
 def _safe_filename(index: int, sheet_name: str) -> str:
     return f"{index:02d}-{sheet_name}.csv"
 
 
-def write_csv_sheets(sheets: dict[str, list[dict[str, str]]], output_dir: Path) -> list[dict[str, Any]]:
+def write_csv_sheets(
+    sheets: dict[str, list[dict[str, str]]],
+    output_dir: Path,
+    graph: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
     output_dir.mkdir(parents=True, exist_ok=True)
     generated: list[dict[str, Any]] = []
-    for index, sheet_name in enumerate(SHEET_ORDER, start=1):
+    for index, sheet_name in enumerate(selected_sheet_order(graph), start=1):
         rows = sheets.get(sheet_name, [])
         headers = _headers_for_sheet(sheet_name, rows)
         filename = _safe_filename(index, sheet_name)
@@ -1204,6 +1504,8 @@ def _md_escape(value: Any) -> str:
 
 
 def markdown_report(sheets: dict[str, list[dict[str, str]]], graph: dict[str, Any] | None = None) -> str:
+    visible_order = selected_sheet_order(graph)
+    visible_sheets = {sheet_name: sheets.get(sheet_name, []) for sheet_name in visible_order}
     lines: list[str] = [
         "# 产品出海市场分析",
         "",
@@ -1211,12 +1513,13 @@ def markdown_report(sheets: dict[str, list[dict[str, str]]], graph: dict[str, An
         "",
     ]
     if isinstance(graph, dict):
+        lines.extend(_market_scope_declaration(graph))
         lines.extend(_brief_markdown_summary(graph))
-    lines.extend(_origin_proof_markdown_summary(sheets))
-    lines.extend(_freshness_markdown_summary(sheets))
-    lines.extend(_authority_markdown_summary(sheets))
-    for sheet_name in SHEET_ORDER:
-        rows = sheets.get(sheet_name, [])
+    lines.extend(_origin_proof_markdown_summary(visible_sheets))
+    lines.extend(_freshness_markdown_summary(visible_sheets))
+    lines.extend(_authority_markdown_summary(visible_sheets))
+    for sheet_name in visible_order:
+        rows = visible_sheets.get(sheet_name, [])
         headers = _headers_for_sheet(sheet_name, rows)
         lines.append(f"## {sheet_name}")
         lines.append("")
@@ -1268,7 +1571,7 @@ def export_graph(
         }
 
     sheets = build_sheets(graph)
-    generated = write_csv_sheets(sheets, output_dir)
+    generated = write_csv_sheets(sheets, output_dir, graph)
     written_paths = [output_dir / item["filename"] for item in generated]
 
     if markdown_path is not None:
@@ -1322,7 +1625,7 @@ def export_graph(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("graph", help="ProductMarketAnalysisGraph JSON fixture")
-    parser.add_argument("--output-dir", required=True, help="Directory for 12 CSV files")
+    parser.add_argument("--output-dir", required=True, help="Directory for the selected market CSV files")
     parser.add_argument("--format", choices=["csv"], default="csv")
     parser.add_argument("--markdown", help="Optional Markdown report path")
     parser.add_argument("--manifest", help="Optional manifest JSON path")

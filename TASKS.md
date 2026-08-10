@@ -1,5 +1,14 @@
 # Tasks
 
+## 2026-08-10 已完成：产品出海市场分析按请求范围输出
+
+- `analysis_modules_requested` 现在控制完整十二表或单项报告：缺失、空、未知或意图不确定时完整输出，明确单项仅输出相关表与三张固定表。
+- CSV、产品市场 Markdown 和统一 Markdown 交付器使用同一兼容模块映射；source planner 的 `certification` 同时覆盖既有准入和 COO 查询组。未请求模块不会出表或写成“未执行”，单项报告开头明确范围与未覆盖项。
+- 单项固定来源表只保留可见模块、产品档案或贸易前提实际引用的来源、Gap 和 Conflict；既有用户可见校验会识别范围声明，不再强制未覆盖模块的税费/运输文案。
+- 完整报告空表按未执行、无可用来源、不适用、来源受限分别解释；认证/用户材料、COO/用户材料、候选税号、Trends、物流等既有边界保持不变。
+- 新增认证单项 pass fixture 与现有 case/runner 断言；插件版本 `0.1.8` 已重装并同步运行时缓存。
+- 未新增 schema、validator 脚本、错误码或 runner，未改批量客户开发、单客背调或 `tmp/stage5_chillys/`。验证记录：`docs/validation/superleads-product-market-report-scope-20260810.md`。
+
 ## 2026-08-10 已完成：批量 Markdown 恢复公开联系人
 
 - 批量 Markdown 联系方式汇总扩为七列，显示联系人 / 公开职业线索、待确认原因和来源链接；保留人员型联系方式归位规则。
