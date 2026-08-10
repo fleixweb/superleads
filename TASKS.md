@@ -1,5 +1,12 @@
 # Tasks
 
+## 2026-08-10 已完成：产品市场证据编译器 UAT 跟进
+
+- 用同一份电水壶美国 UAT graph 在 `/tmp` 回放编译链路，产出 6 EvidenceCard、13 MatrixRow、10 Gap 和 2 个保留的用户产品属性；validate / audit / Markdown export 全部通过。
+- 紧凑笔记现在兼容 `row` / `rows`：同一目标行合并多张卡，单一来源事实可进入多张既有表；行级 freshness / authority 引用避免错误投影。
+- 复合未知属性会保留未提供部分，例如 `额定电压/频率` 在提供电压后变为 `频率`，`额定功率` 会清除 `功率` 缺口。
+- UAT 回建 notes 为 380 行，只证明结构可编译且交付等价范围可达，不作为独立手写耗时或降本比例结论。插件 `0.1.10` 已同步到 `/home/fleix/.codex/plugins/cache/fleix/superleads/0.1.10`。
+
 ## 2026-08-10 已完成：产品市场证据编译器 Phase 1
 
 - 新增 `scripts/compile_product_market_evidence.py`：消费已有已打开 Source / Observation 与紧凑证据笔记，编译为现有 `EvidenceCard`、`MatrixRow`、`Gap` 和 `ProductAttribute` 对象；不搜索、不打开来源、不新增 schema、不创建新状态。

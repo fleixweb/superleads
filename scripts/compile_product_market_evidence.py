@@ -69,6 +69,7 @@ EVIDENCE_NOTE_KEYS = {
     "freshness_record_ids",
     "gap",
     "row",
+    "rows",
 }
 ROW_KEYS = {
     "sheet_name",
@@ -78,6 +79,8 @@ ROW_KEYS = {
     "row_type",
     "certification_requirement",
     "origin_proof_requirement",
+    "authority_verification_record_ids",
+    "freshness_record_ids",
 }
 GAP_KEYS = {"gap_id", "field_domain", "field_name", "status", "missing_item", "requested_from", "user_visible_note"}
 
@@ -132,6 +135,79 @@ def _unique_id(existing: set[str], prefix: str, source: Any) -> str:
         index += 1
     existing.add(candidate)
     return candidate
+
+
+def _split_attribute_parts(value: Any) -> list[str]:
+    return [part.strip() for part in re.split(r"[/、,，;；|]+", str(value or "")) if part.strip()]
+
+
+def _attribute_part_matches(provided_name: str, unknown_part: str) -> bool:
+    provided = re.sub(r"\s+", "", provided_name)
+    unknown = re.sub(r"\s+", "", unknown_part)
+    if not provided or not unknown:
+        return False
+    return provided == unknown or provided in unknown or unknown in provided
+
+
+def _remaining_unknown_attributes(unknowns: list[Any], provided_name: str) -> list[str]:
+    remaining: list[str] = []
+    for raw_unknown in unknowns:
+        unknown = str(raw_unknown).strip()
+        parts = _split_attribute_parts(unknown)
+        if not parts:
+            continue
+        unresolved = [part for part in parts if not _attribute_part_matches(provided_name, part)]
+        if unresolved:
+            remaining.append("/".join(unresolved) if len(parts) > 1 else unknown)
+    return remaining
+
+
+def _row_identity(row: dict[str, Any]) -> str:
+    fields = {
+        key: row.get(key)
+        for key in ("sheet_name", "row_topic", "user_visible_cells", "module_key", "row_type", "certification_requirement", "origin_proof_requirement")
+        if key in row
+    }
+    return json.dumps(fields, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _append_refs(row: dict[str, Any], field: str, values: list[str]) -> None:
+    if not values:
+        return
+    existing = [str(value) for value in _as_list(row.get(field)) if has_text(value)]
+    for value in values:
+        if value not in existing:
+            existing.append(value)
+    row[field] = existing
+
+
+def _target_rows(note: dict[str, Any], path: str, issues: list[dict[str, str]]) -> list[dict[str, Any]]:
+    has_row = "row" in note
+    has_rows = "rows" in note
+    if has_row and has_rows:
+        issues.append(_error("market_evidence_compiler_row_input_ambiguous", "evidence note must use row or rows, not both", path))
+        return []
+    raw_rows = [note.get("row")] if has_row else note.get("rows")
+    if not isinstance(raw_rows, list) or not raw_rows:
+        issues.append(_error("market_evidence_compiler_row_missing", "evidence note requires a row or non-empty rows array", f"{path}.row"))
+        return []
+    result: list[dict[str, Any]] = []
+    for row_index, raw_row in enumerate(raw_rows):
+        row_path = f"{path}.row" if has_row else f"{path}.rows[{row_index}]"
+        row = _validate_keys(raw_row, ROW_KEYS, row_path, issues)
+        if row is None:
+            continue
+        sheet_name = _require_string(row, "sheet_name", row_path, issues)
+        _require_string(row, "row_topic", row_path, issues)
+        if sheet_name and sheet_name not in SHEET_NAMES:
+            issues.append(_error("market_evidence_compiler_sheet_invalid", "row sheet_name must be an existing product-market sheet", f"{row_path}.sheet_name"))
+        if not isinstance(row.get("user_visible_cells"), dict):
+            issues.append(_error("market_evidence_compiler_visible_cells_invalid", "row requires a user_visible_cells object", f"{row_path}.user_visible_cells"))
+        for field in ("authority_verification_record_ids", "freshness_record_ids"):
+            if field in row:
+                _string_list(row, field, row_path, issues)
+        result.append(row)
+    return result
 
 
 def _status(value: Any, path: str, issues: list[dict[str, str]], default: str = "preliminary_reference") -> str:
@@ -193,7 +269,7 @@ def _compile_attribute(
     )
     for product in _as_list(graph.get("products")):
         if isinstance(product, dict) and product.get("product_subject_id") == product_id:
-            unknowns = [str(value) for value in _as_list(product.get("unknown_key_attributes")) if str(value).strip() != name]
+            unknowns = _remaining_unknown_attributes(_as_list(product.get("unknown_key_attributes")), name)
             product["unknown_key_attributes"] = unknowns
 
 
@@ -224,14 +300,7 @@ def _compile_evidence_note(
     does_not_support = _string_list(note, "does_not_support", path, issues)
     boundary_rule_ids = _string_list(note, "boundary_rule_ids", path, issues)
     status = _status(note.get("status"), f"{path}.status", issues)
-    row = _validate_keys(note.get("row"), ROW_KEYS, f"{path}.row", issues)
-    if row is not None:
-        sheet_name = _require_string(row, "sheet_name", f"{path}.row", issues)
-        _require_string(row, "row_topic", f"{path}.row", issues)
-        if sheet_name and sheet_name not in SHEET_NAMES:
-            issues.append(_error("market_evidence_compiler_sheet_invalid", "row sheet_name must be an existing product-market sheet", f"{path}.row.sheet_name"))
-        if not isinstance(row.get("user_visible_cells"), dict):
-            issues.append(_error("market_evidence_compiler_visible_cells_invalid", "row requires a user_visible_cells object", f"{path}.row.user_visible_cells"))
+    rows = _target_rows(note, path, issues)
     observation = observations.get(observation_id)
     if observation is None:
         issues.append(_error("market_evidence_compiler_observation_missing", "evidence note must cite an existing Observation", f"{path}.observation_id"))
@@ -248,7 +317,6 @@ def _compile_evidence_note(
         return
 
     evidence_id = _unique_id(evidence_ids, "card", note_id)
-    row_id = _unique_id(row_ids, "row", note_id)
     gap_id = None
     gap = note.get("gap")
     if gap is not None:
@@ -309,26 +377,40 @@ def _compile_evidence_note(
         card["freshness_record_ids"] = [str(value) for value in note["freshness_record_ids"]]
     graph.setdefault("evidence_cards", []).append(card)
 
-    matrix_row = {
-        "matrix_row_id": row_id,
-        "sheet_name": row["sheet_name"],
-        "row_topic": row["row_topic"],
-        "user_visible_cells": row["user_visible_cells"],
-        "status": status,
-        "evidence_card_ids": [evidence_id],
-        "boundary_rule_ids": boundary_rule_ids,
-        "internal_refs_hidden": True,
-    }
-    if gap_id:
-        matrix_row["gap_ids"] = [gap_id]
-    for key in ("module_key", "row_type", "certification_requirement", "origin_proof_requirement"):
-        if key in row:
-            matrix_row[key] = row[key]
-    if isinstance(note.get("authority_verification_record_ids"), list):
-        matrix_row["authority_verification_record_ids"] = [str(value) for value in note["authority_verification_record_ids"]]
-    if isinstance(note.get("freshness_record_ids"), list):
-        matrix_row["freshness_record_ids"] = [str(value) for value in note["freshness_record_ids"]]
-    graph.setdefault("matrix_rows", []).append(matrix_row)
+    for row in rows:
+        row_id = _unique_id(row_ids, "row", f"{note_id}-{row.get('row_topic')}" if len(rows) > 1 else note_id)
+        matrix_row = {
+            "matrix_row_id": row_id,
+            "sheet_name": row["sheet_name"],
+            "row_topic": row["row_topic"],
+            "user_visible_cells": row["user_visible_cells"],
+            "status": status,
+            "evidence_card_ids": [evidence_id],
+            "boundary_rule_ids": boundary_rule_ids,
+            "internal_refs_hidden": True,
+        }
+        if gap_id:
+            matrix_row["gap_ids"] = [gap_id]
+        for key in ("module_key", "row_type", "certification_requirement", "origin_proof_requirement"):
+            if key in row:
+                matrix_row[key] = row[key]
+        for field in ("authority_verification_record_ids", "freshness_record_ids"):
+            values = row.get(field) if field in row else note.get(field)
+            if isinstance(values, list):
+                matrix_row[field] = [str(value) for value in values]
+        row_identity = _row_identity(matrix_row)
+        existing_row = next(
+            (candidate for candidate in _as_list(graph.get("matrix_rows")) if isinstance(candidate, dict) and _row_identity(candidate) == row_identity),
+            None,
+        )
+        if existing_row is None:
+            graph.setdefault("matrix_rows", []).append(matrix_row)
+        else:
+            _append_refs(existing_row, "evidence_card_ids", [evidence_id])
+            _append_refs(existing_row, "gap_ids", [gap_id] if gap_id else [])
+            _append_refs(existing_row, "boundary_rule_ids", boundary_rule_ids)
+            _append_refs(existing_row, "authority_verification_record_ids", [str(value) for value in row.get("authority_verification_record_ids", note.get("authority_verification_record_ids", []))])
+            _append_refs(existing_row, "freshness_record_ids", [str(value) for value in row.get("freshness_record_ids", note.get("freshness_record_ids", []))])
 
 
 def compile_notes(graph: dict[str, Any], notes: dict[str, Any]) -> tuple[dict[str, Any] | None, list[dict[str, str]]]:

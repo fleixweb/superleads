@@ -1,5 +1,12 @@
 # Handoff
 
+## 2026-08-10 产品市场证据编译器 UAT 跟进
+
+- 用 `/tmp/electric_kettle_us_uat_graph_20260810.json` 重放普通电水壶出口美国 UAT：6 条紧凑证据笔记和 2 个用户属性编译后得到 6 EvidenceCard、13 MatrixRow、10 Gap，产品市场 validator / audit / Markdown 导出均通过，交付仍为 `ready_with_limitations`。
+- UAT 发现并修复两个编译器问题：同一矩阵目标的多条笔记现在合并为一行；单个来源事实可用 `rows` 落到多个既有表，且每个表可单独指定 freshness / authority 引用。
+- 用户输入 `额定电压`、`额定功率` 现在会将 `额定电压/频率` 收敛为 `频率`，并移除已知的功率项，不再因精确字符串不一致而丢失已知资料。
+- 本轮 380 行紧凑 notes 是从既有 UAT graph 回建的结构对比，不是独立计时的盲写测量；不能以此声明最终节省比例。插件 `0.1.10` 已同步到 `/home/fleix/.codex/plugins/cache/fleix/superleads/0.1.10`。
+
 ## 2026-08-10 产品市场证据编译器 Phase 1
 
 - 真实电水壶美国 UAT 已证明：搜索 / 来源打开 / Source / Observation / EvidenceCard / MatrixRow / validator / audit / export 可以连通，但 1547 行手写 JSON 换来 6 Source、6 Observation、6 EvidenceCard、13 MatrixRow，人工转换是当前瓶颈。

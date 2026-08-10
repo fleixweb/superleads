@@ -71,7 +71,7 @@ python3 scripts/preflight_capabilities.py --require-formal-research --format jso
 
 真实业务 UAT 中，claimed path 复核是固定验收步骤：最终声明的 Markdown 路径必须与同一个 graph 重新运行 `export_superleads_markdown.py` 得到的内容逐字一致；否则即使 exporter 曾返回 `ok=true`，该轮 UAT 也不通过。`run_superleads_markdown_delivery_evals.py` 已包含正向通过和后处理 mismatch 失败两条回归。
 
-紧凑证据笔记可从 `shared/references/product-market-evidence-notes.example.json` 起步。示例中的 `observation_id`、逐字摘录、来源事实、适用条件和边界必须替换为本轮实际已打开来源；不能原样复用示例文字或把搜索摘要填入该文件。
+紧凑证据笔记可从 `shared/references/product-market-evidence-notes.example.json` 起步。示例中的 `observation_id`、逐字摘录、来源事实、适用条件和边界必须替换为本轮实际已打开来源；不能原样复用示例文字或把搜索摘要填入该文件。一个事实需要落到多张表时使用 `rows` 数组；同一目标行的多条笔记会合并为一个矩阵行。
 
 ## 常见口径
 

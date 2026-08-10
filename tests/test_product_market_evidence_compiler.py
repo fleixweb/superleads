@@ -50,8 +50,16 @@ class ProductMarketEvidenceCompilerTest(unittest.TestCase):
 
     def test_compiles_opened_observation_and_preserves_known_product_attribute(self) -> None:
         graph = materialize_fixture(FIXTURES / "market_pass_xingheng_minimum_boundary.json")
+        graph["products"][0]["unknown_key_attributes"].extend(["功率", "额定电压/频率"])
         notes = {
             "product_attributes": [
+                {
+                    "attribute_name": "额定电压",
+                    "value": "220-240",
+                    "unit": "V",
+                    "status": "preliminary_reference",
+                    "trigger_paths": ["产品规格核验"],
+                },
                 {
                     "attribute_name": "额定功率",
                     "value": "1500",
@@ -101,6 +109,10 @@ class ProductMarketEvidenceCompilerTest(unittest.TestCase):
         )
         self.assertIn("card-note-xh-opened-voltage", {item["evidence_card_id"] for item in compiled["evidence_cards"]})
         self.assertIn("row-note-xh-opened-voltage", {item["matrix_row_id"] for item in compiled["matrix_rows"]})
+        unknowns = compiled["products"][0]["unknown_key_attributes"]
+        self.assertNotIn("功率", unknowns)
+        self.assertNotIn("额定电压/频率", unknowns)
+        self.assertIn("频率", unknowns)
 
         with tempfile.TemporaryDirectory() as tmp:
             compiled_path = Path(tmp) / "compiled.json"
@@ -113,6 +125,139 @@ class ProductMarketEvidenceCompilerTest(unittest.TestCase):
                 stderr=subprocess.STDOUT,
             )
         self.assertEqual(validation.returncode, 0, validation.stdout)
+
+    def test_merges_notes_targeting_the_same_matrix_row(self) -> None:
+        graph = materialize_fixture(FIXTURES / "market_pass_xingheng_minimum_boundary.json")
+        notes = {
+            "evidence_notes": [
+                {
+                    "evidence_note_id": "note-xh-row-merge-a",
+                    "observation_id": "observation-xh-product-spec",
+                    "field_domain": "产品属性",
+                    "field_name": "公开额定电压",
+                    "current_value": "48 V",
+                    "status": "preliminary_reference",
+                    "source_excerpt_quote": "48 V",
+                    "applicability_scope": "仅限已打开的 Xing Heng 产品页，不扩大到其它型号。",
+                    "supports": ["页面原文包含 48 V。"],
+                    "does_not_support": ["不能作为最终目的国合规结论。"],
+                    "boundary_rule_ids": ["EB-LB-02"],
+                    "row": {
+                        "sheet_name": "产品档案与触发项",
+                        "row_topic": "公开规格摘录",
+                        "user_visible_cells": {"属性": "公开规格"},
+                    },
+                },
+                {
+                    "evidence_note_id": "note-xh-row-merge-b",
+                    "observation_id": "observation-xh-product-spec",
+                    "field_domain": "产品属性",
+                    "field_name": "公开容量",
+                    "current_value": "20 Ah",
+                    "status": "preliminary_reference",
+                    "source_excerpt_quote": "20 Ah",
+                    "applicability_scope": "仅限已打开的 Xing Heng 产品页，不扩大到其它型号。",
+                    "supports": ["页面原文包含 20 Ah。"],
+                    "does_not_support": ["不能作为最终目的国合规结论。"],
+                    "boundary_rule_ids": ["EB-LB-02"],
+                    "row": {
+                        "sheet_name": "产品档案与触发项",
+                        "row_topic": "公开规格摘录",
+                        "user_visible_cells": {"属性": "公开规格"},
+                    },
+                },
+            ]
+        }
+        original_row_count = len(graph["matrix_rows"])
+        result = self._compile(graph, notes)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        compiled = result.compiled_graph  # type: ignore[attr-defined]
+        self.assertEqual(len(compiled["matrix_rows"]), original_row_count + 1)
+        merged = [row for row in compiled["matrix_rows"] if row["row_topic"] == "公开规格摘录"]
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(len(merged[0]["evidence_card_ids"]), 2)
+
+    def test_merges_note_into_existing_matrix_row(self) -> None:
+        graph = materialize_fixture(FIXTURES / "market_pass_xingheng_minimum_boundary.json")
+        existing = next(row for row in graph["matrix_rows"] if row["matrix_row_id"] == "row-xh-voltage")
+        row = {
+            key: existing[key]
+            for key in (
+                "sheet_name",
+                "row_topic",
+                "user_visible_cells",
+                "module_key",
+                "row_type",
+                "certification_requirement",
+                "origin_proof_requirement",
+            )
+            if key in existing
+        }
+        notes = {
+            "evidence_notes": [
+                {
+                    "evidence_note_id": "note-xh-existing-row",
+                    "observation_id": "observation-xh-product-spec",
+                    "field_domain": "产品属性",
+                    "field_name": "公开额定电压补充摘录",
+                    "current_value": "48 V",
+                    "status": "verified",
+                    "source_excerpt_quote": "48 V",
+                    "applicability_scope": "仅限已打开的 Xing Heng 产品页，不扩大到其它型号。",
+                    "supports": ["页面原文包含 48 V。"],
+                    "does_not_support": ["不能作为最终目的国合规结论。"],
+                    "boundary_rule_ids": ["EB-LB-02"],
+                    "row": row,
+                }
+            ]
+        }
+        original_row_count = len(graph["matrix_rows"])
+        result = self._compile(graph, notes)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        compiled = result.compiled_graph  # type: ignore[attr-defined]
+        self.assertEqual(len(compiled["matrix_rows"]), original_row_count)
+        compiled_existing = next(row for row in compiled["matrix_rows"] if row["matrix_row_id"] == "row-xh-voltage")
+        self.assertIn("card-note-xh-existing-row", compiled_existing["evidence_card_ids"])
+
+    def test_one_note_can_target_multiple_matrix_rows(self) -> None:
+        graph = materialize_fixture(FIXTURES / "market_pass_xingheng_minimum_boundary.json")
+        notes = {
+            "evidence_notes": [
+                {
+                    "evidence_note_id": "note-xh-multi-row",
+                    "observation_id": "observation-xh-product-spec",
+                    "field_domain": "产品属性",
+                    "field_name": "公开额定电压",
+                    "current_value": "48 V",
+                    "status": "preliminary_reference",
+                    "source_excerpt_quote": "48 V",
+                    "applicability_scope": "仅限已打开的 Xing Heng 产品页，不扩大到其它型号。",
+                    "supports": ["页面原文包含 48 V。"],
+                    "does_not_support": ["不能作为最终目的国合规结论。"],
+                    "boundary_rule_ids": ["EB-LB-02"],
+                    "rows": [
+                        {
+                            "sheet_name": "市场事实总览",
+                            "row_topic": "公开规格总览",
+                            "user_visible_cells": {"规格": "48 V"},
+                        },
+                        {
+                            "sheet_name": "产品档案与触发项",
+                            "row_topic": "公开规格属性",
+                            "user_visible_cells": {"属性": "额定电压", "当前值": "48 V"},
+                        },
+                    ],
+                }
+            ]
+        }
+        original_row_count = len(graph["matrix_rows"])
+        result = self._compile(graph, notes)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        compiled = result.compiled_graph  # type: ignore[attr-defined]
+        self.assertEqual(len(compiled["matrix_rows"]), original_row_count + 2)
+        targets = [row for row in compiled["matrix_rows"] if row["matrix_row_id"].startswith("row-note-xh-multi-row")]
+        self.assertEqual(len(targets), 2)
+        self.assertTrue(all(row["evidence_card_ids"] == ["card-note-xh-multi-row"] for row in targets))
 
     def test_rejects_evidence_note_for_unopened_observation(self) -> None:
         graph = materialize_fixture(FIXTURES / "market_pass_origin_proof_unable_to_verify_source_limited.json")
