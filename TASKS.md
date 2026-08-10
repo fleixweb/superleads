@@ -1,5 +1,14 @@
 # Tasks
 
+## 2026-08-10 已完成：产品市场证据编译器 Phase 1
+
+- 新增 `scripts/compile_product_market_evidence.py`：消费已有已打开 Source / Observation 与紧凑证据笔记，编译为现有 `EvidenceCard`、`MatrixRow`、`Gap` 和 `ProductAttribute` 对象；不搜索、不打开来源、不新增 schema、不创建新状态。
+- 编译器要求引用 Observation 为 `opened` / `captured` / `extracted` / `rendered` 且包含原文摘录；`source_excerpt_quote` 必须逐字出现在原始 Observation 中；未打开来源直接拒绝。
+- 用户提供的电压、功率、容量、材料等产品属性以非最终状态写入现有 `attributes`，并从对应产品的未知属性清单中移除，避免已知输入在手写 graph 阶段丢失。
+- `analyzing-product-outbound-market` Skill 与常用命令新增编译步骤；插件 manifest / marketplace 版本 bump 至 `0.1.9`。
+- 回归：`tests/test_product_market_evidence_compiler.py` 通过 2/2；产品市场 suite 通过 75/75；插件分发 suite 通过 6/6；主 `all` suite 通过 719/719。测试已接入既有 `evals/run_evals.py`，未新增 eval runner。
+- 插件 `0.1.9` 已重新安装到 `/home/fleix/.codex/plugins/cache/fleix/superleads/0.1.9`。
+
 ## 2026-08-10 已完成：产品出海市场分析按请求范围输出
 
 - `analysis_modules_requested` 现在控制完整十二表或单项报告：缺失、空、未知或意图不确定时完整输出，明确单项仅输出相关表与三张固定表。

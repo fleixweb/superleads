@@ -1,0 +1,52 @@
+{
+  "product_attributes": [
+    {
+      "attribute_name": "额定电压",
+      "value": "220-240",
+      "unit": "V",
+      "status": "preliminary_reference",
+      "trigger_paths": [
+        "产品规格核验"
+      ]
+    }
+  ],
+  "evidence_notes": [
+    {
+      "evidence_note_id": "note-example-opened-source",
+      "observation_id": "observation-from-current-run",
+      "field_domain": "destination_compliance",
+      "field_name": "目标国监管路径",
+      "current_value": "仅填写已打开来源可支持的条件性事实",
+      "status": "preliminary_reference",
+      "source_excerpt_quote": "从该 Observation.raw_excerpt 逐字复制一段可见原文",
+      "source_date": "日期未见",
+      "applicability_scope": "产品型号、材料、进口商角色或销售场景仍需逐项核实。",
+      "supports": [
+        "该公开页面说明的监管路径或可见条件。"
+      ],
+      "does_not_support": [
+        "最终归类、最终税率、产品已合规或可清关结论。"
+      ],
+      "boundary_rule_ids": [
+        "填写现有适用边界规则 ID；没有时使用空数组"
+      ],
+      "row": {
+        "sheet_name": "产品准入与合规要求",
+        "row_topic": "目标国监管路径（条件性）",
+        "user_visible_cells": {
+          "规则结论": "仅填写已打开来源支持的条件性事实",
+          "依据说明": "只引用本轮已打开的公开来源",
+          "不能推出什么": "不等于产品已合规或已可清关"
+        }
+      },
+      "gap": {
+        "field_domain": "destination_compliance",
+        "field_name": "具体型号适用性",
+        "status": "technical_docs_required",
+        "missing_item": "型号、材料清单、标签稿或对应测试资料",
+        "requested_from": "用户/供应商",
+        "user_visible_note": "补齐产品资料并重新核对适用条件。"
+      }
+    }
+  ]
+}

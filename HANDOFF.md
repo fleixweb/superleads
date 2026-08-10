@@ -1,5 +1,14 @@
 # Handoff
 
+## 2026-08-10 产品市场证据编译器 Phase 1
+
+- 真实电水壶美国 UAT 已证明：搜索 / 来源打开 / Source / Observation / EvidenceCard / MatrixRow / validator / audit / export 可以连通，但 1547 行手写 JSON 换来 6 Source、6 Observation、6 EvidenceCard、13 MatrixRow，人工转换是当前瓶颈。
+- 新增 `scripts/compile_product_market_evidence.py`。它只消费已打开 Observation 和紧凑 `evidence_notes`，自动生成重复的 EvidenceCard / MatrixRow / Gap 引用；不搜索、不打开、不判断 Authority、不升级状态。
+- 编译器还支持 `product_attributes` 紧凑输入，把用户提供的电压、功率、容量、材料、型号等写入现有 ProductMarketAnalysisGraph `attributes`，并从产品未知属性列表移除；它不会把用户输入标成 `verified`。
+- 安全门：Observation 必须是 opened/captured/extracted/rendered 且有 `raw_excerpt`；`source_excerpt_quote` 必须逐字存在于原文；未打开来源、搜索摘要或未知字段均拒绝。
+- Skill / 常用命令已写入编译步骤；`.codex-plugin/plugin.json`、`.claude-plugin/plugin.json`、`.claude-plugin/marketplace.json` 已 bump 到 `0.1.9`，并通过 `codex plugin add superleads@fleix --json` 同步到 `/home/fleix/.codex/plugins/cache/fleix/superleads/0.1.9`。
+- 验证记录见 `docs/validation/superleads-product-market-evidence-compiler-20260810.md`。已通过 focused 2/2、产品市场 75/75、插件分发 6/6、主 all 719/719。下一步应使用同一真实 UAT graph 对比手写行数和产品字段保留情况，再决定是否进入 Phase 2 报告收敛。
+
 ## 2026-08-10 产品出海市场分析按请求范围输出
 
 - `analysis_modules_requested` 现在驱动 CSV 与 Markdown 的选表：缺失、空、未知、旧 `product_profile` 标记或大于单项范围的请求都输出完整十二表；明确的单项输出三张固定表和对应模块表。

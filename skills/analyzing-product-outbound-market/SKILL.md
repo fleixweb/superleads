@@ -18,6 +18,7 @@ This skill is parallel to bulk customer development and single-customer backgrou
 Read these only as needed:
 
 - `../../shared/references/product-outbound-market-intake.md` for the entry response, missing-info questions, and route boundaries.
+- `../../shared/references/product-market-evidence-notes.example.json` when preparing compact evidence notes from opened sources.
 - `../../spec/10-product-outbound-market-analysis-contract.md` for product boundaries.
 - `../../spec/13-product-outbound-market-analysis-workbook-contract.md` for workbook sheets and user-visible fields.
 - `../../spec/14-product-outbound-market-analysis-evidence-boundary-rules.md` for forbidden evidence upgrades.
@@ -25,6 +26,7 @@ Read these only as needed:
 - `../../spec/29-product-outbound-market-analysis-certification-requirement-calibration.md` when certification, test, registration, labeling, packaging, SDS, UN38.3, or compliance-file requirements appear.
 - Run `../../scripts/preflight_capabilities.py --require-formal-research` before a formal analysis. It requires `search.web` plus `source.open`, `browser.render`, or `document.extract`; if blocked, give the prescribed switch-environment message and do not issue a market report or source plan as a substitute delivery.
 - Plan source collection with `../../scripts/plan_product_market_sources.py` before any real search/open step. Its output is `source_plan_only`, an internal execution artifact rather than evidence or a formal user delivery.
+- After real sources have been opened and recorded as Source / Observation, use `../../scripts/compile_product_market_evidence.py` to compile concise evidence notes into the existing EvidenceCard / MatrixRow / Gap graph objects. It does not search, open URLs, decide authority, or promote a status.
 - Validate and audit existing graphs with `../../scripts/validate_product_market_analysis.py` and `../../scripts/audit_product_market_analysis.py`.
 - Export reviewed graphs with `../../scripts/export_product_market_workbook.py`.
 
@@ -96,6 +98,38 @@ but it is not a product outbound market analysis and must not be exported as
 one.
 
 Before collecting live sources, use the Source Pack registry to generate a Query Plan. The plan may list packs, source entries, query strings, required authority levels, and observation requirements; it must not create EvidenceCards, MatrixRows, tax rates, certification conclusions, logistics times, trends, prices, or market-entry judgments.
+
+### Compact evidence compilation
+
+Do not hand-author repeated graph IDs, source references, row links, and gap
+links for every opened page. Once a Source / Observation already exists in the
+current graph, put only the decision-bearing fields into a compact notes JSON:
+
+- `product_attributes`: user-provided, known product fields such as voltage,
+  wattage, capacity, material, or model. Keep their non-final status; do not
+  silently turn user input into verified source evidence.
+- `evidence_notes`: one item per source fact, with an existing opened
+  `observation_id`, a `source_excerpt_quote` copied verbatim from that
+  Observation, field domain/name/value, applicability, what it supports and
+  does not support, boundary rules, and one target matrix row.
+- an optional compact Gap when the same fact identifies a missing document,
+  product attribute, or professional confirmation.
+
+Run the compiler before validation:
+
+```bash
+python3 scripts/compile_product_market_evidence.py \
+  --graph source-observations.json \
+  --notes compact-evidence-notes.json \
+  --output compiled-market-graph.json \
+  --format json
+```
+
+The compiler rejects a missing, restricted, or unopened Observation and a
+quote that is not present in the cited original excerpt. It only carries the
+caller-supplied status; `verified`, authority, tax, classification, or
+compliance conclusions still pass through the existing validator and audit.
+Search summaries remain in SearchLog only and cannot be compiler input.
 
 Certification/compliance rows must split two objects:
 
