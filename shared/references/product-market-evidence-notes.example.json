@@ -10,6 +10,42 @@
       ]
     }
   ],
+  "authority_notes": [
+    {
+      "authority_note_id": "authority-example-opened-source",
+      "observation_id": "observation-from-current-run",
+      "fact_domain": "destination_compliance",
+      "jurisdiction_role": "destination_market",
+      "jurisdiction_name": "目标国/地区",
+      "institution_name": "只填写本轮可见原文明确识别的机构名称",
+      "authority_level": "unknown_authority",
+      "source_excerpt_quote": "从该 Observation.raw_excerpt 逐字复制能够支持机构身份或范围的一段可见原文",
+      "authority_basis_summary": "人工只记录本轮可见的来源身份和适用范围，不从域名推断主管机关。",
+      "identity_evidence_summary": "人工说明页面标题、正文或公开署名中实际可见的机构身份线索。",
+      "supports_identity_as": "只填写该来源在此事实域可作为什么来源。",
+      "can_support": [
+        "只填写该打开来源可支持的条件性路径。"
+      ],
+      "cannot_support": [
+        "最终归类、最终税率、产品已合规或可清关结论。"
+      ],
+      "next_verification_steps": [
+        "重新打开当前官方或专业来源，并按具体型号和文件核对。"
+      ]
+    }
+  ],
+  "matrix_row_templates": [
+    {
+      "template_id": "template-destination-compliance-conditional",
+      "sheet_name": "产品准入与合规要求",
+      "row_topic": "目标国监管路径（条件性）",
+      "user_visible_cells": {
+        "规则结论": "仅填写已打开来源支持的条件性事实",
+        "依据说明": "只引用本轮已打开的公开来源",
+        "不能推出什么": "不等于产品已合规或已可清关"
+      }
+    }
+  ],
   "evidence_notes": [
     {
       "evidence_note_id": "note-example-opened-source",
@@ -30,15 +66,12 @@
       "boundary_rule_ids": [
         "填写现有适用边界规则 ID；没有时使用空数组"
       ],
-      "row": {
-        "sheet_name": "产品准入与合规要求",
-        "row_topic": "目标国监管路径（条件性）",
-        "user_visible_cells": {
-          "规则结论": "仅填写已打开来源支持的条件性事实",
-          "依据说明": "只引用本轮已打开的公开来源",
-          "不能推出什么": "不等于产品已合规或已可清关"
-        }
-      },
+      "authority_note_ids": [
+        "authority-example-opened-source"
+      ],
+      "target_row_ids": [
+        "template-destination-compliance-conditional"
+      ],
       "gap": {
         "field_domain": "destination_compliance",
         "field_name": "具体型号适用性",

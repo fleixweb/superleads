@@ -1,5 +1,25 @@
 # Handoff
 
+## 2026-08-11 Phase 1.2 独立真实 UAT 通过
+
+- 新运行目录：`/tmp/superleads-uat-electric-kettle-phase-1-2-20260811T050529Z`；场景为 220–240 V / 1500 W 普通电水壶、中国出口美国。
+- 当前 Run 能力门禁通过：`search.web`、`source.open` 均 available，`formal_research_status=ready`。
+- 耗时 1504 秒；7 次搜索调用、22 条查询；13 个来源/Observation 成功打开，4 个受限、1 个无可提取结果。
+- Phase 1.2 编译输出 13 EvidenceCards、17 MatrixRows、13 Gaps、6 组 Authority skeleton；validator、audit、Markdown、workbook、用户可见检查和 claimed-path 全部通过，交付为 `ready_with_limitations`。
+- 与旧基线相比：耗时 -1486 秒，手工输入 1259 行（-752 行）；Source/Observation +5/+5，EvidenceCard +5，MatrixRow +1，Gap +1。该结果证明编译器降低了本场景的重复录入和执行时间，但不外推到所有产品/国家。
+- 未发现搜索摘要升级、原产地合并、最终 HS/税率、合规、清关、最佳路线或市场进入建议等边界违规；仓库未修改、未提交。
+- 下一步从“减少录入成本”转向“报告收敛质量”：先整理 17 行中的高优先级资料缺口与事实归纳，不新增国家库、validator 或自动搜索编排。详细记录见 `docs/validation/superleads-product-market-evidence-phase-1-2-20260811.md`。
+
+## 2026-08-11 产品市场证据编译器 Phase 1.2
+
+- Plugin-Eval 的通用 benchmark 已替换为 Superleads 专用三场景：无 `search.web/source.open` 时硬停、普通电水壶出口美国盲测、证据边界回归；配置见 `.plugin-eval/benchmark.json`。
+- `scripts/compile_product_market_evidence.py` 新增编译器输入 `authority_notes`、`matrix_row_templates`、`target_row_ids` 和 `authority_note_ids`，输出仍为既有 AuthorityProfile / IdentityEvidence / Capability / VerificationRecord / EvidenceCard / MatrixRow / Gap 对象。
+- Authority 紧凑输入必须绑定已打开 Observation 和逐字摘录；默认 `candidate_needs_check` / `not_reviewed`，不自动识别官方来源、不升级状态。旧 `row` / `rows` 输入保持兼容。
+- 插件版本已 bump 到 `0.1.11`，通过 `codex plugin add superleads@fleix --json` 同步到 `/home/fleix/.codex/plugins/cache/fleix/superleads/0.1.11`。
+- 离线重放盲测输出 8 EvidenceCards、16 MatrixRows、12 Gaps，validator/audit/export/claimed path 全部通过；没有把离线回放当成新的真实搜索 UAT。
+- 验证：compiler 7/7、product-market 75/75、plugin distribution 6/6、主 default 126/126、all 719/719、deep 676/676。当前会话 preflight 显示 `search.web` 与 `source.open` 均 unknown，新的联网 UAT 必须在具备正式来源能力的环境重跑。
+- 详细记录：`docs/validation/superleads-product-market-evidence-phase-1-2-20260811.md`。
+
 ## 2026-08-10 产品市场证据编译器 UAT 跟进
 
 - 用 `/tmp/electric_kettle_us_uat_graph_20260810.json` 重放普通电水壶出口美国 UAT：6 条紧凑证据笔记和 2 个用户属性编译后得到 6 EvidenceCard、13 MatrixRow、10 Gap，产品市场 validator / audit / Markdown 导出均通过，交付仍为 `ready_with_limitations`。

@@ -45,7 +45,7 @@ python3 scripts/preflight_capabilities.py --require-formal-research --format jso
 | 输出采集壳 | `python3 scripts/plan_product_market_sources.py --input brief.json --emit-collection-run-shell --format json` | 生成后续 SearchLog / Source / Observation 空壳，不打开来源 |
 | 手工 URL / 已知来源采集 | `python3 scripts/collect_product_market_sources.py --input source-input.json --format json > collection.json` | 只记录用户明确给定的公开 URL / 来源状态，不自动搜索 |
 | 合并 collection 到图谱 | `python3 scripts/merge_product_market_collection.py --graph market-graph.json --collection collection.json --output merged.json --format json` | 只合并来源记录，不自动生成结论 |
-| 编译已打开来源的紧凑证据笔记 | `python3 scripts/compile_product_market_evidence.py --graph source-observations.json --notes compact-evidence-notes.json --output compiled-market-graph.json --format json` | 只把已打开 Observation 的逐字摘录、条件和边界编译为既有 EvidenceCard / MatrixRow / Gap；不搜索、不打开、不升级状态 |
+| 编译已打开来源的紧凑证据笔记 | `python3 scripts/compile_product_market_evidence.py --graph source-observations.json --notes compact-evidence-notes.json --output compiled-market-graph.json --format json` | 只把已打开 Observation 的逐字摘录、条件、Authority 人工断言和行模板编译为既有对象；不搜索、不打开、不识别官方来源、不升级状态 |
 | 一条命令跑手工 collection + merge + 可选导出 | `python3 scripts/run_product_market_collection_pipeline.py --graph market-graph.json --collection-input source-input.json --output merged.json --export-dir out --markdown market-report.md --format json` | 串联已有安全步骤，不抓取网页、不提取 PDF、不创建新事实 |
 
 ## 验证与回归
@@ -71,7 +71,7 @@ python3 scripts/preflight_capabilities.py --require-formal-research --format jso
 
 真实业务 UAT 中，claimed path 复核是固定验收步骤：最终声明的 Markdown 路径必须与同一个 graph 重新运行 `export_superleads_markdown.py` 得到的内容逐字一致；否则即使 exporter 曾返回 `ok=true`，该轮 UAT 也不通过。`run_superleads_markdown_delivery_evals.py` 已包含正向通过和后处理 mismatch 失败两条回归。
 
-紧凑证据笔记可从 `shared/references/product-market-evidence-notes.example.json` 起步。示例中的 `observation_id`、逐字摘录、来源事实、适用条件和边界必须替换为本轮实际已打开来源；不能原样复用示例文字或把搜索摘要填入该文件。一个事实需要落到多张表时使用 `rows` 数组；同一目标行的多条笔记会合并为一个矩阵行。
+紧凑证据笔记可从 `shared/references/product-market-evidence-notes.example.json` 起步。示例中的 `observation_id`、逐字摘录、来源事实、适用条件和边界必须替换为本轮实际已打开来源；不能原样复用示例文字或把搜索摘要填入该文件。重复矩阵行可先写进 `matrix_row_templates`，再由 `target_row_ids` 引用；一个事实需要落到多张表时可引用多个模板或使用 `rows`。`authority_notes` 只能写人工确认过的可见身份/适用范围事实，必须带逐字摘录；默认是 `candidate_needs_check`，不能根据 URL、域名或机构名称自动写成官方或已核实。
 
 ## 常见口径
 

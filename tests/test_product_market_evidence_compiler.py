@@ -289,6 +289,103 @@ class ProductMarketEvidenceCompilerTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0, result.stdout)
         self.assertIn("market_evidence_compiler_observation_not_opened", result.stdout)
 
+    def test_compiles_compact_authority_note_without_promoting_status(self) -> None:
+        graph = materialize_fixture(FIXTURES / "market_pass_xingheng_minimum_boundary.json")
+        notes = {
+            "authority_notes": [
+                {
+                    "authority_note_id": "authority-xh-product-page",
+                    "observation_id": "observation-xh-product-spec",
+                    "fact_domain": "product_profile",
+                    "jurisdiction_role": "product_source",
+                    "jurisdiction_name": "Product source page",
+                    "institution_name": "Xing Heng public product page",
+                    "authority_level": "unknown_authority",
+                    "source_excerpt_quote": "48 V",
+                    "authority_basis_summary": "Human reviewer records only the visible product-page identity and scope.",
+                    "identity_evidence_summary": "Opened page title and excerpt identify the product source page.",
+                    "supports_identity_as": "product source for product_profile",
+                    "can_support": ["public product-profile reference"],
+                    "cannot_support": ["final compliance", "final classification", "clearance readiness"],
+                    "next_verification_steps": ["confirm model documents with supplier"],
+                }
+            ],
+            "evidence_notes": [
+                {
+                    "evidence_note_id": "note-xh-authority-reference",
+                    "observation_id": "observation-xh-product-spec",
+                    "field_domain": "product_profile",
+                    "field_name": "公开产品规格",
+                    "current_value": "48 V",
+                    "status": "preliminary_reference",
+                    "source_excerpt_quote": "48 V",
+                    "applicability_scope": "仅限已打开的 Xing Heng 产品页。",
+                    "supports": ["页面原文包含 48 V。"],
+                    "does_not_support": ["不能作为最终目的国合规结论。"],
+                    "boundary_rule_ids": ["EB-LB-02"],
+                    "authority_note_ids": ["authority-xh-product-page"],
+                    "row": {
+                        "sheet_name": "产品档案与触发项",
+                        "row_topic": "带紧凑权威引用的公开规格",
+                        "user_visible_cells": {"属性": "额定电压", "当前值": "48 V"},
+                    },
+                }
+            ],
+        }
+
+        result = self._compile(graph, notes)
+
+        self.assertEqual(result.returncode, 0, result.stdout)
+        compiled = result.compiled_graph  # type: ignore[attr-defined]
+        self.assertEqual(len(compiled["authority_profiles"]), 1)
+        self.assertEqual(len(compiled["authority_identity_evidence"]), 1)
+        self.assertEqual(len(compiled["authority_capabilities"]), 1)
+        self.assertEqual(len(compiled["authority_verification_records"]), 1)
+        self.assertEqual(compiled["authority_profiles"][0]["verification_status"], "candidate_needs_check")
+        self.assertEqual(compiled["authority_verification_records"][0]["review_status"], "not_reviewed")
+        authority_record_id = compiled["authority_verification_records"][0]["authority_verification_id"]
+        card = next(item for item in compiled["evidence_cards"] if item["evidence_card_id"] == "card-note-xh-authority-reference")
+        row = next(item for item in compiled["matrix_rows"] if item["row_topic"] == "带紧凑权威引用的公开规格")
+        self.assertEqual(card["authority_verification_record_ids"], [authority_record_id])
+        self.assertEqual(row["authority_verification_record_ids"], [authority_record_id])
+
+    def test_resolves_matrix_row_template_targets(self) -> None:
+        graph = materialize_fixture(FIXTURES / "market_pass_xingheng_minimum_boundary.json")
+        notes = {
+            "matrix_row_templates": [
+                {
+                    "template_id": "template-xh-public-spec",
+                    "sheet_name": "产品档案与触发项",
+                    "row_topic": "模板公开规格",
+                    "user_visible_cells": {"属性": "额定电压", "当前值": "48 V"},
+                }
+            ],
+            "evidence_notes": [
+                {
+                    "evidence_note_id": "note-xh-template-target",
+                    "observation_id": "observation-xh-product-spec",
+                    "field_domain": "产品属性",
+                    "field_name": "公开额定电压",
+                    "current_value": "48 V",
+                    "status": "preliminary_reference",
+                    "source_excerpt_quote": "48 V",
+                    "applicability_scope": "仅限已打开的 Xing Heng 产品页。",
+                    "supports": ["页面原文包含 48 V。"],
+                    "does_not_support": ["不能作为最终目的国合规结论。"],
+                    "boundary_rule_ids": ["EB-LB-02"],
+                    "target_row_ids": ["template-xh-public-spec"],
+                }
+            ],
+        }
+
+        result = self._compile(graph, notes)
+
+        self.assertEqual(result.returncode, 0, result.stdout)
+        compiled = result.compiled_graph  # type: ignore[attr-defined]
+        rows = [row for row in compiled["matrix_rows"] if row["row_topic"] == "模板公开规格"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["evidence_card_ids"], ["card-note-xh-template-target"])
+
 
 if __name__ == "__main__":
     unittest.main()

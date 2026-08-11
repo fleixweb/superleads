@@ -108,13 +108,27 @@ current graph, put only the decision-bearing fields into a compact notes JSON:
 - `product_attributes`: user-provided, known product fields such as voltage,
   wattage, capacity, material, or model. Keep their non-final status; do not
   silently turn user input into verified source evidence.
+- `authority_notes`: compact, human-reviewed authority assertions for an
+  already opened Observation. Each note must give the verbatim visible quote,
+  jurisdiction role/name, institution name, claimed authority level, identity
+  basis, what the source can and cannot support, and next verification steps.
+  The compiler expands it into the existing AuthorityProfile,
+  AuthorityIdentityEvidence, AuthorityCapability, and
+  AuthorityVerificationRecord objects. It defaults to
+  `candidate_needs_check` / `not_reviewed`; it never recognizes an official
+  source from a domain or name and never upgrades a status. An evidence note
+  may use `authority_note_ids` to attach the generated verification record.
+- `matrix_row_templates`: reusable existing row payloads, each with a
+  `template_id`. An evidence note may use `target_row_ids` to reference one or
+  more templates instead of repeating `row` or `rows`. Use exactly one of
+  `row`, `rows`, or `target_row_ids` per evidence note.
 - `evidence_notes`: one item per source fact, with an existing opened
   `observation_id`, a `source_excerpt_quote` copied verbatim from that
   Observation, field domain/name/value, applicability, what it supports and
-  does not support, boundary rules, and one target matrix `row`. Use `rows`
-  when one source fact genuinely supports multiple existing tables; each row
-  can carry its own authority/freshness references. Notes targeting the same
-  row are merged into one row with multiple EvidenceCard references.
+  does not support, boundary rules, and one target matrix `row` or template.
+  Use `rows` when one source fact genuinely supports multiple existing tables;
+  each row can carry its own authority/freshness references. Notes targeting
+  the same row are merged into one row with multiple EvidenceCard references.
 - an optional compact Gap when the same fact identifies a missing document,
   product attribute, or professional confirmation.
 
@@ -135,6 +149,9 @@ compliance conclusions still pass through the existing validator and audit.
 Known product attributes also remove only the matching part of a compound
 unknown such as `额定电压/频率`; the unresolved part remains visible.
 Search summaries remain in SearchLog only and cannot be compiler input.
+`authority_notes` are not a shortcut around authority review: use an explicit
+human assertion tied to an opened Observation, and keep uncertain identity or
+scope at the supplied candidate/restricted status.
 
 Certification/compliance rows must split two objects:
 

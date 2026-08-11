@@ -1,5 +1,24 @@
 # Tasks
 
+## 2026-08-11 已完成：Phase 1.2 独立真实 UAT
+
+- 新 UAT 目录：`/tmp/superleads-uat-electric-kettle-phase-1-2-20260811T050529Z`；能力门禁通过，正式搜索和来源打开真实执行。
+- 运行 1504 秒，13 Source/Observation、13 EvidenceCard、17 MatrixRow、13 Gap；validator、audit、Markdown、workbook、用户可见和 claimed-path 全部通过。
+- 手工输入从旧基线 2011 行降到 1259 行，耗时从 2990 秒降到 1504 秒；只记录本场景绝对差异，不外推普遍百分比。
+- Phase 1.2 的效率目标已得到一次独立正向 UAT 支持。下一步不继续压缩 Authority/证据边界，而是评估风险优先级和资料缺口收敛输出。
+- UAT 报告与指标保存在 `/tmp/superleads-uat-electric-kettle-phase-1-2-20260811T050529Z/{uat_log.md,uat_metrics.json,compiled_graph.json,report.md,workbook_manifest.json}`。
+
+## 2026-08-11 已完成：产品市场证据编译器 Phase 1.2
+
+- 将 `.plugin-eval/benchmark.json` 从通用 starter 场景改为 Superleads 三场景基准：能力门禁、普通电水壶出口美国盲测、证据边界回归。
+- 编译器新增只属于紧凑输入的 `authority_notes`、`matrix_row_templates`、`target_row_ids`、`authority_note_ids`；不改正式 schema、validator、错误码、route 或交付状态。
+- `authority_notes` 只接受已打开 Observation 的逐字摘录和人工明确断言，默认保持 `candidate_needs_check` / `not_reviewed`；旧 `row` / `rows` 保持兼容。
+- 新增 2 条编译器回归，插件版本 bump 到 `0.1.11` 并同步运行时缓存。
+- 验证：compiler 7/7；product-market 75/75；plugin distribution 6/6；default 126/126；all 719/719；deep 676/676；Skill quick validation passed。
+- 离线盲测回放保持 8 EvidenceCards、16 MatrixRows、12 Gaps 和 `ready_with_limitations`；没有声称已取得新的耗时降幅。
+- 当前会话正式能力门禁为 blocked（`search.web/source.open` unknown），新的独立真实 UAT 待切换到具备 Web Search 和来源打开能力的环境。
+- 详细验证：`docs/validation/superleads-product-market-evidence-phase-1-2-20260811.md`。
+
 ## 2026-08-10 已完成：产品市场证据编译器 UAT 跟进
 
 - 用同一份电水壶美国 UAT graph 在 `/tmp` 回放编译链路，产出 6 EvidenceCard、13 MatrixRow、10 Gap 和 2 个保留的用户产品属性；validate / audit / Markdown export 全部通过。
