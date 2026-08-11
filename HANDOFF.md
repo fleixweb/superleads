@@ -1,5 +1,14 @@
 # Handoff
 
+## 2026-08-12 UAT 测量协议与联系人预检跟进
+
+- 复核 `/tmp/superleads-measure-*-20260812T000000Z` 后确认不是旧 graph/report 缓存：三个 RUN 的业务 gate 记录和文件时间实际分段发生；但三个 ledger 同时 `init`、同时打开 active interval、同时 `finalize`，因此三个 active/wall 耗时被重复计量，不能横向比较。固定清单现明确要求三条路线严格顺序执行，禁止 `T000000Z` 占位目录名。
+- `measure_superleads_uat.py` 的 `first_pass_success` 现在同时考虑所有已记录 gate；即使调用方漏把中间 `compiler` 加入 required gate，只要该 gate 首次失败，端到端首遍仍为 false。产品市场 UAT 清单已将 `compiler` 纳入必需链路。
+- `precheck_superleads_uat_input.py` 新增 `ready` / `export_with_source_note` 联系人关联证据必须命名已解析主体的预检；`needs_manual_association_review` 的公开董事/职业线索保持合法例外。
+- 插件版本升至 `0.1.15`；runtime package 与本机缓存均为 124 files、1,868,485 bytes，`diff -qr` 和严格分发检查通过。`tmp/stage5_chillys/` 未修改。
+- 验证：新增测量/预检单测 7/7；`run_evals.py --suite all` 721/721；`--suite deep` 678/678；插件分发 9/9；Skill quick validation、正式 Markdown 冒烟、源码/缓存分发检查和 `git diff --check` 通过。
+- 旧三路线 UAT 的最终交付门禁仍有效，但耗时指标标记为“并行运行，不可横向比较”；下一轮必须顺序重跑，且 market required gates 包含 `compiler`。
+
 ## 2026-08-11 真实 UAT 结构化输入预检
 
 - 新增 `scripts/precheck_superleads_uat_input.py`，在正式路线 validator 前对批量客户开发、单客背调和产品出海市场分析做只读结构预检；范围固定为来源逐字锚定、联系人关联、枚举值和产品属性投影，不搜索、不打开来源、不修改 graph，也不产生业务结论。

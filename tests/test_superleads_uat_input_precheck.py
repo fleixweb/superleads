@@ -61,6 +61,7 @@ class SuperleadsUatInputPrecheckTest(unittest.TestCase):
         self.assertIn("uat_precheck_enum_invalid", codes)
         self.assertIn("uat_precheck_contact_literal_not_in_observation", codes)
         self.assertIn("uat_precheck_contact_association_not_in_observation", codes)
+        self.assertIn("uat_precheck_contact_association_entity_name_missing", codes)
 
     def test_market_notes_and_attribute_projection_fail_before_compile_or_validator(self) -> None:
         graph = json.loads((FIXTURES / "market_pass_xingheng_minimum_boundary.json").read_text(encoding="utf-8"))

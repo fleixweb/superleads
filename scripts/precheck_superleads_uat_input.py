@@ -320,6 +320,19 @@ def _research_anchor_issues(graph: dict[str, Any]) -> list[dict[str, str]]:
                 severity="major",
                 focus="contact_association",
             ))
+        entity = entities.get(str(entity_id)) if has_text(entity_id) else None
+        entity_name = str(entity.get("name") or "").strip() if isinstance(entity, dict) else ""
+        if (
+            export_status in {"ready", "export_with_source_note"}
+            and entity_name
+            and not text_contains(evidence_text, entity_name)
+        ):
+            _append(issues, seen, _issue(
+                "uat_precheck_contact_association_entity_name_missing",
+                "Exportable ContactClaim association_evidence_text must name its resolved Entity",
+                f"{path}.association_evidence_text",
+                focus="contact_association",
+            ))
         if has_text(entity_id):
             for observation, label in ((source_observation, "source"), (association, "association")):
                 if isinstance(observation, dict) and has_text(observation.get("entity_id")) and observation.get("entity_id") != entity_id:

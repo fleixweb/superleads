@@ -135,10 +135,9 @@ def _required_gate_issues(summary: dict[str, dict[str, Any]], required_gates: li
     return issues
 
 
-def _first_pass_failure_classes(summary: dict[str, dict[str, Any]], required_gates: list[str]) -> list[str]:
+def _first_pass_failure_classes(summary: dict[str, dict[str, Any]]) -> list[str]:
     classes: list[str] = []
-    for gate in required_gates:
-        status = summary.get(gate, {})
+    for status in summary.values():
         if status.get("first_result") != "failed":
             continue
         failure_class = status.get("first_failure_class")
@@ -266,10 +265,18 @@ def command_finalize(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         measurement_issues.append("active_interval_open")
     if not git_unchanged:
         measurement_issues.append("git_capture_mismatch")
-    first_pass_success = all(
+    required_gates_first_passed = all(
         summary.get(gate, {}).get("first_result") == "passed"
         for gate in args.required_gate
     )
+    # A caller may record an intermediate compiler or source-plan gate that
+    # was not listed as a delivery requirement. It still means the end-to-end
+    # UAT did not pass on its first attempt and must not be reported as such.
+    recorded_gates_first_passed = all(
+        status.get("first_result") == "passed"
+        for status in summary.values()
+    )
+    first_pass_success = required_gates_first_passed and recorded_gates_first_passed
     repair_cycle_count = sum(int(status.get("failure_count", 0)) for status in summary.values())
     result = _base_result(ledger)
     result.update({
@@ -279,7 +286,7 @@ def command_finalize(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         "gate_summary": summary,
         "required_gates": args.required_gate,
         "first_pass_success": first_pass_success,
-        "first_pass_failure_classes": _first_pass_failure_classes(summary, args.required_gate),
+        "first_pass_failure_classes": _first_pass_failure_classes(summary),
         "repair_cycle_count": repair_cycle_count,
         "git_unchanged": git_unchanged,
         "git_before": ledger.get("git_before"),

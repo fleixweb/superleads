@@ -142,6 +142,35 @@ class SuperleadsUatMeasurementTest(unittest.TestCase):
             self.assertFalse(payload["first_pass_success"])
             self.assertIn("required_gate_missing:validator", payload["measurement_issues"])
 
+    def test_optional_recorded_gate_failure_still_breaks_first_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp) / "market-uat"
+            self._run("init", "--run-dir", str(run_dir), "--route", "product_outbound_market_analysis")
+            self._run("record-gate", "--run-dir", str(run_dir), "--gate", "preflight", "--result", "passed")
+            self._run(
+                "record-gate",
+                "--run-dir",
+                str(run_dir),
+                "--gate",
+                "compiler",
+                "--result",
+                "failed",
+                "--failure-class",
+                "graph_contract",
+            )
+            self._run("record-gate", "--run-dir", str(run_dir), "--gate", "compiler", "--result", "passed")
+            payload = self._run(
+                "finalize",
+                "--run-dir",
+                str(run_dir),
+                "--required-gate",
+                "preflight",
+            )
+
+            self.assertEqual(payload["formal_uat_protocol_status"], "passed")
+            self.assertFalse(payload["first_pass_success"])
+            self.assertEqual(payload["first_pass_failure_classes"], ["graph_contract"])
+
 
 if __name__ == "__main__":
     unittest.main()

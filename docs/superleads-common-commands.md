@@ -84,7 +84,7 @@ python3 scripts/build_superleads_plugin_package.py --format json
 python3 scripts/check_superleads_plugin_distribution.py --plugin-root dist/superleads --source-root . --runtime-package --format json
 ln -sfnT "$PWD/dist/superleads" "$HOME/plugins/superleads"
 codex plugin add superleads@fleix
-python3 scripts/check_superleads_plugin_distribution.py --plugin-root "$HOME/.codex/plugins/cache/fleix/superleads/0.1.14" --source-root . --runtime-package --format json
+python3 scripts/check_superleads_plugin_distribution.py --plugin-root "$HOME/.codex/plugins/cache/fleix/superleads/0.1.15" --source-root . --runtime-package --format json
 ```
 
 运行时工件包含 `.codex-plugin`、Claude manifest、`hooks`、`skills`、`scripts`、

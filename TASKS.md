@@ -1,5 +1,14 @@
 # Tasks
 
+## 2026-08-12 已完成：UAT 测量协议与联系人预检跟进
+
+- 复核三条 2026-08-12 UAT：业务 gate 实际分段执行，不是缓存复用；但账本同时启动/结束，active/wall 时间不可横向比较。固定清单已要求严格顺序运行并禁止 `T000000Z` 占位目录名。
+- 测量器首遍语义修正：所有已记录 gate 的首次失败都会令 `first_pass_success=false`；market 使用 compiler 时必须将 `compiler` 纳入 required gates。
+- 联系人预检新增主体名关联检查，仅约束 `ready` / `export_with_source_note`；`needs_manual_association_review` 的公开职业线索不被误伤。
+- 插件版本 `0.1.15` 已重建并安装缓存：124 files、1,868,485 bytes；分发 eval 9/9 通过。
+- 验证：新增单测 7/7，all 721/721，deep 678/678，Skill quick validation、Markdown 冒烟、缓存逐字比对和严格分发检查通过。
+- 详细说明见 `docs/validation/superleads-uat-sequential-measurement-20260812.md`。
+
 ## 2026-08-11 已完成：真实 UAT 结构化输入预检
 
 - 新增只读 `scripts/precheck_superleads_uat_input.py`，覆盖三条正式路线，优先拦截来源逐字锚定、联系人关联、枚举值和产品属性投影错误；输出 `uat_precheck_*` 诊断，不替代正式 validator / audit。

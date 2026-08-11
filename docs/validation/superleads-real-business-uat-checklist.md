@@ -17,6 +17,13 @@ UAT = User Acceptance Testing，即用户验收测试。这里特指：用真实
 它解决的是“最终修正后通过”被误说成“首遍通过”、Git 空输出换行误判、以及
 墙钟耗时混入等待时间的问题。
 
+三条路线需要比较耗时时，必须严格顺序执行：一条路线完成
+`init -> active-start -> 全部 gate -> active-stop -> finalize` 后，才能开始下一条。
+不得一次初始化多个 RUN_DIR，也不得让多个 active interval 覆盖同一段工作时间；
+否则各路线的 `active_elapsed_seconds` 和 `wall_elapsed_seconds` 只能标为
+“并行运行，不可横向比较”。RUN_DIR 名称也必须使用实际 UTC 时间，不能写固定的
+`T000000Z` 占位值。
+
 ```bash
 python3 scripts/measure_superleads_uat.py init \
   --run-dir "$RUN_DIR" \
@@ -88,6 +95,18 @@ python3 scripts/measure_superleads_uat.py finalize \
 `$RUN_DIR/uat_metrics.json`。该文件中的 `first_pass_success`、
 `repair_cycle_count`、`active_elapsed_seconds`、`wall_elapsed_seconds` 与
 `first_pass_failure_classes` 是跨路线比较的唯一测量口径。
+
+产品出海市场分析若使用 `compile_product_market_evidence.py`，必须将 `compiler`
+作为已记录且必需的 gate，位于编译前紧凑 notes 预检和编译后 graph 预检之间：
+
+```text
+preflight -> input_precheck_notes -> compiler -> input_precheck_graph ->
+validator -> audit -> markdown_export -> workbook_export -> user_visible -> claimed_path
+```
+
+即使调用方误漏了 `compiler` 的 `--required-gate`，只要 ledger 已记录其首遍失败，
+测量器也会将 `first_pass_success` 设为 `false`。这不会改变 required gate 的最终
+通过判定，但会阻止“最终修复后通过”被写成端到端首遍通过。
 
 ## UAT 必交字段
 
