@@ -3,8 +3,10 @@
 
 The check is intentionally distribution-oriented: it compares the installed or
 packaged plugin root against the source repository's ``skills/`` directory, then
-verifies the product-market route's required files and every ``../../spec`` /
-``../../shared`` relative reference found in installed ``SKILL.md`` files.
+verifies the product-market route's required files and every ``../../scripts`` /
+``../../spec`` / ``../../shared`` relative reference found in installed
+``SKILL.md`` files. ``--runtime-package`` additionally rejects development and
+historical-data directories that must not ship in an installed plugin.
 """
 from __future__ import annotations
 
@@ -20,8 +22,11 @@ DEFAULT_REQUIRED_SKILLS = ("analyzing-product-outbound-market",)
 DEFAULT_REQUIRED_FILES = (
     Path("shared/references/product-outbound-market-intake.md"),
 )
-RELATIVE_REFERENCE_RE = re.compile(r"\.\./\.\./(?:spec|shared)/[A-Za-z0-9._/\-]+")
+RELATIVE_REFERENCE_RE = re.compile(r"\.\./\.\./(?:scripts|spec|shared)/[A-Za-z0-9._/\-]+")
 HOOK_COMMAND_TARGET_RE = re.compile(r"(?:\$\{PLUGIN_ROOT\}|%PLUGIN_ROOT%)[/\\]([^\"'\s]+)")
+RUNTIME_TOP_LEVEL_NAMES = {".claude-plugin", ".codex-plugin", "hooks", "scripts", "shared", "skills", "spec"}
+FORBIDDEN_RUNTIME_NAMES = {".agents", ".git", ".plugin-eval", "docs", "evals", "tests", "tmp"}
+FORBIDDEN_RUNTIME_SUFFIXES = {".pyc", ".pyo", ".pyd"}
 
 
 def _issue(code: str, message: str, **extra: str) -> dict[str, str]:
@@ -192,11 +197,51 @@ def _check_manifest_hook(plugin_root: Path) -> tuple[list[dict[str, str]], str |
     return issues, hook_path, checked_targets
 
 
+def _runtime_package_issues(plugin_root: Path) -> tuple[list[dict[str, str]], int, int]:
+    issues: list[dict[str, str]] = []
+    files = 0
+    byte_count = 0
+    for item in sorted(plugin_root.iterdir(), key=lambda path: path.name):
+        if item.name not in RUNTIME_TOP_LEVEL_NAMES:
+            code = "plugin_distribution_forbidden_path" if item.name in FORBIDDEN_RUNTIME_NAMES else "plugin_distribution_unexpected_runtime_path"
+            issues.append(_issue(
+                code,
+                f"runtime plugin package must not contain {item.name}",
+                path=item.name,
+            ))
+    for path in sorted(plugin_root.rglob("*")):
+        relative = path.relative_to(plugin_root)
+        if path.is_symlink():
+            issues.append(_issue(
+                "plugin_distribution_runtime_symlink_forbidden",
+                "runtime plugin package must not contain symlinks",
+                path=relative.as_posix(),
+            ))
+            continue
+        if path.is_dir() and path.name == "__pycache__":
+            issues.append(_issue(
+                "plugin_distribution_forbidden_path",
+                "runtime plugin package must not contain Python bytecode caches",
+                path=relative.as_posix(),
+            ))
+        if path.is_file():
+            files += 1
+            byte_count += path.stat().st_size
+            if path.suffix.lower() in FORBIDDEN_RUNTIME_SUFFIXES:
+                issues.append(_issue(
+                    "plugin_distribution_forbidden_path",
+                    "runtime plugin package must not contain Python bytecode",
+                    path=relative.as_posix(),
+                ))
+    return issues, files, byte_count
+
+
 def check_distribution(
     plugin_root: Path,
     source_root: Path,
     required_skills: tuple[str, ...] = DEFAULT_REQUIRED_SKILLS,
     required_files: tuple[Path, ...] = DEFAULT_REQUIRED_FILES,
+    runtime_package: bool = False,
 ) -> dict[str, Any]:
     issues: list[dict[str, str]] = []
     plugin_root = plugin_root.resolve()
@@ -274,6 +319,13 @@ def check_distribution(
                 path=rel.as_posix(),
             ))
 
+    runtime_issues: list[dict[str, str]] = []
+    runtime_file_count = 0
+    runtime_byte_count = 0
+    if runtime_package:
+        runtime_issues, runtime_file_count, runtime_byte_count = _runtime_package_issues(plugin_root)
+        issues.extend(runtime_issues)
+
     manifest_hook_issues, manifest_hook_path, checked_hook_command_target_count = _check_manifest_hook(plugin_root)
     issues.extend(manifest_hook_issues)
 
@@ -295,6 +347,9 @@ def check_distribution(
         "required_files": [path.as_posix() for path in required_files],
         "manifest_hook_path": manifest_hook_path,
         "checked_hook_command_target_count": checked_hook_command_target_count,
+        "runtime_package": runtime_package,
+        "runtime_file_count": runtime_file_count,
+        "runtime_byte_count": runtime_byte_count,
     }
 
 
@@ -323,6 +378,11 @@ def parse_args() -> argparse.Namespace:
         help="Required runtime file relative to plugin root. May be repeated. Defaults to the product-market intake reference.",
     )
     parser.add_argument("--format", choices=("json", "text"), default="text")
+    parser.add_argument(
+        "--runtime-package",
+        action="store_true",
+        help="Require a minimal runtime package with no development or historical-data directories.",
+    )
     return parser.parse_args()
 
 
@@ -330,7 +390,13 @@ def main() -> int:
     args = parse_args()
     required_skills = tuple(args.required_skills) if args.required_skills else DEFAULT_REQUIRED_SKILLS
     required_files = tuple(Path(item) for item in args.required_files) if args.required_files else DEFAULT_REQUIRED_FILES
-    payload = check_distribution(Path(args.plugin_root), Path(args.source_root), required_skills, required_files)
+    payload = check_distribution(
+        Path(args.plugin_root),
+        Path(args.source_root),
+        required_skills,
+        required_files,
+        runtime_package=args.runtime_package,
+    )
     if args.format == "json":
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:

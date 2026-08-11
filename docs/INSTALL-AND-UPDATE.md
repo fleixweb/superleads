@@ -54,6 +54,24 @@ Codex app 可通过 `/plugins` 添加同一 marketplace，再安装 `superleads@
 
 按当前产品分发方式，ChatGPT app 使用同一已安装的 Codex 环境，不设独立的 Superleads 安装入口。
 
+### 本地开发的精简运行时包
+
+本地 marketplace 若指向源码目录，Codex 会把开发资料和历史 UAT 一并复制到缓存。发布
+前或本地联调时，先在源码根目录构建精简运行时包，再让本地 marketplace 的 Superleads
+source 指向该工件，最后重新安装：
+
+```bash
+python3 scripts/build_superleads_plugin_package.py --format json
+python3 scripts/check_superleads_plugin_distribution.py --plugin-root dist/superleads --source-root . --runtime-package --format json
+ln -sfnT "$PWD/dist/superleads" "$HOME/plugins/superleads"
+codex plugin add superleads@fleix
+```
+
+工件只包含运行时所需的 manifest、hooks、Skills、scripts、shared 规则和 spec；不包含
+`tmp/`、`evals/`、`tests/`、历史验证文档或 Git 元数据。保留源码 `tmp/stage5_chillys/`，
+它不会被移动或删除。上面的软链接命令适用于本机 marketplace 已注册为
+`$HOME/plugins/superleads` 的 Linux/macOS 布局；其它本地路径应改为对应的 marketplace source。
+
 ### 从 0.1.2 或更早版本迁移
 
 `0.1.3` 起，marketplace 名称由 `superleads-dev` 更改为 `fleix`，插件标识随之变为 `superleads@fleix`。已安装旧版本的 Codex 用户执行一次：

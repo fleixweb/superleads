@@ -1,5 +1,12 @@
 # Tasks
 
+## 2026-08-11 已完成：精简运行时插件包
+
+- 新增 `scripts/build_superleads_plugin_package.py`：构建 Git 忽略的 `dist/superleads/`，仅复制 Codex/Claude manifest、hooks、skills、scripts、shared 与 spec；`tmp/`、evals、tests、docs、Git 元数据和 Python bytecode 不进入运行时包。
+- 分发检查新增 `--runtime-package`，覆盖 49 条 Skill 相对引用（含 scripts），并对开发/历史目录、symlink 和 bytecode 施加包级拒绝。
+- 分发 eval 扩为 9/9，已证明缺失 `validate_product_market_analysis.py` 会失败，人工注入 `tmp/old-uat.txt` 也会失败。
+- 工件大小为 1,821,708 bytes / 122 files；源码 `tmp/stage5_chillys/` 未移动、未删除。本机 marketplace 已重指向工件并重装 `0.1.12`；实际缓存 2.2 MB，严格检查确认不含 `tmp/`、`evals/`、`tests/` 或 `docs/`。
+
 ## 2026-08-11 已完成：Phase 1.2 独立真实 UAT
 
 - 新 UAT 目录：`/tmp/superleads-uat-electric-kettle-phase-1-2-20260811T050529Z`；能力门禁通过，正式搜索和来源打开真实执行。

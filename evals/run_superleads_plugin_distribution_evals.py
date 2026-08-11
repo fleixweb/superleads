@@ -14,6 +14,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "scripts" / "check_superleads_plugin_distribution.py"
+BUILDER = ROOT / "scripts" / "build_superleads_plugin_package.py"
 SUITES = ("all",)
 
 
@@ -24,14 +25,18 @@ def _run(cmd: list[str], expect: int) -> dict[str, Any]:
     return {"cmd": cmd, "returncode": proc.returncode, "expected": expect, "ok": proc.returncode == expect, "output": proc.stdout}
 
 
-def _copy_distribution(target: Path) -> None:
-    target.mkdir(parents=True, exist_ok=True)
-    for rel in (".codex-plugin", "hooks", "skills", "shared", "spec"):
-        src = ROOT / rel
-        if src.is_dir():
-            shutil.copytree(src, target / rel)
-        elif src.exists():
-            shutil.copy2(src, target / rel)
+def _build_distribution(target: Path) -> dict[str, Any]:
+    result = _run([
+        sys.executable,
+        str(BUILDER),
+        "--output",
+        str(target),
+        "--format",
+        "json",
+    ], 0)
+    if not result["ok"]:
+        raise RuntimeError(f"runtime package build failed: {result['output']}")
+    return result
 
 
 def _parse(output: str) -> dict[str, Any]:
@@ -42,8 +47,8 @@ def _parse(output: str) -> dict[str, Any]:
         return {}
 
 
-def _checker(py: str, plugin_root: Path, expect: int) -> dict[str, Any]:
-    return _run([
+def _checker(py: str, plugin_root: Path, expect: int, *, runtime_package: bool = False) -> dict[str, Any]:
+    command = [
         py,
         str(CHECKER),
         "--plugin-root",
@@ -52,7 +57,10 @@ def _checker(py: str, plugin_root: Path, expect: int) -> dict[str, Any]:
         str(ROOT),
         "--format",
         "json",
-    ], expect)
+    ]
+    if runtime_package:
+        command.append("--runtime-package")
+    return _run(command, expect)
 
 
 def _assert_result(result: dict[str, Any], *, expected_codes: list[str] | None = None, require_ok_payload: bool | None = None) -> dict[str, Any]:
@@ -93,16 +101,18 @@ def run_suite() -> dict[str, Any]:
         results.append(repo_positive)
 
         dist = tmp_path / "dist"
-        _copy_distribution(dist)
-        copied_positive = _assert_result(_checker(py, dist, 0), require_ok_payload=True)
-        copied_positive["name"] = "materialized plugin distribution passes"
+        build_result = _build_distribution(dist)
+        build_result["name"] = "runtime package build passes"
+        results.append(build_result)
+        copied_positive = _assert_result(_checker(py, dist, 0, runtime_package=True), require_ok_payload=True)
+        copied_positive["name"] = "materialized runtime package passes"
         results.append(copied_positive)
 
         missing_skill = tmp_path / "missing_skill"
-        _copy_distribution(missing_skill)
+        _build_distribution(missing_skill)
         shutil.rmtree(missing_skill / "skills" / "analyzing-product-outbound-market")
         missing_skill_result = _assert_result(
-            _checker(py, missing_skill, 1),
+            _checker(py, missing_skill, 1, runtime_package=True),
             expected_codes=["plugin_distribution_skill_count_mismatch", "plugin_distribution_required_skill_missing"],
             require_ok_payload=False,
         )
@@ -110,10 +120,10 @@ def run_suite() -> dict[str, Any]:
         results.append(missing_skill_result)
 
         dead_ref = tmp_path / "dead_reference"
-        _copy_distribution(dead_ref)
+        _build_distribution(dead_ref)
         (dead_ref / "spec" / "10-product-outbound-market-analysis-contract.md").unlink()
         dead_ref_result = _assert_result(
-            _checker(py, dead_ref, 1),
+            _checker(py, dead_ref, 1, runtime_package=True),
             expected_codes=["plugin_distribution_reference_missing"],
             require_ok_payload=False,
         )
@@ -121,10 +131,10 @@ def run_suite() -> dict[str, Any]:
         results.append(dead_ref_result)
 
         missing_hook = tmp_path / "missing_hook"
-        _copy_distribution(missing_hook)
+        _build_distribution(missing_hook)
         (missing_hook / "hooks" / "codex-hooks.json").unlink()
         missing_hook_result = _assert_result(
-            _checker(py, missing_hook, 1),
+            _checker(py, missing_hook, 1, runtime_package=True),
             expected_codes=["plugin_distribution_manifest_hook_missing"],
             require_ok_payload=False,
         )
@@ -132,15 +142,38 @@ def run_suite() -> dict[str, Any]:
         results.append(missing_hook_result)
 
         missing_hook_command_target = tmp_path / "missing_hook_command_target"
-        _copy_distribution(missing_hook_command_target)
+        _build_distribution(missing_hook_command_target)
         (missing_hook_command_target / "hooks" / "session-start").unlink()
         missing_hook_command_target_result = _assert_result(
-            _checker(py, missing_hook_command_target, 1),
+            _checker(py, missing_hook_command_target, 1, runtime_package=True),
             expected_codes=["plugin_distribution_hook_command_target_missing"],
             require_ok_payload=False,
         )
         missing_hook_command_target_result["name"] = "missing hook command target is caught"
         results.append(missing_hook_command_target_result)
+
+        missing_runtime_script = tmp_path / "missing_runtime_script"
+        _build_distribution(missing_runtime_script)
+        (missing_runtime_script / "scripts" / "validate_product_market_analysis.py").unlink()
+        missing_runtime_script_result = _assert_result(
+            _checker(py, missing_runtime_script, 1, runtime_package=True),
+            expected_codes=["plugin_distribution_reference_missing"],
+            require_ok_payload=False,
+        )
+        missing_runtime_script_result["name"] = "missing Skill-referenced script is caught"
+        results.append(missing_runtime_script_result)
+
+        forbidden_tmp = tmp_path / "forbidden_tmp"
+        _build_distribution(forbidden_tmp)
+        (forbidden_tmp / "tmp").mkdir()
+        (forbidden_tmp / "tmp" / "old-uat.txt").write_text("must not ship", encoding="utf-8")
+        forbidden_tmp_result = _assert_result(
+            _checker(py, forbidden_tmp, 1, runtime_package=True),
+            expected_codes=["plugin_distribution_forbidden_path"],
+            require_ok_payload=False,
+        )
+        forbidden_tmp_result["name"] = "runtime package rejects historical tmp files"
+        results.append(forbidden_tmp_result)
 
     passed = sum(1 for item in results if item.get("ok"))
     failed = [item for item in results if not item.get("ok")]

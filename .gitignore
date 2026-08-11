@@ -3,5 +3,6 @@ __pycache__/
 *.pyo
 *.pyd
 .plugin-eval/
+dist/
 out/
 tmp/

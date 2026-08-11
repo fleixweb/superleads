@@ -1,5 +1,12 @@
 # Handoff
 
+## 2026-08-11 精简运行时插件包
+
+- 新增 `scripts/build_superleads_plugin_package.py`，默认将运行时工件生成到被 Git 忽略的 `dist/superleads/`。它只复制 `.codex-plugin`、`.claude-plugin/plugin.json`、`hooks`、`skills`、`scripts`、`shared` 和 `spec`，跳过 Python bytecode 与所有历史运行材料。
+- `scripts/check_superleads_plugin_distribution.py --runtime-package` 现在会检查所有 Skill 的 `../../scripts`、`../../shared`、`../../spec` 引用，并拒绝 `tmp/`、`evals/`、`tests/`、`docs/`、Git 元数据、字节码和 symlink。
+- 运行时工件实测为 122 个文件、1,821,708 bytes；分发 eval 扩为 9/9，覆盖缺少 Skill、spec、hook、hook target、Skill 引用脚本和误带 `tmp/` 的负例。
+- 源码 `tmp/stage5_chillys/` 保留且没有移动或删除。本机 marketplace 已指向 `dist/superleads`，并重装 `0.1.12` 到 `/home/fleix/.codex/plugins/cache/fleix/superleads/0.1.12`；实际缓存为 2.2 MB，严格检查确认不含 `tmp/`、`evals/`、`tests/` 或 `docs/`。
+
 ## 2026-08-11 Phase 1.2 独立真实 UAT 通过
 
 - 新运行目录：`/tmp/superleads-uat-electric-kettle-phase-1-2-20260811T050529Z`；场景为 220–240 V / 1500 W 普通电水壶、中国出口美国。

@@ -69,6 +69,24 @@ python3 scripts/preflight_capabilities.py --require-formal-research --format jso
 | 主 all 套件 | `python3 evals/run_evals.py --suite all` |
 | Markdown / 文档空白检查 | `git diff --check` |
 
+## 构建运行时插件包
+
+开发仓库的 `tmp/`、`evals/` 和验证文档不属于已安装插件。构建工件后，再让本地
+marketplace 指向 `dist/superleads/`；不要移动或删除源码 `tmp/stage5_chillys/`。
+
+```bash
+python3 scripts/build_superleads_plugin_package.py --format json
+python3 scripts/check_superleads_plugin_distribution.py --plugin-root dist/superleads --source-root . --runtime-package --format json
+ln -sfnT "$PWD/dist/superleads" "$HOME/plugins/superleads"
+codex plugin add superleads@fleix
+python3 scripts/check_superleads_plugin_distribution.py --plugin-root "$HOME/.codex/plugins/cache/fleix/superleads/0.1.12" --source-root . --runtime-package --format json
+```
+
+运行时工件包含 `.codex-plugin`、Claude manifest、`hooks`、`skills`、`scripts`、
+`shared` 和 `spec`。它不应包含 `tmp/`、`evals/`、`tests/`、`docs/` 或 Git 元数据。软链接
+命令只适用于 marketplace source 为 `$HOME/plugins/superleads` 的 Linux/macOS 本机布局；其它
+本地路径改为对应 source。缓存版本号应替换为本次 manifest 的版本。
+
 真实业务 UAT 中，claimed path 复核是固定验收步骤：最终声明的 Markdown 路径必须与同一个 graph 重新运行 `export_superleads_markdown.py` 得到的内容逐字一致；否则即使 exporter 曾返回 `ok=true`，该轮 UAT 也不通过。`run_superleads_markdown_delivery_evals.py` 已包含正向通过和后处理 mismatch 失败两条回归。
 
 紧凑证据笔记可从 `shared/references/product-market-evidence-notes.example.json` 起步。示例中的 `observation_id`、逐字摘录、来源事实、适用条件和边界必须替换为本轮实际已打开来源；不能原样复用示例文字或把搜索摘要填入该文件。重复矩阵行可先写进 `matrix_row_templates`，再由 `target_row_ids` 引用；一个事实需要落到多张表时可引用多个模板或使用 `rows`。`authority_notes` 只能写人工确认过的可见身份/适用范围事实，必须带逐字摘录；默认是 `candidate_needs_check`，不能根据 URL、域名或机构名称自动写成官方或已核实。

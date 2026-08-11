@@ -54,6 +54,26 @@ In the Codex app, use `/plugins` to add the same marketplace and install `superl
 
 Under the current distribution design, the ChatGPT app uses the same installed Codex environment and has no separate Superleads installation entry.
 
+### Lean Runtime Package For Local Development
+
+When a local marketplace points at the source repository, Codex copies development
+assets and historical UAT files into its cache. Before a local release or runtime
+test, build the lean package, point the local Superleads marketplace source at the
+artifact, then reinstall:
+
+```bash
+python3 scripts/build_superleads_plugin_package.py --format json
+python3 scripts/check_superleads_plugin_distribution.py --plugin-root dist/superleads --source-root . --runtime-package --format json
+ln -sfnT "$PWD/dist/superleads" "$HOME/plugins/superleads"
+codex plugin add superleads@fleix
+```
+
+The artifact contains only the runtime manifest, hooks, Skills, scripts, shared
+rules, and spec. It excludes `tmp/`, `evals/`, `tests/`, historical validation
+documents, and Git metadata. Source `tmp/stage5_chillys/` remains in place. The
+symlink command assumes a Linux/macOS local marketplace source at
+`$HOME/plugins/superleads`; adapt it to the registered local source path otherwise.
+
 ### Migrate From 0.1.2 Or Earlier
 
 Starting with `0.1.3`, the marketplace name changes from `superleads-dev` to `fleix`; the plugin identifier is now `superleads@fleix`. Existing Codex users need this one-time migration:
