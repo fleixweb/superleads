@@ -97,6 +97,30 @@ class SuperleadsUatInputPrecheckTest(unittest.TestCase):
         self.assertIn("uat_precheck_market_note_quote_not_in_observation", codes)
         self.assertIn("uat_precheck_product_attribute_not_projected", codes)
 
+    def test_bulk_search_log_candidate_links_fail_before_validator(self) -> None:
+        graph = json.loads((FIXTURES / "pass_default_discovery_candidate_pool.json").read_text(encoding="utf-8"))
+        graph["candidates"][0]["search_log_ids"] = []
+        graph["candidates"][1]["search_log_ids"] = []
+        graph["candidates"][1]["search_log_id"] = "missing_search_log"
+        graph["candidates"][2]["run_id"] = "different_run"
+        graph["search_logs"][0]["result_refs"] = [
+            ref for ref in graph["search_logs"][0]["result_refs"] if ref["candidate_id"] != "cand_gamma_001"
+        ]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write(Path(tmp), "bad-search-links.json", graph)
+            payload = self._run("--route", "bulk_customer_development", "--graph", str(path), expected=1)
+
+        codes = {item["code"] for item in payload["issues"]}
+        self.assertIn("uat_precheck_search_log_candidate_reverse_link_missing", codes)
+        self.assertIn("uat_precheck_search_web_candidate_without_search_log", codes)
+        self.assertIn("uat_precheck_search_web_candidate_binding_mismatch", codes)
+        self.assertIn("uat_precheck_search_log_candidate_result_ref_missing", codes)
+        self.assertEqual(
+            {item["focus"] for item in payload["issues"] if item["code"].startswith("uat_precheck_search_")},
+            {"search_log_candidate_links"},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

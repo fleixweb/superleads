@@ -1,5 +1,11 @@
 # Handoff
 
+## 2026-08-12 Bulk SearchLog-Candidate input precheck
+
+- `scripts/precheck_superleads_uat_input.py` now checks the existing SearchLog/Candidate discovery contract before the formal graph validator for both research routes: result refs resolve to Candidates, `search_web` Candidates point to an existing same-run SearchLog, Run/Brief/Plan bindings agree, and each linked Candidate appears in that SearchLog's `result_refs`.
+- Added focused regression coverage by mutating the existing Bulk pass graph; no new fixture, schema, validator, error-code family, or eval runner was added. The precheck remains read-only and does not search, open sources, mutate graphs, or produce claims.
+- Runtime plugin version bumped to `0.1.16`; `dist/superleads` and the installed cache must be rebuilt and compared before delivery. `tmp/stage5_chillys/` remains untouched.
+
 ## 2026-08-12 UAT 测量协议与联系人预检跟进
 
 - 复核 `/tmp/superleads-measure-*-20260812T000000Z` 后确认不是旧 graph/report 缓存：三个 RUN 的业务 gate 记录和文件时间实际分段发生；但三个 ledger 同时 `init`、同时打开 active interval、同时 `finalize`，因此三个 active/wall 耗时被重复计量，不能横向比较。固定清单现明确要求三条路线严格顺序执行，禁止 `T000000Z` 占位目录名。

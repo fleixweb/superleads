@@ -1,5 +1,11 @@
 # Tasks
 
+## 2026-08-12 已完成：Bulk SearchLog↔Candidate 预检
+
+- 在正式 validator 前补齐 SearchLog 与 Candidate 的双向发现链接预检：`result_refs` 必须解析到 Candidate；`search_web` Candidate 必须有现存同轮 SearchLog；Run/Brief/Plan 必须一致；Candidate 必须反向出现在关联 SearchLog 的 `result_refs` 中。
+- 复用既有 Bulk pass fixture 做坏图变体测试，没有新增 fixture、schema、正式 validator、错误码类别或 eval runner；预检仍为只读输入检查。
+- 插件版本 bump 到 `0.1.16`，需同步运行时包和本机缓存后再交付。
+
 ## 2026-08-12 已完成：UAT 测量协议与联系人预检跟进
 
 - 复核三条 2026-08-12 UAT：业务 gate 实际分段执行，不是缓存复用；但账本同时启动/结束，active/wall 时间不可横向比较。固定清单已要求严格顺序运行并禁止 `T000000Z` 占位目录名。

@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "shared" / "schemas"
 RESEARCH_ROUTES = {"bulk_customer_development", "customer_background_research"}
 ROUTES = (*sorted(RESEARCH_ROUTES), "product_outbound_market_analysis")
+SEARCH_LINK_FOCUS = "search_log_candidate_links"
 OPENED_ACCESS_STATUSES = {"opened", "captured", "extracted", "rendered"}
 MARKET_STATUSES = {
     "verified",
@@ -191,6 +192,89 @@ def _research_anchor_issues(graph: dict[str, Any]) -> list[dict[str, str]]:
     entities = _index(graph, "entities", "entity_id")
     claims = _index(graph, "claims", "claim_id")
     contact_points = _index(graph, "contact_points", "contact_id")
+
+    # SearchLog and Candidate form a bidirectional, same-run discovery link.
+    # Catch broken links before the full graph validator so UAT repair does not
+    # spend a cycle discovering a missing locator on the opposite side.
+    search_logs = _index(graph, "search_logs", "search_log_id")
+    candidates = _index(graph, "candidates", "candidate_id")
+    candidate_refs: dict[str, set[str]] = {}
+    for index, log in enumerate(_items(graph, "search_logs")):
+        log_id = str(log.get("search_log_id") or "")
+        path = f"search_logs[{index}]"
+        for ref_index, ref in enumerate(as_list(log.get("result_refs"))):
+            ref_path = f"{path}.result_refs[{ref_index}]"
+            if not isinstance(ref, dict) or not has_text(ref.get("candidate_id")):
+                continue
+            candidate_id = str(ref.get("candidate_id"))
+            candidate = candidates.get(candidate_id)
+            if candidate is None:
+                _append(issues, seen, _issue(
+                    "uat_precheck_search_log_candidate_missing",
+                    "SearchLog result_refs must point to an existing Candidate",
+                    f"{ref_path}.candidate_id",
+                    severity="major",
+                    focus=SEARCH_LINK_FOCUS,
+                ))
+                continue
+            candidate_refs.setdefault(candidate_id, set()).add(log_id)
+            linked_log_ids = {
+                str(raw) for raw in ([candidate.get("search_log_id")] if has_text(candidate.get("search_log_id")) else [])
+            } | {
+                str(raw) for raw in as_list(candidate.get("search_log_ids")) if has_text(raw)
+            }
+            if candidate.get("discovery_method") == "search_web" and log_id not in linked_log_ids:
+                _append(issues, seen, _issue(
+                    "uat_precheck_search_log_candidate_reverse_link_missing",
+                    "SearchLog candidate ref must agree with Candidate.search_log_id/search_log_ids",
+                    f"{ref_path}.candidate_id",
+                    focus=SEARCH_LINK_FOCUS,
+                ))
+
+    for index, candidate in enumerate(_items(graph, "candidates")):
+        if candidate.get("discovery_method") != "search_web":
+            continue
+        path = f"candidates[{index}]"
+        candidate_id = str(candidate.get("candidate_id") or "")
+        linked_log_ids = {
+            str(raw) for raw in ([candidate.get("search_log_id")] if has_text(candidate.get("search_log_id")) else [])
+        } | {
+            str(raw) for raw in as_list(candidate.get("search_log_ids")) if has_text(raw)
+        }
+        if not linked_log_ids:
+            _append(issues, seen, _issue(
+                "uat_precheck_search_web_candidate_without_search_log",
+                "search_web Candidate requires a formal same-run SearchLog",
+                f"{path}.search_log_id",
+                focus=SEARCH_LINK_FOCUS,
+            ))
+            continue
+        matching_logs = [search_logs[log_id] for log_id in linked_log_ids if log_id in search_logs]
+        if not matching_logs:
+            _append(issues, seen, _issue(
+                "uat_precheck_search_web_candidate_without_search_log",
+                "search_web Candidate requires an existing same-run SearchLog",
+                path,
+                focus=SEARCH_LINK_FOCUS,
+            ))
+            continue
+        if not any(
+            all(candidate.get(field) == log.get(field) for field in ("run_id", "brief_id", "plan_id"))
+            for log in matching_logs
+        ):
+            _append(issues, seen, _issue(
+                "uat_precheck_search_web_candidate_binding_mismatch",
+                "search_web Candidate Run/Brief/Plan must match at least one linked SearchLog",
+                path,
+                focus=SEARCH_LINK_FOCUS,
+            ))
+        if not candidate_refs.get(candidate_id, set()).intersection(linked_log_ids):
+            _append(issues, seen, _issue(
+                "uat_precheck_search_log_candidate_result_ref_missing",
+                "search_web Candidate must appear in at least one linked SearchLog result_refs",
+                path,
+                focus=SEARCH_LINK_FOCUS,
+            ))
 
     for index, evidence in enumerate(_items(graph, "claim_evidence")):
         path = f"claim_evidence[{index}]"
@@ -609,7 +693,13 @@ def main() -> int:
             "does_not_search_web": True,
             "does_not_open_sources": True,
             "does_not_mutate_graph": True,
-            "focuses": ["source_literal_anchors", "contact_association", "enum_values", "product_attribute_projection"],
+            "focuses": [
+                "source_literal_anchors",
+                "contact_association",
+                "search_log_candidate_links",
+                "enum_values",
+                "product_attribute_projection",
+            ],
             "issue_count": len(issues),
             "issues": issues,
         }
