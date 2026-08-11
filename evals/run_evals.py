@@ -28,6 +28,8 @@ MARKDOWN_DELIVERY_EVALS = ROOT / "evals" / "run_superleads_markdown_delivery_eva
 CUSTOMER_BACKGROUND_EVALS = ROOT / "evals" / "run_customer_background_research_evals.py"
 PLUGIN_DISTRIBUTION_EVALS = ROOT / "evals" / "run_superleads_plugin_distribution_evals.py"
 PRODUCT_MARKET_EVIDENCE_COMPILER_TEST = ROOT / "tests" / "test_product_market_evidence_compiler.py"
+UAT_MEASUREMENT_TEST = ROOT / "tests" / "test_superleads_uat_measurement.py"
+UAT_INPUT_PRECHECK_TEST = ROOT / "tests" / "test_superleads_uat_input_precheck.py"
 MODE_TO_STATUS = {
     "initial": "initial_lead_list",
     "standard": "standard_development_list",
@@ -677,6 +679,20 @@ def add_static_suite_tests(py: str, tests: list[tuple[str, list[str], int, list[
         tests.append((
             "product market evidence compiler suite",
             [py, "-m", "unittest", "tests/test_product_market_evidence_compiler.py", "-v"],
+            0,
+            [],
+        ))
+    if UAT_MEASUREMENT_TEST.exists():
+        tests.append((
+            "real-business UAT measurement ledger suite",
+            [py, "-m", "unittest", "tests/test_superleads_uat_measurement.py", "-v"],
+            0,
+            [],
+        ))
+    if UAT_INPUT_PRECHECK_TEST.exists():
+        tests.append((
+            "real-business UAT input precheck suite",
+            [py, "-m", "unittest", "tests/test_superleads_uat_input_precheck.py", "-v"],
             0,
             [],
         ))

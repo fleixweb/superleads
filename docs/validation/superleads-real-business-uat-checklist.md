@@ -10,6 +10,85 @@ UAT = User Acceptance Testing，即用户验收测试。这里特指：用真实
 
 凡是真实业务 UAT 声称完成正式 Markdown 交付，都必须把 claimed path 复核作为固定验收步骤。只看到 exporter `ok=true` 不够；还必须证明最终报给用户的 Markdown 路径，和同一个 graph 重新导出的 canonical Markdown 逐字一致。
 
+## 固定测量账本
+
+每轮真实 UAT 在研究开始前必须初始化独立运行目录。测量器只记录过程和
+原始 gate 结果，不替代 `preflight_capabilities.py`、路线 validator、audit 或 exporter。
+它解决的是“最终修正后通过”被误说成“首遍通过”、Git 空输出换行误判、以及
+墙钟耗时混入等待时间的问题。
+
+```bash
+python3 scripts/measure_superleads_uat.py init \
+  --run-dir "$RUN_DIR" \
+  --route product_outbound_market_analysis \
+  --token-usage-availability unavailable \
+  --format json
+```
+
+只有宿主实际提供 input/output/total token usage 或其可读取日志时，才可把
+`--token-usage-availability` 写为 `available` 并记录证据路径；不得用静态 token
+估算、文件行数或墙钟耗时替代真实 token。
+
+在实际做研究、录入或修复时开始/结束活动区间；等待页面、等待用户或会话中断不计入
+`active_elapsed_seconds`，但仍会留在 `wall_elapsed_seconds` 中。
+
+```bash
+python3 scripts/measure_superleads_uat.py active-start --run-dir "$RUN_DIR" --note "公开来源采集" --format json
+python3 scripts/measure_superleads_uat.py active-stop --run-dir "$RUN_DIR" --note "采集完成" --format json
+```
+
+每个真实 gate 完成后记录其原始 JSON 或日志路径。失败必须按实际原因分类：
+`capability_adapter`、`command_invocation`、`graph_contract`、`evidence_contract`、
+`exporter_completeness`、`measurement_protocol` 或 `other`。不能把业务资料缺口、
+来源受限或未执行模块伪装成工具失败。
+
+在正式 validator 前必须先运行输入预检。它不是 validator 的替代品：只提前定位
+来源原文锚定、联系人关联、枚举和产品属性可见投影错误。产品市场使用紧凑 notes 时，
+先对 `graph + notes` 预检，再编译，并对编译图谱再预检一次。
+
+```bash
+python3 scripts/precheck_superleads_uat_input.py \
+  --route "$ROUTE" --graph "$GRAPH" --format json
+
+python3 scripts/measure_superleads_uat.py record-gate \
+  --run-dir "$RUN_DIR" --gate input_precheck --result passed \
+  --artifact "$RUN_DIR/input_precheck.json" --format json
+```
+
+```bash
+python3 scripts/measure_superleads_uat.py record-gate \
+  --run-dir "$RUN_DIR" --gate preflight --result passed \
+  --artifact "$RUN_DIR/preflight_result.json" --format json
+
+python3 scripts/measure_superleads_uat.py record-gate \
+  --run-dir "$RUN_DIR" --gate validator --result failed \
+  --failure-class graph_contract --artifact "$RUN_DIR/validator-attempt-1.json" \
+  --format json
+```
+
+最后由测量器原样执行 `git status --porcelain=v1` 并以字节比较 `git-before.txt` /
+`git-after.txt`。不能再用 `echo`、手工换行或摘要文本比较 Git 状态。
+
+```bash
+python3 scripts/measure_superleads_uat.py finalize \
+  --run-dir "$RUN_DIR" \
+  --required-gate preflight \
+  --required-gate input_precheck \
+  --required-gate validator \
+  --required-gate audit \
+  --required-gate markdown_export \
+  --required-gate workbook_export \
+  --required-gate user_visible \
+  --required-gate claimed_path \
+  --format json
+```
+
+单客背调没有 audit gate 时不传 `--required-gate audit`。`finalize` 在任何必需 gate
+最终未通过、活动区间未关闭或 Git 快照不一致时返回非零，但仍会写
+`$RUN_DIR/uat_metrics.json`。该文件中的 `first_pass_success`、
+`repair_cycle_count`、`active_elapsed_seconds`、`wall_elapsed_seconds` 与
+`first_pass_failure_classes` 是跨路线比较的唯一测量口径。
+
 ## UAT 必交字段
 
 真实业务 UAT 交付记录至少包含：
@@ -21,6 +100,8 @@ UAT = User Acceptance Testing，即用户验收测试。这里特指：用真实
 | Markdown path | 最终声明给用户的 Markdown 报告路径 |
 | exporter result | `export_superleads_markdown.py` 的 JSON 结果，必须 `ok=true` / `issue_count=0` |
 | claimed path check result | `check_superleads_formal_markdown_delivery.py --claimed-graph ... --claimed-markdown ...` 的 JSON 结果，必须 `ok=true` / `issue_count=0` |
+| input precheck result | `precheck_superleads_uat_input.py` 的 JSON 结果，必须 `ok=true` / `issue_count=0`；产品市场若使用 compact notes，保存编译前与编译后两份结果 |
+| UAT metrics JSON | `measure_superleads_uat.py finalize` 写出的 `$RUN_DIR/uat_metrics.json`；必须说明首遍状态、修复轮数、活动/墙钟耗时、Git 一致性与 token 可观测性 |
 
 没有 graph JSON 的搜索笔记、截图整理、手写表格或临时 Markdown，只能算 research draft / source-collection note，不能算正式 UAT 通过。
 

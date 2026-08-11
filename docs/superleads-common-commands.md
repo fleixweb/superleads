@@ -58,6 +58,11 @@ python3 scripts/preflight_capabilities.py --require-formal-research --format jso
 | 三路线 Markdown 交付器 + claimed path UAT 回归 | `python3 evals/run_superleads_markdown_delivery_evals.py --suite all` |
 | 正式 Skill 调用 Markdown 冒烟检查 | `python3 scripts/check_superleads_formal_markdown_delivery.py --fixture shared/references/default-discovery-reference.example.json` |
 | 真实业务 UAT claimed path 固定验收 | `python3 scripts/check_superleads_formal_markdown_delivery.py --claimed-graph graph.json --claimed-markdown report.md --claimed-route auto --format json` |
+| 真实业务 UAT 测量账本初始化 | `python3 scripts/measure_superleads_uat.py init --run-dir /tmp/superleads-uat-example --route bulk_customer_development --token-usage-availability unknown --format json` |
+| 真实业务 UAT 结构输入预检 | `python3 scripts/precheck_superleads_uat_input.py --route bulk_customer_development --graph graph.json --format json` |
+| 产品市场紧凑 notes 预检 | `python3 scripts/precheck_superleads_uat_input.py --route product_outbound_market_analysis --graph source-observations.json --notes compact-evidence-notes.json --format json` |
+| 真实业务 UAT 记录一个 gate | `python3 scripts/measure_superleads_uat.py record-gate --run-dir /tmp/superleads-uat-example --gate validator --result passed --artifact /tmp/superleads-uat-example/validator.json --format json` |
+| 真实业务 UAT 汇总首遍、修复、活动耗时和 Git 快照 | `python3 scripts/measure_superleads_uat.py finalize --run-dir /tmp/superleads-uat-example --required-gate preflight --required-gate input_precheck --required-gate validator --required-gate markdown_export --required-gate workbook_export --required-gate user_visible --required-gate claimed_path --format json` |
 | 用户可见输出静态 eval | `python3 evals/run_superleads_user_visible_output_evals.py --suite all` |
 | 产品出海市场分析 eval | `python3 evals/run_product_market_analysis_evals.py --suite all` |
 | Source Plan eval | `python3 evals/run_product_market_source_plan_evals.py --suite all` |
@@ -79,7 +84,7 @@ python3 scripts/build_superleads_plugin_package.py --format json
 python3 scripts/check_superleads_plugin_distribution.py --plugin-root dist/superleads --source-root . --runtime-package --format json
 ln -sfnT "$PWD/dist/superleads" "$HOME/plugins/superleads"
 codex plugin add superleads@fleix
-python3 scripts/check_superleads_plugin_distribution.py --plugin-root "$HOME/.codex/plugins/cache/fleix/superleads/0.1.12" --source-root . --runtime-package --format json
+python3 scripts/check_superleads_plugin_distribution.py --plugin-root "$HOME/.codex/plugins/cache/fleix/superleads/0.1.14" --source-root . --runtime-package --format json
 ```
 
 运行时工件包含 `.codex-plugin`、Claude manifest、`hooks`、`skills`、`scripts`、

@@ -1,5 +1,19 @@
 # Tasks
 
+## 2026-08-11 已完成：真实 UAT 结构化输入预检
+
+- 新增只读 `scripts/precheck_superleads_uat_input.py`，覆盖三条正式路线，优先拦截来源逐字锚定、联系人关联、枚举值和产品属性投影错误；输出 `uat_precheck_*` 诊断，不替代正式 validator / audit。
+- 产品市场紧凑 notes 在编译前检查 Observation 打开状态、逐字摘录和 notes 枚举；编译后检查 EvidenceCard 来源引用以及“用户提供产品资料”是否投影到“产品档案与触发项”。不要求旧 source-derived 属性逐行投影，避免误伤既有合法 fixture。
+- `using-superleads`、产品市场 Skill、UAT checklist、常用命令和既有静态 suite 已接入 `input_precheck` gate；没有新增 schema、validator 脚本、错误码或 eval runner。
+- 插件 manifest 已 bump 到 `0.1.14`；runtime package 已构建为 124 files、1,867,191 bytes，并与 `/home/fleix/.codex/plugins/cache/fleix/superleads/0.1.14` `diff -qr` 无差异；源码和缓存严格分发检查、插件分发 eval 9/9 均通过。
+- 已验证：预检 / 测量 / 编译器单测 13/13；产品市场 75/75；单客背调 7/7；Markdown 交付 9/9；用户可见输出 15/15；`run_evals.py --suite default` 128/128、`--suite all` 721/721、`--suite deep` 678/678；两项 Skill quick validation 和正式 Markdown 冒烟通过。未运行新的联网真实 UAT。
+
+## 2026-08-11 已完成：真实 UAT 测量账本
+
+- 新增 `scripts/measure_superleads_uat.py` 与 3 条回归：记录精确 Git 快照、活动/墙钟耗时、gate 首遍与最终结果、失败分类、修复轮数和 token 可观测性；不执行搜索、不替代任何业务 validator 或 audit。
+- 固定 UAT 清单要求新窗口先 `init`，记录实际 preflight / validator / audit（适用时）/ Markdown / workbook / user-visible / claimed-path，再 `finalize`。Git 快照不一致、漏 gate 或未关闭活动区间均为严格 UAT 测量失败。
+- `using-superleads` Skill、常用命令、运行时包和插件缓存当前已同步至 `0.1.14`（124 files、1,867,191 bytes）；本条保留的 measurement 3/3、default 127/127、all 720/720、deep 677/677、plugin distribution 9/9 是上一轮 `0.1.13` 历史记录，不把历史指标伪造成当前版本结果。
+
 ## 2026-08-11 已完成：精简运行时插件包
 
 - 新增 `scripts/build_superleads_plugin_package.py`：构建 Git 忽略的 `dist/superleads/`，仅复制 Codex/Claude manifest、hooks、skills、scripts、shared 与 spec；`tmp/`、evals、tests、docs、Git 元数据和 Python bytecode 不进入运行时包。

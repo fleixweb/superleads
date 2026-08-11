@@ -1,5 +1,21 @@
 # Handoff
 
+## 2026-08-11 真实 UAT 结构化输入预检
+
+- 新增 `scripts/precheck_superleads_uat_input.py`，在正式路线 validator 前对批量客户开发、单客背调和产品出海市场分析做只读结构预检；范围固定为来源逐字锚定、联系人关联、枚举值和产品属性投影，不搜索、不打开来源、不修改 graph，也不产生业务结论。
+- 研究图谱预检复用现有 schema、原文锚定和联系人归一化 helper；产品市场同时支持编译前的紧凑 notes 检查和编译后的 EvidenceCard 引用 / 用户提供属性投影检查。正式 validator 和 audit 仍是最终门禁。
+- `using-superleads`、`analyzing-product-outbound-market`、UAT checklist 和常用命令已接入 `input_precheck` gate；预检回归已接入既有 `evals/run_evals.py`，没有新增 eval runner 或业务错误码。
+- 插件 manifest、runtime package 和本机缓存均为 `0.1.14`；`dist/superleads` 与 `/home/fleix/.codex/plugins/cache/fleix/superleads/0.1.14` 已 `diff -qr` 无差异，均为 124 files、1,867,191 bytes。`tmp/stage5_chillys/` 未修改。
+- 验证：预检 / 测量 / 编译器单测 13/13；产品市场 75/75；单客背调 7/7；Markdown 交付 9/9；用户可见输出 15/15；default 128/128；all 721/721；deep 678/678；插件分发 9/9；两项 Skill quick validation、正式 Markdown 冒烟和源码/缓存严格分发检查均通过。未运行新的联网真实 UAT。
+
+## 2026-08-11 真实 UAT 测量账本
+
+- 新增 `scripts/measure_superleads_uat.py`：真实 UAT 在独立 `/tmp` 目录执行 `init`、`active-start` / `active-stop`、`record-gate` 和 `finalize`。它不替代已有 preflight、validator、audit 或 exporter，只记录其实际结果。
+- 初始与最终 Git 状态均由脚本直接写入 `git status --porcelain=v1` 原始字节，并做字节级比较；杜绝零字节状态被手工换行误判。汇总输出 `first_pass_success`、`repair_cycle_count`、`first_pass_failure_classes`、`active_elapsed_seconds`、`wall_elapsed_seconds`、`git_unchanged` 和 token 可观测性。
+- `first_pass_success` 只在每个必需 gate 的第一次记录均为 `passed` 时成立；任何 gate 缺失、最终未通过、未关闭的活动区间或 Git 快照不一致都会令 `finalize` 非零，同时保留 `$RUN_DIR/uat_metrics.json`。
+- 固定 UAT 清单、常用命令和 `using-superleads` Skill 已接入该测量器。上一轮测量记录使用插件版本 `0.1.13`，运行时包 / 本机缓存为 123 文件、1,837,379 bytes；该数值是历史记录，当前 `0.1.14` 状态见本节上方，未将历史内容伪造成新版本。
+- 验证：测量器 3/3、default 127/127、all 720/720、deep 677/677、插件分发 9/9、Skill quick validation、统一 Markdown 冒烟及 `git diff --check` 通过。未改三条路线的业务规则或 `tmp/stage5_chillys/`。
+
 ## 2026-08-11 精简运行时插件包
 
 - 新增 `scripts/build_superleads_plugin_package.py`，默认将运行时工件生成到被 Git 忽略的 `dist/superleads/`。它只复制 `.codex-plugin`、`.claude-plugin/plugin.json`、`hooks`、`skills`、`scripts`、`shared` 和 `spec`，跳过 Python bytecode 与所有历史运行材料。

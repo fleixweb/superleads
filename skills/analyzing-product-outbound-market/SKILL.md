@@ -26,7 +26,9 @@ Read these only as needed:
 - `../../spec/29-product-outbound-market-analysis-certification-requirement-calibration.md` when certification, test, registration, labeling, packaging, SDS, UN38.3, or compliance-file requirements appear.
 - Run `../../scripts/preflight_capabilities.py --require-formal-research` before a formal analysis. It requires `search.web` plus `source.open`, `browser.render`, or `document.extract`; if blocked, give the prescribed switch-environment message and do not issue a market report or source plan as a substitute delivery.
 - Plan source collection with `../../scripts/plan_product_market_sources.py` before any real search/open step. Its output is `source_plan_only`, an internal execution artifact rather than evidence or a formal user delivery.
+- Before compiling compact notes, run `../../scripts/precheck_superleads_uat_input.py --route product_outbound_market_analysis --graph source-observations.json --notes compact-evidence-notes.json --format json`. It catches invalid compact enums, missing/opened Observation bindings, and non-verbatim source excerpts without running the formal validator.
 - After real sources have been opened and recorded as Source / Observation, use `../../scripts/compile_product_market_evidence.py` to compile concise evidence notes into the existing EvidenceCard / MatrixRow / Gap graph objects. It does not search, open URLs, decide authority, or promote a status.
+- Run the same precheck on `compiled-market-graph.json` before the formal validator. That second pass catches broken EvidenceCard source refs and user-provided ProductAttribute values that would not appear in `产品档案与触发项`; it does not replace validation or audit.
 - Validate and audit existing graphs with `../../scripts/validate_product_market_analysis.py` and `../../scripts/audit_product_market_analysis.py`.
 - Export reviewed graphs with `../../scripts/export_product_market_workbook.py`.
 
@@ -141,6 +143,12 @@ python3 scripts/compile_product_market_evidence.py \
   --output compiled-market-graph.json \
   --format json
 ```
+
+Run the UAT input precheck before this compiler command with `--notes`, then
+again after compilation without `--notes`. The precheck is not evidence review
+and cannot turn an input into a valid report; its only role is to surface the
+common quote, enum, Source/Observation, and user-attribute projection mistakes
+before the formal validator.
 
 The compiler rejects a missing, restricted, or unopened Observation and a
 quote that is not present in the cited original excerpt. It only carries the
