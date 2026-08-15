@@ -82,6 +82,35 @@ def _sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def _sha256_file(path: Path) -> str | None:
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+def claimed_path_attestation(
+    *,
+    graph_arg: str,
+    markdown_arg: str,
+    route: str,
+    graph: Path,
+    markdown: Path,
+    issues: list[dict[str, str]],
+) -> dict[str, Any]:
+    """Describe the claimed-path result without exposing the fresh temp export."""
+    return {
+        "graph": graph_arg,
+        "markdown": markdown_arg,
+        "requested_route": route,
+        "ok": not issues,
+        "issue_count": len(issues),
+        "issues": issues,
+        "graph_sha256": _sha256_file(graph),
+        "markdown_sha256": _sha256_file(markdown),
+    }
+
+
 def check_skill_instructions(cache_root: Path, *, skip_cache: bool) -> list[dict[str, str]]:
     issues: list[dict[str, str]] = []
     for rel, required_snippets in SKILL_FILE_SNIPPETS.items():
@@ -272,8 +301,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fixture", type=Path, default=DEFAULT_FIXTURE)
     parser.add_argument("--cache-root", type=Path, default=DEFAULT_CACHE_ROOT)
-    parser.add_argument("--claimed-graph", type=Path, help="Graph JSON path claimed by a real formal-call UAT run; pair with --claimed-markdown for the fixed UAT gate")
-    parser.add_argument("--claimed-markdown", type=Path, help="Markdown path claimed by a real formal-call UAT run; must exactly match a fresh exporter run from --claimed-graph")
+    parser.add_argument("--claimed-graph", help="Graph JSON path claimed by a real formal-call UAT run; pair with --claimed-markdown for the fixed UAT gate")
+    parser.add_argument("--claimed-markdown", help="Markdown path claimed by a real formal-call UAT run; must exactly match a fresh exporter run from --claimed-graph")
     parser.add_argument("--claimed-route", choices=("auto", "bulk_customer_development", "customer_background_research", "product_outbound_market_analysis"), default="auto")
     parser.add_argument("--skip-cache", action="store_true")
     parser.add_argument("--format", choices=("json", "text"), default="json")
@@ -286,41 +315,59 @@ def main() -> int:
     issues.extend(markdown_issues)
     background_issues, background_payload = check_customer_background_export_support()
     issues.extend(background_issues)
+    claimed_attestation: dict[str, Any] | None = None
     if args.claimed_graph or args.claimed_markdown:
         if not (args.claimed_graph and args.claimed_markdown):
             issues.append(_issue("formal_markdown_claimed_pair_incomplete", "--claimed-graph and --claimed-markdown must be provided together"))
         else:
-            claimed_graph = args.claimed_graph if args.claimed_graph.is_absolute() else ROOT / args.claimed_graph
-            claimed_markdown = args.claimed_markdown if args.claimed_markdown.is_absolute() else ROOT / args.claimed_markdown
-            issues.extend(check_claimed_export_output(claimed_graph, claimed_markdown, route=args.claimed_route))
+            claimed_graph_arg = args.claimed_graph
+            claimed_markdown_arg = args.claimed_markdown
+            claimed_graph_path = Path(claimed_graph_arg)
+            claimed_markdown_path = Path(claimed_markdown_arg)
+            claimed_graph = claimed_graph_path if claimed_graph_path.is_absolute() else ROOT / claimed_graph_path
+            claimed_markdown = claimed_markdown_path if claimed_markdown_path.is_absolute() else ROOT / claimed_markdown_path
+            claimed_issues = check_claimed_export_output(claimed_graph, claimed_markdown, route=args.claimed_route)
+            issues.extend(claimed_issues)
+            claimed_attestation = claimed_path_attestation(
+                graph_arg=claimed_graph_arg,
+                markdown_arg=claimed_markdown_arg,
+                route=args.claimed_route,
+                graph=claimed_graph,
+                markdown=claimed_markdown,
+                issues=claimed_issues,
+            )
     payload: dict[str, Any] = {
         "ok": not issues,
         "issue_count": len(issues),
         "issues": issues,
-        "fixture": str(fixture),
-        "cache_root": None if args.skip_cache else str(args.cache_root),
-        "export": {
-            "ok": bool(export_payload.get("ok")),
-            "returncode": export_payload.get("returncode"),
-            "route": export_payload.get("route"),
-            "stage": export_payload.get("stage"),
-            "issue_count": export_payload.get("issue_count"),
+        "smoke_check": {
+            "fixture": str(fixture),
+            "cache_root": None if args.skip_cache else str(args.cache_root),
+            "export": {
+                "ok": bool(export_payload.get("ok")),
+                "returncode": export_payload.get("returncode"),
+                "route": export_payload.get("route"),
+                "stage": export_payload.get("stage"),
+                "issue_count": export_payload.get("issue_count"),
+            },
+            "background_export": {
+                "ok": bool(background_payload.get("ok")),
+                "returncode": background_payload.get("returncode"),
+                "route": background_payload.get("route"),
+                "stage": background_payload.get("stage"),
+                "issue_count": background_payload.get("issue_count"),
+            },
+            "northshore_row": _line_containing(text, "Northshore Drinkware Distributors"),
         },
-        "background_export": {
-            "ok": bool(background_payload.get("ok")),
-            "returncode": background_payload.get("returncode"),
-            "route": background_payload.get("route"),
-            "stage": background_payload.get("stage"),
-            "issue_count": background_payload.get("issue_count"),
-        },
-        "northshore_row": _line_containing(text, "Northshore Drinkware Distributors"),
     }
+    if claimed_attestation is not None:
+        payload["claimed_path_attestation"] = claimed_attestation
     if args.format == "json":
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:
         if payload["ok"]:
             print("formal Markdown delivery check passed")
-            print(payload["northshore_row"])
+            print(payload["smoke_check"]["northshore_row"])
         else:
             for issue in issues:
                 print(f"{issue['code']}: {issue['message']}")

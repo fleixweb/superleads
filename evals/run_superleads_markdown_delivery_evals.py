@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import subprocess
@@ -44,6 +45,41 @@ def _parse_json_output(output: str) -> dict[str, Any]:
         return payload if isinstance(payload, dict) else {}
     except Exception:
         return {}
+
+
+def _claimed_path_attestation_problems(
+    payload: dict[str, Any],
+    *,
+    graph: str,
+    markdown: str,
+    route: str,
+    expected_ok: bool,
+    expected_issue_codes: list[str],
+    graph_sha256: str,
+    markdown_sha256: str,
+) -> list[str]:
+    attestation = payload.get("claimed_path_attestation")
+    if not isinstance(attestation, dict):
+        return ["missing claimed_path_attestation"]
+    problems: list[str] = []
+    expected_values = {
+        "graph": graph,
+        "markdown": markdown,
+        "requested_route": route,
+        "ok": expected_ok,
+        "issue_count": len(expected_issue_codes),
+        "graph_sha256": graph_sha256,
+        "markdown_sha256": markdown_sha256,
+    }
+    for key, expected in expected_values.items():
+        if attestation.get(key) != expected:
+            problems.append(f"attestation {key} expected {expected!r} got {attestation.get(key)!r}")
+    issue_codes = [item.get("code") for item in attestation.get("issues", []) if isinstance(item, dict)]
+    if issue_codes != expected_issue_codes:
+        problems.append(f"attestation issue codes expected {expected_issue_codes!r} got {issue_codes!r}")
+    if "expected.md" in json.dumps(attestation, ensure_ascii=False):
+        problems.append("attestation exposed the temporary exporter path")
+    return problems
 
 
 def _validate_generated_markdown(py: str, markdown: Path, route: str, case: dict[str, Any]) -> dict[str, Any]:
@@ -107,14 +143,17 @@ def _case(py: str, case: dict[str, Any], tmp_path: Path, index: int) -> dict[str
 
 
 def _claimed_path_positive_case(py: str, tmp_path: Path) -> dict[str, Any]:
-    fixture = ROOT / "evals" / "fixtures" / "pass_default_discovery_candidate_pool.json"
+    fixture = ROOT / "evals" / "fixtures" / "market_pass_xingheng_minimum_boundary.json"
     out = tmp_path / "claimed_path_uat_positive.md"
+    graph_arg = str(fixture.relative_to(ROOT))
+    markdown_arg = str(out.relative_to(ROOT))
+    route = "product_outbound_market_analysis"
     delivery = run([
         py,
         str(DELIVERER),
         str(fixture),
         "--route",
-        "bulk_customer_development",
+        route,
         "--output",
         str(out),
         "--format",
@@ -125,11 +164,11 @@ def _claimed_path_positive_case(py: str, tmp_path: Path) -> dict[str, Any]:
         str(FORMAL_CHECKER),
         "--skip-cache",
         "--claimed-graph",
-        str(fixture),
+        graph_arg,
         "--claimed-markdown",
-        str(out),
+        markdown_arg,
         "--claimed-route",
-        "auto",
+        route,
         "--format",
         "json",
     ], 0) if out.exists() else {"ok": False, "output": "missing exported Markdown"}
@@ -137,6 +176,16 @@ def _claimed_path_positive_case(py: str, tmp_path: Path) -> dict[str, Any]:
     problems: list[str] = []
     if parsed and (parsed.get("ok") is not True or parsed.get("issue_count") != 0):
         problems.append(f"claimed path check payload not clean: ok={parsed.get('ok')} issue_count={parsed.get('issue_count')}")
+    problems.extend(_claimed_path_attestation_problems(
+        parsed,
+        graph=graph_arg,
+        markdown=markdown_arg,
+        route=route,
+        expected_ok=True,
+        expected_issue_codes=[],
+        graph_sha256=hashlib.sha256(fixture.read_bytes()).hexdigest(),
+        markdown_sha256=hashlib.sha256(out.read_bytes()).hexdigest() if out.exists() else "",
+    ))
     if problems:
         claimed_check["ok"] = False
         claimed_check["returncode"] = 1
@@ -151,15 +200,18 @@ def _claimed_path_positive_case(py: str, tmp_path: Path) -> dict[str, Any]:
 
 
 def _claimed_path_mismatch_case(py: str, tmp_path: Path) -> dict[str, Any]:
-    fixture = ROOT / "evals" / "fixtures" / "pass_default_discovery_candidate_pool.json"
+    fixture = ROOT / "evals" / "fixtures" / "market_pass_xingheng_minimum_boundary.json"
     original = tmp_path / "claimed_path_uat_original.md"
     mutated = tmp_path / "claimed_path_uat_mutated.md"
+    graph_arg = str(fixture.relative_to(ROOT))
+    markdown_arg = str(mutated.relative_to(ROOT))
+    route = "product_outbound_market_analysis"
     delivery = run([
         py,
         str(DELIVERER),
         str(fixture),
         "--route",
-        "bulk_customer_development",
+        route,
         "--output",
         str(original),
         "--format",
@@ -172,18 +224,34 @@ def _claimed_path_mismatch_case(py: str, tmp_path: Path) -> dict[str, Any]:
         str(FORMAL_CHECKER),
         "--skip-cache",
         "--claimed-graph",
-        str(fixture),
+        graph_arg,
         "--claimed-markdown",
-        str(mutated),
+        markdown_arg,
         "--claimed-route",
-        "auto",
+        route,
         "--format",
         "json",
     ], 1) if mutated.exists() else {"ok": False, "output": "missing mutated Markdown"}
-    if "formal_markdown_claimed_output_mismatch" not in str(claimed_check.get("output", "")):
+    parsed = _parse_json_output(str(claimed_check.get("output", "")))
+    top_level_issue_codes = [item.get("code") for item in parsed.get("issues", []) if isinstance(item, dict)]
+    if "formal_markdown_claimed_output_mismatch" not in top_level_issue_codes:
         claimed_check["ok"] = False
         claimed_check["returncode"] = 0
-        claimed_check["output"] += "\nclaimed path mismatch assertion failed: missing formal_markdown_claimed_output_mismatch"
+        claimed_check["output"] += "\nclaimed path mismatch assertion failed: top-level issues missing formal_markdown_claimed_output_mismatch"
+    problems = _claimed_path_attestation_problems(
+        parsed,
+        graph=graph_arg,
+        markdown=markdown_arg,
+        route=route,
+        expected_ok=False,
+        expected_issue_codes=["formal_markdown_claimed_output_mismatch"],
+        graph_sha256=hashlib.sha256(fixture.read_bytes()).hexdigest(),
+        markdown_sha256=hashlib.sha256(mutated.read_bytes()).hexdigest() if mutated.exists() else "",
+    )
+    if problems:
+        claimed_check["ok"] = False
+        claimed_check["returncode"] = 0
+        claimed_check["output"] += "\nclaimed path mismatch attestation assertion failed: " + "; ".join(problems)
     return {
         "name": "real UAT claimed path check rejects post-processed Markdown",
         "fixture": str(fixture.relative_to(ROOT)),
@@ -199,7 +267,7 @@ def main() -> int:
     args = parser.parse_args()
     py = sys.executable
     results: list[dict[str, Any]] = []
-    with tempfile.TemporaryDirectory() as tmp:
+    with tempfile.TemporaryDirectory(dir=ROOT) as tmp:
         tmp_path = Path(tmp)
         for index, case in enumerate(_load_cases(), start=1):
             results.append(_case(py, case, tmp_path, index))
