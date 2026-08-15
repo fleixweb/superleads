@@ -157,10 +157,12 @@ def _staged_artifact_path(run_dir: Path, gate: str, attempt: int, source: Path) 
 
 
 def _stage_artifact(run_dir: Path, gate: str, attempt: int, source: Path) -> dict[str, Any]:
+    if source.is_symlink():
+        raise ValueError(f"evidence artifact is missing or a symlink: {source}")
     source = source.resolve()
     artifacts_dir = (run_dir / ARTIFACTS_DIRECTORY).resolve()
-    if not source.exists() or source.is_symlink():
-        raise ValueError(f"evidence artifact is missing or a symlink: {source}")
+    if not source.exists():
+        raise ValueError(f"evidence artifact is missing: {source}")
     if source == run_dir.resolve() or _within(source, artifacts_dir):
         raise ValueError(f"refusing to stage the UAT directory or an existing staged artifact: {source}")
     destination = _staged_artifact_path(run_dir, gate, attempt, source)
@@ -191,31 +193,56 @@ def _git_head() -> str | None:
     return value or None
 
 
-def _capture_release_identity(run_dir: Path, manifest: Path, runtime_package: Path | None) -> dict[str, Any]:
+def _read_plugin_manifest(manifest: Path, *, label: str) -> tuple[Path, dict[str, Any], str, str]:
+    if manifest.is_symlink():
+        raise ValueError(f"{label} must be a readable regular file: {manifest}")
     manifest = manifest.resolve()
-    if not manifest.is_file() or manifest.is_symlink():
-        raise ValueError(f"plugin manifest must be a readable regular file: {manifest}")
+    if not manifest.is_file():
+        raise ValueError(f"{label} must be a readable regular file: {manifest}")
     try:
         manifest_payload = json.loads(manifest.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        raise ValueError(f"plugin manifest is not readable JSON: {manifest}") from exc
+        raise ValueError(f"{label} is not readable JSON: {manifest}") from exc
     name = manifest_payload.get("name") if isinstance(manifest_payload, dict) else None
     version = manifest_payload.get("version") if isinstance(manifest_payload, dict) else None
     if not isinstance(name, str) or not name or not isinstance(version, str) or not version:
-        raise ValueError("plugin manifest must contain non-empty string name and version")
+        raise ValueError(f"{label} must contain non-empty string name and version")
+    return manifest, manifest_payload, name, version
 
-    staged_manifest = run_dir / "plugin_manifest.json"
-    shutil.copy2(manifest, staged_manifest)
-    manifest_sha256, manifest_bytes = _sha256_file(staged_manifest)
+
+def _capture_release_identity(run_dir: Path, manifest: Path | None, runtime_package: Path | None) -> dict[str, Any]:
+    source_manifest = manifest or ROOT / ".codex-plugin" / "plugin.json"
+    source_manifest, source_payload, source_name, source_version = _read_plugin_manifest(
+        source_manifest,
+        label="plugin manifest",
+    )
+    identity_manifest = source_manifest
+    name = source_name
+    version = source_version
     runtime_descriptor: dict[str, Any] | None = None
     if runtime_package is not None:
-        runtime_package = runtime_package.resolve()
-        if not runtime_package.is_dir() or runtime_package.is_symlink():
+        if runtime_package.is_symlink():
             raise ValueError(f"runtime package must be a readable regular directory: {runtime_package}")
+        runtime_package = runtime_package.resolve()
+        if not runtime_package.is_dir():
+            raise ValueError(f"runtime package must be a readable regular directory: {runtime_package}")
+        runtime_manifest, runtime_payload, runtime_name, runtime_version = _read_plugin_manifest(
+            runtime_package / ".codex-plugin" / "plugin.json",
+            label="runtime package manifest",
+        )
+        if manifest is not None and source_payload != runtime_payload:
+            raise ValueError("plugin manifest must exactly match the runtime package manifest")
+        identity_manifest = runtime_manifest
+        name = runtime_name
+        version = runtime_version
         _directory_inventory(runtime_package)
         staged_runtime_package = run_dir / RUNTIME_PACKAGE_DIRECTORY
         shutil.copytree(runtime_package, staged_runtime_package, symlinks=False)
         runtime_descriptor = _artifact_descriptor(run_dir, staged_runtime_package)
+
+    staged_manifest = run_dir / "plugin_manifest.json"
+    shutil.copy2(identity_manifest, staged_manifest)
+    manifest_sha256, manifest_bytes = _sha256_file(staged_manifest)
 
     identity = {
         "schema_version": 1,
@@ -267,7 +294,7 @@ def _capture_git_status(run_dir: Path, name: str) -> dict[str, Any]:
     path = run_dir / name
     path.write_bytes(content)
     return {
-        "path": str(path),
+        "path": name,
         "byte_count": len(content),
         "sha256": hashlib.sha256(content).hexdigest(),
     }
@@ -489,6 +516,22 @@ def command_init(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         if existing.get("gate_events") or existing.get("active_intervals"):
             raise ValueError("refusing to overwrite a measurement ledger that already contains events")
 
+        for name in (
+            ARTIFACTS_DIRECTORY,
+            RUNTIME_PACKAGE_DIRECTORY,
+            "plugin_manifest.json",
+            RELEASE_IDENTITY_FILENAME,
+            EVIDENCE_MANIFEST_FILENAME,
+            METRICS_FILENAME,
+            "git-before.txt",
+            "git-after.txt",
+        ):
+            path = run_dir / name
+            if path.is_dir() and not path.is_symlink():
+                shutil.rmtree(path)
+            elif path.exists() or path.is_symlink():
+                path.unlink()
+
     (run_dir / ARTIFACTS_DIRECTORY).mkdir(exist_ok=True)
     release_identity = _capture_release_identity(run_dir, args.plugin_manifest, args.runtime_package)
     started_at = _now()
@@ -586,7 +629,10 @@ def command_finalize(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     ledger = _load_ledger(run_dir)
     finished_at = _now()
     git_after = _capture_git_status(run_dir, "git-after.txt")
-    before = (run_dir / "git-before.txt").read_bytes()
+    before_path, _ = _safe_evidence_path(run_dir, ledger.get("git_before", {}).get("path"))
+    if before_path is None or not before_path.is_file() or before_path.is_symlink():
+        raise ValueError("measurement ledger has no readable relative git-before capture")
+    before = before_path.read_bytes()
     after = (run_dir / "git-after.txt").read_bytes()
     git_unchanged = before == after
     summary = _gate_summary(ledger)
@@ -641,7 +687,7 @@ def command_finalize(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     result["ok"] = result["formal_uat_protocol_status"] == "passed"
     _write_json(run_dir / METRICS_FILENAME, result)
     ledger["finalized_at_utc"] = finished_at
-    ledger["final_metrics_path"] = str(run_dir / METRICS_FILENAME)
+    ledger["final_metrics_path"] = METRICS_FILENAME
     _save_ledger(run_dir, ledger)
     return result, 0 if result["ok"] else 1
 
@@ -662,7 +708,7 @@ def parse_args() -> argparse.Namespace:
     _add_common_run_dir(init)
     init.add_argument("--route", choices=ROUTES, required=True)
     init.add_argument("--run-id")
-    init.add_argument("--plugin-manifest", type=Path, default=ROOT / ".codex-plugin" / "plugin.json")
+    init.add_argument("--plugin-manifest", type=Path)
     init.add_argument("--runtime-package", type=Path)
     init.add_argument("--token-usage-availability", choices=TOKEN_USAGE_AVAILABILITY, default="unknown")
     init.add_argument("--token-usage-evidence")

@@ -408,6 +408,135 @@ class SuperleadsUatMeasurementTest(unittest.TestCase):
             self.assertEqual(payload["formal_uat_protocol_status"], "failed")
             self.assertIn("release_identity_runtime_package_missing", payload["measurement_issues"])
 
+    def test_init_rejects_runtime_manifest_that_differs_from_supplied_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = self._durable_run_dir(tmp, "runtime-manifest-mismatch")
+            runtime_package = self._runtime_package(run_dir.parent / "runtime-package", version="0.1.18")
+            source_manifest = run_dir.parent / "source-plugin.json"
+            source_manifest.write_text(
+                json.dumps({"name": "superleads", "version": "0.1.17"}),
+                encoding="utf-8",
+            )
+
+            self._run(
+                "init",
+                "--run-dir",
+                str(run_dir),
+                "--route",
+                "product_outbound_market_analysis",
+                "--plugin-manifest",
+                str(source_manifest),
+                "--runtime-package",
+                str(runtime_package),
+                expected=2,
+            )
+
+    def test_init_rejects_runtime_package_without_its_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = self._durable_run_dir(tmp, "runtime-manifest-missing")
+            runtime_package = run_dir.parent / "runtime-package"
+            runtime_package.mkdir(parents=True)
+
+            self._run(
+                "init",
+                "--run-dir",
+                str(run_dir),
+                "--route",
+                "product_outbound_market_analysis",
+                "--runtime-package",
+                str(runtime_package),
+                expected=2,
+            )
+
+    def test_init_rejects_symlinked_runtime_package_and_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = self._durable_run_dir(tmp, "symlink-rejection")
+            runtime_package = self._runtime_package(run_dir.parent / "runtime-package")
+            runtime_link = run_dir.parent / "runtime-package-link"
+            runtime_link.symlink_to(runtime_package, target_is_directory=True)
+
+            self._run(
+                "init",
+                "--run-dir",
+                str(run_dir),
+                "--route",
+                "product_outbound_market_analysis",
+                "--runtime-package",
+                str(runtime_link),
+                expected=2,
+            )
+
+            self._run(
+                "init",
+                "--run-dir",
+                str(run_dir),
+                "--route",
+                "product_outbound_market_analysis",
+                "--runtime-package",
+                str(runtime_package),
+            )
+            artifact = run_dir.parent / "original.json"
+            artifact.write_text('{"ok": true}\n', encoding="utf-8")
+            artifact_link = run_dir.parent / "artifact-link.json"
+            artifact_link.symlink_to(artifact)
+
+            self._run(
+                "record-gate",
+                "--run-dir",
+                str(run_dir),
+                "--gate",
+                "preflight",
+                "--result",
+                "passed",
+                "--artifact",
+                str(artifact_link),
+                expected=2,
+            )
+
+    def test_init_overwrite_replaces_unstarted_staged_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = self._durable_run_dir(tmp, "overwrite-unstarted")
+            runtime_package = self._runtime_package(run_dir.parent / "runtime-package")
+            init_args = (
+                "init",
+                "--run-dir",
+                str(run_dir),
+                "--route",
+                "product_outbound_market_analysis",
+                "--runtime-package",
+                str(runtime_package),
+            )
+            self._run(*init_args)
+            payload = self._run(*init_args, "--overwrite")
+
+            self.assertTrue(payload["ok"])
+            self.assertTrue((run_dir / "runtime_package" / ".codex-plugin" / "plugin.json").is_file())
+
+    def test_ledger_and_metrics_store_only_relative_evidence_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = self._durable_run_dir(tmp, "relative-paths")
+            runtime_package = self._runtime_package(run_dir.parent / "runtime-package")
+            self._run(
+                "init",
+                "--run-dir",
+                str(run_dir),
+                "--route",
+                "product_outbound_market_analysis",
+                "--runtime-package",
+                str(runtime_package),
+            )
+            self.assertEqual(
+                json.loads((run_dir / "uat_measurement.json").read_text(encoding="utf-8"))["git_before"]["path"],
+                "git-before.txt",
+            )
+            self._record_required_passes(run_dir, run_dir.parent / "external-artifacts")
+            payload = self._finalize_portable_required_gates(run_dir)
+            ledger = json.loads((run_dir / "uat_measurement.json").read_text(encoding="utf-8"))
+
+            self.assertEqual(payload["git_before"]["path"], "git-before.txt")
+            self.assertEqual(payload["git_after"]["path"], "git-after.txt")
+            self.assertEqual(ledger["final_metrics_path"], "uat_metrics.json")
+
 
 if __name__ == "__main__":
     unittest.main()

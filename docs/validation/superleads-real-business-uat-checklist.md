@@ -101,7 +101,9 @@ python3 scripts/measure_superleads_uat.py finalize \
   --run-dir "$RUN_DIR" \
   --required-gate preflight \
   --required-gate source_evidence \
-  --required-gate input_precheck \
+  --required-gate input_precheck_notes \
+  --required-gate compiler \
+  --required-gate input_precheck_graph \
   --required-gate validator \
   --required-gate audit \
   --required-gate markdown_export \
