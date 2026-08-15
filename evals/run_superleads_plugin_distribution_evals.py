@@ -102,6 +102,11 @@ def run_suite() -> dict[str, Any]:
 
         dist = tmp_path / "dist"
         build_result = _build_distribution(dist)
+        nested_eval = dist / "skills" / "using-superleads" / ".plugin-eval"
+        if nested_eval.exists():
+            build_result["ok"] = False
+            build_result["returncode"] = 1
+            build_result["output"] = str(build_result.get("output", "")) + "\nruntime package retained nested .plugin-eval data"
         build_result["name"] = "runtime package build passes"
         results.append(build_result)
         copied_positive = _assert_result(_checker(py, dist, 0, runtime_package=True), require_ok_payload=True)
@@ -174,6 +179,19 @@ def run_suite() -> dict[str, Any]:
         )
         forbidden_tmp_result["name"] = "runtime package rejects historical tmp files"
         results.append(forbidden_tmp_result)
+
+        forbidden_nested_eval = tmp_path / "forbidden_nested_eval"
+        _build_distribution(forbidden_nested_eval)
+        nested_dir = forbidden_nested_eval / "skills" / "using-superleads" / ".plugin-eval"
+        nested_dir.mkdir(parents=True, exist_ok=True)
+        (nested_dir / "benchmark.json").write_text("{}\n", encoding="utf-8")
+        forbidden_nested_eval_result = _assert_result(
+            _checker(py, forbidden_nested_eval, 1, runtime_package=True),
+            expected_codes=["plugin_distribution_forbidden_path"],
+            require_ok_payload=False,
+        )
+        forbidden_nested_eval_result["name"] = "runtime package rejects nested plugin evaluation data"
+        results.append(forbidden_nested_eval_result)
 
     passed = sum(1 for item in results if item.get("ok"))
     failed = [item for item in results if not item.get("ok")]

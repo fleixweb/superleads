@@ -427,8 +427,10 @@ def codex_adapter_observation_operation_key(
     concrete_tool: Any,
     source: Any,
     observation: Any,
+    *,
+    excluded_operation_keys: set[str] | None = None,
 ) -> str | None:
-    """Return the single recorded source-open operation matching one Observation."""
+    """Return a matching source-open operation, preferring an unconsumed key."""
     if capability != "source.open" or not isinstance(source, dict) or not isinstance(observation, dict):
         return None
     source_urls = {
@@ -438,6 +440,7 @@ def codex_adapter_observation_operation_key(
     }
     if not source_urls:
         return None
+    consumed_match: str | None = None
     for result in adapter_result.get("adapter_results", []):
         if not isinstance(result, dict) or not result.get("valid"):
             continue
@@ -454,22 +457,39 @@ def codex_adapter_observation_operation_key(
                 continue
             if operation.get("status") != expected_status:
                 continue
-            if has_text(operation.get("source_id")) and operation.get("source_id") != source.get("source_id"):
+            operation_source_id = operation.get("source_id")
+            operation_observation_id = operation.get("observation_id")
+            if expected_status == "failed":
+                # Failed opens may omit URL/extraction metadata, but must retain
+                # both explicit IDs so one blocked attempt cannot back another Observation.
+                if operation_source_id != source.get("source_id") or operation_observation_id != observation.get("observation_id"):
+                    continue
+            elif (
+                has_text(operation_source_id) and operation_source_id != source.get("source_id")
+            ) or (
+                has_text(operation_observation_id) and operation_observation_id != observation.get("observation_id")
+            ):
                 continue
-            if has_text(operation.get("observation_id")) and operation.get("observation_id") != observation.get("observation_id"):
+            original_url = operation.get("original_url")
+            if expected_status == "verified" and original_url not in source_urls:
                 continue
-            if operation.get("original_url") not in source_urls:
+            if has_text(original_url) and original_url not in source_urls:
                 continue
-            if has_text(operation.get("final_url")) and operation.get("final_url") not in source_urls:
+            final_url = operation.get("final_url")
+            if has_text(final_url) and final_url not in source_urls:
                 continue
-            if operation.get("source_title") != observation.get("title"):
+            if has_text(operation.get("source_title")) and operation.get("source_title") != observation.get("title"):
                 continue
-            if operation.get("raw_excerpt") != observation.get("raw_excerpt"):
+            if has_text(operation.get("raw_excerpt")) and operation.get("raw_excerpt") != observation.get("raw_excerpt"):
                 continue
-            if operation.get("excerpt_locator") != observation.get("page_or_dom_locator"):
+            if has_text(operation.get("excerpt_locator")) and operation.get("excerpt_locator") != observation.get("page_or_dom_locator"):
                 continue
-            return str(binding.get("operation_key"))
-    return None
+            operation_key = str(binding.get("operation_key"))
+            if excluded_operation_keys and operation_key in excluded_operation_keys:
+                consumed_match = consumed_match or operation_key
+                continue
+            return operation_key
+    return consumed_match
 
 
 def _validate_adapter_mapping(report: dict[str, Any], owned: tuple[str, ...], raw_mapped: dict[str, str],

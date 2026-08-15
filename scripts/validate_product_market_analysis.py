@@ -21,6 +21,7 @@ from _superleads_common import (
     CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES,
     CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES,
     CODEX_WEB_RUN_OWNED_CAPABILITIES,
+    SOURCE_OPEN_FAILED_ACCESS_STATUSES,
     adapter_reports_from_run,
     codex_adapter_observation_operation_key,
     codex_adapter_allows_observation,
@@ -359,7 +360,6 @@ SOURCE_OPEN_CAPABILITIES = {
     "image.inspect",
 }
 OPENED_ACCESS_STATUSES = {"opened", "captured", "extracted", "rendered"}
-SOURCE_RESTRICTED_ACCESS_STATUSES = {"blocked", "login_wall", "login_required", "forbidden", "inaccessible", "not_accessed", "restricted"}
 SEARCH_LOG_ALLOWED_OUTPUT = "search_log_or_source_locator_only"
 SOURCE_PLAN_ROUTE = "product_outbound_market_analysis_source_plan"
 QUERY_PLAN_DIRECT_FACT_MARKERS = (
@@ -1985,18 +1985,25 @@ def _market_search_collection_issues(
                     if not codex_adapter_allows_observation(adapter_result, capability, obs.get("concrete_tool")):
                         _add_issue(issues, "critical", "market_codex_observation_tool_not_allowed_by_adapter", "Codex source Observation concrete_tool is not explicitly authorized by a verified provider", f"{path}.concrete_tool")
                     if capability == "source.open":
-                        operation_key = codex_adapter_observation_operation_key(adapter_result, capability, obs.get("concrete_tool"), source, obs)
+                        run_key = str(observation_run.get("run_id") or observation_run_id or "sole-run")
+                        used_keys = used_open_operation_keys_by_run.setdefault(run_key, set())
+                        operation_key = codex_adapter_observation_operation_key(
+                            adapter_result,
+                            capability,
+                            obs.get("concrete_tool"),
+                            source,
+                            obs,
+                            excluded_operation_keys=used_keys,
+                        )
                         if operation_key is None:
                             _add_issue(issues, "critical", "market_codex_observation_open_operation_mismatch", "Codex source Observation does not match a compatible Run open operation by Source URL, title, excerpt, and locator", path)
                         else:
-                            run_key = str(observation_run.get("run_id") or observation_run_id or "sole-run")
-                            used_keys = used_open_operation_keys_by_run.setdefault(run_key, set())
                             if operation_key in used_keys:
                                 _add_issue(issues, "critical", "market_codex_observation_open_operation_reused", "A recorded Codex open operation cannot back more than one Observation", path)
                             used_keys.add(operation_key)
         if source.get("medium") == "search_result":
             _add_issue(issues, "critical", "market_search_result_as_source", "Search result Source cannot produce Observation facts", path)
-        if str(obs.get("access_status") or "") in SOURCE_RESTRICTED_ACCESS_STATUSES and has_text(obs.get("raw_excerpt")):
+        if str(obs.get("access_status") or "") in SOURCE_OPEN_FAILED_ACCESS_STATUSES and has_text(obs.get("raw_excerpt")):
             _add_issue(issues, "major", "market_restricted_source_has_observation_excerpt", "Restricted/not-opened source must not have factual raw_excerpt", f"{path}.raw_excerpt")
         if _observation_is_opened_source(obs):
             linked_logs = _source_linked_search_logs(source_id, search_logs)

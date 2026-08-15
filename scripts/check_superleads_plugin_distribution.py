@@ -218,6 +218,12 @@ def _runtime_package_issues(plugin_root: Path) -> tuple[list[dict[str, str]], in
                 path=relative.as_posix(),
             ))
             continue
+        if path.is_dir() and path.parent != plugin_root and path.name in FORBIDDEN_RUNTIME_NAMES:
+            issues.append(_issue(
+                "plugin_distribution_forbidden_path",
+                f"runtime plugin package must not contain {relative.as_posix()}",
+                path=relative.as_posix(),
+            ))
         if path.is_dir() and path.name == "__pycache__":
             issues.append(_issue(
                 "plugin_distribution_forbidden_path",

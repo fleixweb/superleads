@@ -21,6 +21,7 @@ import validate_research_graph
 
 FIXTURE = ROOT / "evals" / "fixtures" / "market_pass_codex_web_run_open_source_verified.json"
 BACKGROUND_FIXTURE = ROOT / "evals" / "fixtures" / "pass_customer_background_chillys_markdown.json"
+NATIVE_FIXTURE = ROOT / "evals" / "fixtures" / "pass_codex_native_open_source_verified_standard_delivery.json"
 
 
 class CapabilityAdapterObservationBindingTest(unittest.TestCase):
@@ -56,6 +57,27 @@ class CapabilityAdapterObservationBindingTest(unittest.TestCase):
         issues = validate_product_market_analysis.validate_graph(graph)
 
         self.assertIn("market_codex_observation_open_operation_reused", {item["code"] for item in issues})
+
+    def test_identical_unidentified_open_records_bind_to_distinct_observations(self) -> None:
+        graph = _load_fixture_graph(FIXTURE)
+        sources = graph["sources"]
+        observations = graph["observations"]
+        operations = graph["runs"][0]["capability_adapter_report"]["host_tools"]["web__run"]["operations"]["open"]
+
+        sources[1]["canonical_url"] = sources[0]["canonical_url"]
+        sources[1]["final_url"] = sources[0]["final_url"]
+        for field in ("title", "raw_excerpt", "page_or_dom_locator"):
+            observations[1][field] = observations[0][field]
+        operations[1] = copy.deepcopy(operations[0])
+        for operation in operations:
+            operation.pop("source_id", None)
+            operation.pop("observation_id", None)
+
+        market_issues = validate_product_market_analysis.validate_graph(graph)
+        research_issues = validate_research_graph.validate_graph(graph)
+
+        self.assertNotIn("market_codex_observation_open_operation_reused", {item["code"] for item in market_issues})
+        self.assertNotIn("codex_observation_open_operation_reused", {item["code"] for item in research_issues})
 
     def test_batch_capture_emits_one_open_operation_per_observation(self) -> None:
         pages = {
@@ -105,6 +127,66 @@ class CapabilityAdapterObservationBindingTest(unittest.TestCase):
         issues = validate_research_graph.validate_graph(graph)
 
         self.assertNotIn("codex_observation_open_operation_mismatch", {item["code"] for item in issues})
+
+    def test_failed_open_with_explicit_ids_may_omit_verified_only_metadata(self) -> None:
+        graph = _load_fixture_graph(BACKGROUND_FIXTURE)
+        sources = {item["source_id"]: item for item in graph["sources"]}
+        opened_observations = [
+            item for item in graph["observations"]
+            if item["capability"] == "source.open" and item["access_status"] == "ok"
+        ]
+        forbidden = next(item for item in graph["observations"] if item["access_status"] == "forbidden")
+
+        def verified_operation(observation: dict[str, object]) -> dict[str, object]:
+            source = sources[observation["source_id"]]
+            return {
+                "status": "verified",
+                "request_method": "GET",
+                "original_url": source["canonical_url"],
+                "final_url": source["final_url"],
+                "source_id": observation["source_id"],
+                "observation_id": observation["observation_id"],
+                "http_status": observation["http_status"],
+                "source_title": observation["title"],
+                "raw_excerpt": observation["raw_excerpt"],
+                "excerpt_locator": observation["page_or_dom_locator"],
+            }
+
+        graph["runs"][0]["capability_adapter_report"]["host_tools"]["shell_http"]["operations"]["open_source"] = [
+            *(verified_operation(item) for item in opened_observations),
+            {
+                "status": "failed",
+                "source_id": forbidden["source_id"],
+                "observation_id": forbidden["observation_id"],
+            },
+        ]
+
+        issues = validate_research_graph.validate_graph(graph)
+
+        self.assertNotIn("codex_observation_open_operation_mismatch", {item["code"] for item in issues})
+
+    def test_native_source_open_text_does_not_trigger_shell_http_secret_check(self) -> None:
+        graph = _load_fixture_graph(NATIVE_FIXTURE)
+        observation = next(item for item in graph["observations"] if item["capability"] == "source.open")
+        operation = graph["runs"][0]["capability_adapter_report"]["host_tools"]["web_search"]["operations"]["open_source"]
+        text = "Published guidance uses token: placeholder as an example."
+        observation["raw_excerpt"] = text
+        operation["raw_excerpt"] = text
+
+        issues = validate_research_graph.validate_graph(graph)
+
+        self.assertNotIn("codex_shell_http_observation_forbidden_data", {item["code"] for item in issues})
+
+    def test_login_dash_wall_with_excerpt_is_restricted_source(self) -> None:
+        graph = _load_fixture_graph(FIXTURE)
+        observation = graph["observations"][0]
+        operation = graph["runs"][0]["capability_adapter_report"]["host_tools"]["web__run"]["operations"]["open"][0]
+        observation["access_status"] = "login-wall"
+        operation["status"] = "failed"
+
+        issues = validate_product_market_analysis.validate_graph(graph)
+
+        self.assertIn("market_restricted_source_has_observation_excerpt", {item["code"] for item in issues})
 
 
 if __name__ == "__main__":

@@ -1,5 +1,10 @@
 # Tasks
 
+## 2026-08-15 已完成：0.1.19 adapter contract repair
+
+- 适配器合同已修复：failed-open 双 ID 绑定、相同 open 记录的一对一消费、仅 shell 的敏感数据检查，以及递归排除/拒绝 `.plugin-eval` 运行时内容；产品市场校验复用公共受限状态集合；release manifest 已更新至 `0.1.19`。
+- 已完成验证：focused bindings `9/9`、unit tests `53/53`、产品市场 evals `80/80`、全量 evals `731/731`、distribution evals `10/10`，以及工作树与干净 `HEAD` 导出的严格 runtime-package 检查。runtime package 与启用的本机缓存 `/home/fleix/.codex/plugins/cache/fleix/superleads/0.1.19` 完全一致且严格分发检查通过。必须保留 `tmp/stage5_chillys/`，不得整理或删除。
+
 ## 2026-08-12 已完成：Bulk SearchLog↔Candidate 预检
 
 - 在正式 validator 前补齐 SearchLog 与 Candidate 的双向发现链接预检：`result_refs` 必须解析到 Candidate；`search_web` Candidate 必须有现存同轮 SearchLog；Run/Brief/Plan 必须一致；Candidate 必须反向出现在关联 SearchLog 的 `result_refs` 中。

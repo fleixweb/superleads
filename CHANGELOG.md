@@ -10,6 +10,91 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 - **MINOR**: adds capabilities without breaking existing research graphs.
 - **PATCH**: fixes bugs or changes copy.
 
+## [0.1.19] - 2026-08-15
+
+### Fixed
+
+- Repair capability-adapter contracts with failed-open dual-ID binding, one-to-one consumption of identical open records, and shell-only sensitive-data checks.
+- Reuse the public source-restricted status set in product-market validation and recursively exclude and reject `.plugin-eval` runtime data.
+
+## [0.1.18] - 2026-08-15
+
+### Added
+
+- Bind the capability adapter to `web__run` and record portable UAT artifacts for product-market research.
+
+## [0.1.17] - 2026-08-15
+
+### Changed
+
+- No dedicated manifest-bump commit was recorded for this release; this entry preserves release tracking without attributing unverified functionality.
+
+## [0.1.16] - 2026-08-12
+
+### Added
+
+- Precheck Bulk SearchLog and Candidate discovery links before formal validation.
+
+## [0.1.15] - 2026-08-12
+
+### Fixed
+
+- Require sequential UAT measurement and precheck contact evidence against the resolved subject.
+
+## [0.1.14] - 2026-08-11
+
+### Added
+
+- Add structured UAT input prechecks for the formal research routes.
+
+## [0.1.13] - 2026-08-11
+
+### Changed
+
+- No dedicated manifest-bump commit was recorded for this release; this entry preserves release tracking without attributing unverified functionality.
+
+## [0.1.12] - 2026-08-11
+
+### Added
+
+- Build a lean runtime plugin package and add distribution integrity checks.
+
+## [0.1.11] - 2026-08-11
+
+### Changed
+
+- Streamline product-market evidence compiler authoring with compact authority and row inputs.
+
+## [0.1.10] - 2026-08-10
+
+### Fixed
+
+- Refine evidence compiler row merging and product-attribute projection.
+
+## [0.1.9] - 2026-08-10
+
+### Added
+
+- Add a product-market evidence compiler for opened-source evidence notes.
+
+## [0.1.8] - 2026-08-10
+
+### Changed
+
+- Scope product-market reports to the analysis modules requested by the user.
+
+## [0.1.7] - 2026-08-10
+
+### Added
+
+- Show public contact-person and role visibility in Bulk discovery Markdown.
+
+## [0.1.6] - 2026-08-10
+
+### Added
+
+- Capture suspected trade records in customer-background research as third-party information requiring verification.
+
 ## [0.1.5] - 2026-08-10
 
 ### Fixed

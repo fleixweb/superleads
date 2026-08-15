@@ -967,26 +967,6 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
                             "Codex shell HTTP Observation requires public credential-free HTTP(S) Source URLs",
                             f"observations[{idx}].source_id",
                         ))
-                if capability == "source.open":
-                    operation_key = codex_adapter_observation_operation_key(adapter_result, capability, obs.get("concrete_tool"), source, obs)
-                    if operation_key is None:
-                        issues.append(issue(
-                            "critical",
-                            "codex_observation_open_operation_mismatch",
-                            "Codex source Observation does not match a compatible Run open operation by Source URL, title, excerpt, and locator",
-                            f"observations[{idx}]",
-                        ))
-                    else:
-                        run_key = str(observation_run.get("run_id") or observation_run_id or "sole-run")
-                        used_keys = used_open_operation_keys_by_run.setdefault(run_key, set())
-                        if operation_key in used_keys:
-                            issues.append(issue(
-                                "critical",
-                                "codex_observation_open_operation_reused",
-                                "A recorded Codex open operation cannot back more than one Observation",
-                                f"observations[{idx}]",
-                            ))
-                        used_keys.add(operation_key)
                     if contains_shell_http_forbidden_data({
                         "canonical_url": source.get("canonical_url") if isinstance(source, dict) else None,
                         "final_url": source.get("final_url") if isinstance(source, dict) else None,
@@ -1000,6 +980,33 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
                             "Codex shell HTTP Observation may not contain local paths or credential/request-secret data",
                             f"observations[{idx}]",
                         ))
+                if capability == "source.open":
+                    run_key = str(observation_run.get("run_id") or observation_run_id or "sole-run")
+                    used_keys = used_open_operation_keys_by_run.setdefault(run_key, set())
+                    operation_key = codex_adapter_observation_operation_key(
+                        adapter_result,
+                        capability,
+                        obs.get("concrete_tool"),
+                        source,
+                        obs,
+                        excluded_operation_keys=used_keys,
+                    )
+                    if operation_key is None:
+                        issues.append(issue(
+                            "critical",
+                            "codex_observation_open_operation_mismatch",
+                            "Codex source Observation does not match a compatible Run open operation by Source URL, title, excerpt, and locator",
+                            f"observations[{idx}]",
+                        ))
+                    else:
+                        if operation_key in used_keys:
+                            issues.append(issue(
+                                "critical",
+                                "codex_observation_open_operation_reused",
+                                "A recorded Codex open operation cannot back more than one Observation",
+                                f"observations[{idx}]",
+                            ))
+                        used_keys.add(operation_key)
         elif isinstance(observation_run, dict) and observation_run.get("platform") == "codex_cli" and obs.get("capability") in CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES:
             issues.append(issue(
                 "critical",

@@ -1,5 +1,10 @@
 # Handoff
 
+## 2026-08-15 0.1.19 adapter contract repair
+
+- The repair adds failed-open dual-ID adapter binding, one-to-one consumption of identical open records, a shell-only sensitive-data check, and recursive `.plugin-eval` runtime exclusion/rejection. Product-market validation now reuses the public source-restricted status set. The release manifests are `0.1.19`.
+- Verification passed: focused bindings `9/9`, unit tests `53/53`, product-market evals `80/80`, full evals `731/731`, distribution evals `10/10`, and strict runtime-package checks for both the working tree and a clean `HEAD` export. The runtime package and enabled user-level cache `/home/fleix/.codex/plugins/cache/fleix/superleads/0.1.19` match exactly and pass strict distribution validation. Preserve `tmp/stage5_chillys/` unchanged.
+
 ## 2026-08-12 Bulk SearchLog-Candidate input precheck
 
 - `scripts/precheck_superleads_uat_input.py` now checks the existing SearchLog/Candidate discovery contract before the formal graph validator for both research routes: result refs resolve to Candidates, `search_web` Candidates point to an existing same-run SearchLog, Run/Brief/Plan bindings agree, and each linked Candidate appears in that SearchLog's `result_refs`.
