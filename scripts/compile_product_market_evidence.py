@@ -341,6 +341,14 @@ def _status(value: Any, path: str, issues: list[dict[str, str]], default: str = 
     return value
 
 
+def _displayed_attribute_value(value: Any, unit: Any) -> str:
+    displayed_value = str(value).strip() if value is not None else ""
+    displayed_unit = _text(unit)
+    if displayed_value and displayed_unit and displayed_value.casefold().endswith(displayed_unit.casefold()):
+        return displayed_value
+    return " ".join(part for part in (displayed_value, displayed_unit) if part)
+
+
 def _string_list(note: dict[str, Any], field: str, path: str, issues: list[dict[str, str]]) -> list[str]:
     raw = note.get(field, [])
     if not isinstance(raw, list) or any(not has_text(value) for value in raw):
@@ -394,6 +402,7 @@ def _compile_attribute(
     attribute_ids: set[str],
     product_ids: set[str],
     default_product_id: str,
+    row_ids: set[str],
     issues: list[dict[str, str]],
 ) -> None:
     path = f"product_attributes[{index}]"
@@ -427,6 +436,20 @@ def _compile_attribute(
             "status": status,
             "trigger_paths": trigger_paths,
             "evidence_card_ids": [],
+        }
+    )
+    graph.setdefault("matrix_rows", []).append(
+        {
+            "matrix_row_id": _unique_id(row_ids, "row-attribute", attribute_id),
+            "sheet_name": "产品档案与触发项",
+            "row_topic": f"用户提供产品资料：{name}",
+            "user_visible_cells": {
+                "属性": name,
+                "当前值": _displayed_attribute_value(note.get("value"), note.get("unit")),
+            },
+            "status": status,
+            "boundary_rule_ids": [],
+            "internal_refs_hidden": True,
         }
     )
     for product in _as_list(graph.get("products")):
@@ -850,7 +873,7 @@ def compile_notes(graph: dict[str, Any], notes: dict[str, Any]) -> tuple[dict[st
     authority_note_refs: dict[str, str] = {}
 
     for index, raw in enumerate(notes.get("product_attributes", [])):
-        _compile_attribute(compiled, raw, index, attribute_ids, product_ids, default_product_id, issues)
+        _compile_attribute(compiled, raw, index, attribute_ids, product_ids, default_product_id, row_ids, issues)
     for index, raw in enumerate(notes.get("authority_notes", [])):
         _compile_authority_note(
             compiled,

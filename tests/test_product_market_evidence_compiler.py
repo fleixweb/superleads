@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "evals" / "fixtures"
 COMPILER = ROOT / "scripts" / "compile_product_market_evidence.py"
 VALIDATOR = ROOT / "scripts" / "validate_product_market_analysis.py"
+UAT_PRECHECK = ROOT / "scripts" / "precheck_superleads_uat_input.py"
 
 
 def materialize_fixture(path: Path) -> dict[str, object]:
@@ -125,6 +126,77 @@ class ProductMarketEvidenceCompilerTest(unittest.TestCase):
                 stderr=subprocess.STDOUT,
             )
         self.assertEqual(validation.returncode, 0, validation.stdout)
+
+    def test_projects_compact_user_product_attributes_without_evidence_notes(self) -> None:
+        graph = materialize_fixture(FIXTURES / "market_pass_xingheng_minimum_boundary.json")
+        original_evidence_count = len(graph["evidence_cards"])
+        notes = {
+            "product_attributes": [
+                {
+                    "attribute_name": "额定电压",
+                    "value": "220-240",
+                    "unit": "V",
+                    "status": "preliminary_reference",
+                    "trigger_paths": ["产品规格核验"],
+                },
+                {
+                    "attribute_name": "额定功率",
+                    "value": "1500",
+                    "unit": "W",
+                    "status": "preliminary_reference",
+                    "trigger_paths": ["产品规格核验"],
+                },
+            ]
+        }
+
+        result = self._compile(graph, notes)
+
+        self.assertEqual(result.returncode, 0, result.stdout)
+        compiled = result.compiled_graph  # type: ignore[attr-defined]
+        self.assertEqual(len(compiled["evidence_cards"]), original_evidence_count)
+        projected_rows = [
+            row
+            for row in compiled["matrix_rows"]
+            if row["sheet_name"] == "产品档案与触发项"
+            and row["user_visible_cells"].get("属性") in {"额定电压", "额定功率"}
+            and row["user_visible_cells"].get("当前值") in {"220-240 V", "1500 W"}
+        ]
+        self.assertEqual(len(projected_rows), 2)
+        self.assertTrue(all(row["status"] == "preliminary_reference" for row in projected_rows))
+        self.assertTrue(all(row["boundary_rule_ids"] == [] for row in projected_rows))
+        self.assertTrue(all("evidence_card_ids" not in row for row in projected_rows))
+        self.assertEqual(
+            {
+                (attribute["attribute_name"], attribute["product_subject_id"], attribute["status"])
+                for attribute in compiled["attributes"]
+                if attribute.get("attribute_family") == "用户提供产品资料"
+            },
+            {
+                ("额定电压", graph["products"][0]["product_subject_id"], "preliminary_reference"),
+                ("额定功率", graph["products"][0]["product_subject_id"], "preliminary_reference"),
+            },
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            compiled_path = Path(tmp) / "compiled.json"
+            compiled_path.write_text(json.dumps(compiled, ensure_ascii=False, indent=2), encoding="utf-8")
+            precheck = subprocess.run(
+                [
+                    sys.executable,
+                    str(UAT_PRECHECK),
+                    "--route",
+                    "product_outbound_market_analysis",
+                    "--graph",
+                    str(compiled_path),
+                    "--format",
+                    "json",
+                ],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+        self.assertEqual(precheck.returncode, 0, precheck.stdout)
 
     def test_merges_notes_targeting_the_same_matrix_row(self) -> None:
         graph = materialize_fixture(FIXTURES / "market_pass_xingheng_minimum_boundary.json")
