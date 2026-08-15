@@ -53,13 +53,17 @@ python3 scripts/measure_superleads_uat.py active-start --run-dir "$RUN_DIR" --no
 python3 scripts/measure_superleads_uat.py active-stop --run-dir "$RUN_DIR" --note "采集完成" --format json
 ```
 
-每个真实 gate 完成后记录其原始 JSON 或日志路径。失败必须按实际原因分类：
+每个真实 gate 完成后记录其原始 JSON 或日志路径。产品出海市场分析的 gate 名称、顺序和
+`finalize --required-gate` 列表必须逐字等于下方固定链；测量器会拒绝缩短、乱序、重复通过后
+重记或未知 gate 的正式成功。失败必须按实际原因分类：
 `capability_adapter`、`command_invocation`、`graph_contract`、`evidence_contract`、
 `exporter_completeness`、`measurement_protocol` 或 `other`。不能把业务资料缺口、
 来源受限或未执行模块伪装成工具失败。
 
 `record-gate --artifact` 会在写入 ledger 前将文件或目录复制到 RUN_DIR 的
-`artifacts/` 并记录相对路径与 SHA-256；不能只保存原始的绝对路径。产品市场真实 UAT
+`artifacts/` 并记录相对路径与 SHA-256；不能只保存原始的绝对路径。若 token usage 标为
+`available`，也必须传入可读取的 `--token-usage-evidence` 文件，测量器会同样封存它；其它
+token availability 不得填写外部 evidence 路径。产品市场真实 UAT
 还必须记录 `source_evidence`：其中至少包含同一 Run 的搜索/打开来源 operation record，
 以及由这些已打开来源产生 Source/Observation 的 graph。搜索摘要、候选链接或手写说明
 不能替代该 gate。
@@ -146,9 +150,9 @@ validator -> audit -> markdown_export -> workbook_export -> user_visible -> clai
 | exporter result | `export_superleads_markdown.py` 的 JSON 结果，必须 `ok=true` / `issue_count=0` |
 | claimed path check result | `check_superleads_formal_markdown_delivery.py --claimed-graph ... --claimed-markdown ...` 的 JSON 结果，必须 `ok=true` / `issue_count=0` |
 | input precheck result | `precheck_superleads_uat_input.py` 的 JSON 结果，必须 `ok=true` / `issue_count=0`；产品市场若使用 compact notes，保存编译前与编译后两份结果 |
-| UAT metrics JSON | `measure_superleads_uat.py finalize` 写出的 `$RUN_DIR/uat_metrics.json`；必须说明首遍状态、修复轮数、活动/墙钟耗时、Git 一致性与 token 可观测性 |
+| UAT metrics JSON | `measure_superleads_uat.py finalize` 写出的 `$RUN_DIR/uat_metrics.json`；必须说明首遍状态、修复轮数、活动/墙钟耗时、Git 一致性与 token 可观测性。manifest 还覆盖 ledger、metrics、两份 Git 快照及每个 gate 的结果/失败类别 |
 | Release identity | `$RUN_DIR/release_identity.json`；记录插件 manifest 版本与 SHA-256、Git HEAD 和封存运行时包的内容清单，不能从当前工作区版本推断 |
-| Evidence manifest | `$RUN_DIR/evidence_manifest.json`；仅含封存工件的相对路径与 SHA-256；`measure_superleads_uat.py verify` 必须通过，复制整个 RUN_DIR 后也必须可复核 |
+| Evidence manifest | `$RUN_DIR/evidence_manifest.json`；含封存工件、token evidence（如有）、ledger、metrics、两份 Git 快照和 gate 结果的相对路径与 SHA-256；`measure_superleads_uat.py verify` 必须通过，复制整个 RUN_DIR 到不同目录后也必须再次通过 |
 
 没有 graph JSON 的搜索笔记、截图整理、手写表格或临时 Markdown，只能算 research draft / source-collection note，不能算正式 UAT 通过。
 缺少 release identity、runtime package、封存 artifact 或 `verify` 失败的运行同样不能算正式 UAT 通过；即使静态 eval 或 benchmark harness 返回零也不能替代这些工件。

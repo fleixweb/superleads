@@ -447,17 +447,32 @@ def _manifest_artifacts(ledger: dict[str, Any]) -> list[dict[str, Any]]:
     return artifacts
 
 
+def _control_file_descriptor(run_dir: Path, filename: str) -> dict[str, Any]:
+    path = run_dir / filename
+    if not path.is_file() or path.is_symlink():
+        return {"relative_path": filename, "kind": "missing"}
+    return _artifact_descriptor(run_dir, path)
+
+
 def _evidence_manifest(ledger: dict[str, Any], run_dir: Path) -> dict[str, Any]:
     identity_path = run_dir / RELEASE_IDENTITY_FILENAME
     identity_sha256 = _sha256_file(identity_path)[0] if identity_path.is_file() else None
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "run_id": ledger.get("run_id"),
         "release_identity": {
             "relative_path": RELEASE_IDENTITY_FILENAME,
             "sha256": identity_sha256,
         },
         "artifacts": _manifest_artifacts(ledger),
+        "token_usage_evidence": ledger.get("token_usage_evidence"),
+        "gate_events": ledger.get("gate_events"),
+        "control_files": {
+            "git_before": _control_file_descriptor(run_dir, "git-before.txt"),
+            "git_after": _control_file_descriptor(run_dir, "git-after.txt"),
+            "ledger": _control_file_descriptor(run_dir, LEDGER_FILENAME),
+            "metrics": _control_file_descriptor(run_dir, METRICS_FILENAME),
+        },
     }
 
 
@@ -494,6 +509,11 @@ def _verify_evidence(run_dir: Path, ledger: dict[str, Any]) -> list[str]:
     issues = _verify_release_identity(run_dir)
     for descriptor in _manifest_artifacts(ledger):
         issue = _artifact_verification_issue(run_dir, descriptor)
+        if issue is not None and issue not in issues:
+            issues.append(issue)
+    token_usage_evidence = ledger.get("token_usage_evidence")
+    if token_usage_evidence is not None:
+        issue = _artifact_verification_issue(run_dir, token_usage_evidence)
         if issue is not None and issue not in issues:
             issues.append(issue)
     manifest_path = run_dir / EVIDENCE_MANIFEST_FILENAME
@@ -575,6 +595,15 @@ def command_init(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
                 path.unlink()
 
     (run_dir / ARTIFACTS_DIRECTORY).mkdir(exist_ok=True)
+    if args.token_usage_availability == "available" and not args.token_usage_evidence:
+        raise ValueError("--token-usage-evidence is required when token usage is available")
+    if args.token_usage_availability != "available" and args.token_usage_evidence:
+        raise ValueError("--token-usage-evidence is only valid when token usage is available")
+    token_usage_evidence = (
+        _stage_artifact(run_dir, "token-usage", 1, Path(args.token_usage_evidence))
+        if args.token_usage_evidence
+        else None
+    )
     release_identity = _capture_release_identity(run_dir, args.plugin_manifest, args.runtime_package)
     started_at = _now()
     before = _capture_git_status(run_dir, "git-before.txt")
@@ -582,10 +611,10 @@ def command_init(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         "schema_version": 2,
         "run_id": args.run_id or run_dir.name,
         "route": args.route,
-        "run_dir": str(run_dir),
+        "run_dir": ".",
         "started_at_utc": started_at,
         "token_usage_availability": args.token_usage_availability,
-        "token_usage_evidence": args.token_usage_evidence or None,
+        "token_usage_evidence": token_usage_evidence,
         "git_before": before,
         "release_identity": release_identity,
         "active_intervals": [],
@@ -593,7 +622,7 @@ def command_init(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     }
     _save_ledger(run_dir, ledger)
     result = _base_result(ledger)
-    result.update({"ok": True, "measurement_ledger": str(ledger_path), "git_before": before})
+    result.update({"ok": True, "measurement_ledger": LEDGER_FILENAME, "git_before": before})
     return result, 0
 
 
@@ -687,8 +716,6 @@ def command_finalize(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         measurement_issues.append("git_capture_mismatch")
     if _is_ephemeral_directory(run_dir):
         measurement_issues.append("evidence_run_dir_ephemeral")
-    _write_json(run_dir / EVIDENCE_MANIFEST_FILENAME, _evidence_manifest(ledger, run_dir))
-    measurement_issues.extend(issue for issue in _verify_evidence(run_dir, ledger) if issue not in measurement_issues)
     required_gates_first_passed = all(
         summary.get(gate, {}).get("first_result") == "passed"
         for gate in args.required_gate
@@ -709,6 +736,9 @@ def command_finalize(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         "evidence_manifest_",
         "required_gate_artifact_missing:",
     )
+    ledger["finalized_at_utc"] = finished_at
+    ledger["final_metrics_path"] = METRICS_FILENAME
+    _save_ledger(run_dir, ledger)
     result = _base_result(ledger)
     result.update({
         "finished_at_utc": finished_at,
@@ -724,14 +754,16 @@ def command_finalize(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         "git_after": git_after,
         "measurement_issues": measurement_issues,
         "evidence_manifest": EVIDENCE_MANIFEST_FILENAME,
-        "portable_evidence": not any(issue.startswith(portable_failure_prefixes) for issue in measurement_issues),
-        "formal_uat_protocol_status": "passed" if not measurement_issues else "failed",
     })
+    _write_json(run_dir / METRICS_FILENAME, result)
+    _write_json(run_dir / EVIDENCE_MANIFEST_FILENAME, _evidence_manifest(ledger, run_dir))
+    measurement_issues.extend(issue for issue in _verify_evidence(run_dir, ledger) if issue not in measurement_issues)
+    result["measurement_issues"] = measurement_issues
+    result["portable_evidence"] = not any(issue.startswith(portable_failure_prefixes) for issue in measurement_issues)
+    result["formal_uat_protocol_status"] = "passed" if not measurement_issues else "failed"
     result["ok"] = result["formal_uat_protocol_status"] == "passed"
     _write_json(run_dir / METRICS_FILENAME, result)
-    ledger["finalized_at_utc"] = finished_at
-    ledger["final_metrics_path"] = METRICS_FILENAME
-    _save_ledger(run_dir, ledger)
+    _write_json(run_dir / EVIDENCE_MANIFEST_FILENAME, _evidence_manifest(ledger, run_dir))
     return result, 0 if result["ok"] else 1
 
 

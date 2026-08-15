@@ -631,6 +631,109 @@ class SuperleadsUatMeasurementTest(unittest.TestCase):
             self.assertEqual(payload["git_after"]["path"], "git-after.txt")
             self.assertEqual(ledger["final_metrics_path"], "uat_metrics.json")
 
+    def test_portable_bundle_stages_available_token_evidence_and_omits_run_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = self._durable_run_dir(tmp, "portable-token-evidence")
+            runtime_package = self._runtime_package(run_dir.parent / "runtime-package")
+            external_dir = run_dir.parent / "external-artifacts"
+            token_evidence = external_dir / "token-usage.json"
+            external_dir.mkdir(parents=True, exist_ok=True)
+            token_evidence.write_text('{"input_tokens": 1, "output_tokens": 2}\n', encoding="utf-8")
+            self._run(
+                "init",
+                "--run-dir",
+                str(run_dir),
+                "--route",
+                "bulk_customer_development",
+                "--runtime-package",
+                str(runtime_package),
+                "--token-usage-availability",
+                "available",
+                "--token-usage-evidence",
+                str(token_evidence),
+            )
+            self._record_required_passes(run_dir, external_dir)
+            self._finalize_portable_required_gates(run_dir)
+            token_evidence.unlink()
+
+            ledger = json.loads((run_dir / "uat_measurement.json").read_text(encoding="utf-8"))
+            metrics = json.loads((run_dir / "uat_metrics.json").read_text(encoding="utf-8"))
+            self.assertEqual(ledger["run_dir"], ".")
+            self.assertEqual(metrics["run_dir"], ".")
+            self.assertEqual(ledger["token_usage_evidence"]["relative_path"].split("/", 1)[0], "artifacts")
+            self.assertTrue(self._run("verify", "--run-dir", str(run_dir))["ok"])
+
+    def test_init_rejects_available_token_usage_without_staged_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = self._durable_run_dir(tmp, "missing-token-evidence")
+            runtime_package = self._runtime_package(run_dir.parent / "runtime-package")
+
+            self._run(
+                "init",
+                "--run-dir",
+                str(run_dir),
+                "--route",
+                "bulk_customer_development",
+                "--runtime-package",
+                str(runtime_package),
+                "--token-usage-availability",
+                "available",
+                expected=2,
+            )
+
+    def test_verify_rejects_tampered_final_ledger_metrics_and_git_captures(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            original = self._durable_run_dir(tmp, "sealed-original")
+            runtime_package = self._runtime_package(original.parent / "runtime-package")
+            external_dir = original.parent / "external-artifacts"
+            self._run(
+                "init",
+                "--run-dir",
+                str(original),
+                "--route",
+                "bulk_customer_development",
+                "--runtime-package",
+                str(runtime_package),
+            )
+            self._record_required_passes(original, external_dir)
+            self._finalize_portable_required_gates(original)
+
+            for name, replacement in (
+                ("uat_measurement.json", '{"tampered": true}\n'),
+                ("uat_metrics.json", '{"tampered": true}\n'),
+                ("git-before.txt", "tampered\n"),
+            ):
+                copy_dir = original.parent / f"tampered-{name.replace('.', '-')}"
+                shutil.copytree(original, copy_dir)
+                (copy_dir / name).write_text(replacement, encoding="utf-8")
+                payload = self._run("verify", "--run-dir", str(copy_dir), expected=1)
+                self.assertFalse(payload["ok"])
+
+    def test_verify_succeeds_after_copying_bundle_to_a_different_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            original = self._durable_run_dir(tmp, "portable-copy-original")
+            runtime_package = self._runtime_package(original.parent / "runtime-package")
+            external_dir = original.parent / "external-artifacts"
+            self._run(
+                "init",
+                "--run-dir",
+                str(original),
+                "--route",
+                "bulk_customer_development",
+                "--runtime-package",
+                str(runtime_package),
+            )
+            self._record_required_passes(original, external_dir)
+            self._finalize_portable_required_gates(original)
+            copied = Path(tmp) / "copied-evidence" / "bundle"
+            copied.parent.mkdir(parents=True)
+            shutil.copytree(original, copied)
+
+            payload = self._run("verify", "--run-dir", str(copied))
+            self.assertTrue(payload["ok"])
+            for name in ("uat_measurement.json", "uat_metrics.json", "evidence_manifest.json"):
+                self.assertNotIn(str(original), (copied / name).read_text(encoding="utf-8"))
+
     def test_portable_uat_entry_skill_links_formal_delivery_reference(self) -> None:
         skill = ROOT / "skills" / "using-superleads" / "SKILL.md"
 
