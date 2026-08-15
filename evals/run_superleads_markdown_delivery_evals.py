@@ -56,7 +56,7 @@ def _claimed_path_attestation_problems(
     expected_ok: bool,
     expected_issue_codes: list[str],
     graph_sha256: str,
-    markdown_sha256: str,
+    markdown_sha256: str | None,
 ) -> list[str]:
     attestation = payload.get("claimed_path_attestation")
     if not isinstance(attestation, dict):
@@ -77,8 +77,14 @@ def _claimed_path_attestation_problems(
     issue_codes = [item.get("code") for item in attestation.get("issues", []) if isinstance(item, dict)]
     if issue_codes != expected_issue_codes:
         problems.append(f"attestation issue codes expected {expected_issue_codes!r} got {issue_codes!r}")
-    if "expected.md" in json.dumps(attestation, ensure_ascii=False):
+    serialized_attestation = json.dumps(attestation, ensure_ascii=False)
+    if str(ROOT) in serialized_attestation:
+        problems.append("attestation exposed an absolute workspace path")
+    if "expected.md" in serialized_attestation:
         problems.append("attestation exposed the temporary exporter path")
+    for key in ("fixture", "cache_root", "export", "background_export", "northshore_row"):
+        if key in payload:
+            problems.append(f"claimed-path output unexpectedly contains legacy smoke alias {key}")
     return problems
 
 
@@ -261,6 +267,83 @@ def _claimed_path_mismatch_case(py: str, tmp_path: Path) -> dict[str, Any]:
     }
 
 
+def _claimed_path_directory_case(py: str, tmp_path: Path) -> dict[str, Any]:
+    fixture = ROOT / "evals" / "fixtures" / "market_pass_xingheng_minimum_boundary.json"
+    graph_arg = str(fixture.relative_to(ROOT))
+    markdown_arg = str(tmp_path.relative_to(ROOT))
+    route = "product_outbound_market_analysis"
+    claimed_check = run([
+        py,
+        str(FORMAL_CHECKER),
+        "--skip-cache",
+        "--claimed-graph",
+        graph_arg,
+        "--claimed-markdown",
+        markdown_arg,
+        "--claimed-route",
+        route,
+        "--format",
+        "json",
+    ], 1)
+    parsed = _parse_json_output(str(claimed_check.get("output", "")))
+    problems: list[str] = []
+    if "Traceback" in str(claimed_check.get("output", "")):
+        problems.append("directory claimed Markdown produced a traceback")
+    top_level_issue_codes = [item.get("code") for item in parsed.get("issues", []) if isinstance(item, dict)]
+    if "formal_markdown_claimed_markdown_not_readable" not in top_level_issue_codes:
+        problems.append("top-level issues missing formal_markdown_claimed_markdown_not_readable")
+    problems.extend(_claimed_path_attestation_problems(
+        parsed,
+        graph=graph_arg,
+        markdown=markdown_arg,
+        route=route,
+        expected_ok=False,
+        expected_issue_codes=["formal_markdown_claimed_markdown_not_readable"],
+        graph_sha256=hashlib.sha256(fixture.read_bytes()).hexdigest(),
+        markdown_sha256=None,
+    ))
+    if problems:
+        claimed_check["ok"] = False
+        claimed_check["returncode"] = 0
+        claimed_check["output"] += "\nclaimed path directory assertion failed: " + "; ".join(problems)
+    return {
+        "name": "real UAT claimed path check reports an unreadable Markdown path as JSON",
+        "fixture": str(fixture.relative_to(ROOT)),
+        "claimed_path_check": claimed_check,
+        "ok": bool(claimed_check.get("ok")),
+    }
+
+
+def _legacy_smoke_alias_case(py: str) -> dict[str, Any]:
+    smoke_check = run([
+        py,
+        str(FORMAL_CHECKER),
+        "--skip-cache",
+        "--format",
+        "json",
+    ], 0)
+    parsed = _parse_json_output(str(smoke_check.get("output", "")))
+    smoke = parsed.get("smoke_check")
+    problems: list[str] = []
+    if not isinstance(smoke, dict):
+        problems.append("missing smoke_check")
+    else:
+        for key in ("fixture", "cache_root", "export", "background_export", "northshore_row"):
+            if parsed.get(key) != smoke.get(key):
+                problems.append(f"legacy smoke alias {key} does not match smoke_check")
+    if "claimed_path_attestation" in parsed:
+        problems.append("no-claim smoke output unexpectedly contains claimed_path_attestation")
+    if problems:
+        smoke_check["ok"] = False
+        smoke_check["returncode"] = 1
+        smoke_check["output"] += "\nlegacy smoke alias assertion failed: " + "; ".join(problems)
+    return {
+        "name": "legacy no-claim smoke output keeps top-level aliases",
+        "smoke_check": smoke_check,
+        "ok": bool(smoke_check.get("ok")),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--suite", choices=["all"], default="all")
@@ -273,6 +356,8 @@ def main() -> int:
             results.append(_case(py, case, tmp_path, index))
         results.append(_claimed_path_positive_case(py, tmp_path))
         results.append(_claimed_path_mismatch_case(py, tmp_path))
+        results.append(_claimed_path_directory_case(py, tmp_path))
+        results.append(_legacy_smoke_alias_case(py))
     total = len(results)
     passed = sum(1 for result in results if result.get("ok"))
     summary = {"suite": args.suite, "total": total, "passed": passed, "failed": total - passed, "results": results}

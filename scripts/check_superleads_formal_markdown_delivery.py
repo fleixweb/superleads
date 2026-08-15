@@ -235,12 +235,45 @@ def check_customer_background_export_support() -> tuple[list[dict[str, str]], di
     return issues, payload
 
 
-def check_claimed_export_output(graph: Path, markdown: Path, *, route: str) -> list[dict[str, str]]:
+def _read_claimed_markdown(path: Path, markdown_arg: str) -> tuple[str | None, dict[str, str] | None]:
+    if not path.is_file():
+        return None, _issue(
+            "formal_markdown_claimed_markdown_not_readable",
+            f"claimed Markdown report is not a readable UTF-8 file: {markdown_arg}",
+            markdown_arg,
+        )
+    try:
+        return _read(path), None
+    except (OSError, UnicodeDecodeError):
+        return None, _issue(
+            "formal_markdown_claimed_markdown_not_readable",
+            f"claimed Markdown report is not a readable UTF-8 file: {markdown_arg}",
+            markdown_arg,
+        )
+
+
+def check_claimed_export_output(
+    graph: Path,
+    markdown: Path,
+    *,
+    graph_arg: str,
+    markdown_arg: str,
+    route: str,
+) -> list[dict[str, str]]:
     issues: list[dict[str, str]] = []
     if not graph.exists():
-        return [_issue("formal_markdown_claimed_graph_missing", f"claimed graph JSON does not exist: {graph}", str(graph))]
+        return [_issue("formal_markdown_claimed_graph_missing", f"claimed graph JSON does not exist: {graph_arg}", graph_arg)]
+    if not graph.is_file():
+        return [_issue(
+            "formal_markdown_claimed_graph_not_readable",
+            f"claimed graph JSON is not a readable file: {graph_arg}",
+            graph_arg,
+        )]
     if not markdown.exists():
-        return [_issue("formal_markdown_claimed_markdown_missing", f"claimed Markdown report does not exist: {markdown}", str(markdown))]
+        return [_issue("formal_markdown_claimed_markdown_missing", f"claimed Markdown report does not exist: {markdown_arg}", markdown_arg)]
+    claimed_text, markdown_issue = _read_claimed_markdown(markdown, markdown_arg)
+    if markdown_issue is not None:
+        return [markdown_issue]
     with tempfile.TemporaryDirectory() as tmp:
         expected_path = Path(tmp) / "expected.md"
         payload, expected_text = _run_export(graph, expected_path, route=route)
@@ -248,15 +281,14 @@ def check_claimed_export_output(graph: Path, markdown: Path, *, route: str) -> l
         issues.append(_issue(
             "formal_markdown_claimed_graph_export_failed",
             "claimed graph could not be exported by export_superleads_markdown.py",
-            str(graph),
+            graph_arg,
         ))
         return issues
-    claimed_text = _read(markdown)
     if claimed_text != expected_text:
         issues.append(_issue(
             "formal_markdown_claimed_output_mismatch",
             "claimed Markdown path does not exactly match export_superleads_markdown.py output for the claimed graph",
-            f"{markdown} claimed_sha256={_sha256_text(claimed_text)} expected_sha256={_sha256_text(expected_text)}",
+            f"{markdown_arg} claimed_sha256={_sha256_text(claimed_text)} expected_sha256={_sha256_text(expected_text)}",
         ))
     return issues
 
@@ -326,7 +358,13 @@ def main() -> int:
             claimed_markdown_path = Path(claimed_markdown_arg)
             claimed_graph = claimed_graph_path if claimed_graph_path.is_absolute() else ROOT / claimed_graph_path
             claimed_markdown = claimed_markdown_path if claimed_markdown_path.is_absolute() else ROOT / claimed_markdown_path
-            claimed_issues = check_claimed_export_output(claimed_graph, claimed_markdown, route=args.claimed_route)
+            claimed_issues = check_claimed_export_output(
+                claimed_graph,
+                claimed_markdown,
+                graph_arg=claimed_graph_arg,
+                markdown_arg=claimed_markdown_arg,
+                route=args.claimed_route,
+            )
             issues.extend(claimed_issues)
             claimed_attestation = claimed_path_attestation(
                 graph_arg=claimed_graph_arg,
@@ -362,6 +400,8 @@ def main() -> int:
     }
     if claimed_attestation is not None:
         payload["claimed_path_attestation"] = claimed_attestation
+    elif not (args.claimed_graph or args.claimed_markdown):
+        payload.update(payload["smoke_check"])
     if args.format == "json":
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:
