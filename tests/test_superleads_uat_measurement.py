@@ -316,11 +316,54 @@ class SuperleadsUatMeasurementTest(unittest.TestCase):
             artifacts = self._record_required_passes(run_dir, run_dir.parent / "external-artifacts")
             artifacts["preflight"].unlink()
 
-            verify = self._run("verify", "--run-dir", str(run_dir))
             payload = self._finalize_portable_required_gates(run_dir)
+            verify = self._run("verify", "--run-dir", str(run_dir))
 
             self.assertTrue(verify["ok"])
             self.assertEqual(payload["formal_uat_protocol_status"], "passed")
+
+    def test_record_gate_stages_directory_with_relative_manifest_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = self._durable_run_dir(tmp, "staged-directory")
+            runtime_package = self._runtime_package(run_dir.parent / "runtime-package")
+            source_bundle = run_dir.parent / "external-source-bundle"
+            source_bundle.mkdir(parents=True)
+            (source_bundle / "adapter.json").write_text('{"operation": "open"}\n', encoding="utf-8")
+            nested = source_bundle / "graph" / "current-run.json"
+            nested.parent.mkdir(parents=True)
+            nested.write_text('{"observations": ["obs-1"]}\n', encoding="utf-8")
+            self._run(
+                "init",
+                "--run-dir",
+                str(run_dir),
+                "--route",
+                "product_outbound_market_analysis",
+                "--runtime-package",
+                str(runtime_package),
+            )
+            self._record_passing_gate(run_dir, run_dir.parent / "external-artifacts", "preflight")
+            self._run(
+                "record-gate",
+                "--run-dir",
+                str(run_dir),
+                "--gate",
+                "source_evidence",
+                "--result",
+                "passed",
+                "--artifact",
+                str(source_bundle),
+            )
+            self._record_passing_gate(run_dir, run_dir.parent / "external-artifacts", "validator")
+
+            self._finalize_portable_required_gates(run_dir)
+            manifest = json.loads((run_dir / "evidence_manifest.json").read_text(encoding="utf-8"))
+
+            staged = [item for item in manifest["artifacts"] if item["gate"] == "source_evidence"]
+            self.assertEqual(len(staged), 1)
+            self.assertEqual(staged[0]["kind"], "directory")
+            self.assertFalse(Path(staged[0]["relative_path"]).is_absolute())
+            self.assertEqual(len(staged[0]["files"]), 2)
+            self.assertTrue(self._run("verify", "--run-dir", str(run_dir))["ok"])
 
     def test_verify_and_finalize_reject_tampered_staged_artifact(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

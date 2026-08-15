@@ -24,10 +24,19 @@ UAT = User Acceptance Testing，即用户验收测试。这里特指：用真实
 “并行运行，不可横向比较”。RUN_DIR 名称也必须使用实际 UTC 时间，不能写固定的
 `T000000Z` 占位值。
 
+正式 UAT 的 RUN_DIR 必须位于非临时、可复制的位置。仓库内推荐使用已忽略的
+`.plugin-eval/manual/uat-runs/`；`/tmp` 可以保留失败诊断，但无论其它 gate 是否通过，
+都不能声明为可携带的正式 UAT 成功。开始前必须从本轮源码构建运行时插件包；测量器
+会将 manifest、版本、Git HEAD 和该运行时包的内容清单封存在 RUN_DIR。
+
 ```bash
+RUN_DIR="$PWD/.plugin-eval/manual/uat-runs/superleads-uat-$(date -u +%Y%m%dT%H%M%SZ)"
+python3 scripts/build_superleads_plugin_package.py --output "$PWD/dist/superleads" --format json
+
 python3 scripts/measure_superleads_uat.py init \
   --run-dir "$RUN_DIR" \
   --route product_outbound_market_analysis \
+  --runtime-package "$PWD/dist/superleads" \
   --token-usage-availability unavailable \
   --format json
 ```
@@ -49,6 +58,12 @@ python3 scripts/measure_superleads_uat.py active-stop --run-dir "$RUN_DIR" --not
 `exporter_completeness`、`measurement_protocol` 或 `other`。不能把业务资料缺口、
 来源受限或未执行模块伪装成工具失败。
 
+`record-gate --artifact` 会在写入 ledger 前将文件或目录复制到 RUN_DIR 的
+`artifacts/` 并记录相对路径与 SHA-256；不能只保存原始的绝对路径。产品市场真实 UAT
+还必须记录 `source_evidence`：其中至少包含同一 Run 的搜索/打开来源 operation record，
+以及由这些已打开来源产生 Source/Observation 的 graph。搜索摘要、候选链接或手写说明
+不能替代该 gate。
+
 在正式 validator 前必须先运行输入预检。它不是 validator 的替代品：只提前定位
 来源原文锚定、联系人关联、枚举和产品属性可见投影错误。产品市场使用紧凑 notes 时，
 先对 `graph + notes` 预检，再编译，并对编译图谱再预检一次。
@@ -68,6 +83,11 @@ python3 scripts/measure_superleads_uat.py record-gate \
   --artifact "$RUN_DIR/preflight_result.json" --format json
 
 python3 scripts/measure_superleads_uat.py record-gate \
+  --run-dir "$RUN_DIR" --gate source_evidence --result passed \
+  --artifact "$RUN_DIR/source_operations.json" \
+  --artifact "$RUN_DIR/current_run_graph.json" --format json
+
+python3 scripts/measure_superleads_uat.py record-gate \
   --run-dir "$RUN_DIR" --gate validator --result failed \
   --failure-class graph_contract --artifact "$RUN_DIR/validator-attempt-1.json" \
   --format json
@@ -80,6 +100,7 @@ python3 scripts/measure_superleads_uat.py record-gate \
 python3 scripts/measure_superleads_uat.py finalize \
   --run-dir "$RUN_DIR" \
   --required-gate preflight \
+  --required-gate source_evidence \
   --required-gate input_precheck \
   --required-gate validator \
   --required-gate audit \
@@ -88,6 +109,9 @@ python3 scripts/measure_superleads_uat.py finalize \
   --required-gate user_visible \
   --required-gate claimed_path \
   --format json
+
+python3 scripts/measure_superleads_uat.py verify \
+  --run-dir "$RUN_DIR" --format json
 ```
 
 单客背调没有 audit gate 时不传 `--required-gate audit`。`finalize` 在任何必需 gate
@@ -100,7 +124,7 @@ python3 scripts/measure_superleads_uat.py finalize \
 作为已记录且必需的 gate，位于编译前紧凑 notes 预检和编译后 graph 预检之间：
 
 ```text
-preflight -> input_precheck_notes -> compiler -> input_precheck_graph ->
+preflight -> source_evidence -> input_precheck_notes -> compiler -> input_precheck_graph ->
 validator -> audit -> markdown_export -> workbook_export -> user_visible -> claimed_path
 ```
 
@@ -121,8 +145,11 @@ validator -> audit -> markdown_export -> workbook_export -> user_visible -> clai
 | claimed path check result | `check_superleads_formal_markdown_delivery.py --claimed-graph ... --claimed-markdown ...` 的 JSON 结果，必须 `ok=true` / `issue_count=0` |
 | input precheck result | `precheck_superleads_uat_input.py` 的 JSON 结果，必须 `ok=true` / `issue_count=0`；产品市场若使用 compact notes，保存编译前与编译后两份结果 |
 | UAT metrics JSON | `measure_superleads_uat.py finalize` 写出的 `$RUN_DIR/uat_metrics.json`；必须说明首遍状态、修复轮数、活动/墙钟耗时、Git 一致性与 token 可观测性 |
+| Release identity | `$RUN_DIR/release_identity.json`；记录插件 manifest 版本与 SHA-256、Git HEAD 和封存运行时包的内容清单，不能从当前工作区版本推断 |
+| Evidence manifest | `$RUN_DIR/evidence_manifest.json`；仅含封存工件的相对路径与 SHA-256；`measure_superleads_uat.py verify` 必须通过，复制整个 RUN_DIR 后也必须可复核 |
 
 没有 graph JSON 的搜索笔记、截图整理、手写表格或临时 Markdown，只能算 research draft / source-collection note，不能算正式 UAT 通过。
+缺少 release identity、runtime package、封存 artifact 或 `verify` 失败的运行同样不能算正式 UAT 通过；即使静态 eval 或 benchmark harness 返回零也不能替代这些工件。
 
 ## 固定命令
 
