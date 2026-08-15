@@ -39,6 +39,19 @@ FAILURE_CLASSES = (
     "other",
 )
 TOKEN_USAGE_AVAILABILITY = ("available", "unavailable", "unknown")
+PRODUCT_MARKET_REQUIRED_GATES = (
+    "preflight",
+    "source_evidence",
+    "input_precheck_notes",
+    "compiler",
+    "input_precheck_graph",
+    "validator",
+    "audit",
+    "markdown_export",
+    "workbook_export",
+    "user_visible",
+    "claimed_path",
+)
 
 
 def _now() -> str:
@@ -351,6 +364,35 @@ def _required_gate_artifact_issues(ledger: dict[str, Any], required_gates: list[
     return issues
 
 
+def _product_market_gate_chain_issues(ledger: dict[str, Any], required_gates: list[str]) -> list[str]:
+    if ledger.get("route") != "product_outbound_market_analysis":
+        return []
+
+    issues: list[str] = []
+    if tuple(required_gates) != PRODUCT_MARKET_REQUIRED_GATES:
+        issues.append("product_market_uat_required_gate_chain_mismatch")
+
+    expected_index = 0
+    for event in ledger.get("gate_events", []):
+        if not isinstance(event, dict):
+            continue
+        gate = event.get("gate")
+        if gate not in PRODUCT_MARKET_REQUIRED_GATES:
+            issues.append(f"product_market_uat_gate_unknown:{gate}")
+            continue
+        expected_gate = (
+            PRODUCT_MARKET_REQUIRED_GATES[expected_index]
+            if expected_index < len(PRODUCT_MARKET_REQUIRED_GATES)
+            else None
+        )
+        if gate != expected_gate:
+            issues.append(f"product_market_uat_gate_order_violation:{gate}")
+            continue
+        if event.get("result") == "passed":
+            expected_index += 1
+    return issues
+
+
 def _safe_evidence_path(run_dir: Path, relative_path: Any) -> tuple[Path | None, str]:
     if not isinstance(relative_path, str) or not relative_path or Path(relative_path).is_absolute():
         return None, str(relative_path)
@@ -638,6 +680,7 @@ def command_finalize(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     summary = _gate_summary(ledger)
     measurement_issues = _required_gate_issues(summary, args.required_gate)
     measurement_issues.extend(_required_gate_artifact_issues(ledger, args.required_gate))
+    measurement_issues.extend(_product_market_gate_chain_issues(ledger, args.required_gate))
     if _open_interval(ledger) is not None:
         measurement_issues.append("active_interval_open")
     if not git_unchanged:

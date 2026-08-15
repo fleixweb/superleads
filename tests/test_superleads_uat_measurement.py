@@ -14,6 +14,19 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MEASURER = ROOT / "scripts" / "measure_superleads_uat.py"
 PORTABLE_REQUIRED_GATES = ("preflight", "source_evidence", "validator")
+PRODUCT_MARKET_REQUIRED_GATES = (
+    "preflight",
+    "source_evidence",
+    "input_precheck_notes",
+    "compiler",
+    "input_precheck_graph",
+    "validator",
+    "audit",
+    "markdown_export",
+    "workbook_export",
+    "user_visible",
+    "claimed_path",
+)
 
 
 class SuperleadsUatMeasurementTest(unittest.TestCase):
@@ -212,6 +225,87 @@ class SuperleadsUatMeasurementTest(unittest.TestCase):
             self.assertFalse(payload["first_pass_success"])
             self.assertIn("required_gate_missing:validator", payload["measurement_issues"])
 
+    def test_product_market_finalize_rejects_caller_shortened_gate_chain(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = self._durable_run_dir(tmp, "market-shortened-chain")
+            runtime_package = self._runtime_package(run_dir.parent / "runtime-package")
+            external_dir = run_dir.parent / "external-artifacts"
+            self._run(
+                "init",
+                "--run-dir",
+                str(run_dir),
+                "--route",
+                "product_outbound_market_analysis",
+                "--runtime-package",
+                str(runtime_package),
+            )
+            for gate in PRODUCT_MARKET_REQUIRED_GATES:
+                self._record_passing_gate(run_dir, external_dir, gate)
+
+            payload = self._run(
+                "finalize",
+                "--run-dir",
+                str(run_dir),
+                "--required-gate",
+                "preflight",
+                expected=1,
+            )
+
+            self.assertEqual(payload["formal_uat_protocol_status"], "failed")
+            self.assertIn("product_market_uat_required_gate_chain_mismatch", payload["measurement_issues"])
+
+    def test_product_market_finalize_rejects_out_of_order_gate_events(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = self._durable_run_dir(tmp, "market-out-of-order-chain")
+            runtime_package = self._runtime_package(run_dir.parent / "runtime-package")
+            external_dir = run_dir.parent / "external-artifacts"
+            self._run(
+                "init",
+                "--run-dir",
+                str(run_dir),
+                "--route",
+                "product_outbound_market_analysis",
+                "--runtime-package",
+                str(runtime_package),
+            )
+            out_of_order = ("preflight", "compiler", *PRODUCT_MARKET_REQUIRED_GATES[1:3], *PRODUCT_MARKET_REQUIRED_GATES[4:])
+            for gate in out_of_order:
+                self._record_passing_gate(run_dir, external_dir, gate)
+
+            args = ["finalize", "--run-dir", str(run_dir)]
+            for gate in PRODUCT_MARKET_REQUIRED_GATES:
+                args.extend(("--required-gate", gate))
+            payload = self._run(*args, expected=1)
+
+            self.assertEqual(payload["formal_uat_protocol_status"], "failed")
+            self.assertIn("product_market_uat_gate_order_violation:compiler", payload["measurement_issues"])
+
+    def test_product_market_finalize_rejects_unknown_gate_event(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = self._durable_run_dir(tmp, "market-unknown-gate")
+            runtime_package = self._runtime_package(run_dir.parent / "runtime-package")
+            external_dir = run_dir.parent / "external-artifacts"
+            self._run(
+                "init",
+                "--run-dir",
+                str(run_dir),
+                "--route",
+                "product_outbound_market_analysis",
+                "--runtime-package",
+                str(runtime_package),
+            )
+            for gate in PRODUCT_MARKET_REQUIRED_GATES:
+                self._record_passing_gate(run_dir, external_dir, gate)
+            self._record_passing_gate(run_dir, external_dir, "unexpected_gate")
+
+            args = ["finalize", "--run-dir", str(run_dir)]
+            for gate in PRODUCT_MARKET_REQUIRED_GATES:
+                args.extend(("--required-gate", gate))
+            payload = self._run(*args, expected=1)
+
+            self.assertEqual(payload["formal_uat_protocol_status"], "failed")
+            self.assertIn("product_market_uat_gate_unknown:unexpected_gate", payload["measurement_issues"])
+
     def test_optional_recorded_gate_failure_still_breaks_first_pass(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             run_dir = self._durable_run_dir(tmp, "market-uat")
@@ -222,7 +316,7 @@ class SuperleadsUatMeasurementTest(unittest.TestCase):
                 "--run-dir",
                 str(run_dir),
                 "--route",
-                "product_outbound_market_analysis",
+                "bulk_customer_development",
                 "--runtime-package",
                 str(runtime_package),
             )
@@ -260,7 +354,7 @@ class SuperleadsUatMeasurementTest(unittest.TestCase):
                 "--run-dir",
                 str(run_dir),
                 "--route",
-                "product_outbound_market_analysis",
+                "bulk_customer_development",
                 "--runtime-package",
                 str(runtime_package),
             )
@@ -288,7 +382,7 @@ class SuperleadsUatMeasurementTest(unittest.TestCase):
                 "--run-dir",
                 str(run_dir),
                 "--route",
-                "product_outbound_market_analysis",
+                "bulk_customer_development",
                 "--runtime-package",
                 str(runtime_package),
             )
@@ -309,7 +403,7 @@ class SuperleadsUatMeasurementTest(unittest.TestCase):
                 "--run-dir",
                 str(run_dir),
                 "--route",
-                "product_outbound_market_analysis",
+                "bulk_customer_development",
                 "--runtime-package",
                 str(runtime_package),
             )
@@ -337,7 +431,7 @@ class SuperleadsUatMeasurementTest(unittest.TestCase):
                 "--run-dir",
                 str(run_dir),
                 "--route",
-                "product_outbound_market_analysis",
+                "bulk_customer_development",
                 "--runtime-package",
                 str(runtime_package),
             )
@@ -374,7 +468,7 @@ class SuperleadsUatMeasurementTest(unittest.TestCase):
                 "--run-dir",
                 str(run_dir),
                 "--route",
-                "product_outbound_market_analysis",
+                "bulk_customer_development",
                 "--runtime-package",
                 str(runtime_package),
             )
@@ -399,7 +493,7 @@ class SuperleadsUatMeasurementTest(unittest.TestCase):
                 "--run-dir",
                 str(run_dir),
                 "--route",
-                "product_outbound_market_analysis",
+                "bulk_customer_development",
             )
             self._record_required_passes(run_dir, run_dir.parent / "external-artifacts")
 
@@ -521,7 +615,7 @@ class SuperleadsUatMeasurementTest(unittest.TestCase):
                 "--run-dir",
                 str(run_dir),
                 "--route",
-                "product_outbound_market_analysis",
+                "bulk_customer_development",
                 "--runtime-package",
                 str(runtime_package),
             )
