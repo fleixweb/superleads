@@ -6,8 +6,7 @@ import argparse, json
 from datetime import datetime, timezone
 from typing import Any
 from _superleads_common import (
-    CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES,
-    CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES,
+    CODEX_CLI_ADAPTER_OWNED_CAPABILITIES,
     adapter_reports_from_run,
     is_canonical_platform_id,
     load_json,
@@ -45,19 +44,19 @@ def _missing_codex_adapter_result() -> dict[str, Any]:
     return {
         "recognized": False,
         "valid": False,
-        "owned_capabilities": sorted(set(CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES) | set(CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES)),
-        "mapped_capabilities": {capability: "unknown" for capability in set(CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES) | set(CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES)},
-        "raw_mapped_capabilities": {capability: "unknown" for capability in set(CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES) | set(CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES)},
+        "owned_capabilities": sorted(CODEX_CLI_ADAPTER_OWNED_CAPABILITIES),
+        "mapped_capabilities": {capability: "unknown" for capability in CODEX_CLI_ADAPTER_OWNED_CAPABILITIES},
+        "raw_mapped_capabilities": {capability: "unknown" for capability in CODEX_CLI_ADAPTER_OWNED_CAPABILITIES},
         "issues": [{
             "code": "codex_native_capability_adapter_required",
-            "message": "Codex CLI native search/source capability requires a valid capability adapter report",
+            "message": "Codex CLI capability requires a valid capability adapter report",
             "path": "capability_adapter_reports",
         }],
     }
 
 
 def _invalid_platform_result() -> dict[str, Any]:
-    owned = sorted(set(CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES) | set(CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES))
+    owned = sorted(CODEX_CLI_ADAPTER_OWNED_CAPABILITIES)
     return {
         "recognized": False,
         "valid": False,
@@ -101,13 +100,21 @@ def preflight(payload: dict[str,Any]|None) -> dict[str,Any]:
                     "message": "Capability adapter report platform must match the canonical Run platform",
                     "path": "capability_adapter_reports",
                 })
+            if payload.get("platform") == "codex_cli":
+                capabilities_to_map = CODEX_CLI_ADAPTER_OWNED_CAPABILITIES
+            else:
+                capabilities_to_map = adapter_result["owned_capabilities"]
+            if has_platform and payload.get("platform") != "codex_cli":
                 for capability in adapter_result["owned_capabilities"]:
                     adapter_result["mapped_capabilities"][capability] = "unknown"
-            for capability in adapter_result["owned_capabilities"]:
-                provided[capability] = adapter_result["mapped_capabilities"][capability]
+            for capability in capabilities_to_map:
+                if capability in adapter_result["mapped_capabilities"]:
+                    provided[capability] = adapter_result["mapped_capabilities"][capability]
+                elif normalize_status(provided.get(capability)) == "available":
+                    provided[capability] = "unknown"
         elif payload.get("platform") == "codex_cli" and any(
             normalize_status(provided.get(capability)) == "available"
-            for capability in set(CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES) | set(CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES)
+            for capability in CODEX_CLI_ADAPTER_OWNED_CAPABILITIES
         ):
             adapter_result = _missing_codex_adapter_result()
             for capability in adapter_result["owned_capabilities"]:

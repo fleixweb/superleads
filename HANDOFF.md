@@ -1,5 +1,11 @@
 # Handoff
 
+## 2026-08-15 0.1.20 preflight adapter ownership repair
+
+- The repair derives `CODEX_CLI_ADAPTER_OWNED_CAPABILITIES` from native web search, `web__run`, and shell HTTP adapter constants. Codex preflight now reconciles those capabilities independently: an unmapped self-reported `available` becomes `unknown`, an explicit `missing` remains `missing`, and an invalid extra report does not erase a valid provider mapping.
+- Verification passed: focused preflight `4/4`, capability-adapter cases `24/24`, unit tests `57/57`, full evals `731/731`, Python compilation, `git diff --check`, and a strict 126-file runtime package build with zero distribution issues. Source manifests and `dist/superleads` are `0.1.20`.
+- The enabled cache `/home/fleix/.codex/plugins/cache/fleix/superleads/0.1.20` is an earlier `0.1.20` build and differs from the rebuilt package in `scripts/preflight_capabilities.py`; it was not overwritten in this task. Preserve `tmp/stage5_chillys/` unchanged.
+
 ## 2026-08-15 0.1.19 adapter contract repair
 
 - The repair adds failed-open dual-ID adapter binding, one-to-one consumption of identical open records, a shell-only sensitive-data check, and recursive `.plugin-eval` runtime exclusion/rejection. Product-market validation now reuses the public source-restricted status set. The release manifests are `0.1.19`.

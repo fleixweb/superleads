@@ -10,6 +10,12 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 - **MINOR**: adds capabilities without breaking existing research graphs.
 - **PATCH**: fixes bugs or changes copy.
 
+## [0.1.20] - 2026-08-15
+
+### Fixed
+
+- Derive Codex preflight ownership from every recognized adapter and reconcile each owned capability independently, so unsupported self-reported availability is downgraded without erasing valid provider mappings or explicit missing states.
+
 ## [0.1.19] - 2026-08-15
 
 ### Fixed

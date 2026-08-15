@@ -1,5 +1,11 @@
 # Tasks
 
+## 2026-08-15 已完成：0.1.20 preflight adapter ownership repair
+
+- 本次修复从 native web search、`web__run` 和 shell HTTP adapter 常量派生 `CODEX_CLI_ADAPTER_OWNED_CAPABILITIES`；Codex preflight 改为逐能力采用有效 adapter 映射。未映射的自报 `available` 降为 `unknown`，显式 `missing` 保持不变，无效附加报告不会抹掉有效 provider 映射。
+- 已通过 focused preflight `4/4`、capability-adapter cases `24/24`、unit tests `57/57`、全量 eval `731/731`、Python 编译、`git diff --check` 和 126 文件严格 runtime package 构建。manifest 与 `dist/superleads` 均为 `0.1.20`。
+- 已启用缓存 `/home/fleix/.codex/plugins/cache/fleix/superleads/0.1.20` 是较早的 `0.1.20` 构建，与新包仅在 `scripts/preflight_capabilities.py` 不同；本任务未覆盖缓存。必须保留 `tmp/stage5_chillys/`。
+
 ## 2026-08-15 已完成：0.1.19 adapter contract repair
 
 - 适配器合同已修复：failed-open 双 ID 绑定、相同 open 记录的一对一消费、仅 shell 的敏感数据检查，以及递归排除/拒绝 `.plugin-eval` 运行时内容；产品市场校验复用公共受限状态集合；release manifest 已更新至 `0.1.19`。
