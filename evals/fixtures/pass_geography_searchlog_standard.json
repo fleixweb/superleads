@@ -321,7 +321,7 @@
               "open_source": {
                 "status": "verified",
                 "original_url": "https://example.com",
-                "source_title": "Example Buyer",
+                "source_title": "Example Buyer Contact",
                 "raw_excerpt": "Example Buyer is located in Region Q. Example Buyer Contact: sales@example.com",
                 "excerpt_locator": "body"
               }
@@ -403,8 +403,8 @@
       "reviewed_assessment_ids": [
         "assess_001"
       ],
-      "input_graph_hash": "98ff4a70762b9d2a0fb4dec0bfb3d566a26cd6b58c3bf4b3af07fb83996b27a5",
-      "reviewed_subject_hash": "98ff4a70762b9d2a0fb4dec0bfb3d566a26cd6b58c3bf4b3af07fb83996b27a5",
+      "input_graph_hash": "4d81f5e30604bce49b0d0c2b6ee1af73a7a2f2aea2420035d17a1c61befc7e9f",
+      "reviewed_subject_hash": "4d81f5e30604bce49b0d0c2b6ee1af73a7a2f2aea2420035d17a1c61befc7e9f",
       "provenance_level": "declared_separate_session"
     }
   ],

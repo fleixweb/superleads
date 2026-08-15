@@ -1,0 +1,10 @@
+{
+  "extends": "market_pass_codex_web_run_open_source_verified.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/runs/0/capability_adapter_report/host_tools/web__run/operations/open/0/original_url",
+      "value": "https://unrelated.example/source"
+    }
+  ]
+}

@@ -48,6 +48,7 @@ from _superleads_common import (
     CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES,
     CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES,
     adapter_reports_from_run,
+    codex_adapter_observation_operation_key,
     codex_adapter_allows_observation,
     contains_shell_http_forbidden_data,
     is_canonical_platform_id,
@@ -890,6 +891,7 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
     valid_runs = [run for run in run_items if isinstance(run, dict) and has_text(run.get("run_id"))]
     multi_run_graph = len(run_items) > 1
     sole_run = valid_runs[0] if len(valid_runs) == 1 else None
+    used_open_operation_keys_by_run: dict[str, set[str]] = {}
     for idx, obs in enumerate(ensure_list(graph, "observations")):
         if not isinstance(obs, dict): continue
         sid = obs.get("source_id")
@@ -965,6 +967,26 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
                             "Codex shell HTTP Observation requires public credential-free HTTP(S) Source URLs",
                             f"observations[{idx}].source_id",
                         ))
+                if capability == "source.open":
+                    operation_key = codex_adapter_observation_operation_key(adapter_result, capability, obs.get("concrete_tool"), source, obs)
+                    if operation_key is None:
+                        issues.append(issue(
+                            "critical",
+                            "codex_observation_open_operation_mismatch",
+                            "Codex source Observation does not match a compatible Run open operation by Source URL, title, excerpt, and locator",
+                            f"observations[{idx}]",
+                        ))
+                    else:
+                        run_key = str(observation_run.get("run_id") or observation_run_id or "sole-run")
+                        used_keys = used_open_operation_keys_by_run.setdefault(run_key, set())
+                        if operation_key in used_keys:
+                            issues.append(issue(
+                                "critical",
+                                "codex_observation_open_operation_reused",
+                                "A recorded Codex open operation cannot back more than one Observation",
+                                f"observations[{idx}]",
+                            ))
+                        used_keys.add(operation_key)
                     if contains_shell_http_forbidden_data({
                         "canonical_url": source.get("canonical_url") if isinstance(source, dict) else None,
                         "final_url": source.get("final_url") if isinstance(source, dict) else None,

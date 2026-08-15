@@ -67,10 +67,10 @@ SUBJECT_ANCHOR_MARKERS = (
 TABLE_MARKERS = ("客户表", "客户名单表", "excel", "csv", "表格补全", "补全表格", "补全已有")
 PRODUCT_MARKERS = (
     "产品", "型号", "电池", "锂电", "纺织", "衬衫", "面料", "化工", "农产品", "机械",
-    "配件", "零件", "汽车配件", "户外家具", "柴油发电机", "发电机",
+    "配件", "零件", "汽车配件", "户外家具", "柴油发电机", "发电机", "电水壶",
     "钢材", "粮食", "矿产", "水果", "蔬菜", "茶", "工装", "灯芯绒",
     "steel", "battery", "textile", "fabric", "shirt", "product", "parts",
-    "accessories", "furniture", "generator",
+    "accessories", "furniture", "generator", "kettle",
 )
 MARKET_QUESTION_OR_ANALYSIS_MARKERS = (
     "分析", "查", "查询", "核实", "确认", "判断", "看一下", "了解", "研究", "评估",
@@ -81,6 +81,8 @@ MARKET_QUESTION_OR_ANALYSIS_MARKERS = (
 NEGATED_CUSTOMER_PATTERNS = (
     r"(?:不|不要|不用|无需|先不|暂不|别)(?:帮我)?(?:再)?(?:找|开发|生成|整理|输出|给).{0,10}(?:客户|买家|进口商|采购商|经销商|批发商|零售商|代理商|客户名单|名单|leads)",
     r"(?:不生成|不要生成|不输出|不要输出|不做).{0,10}(?:客户名单|客户|买家|leads)",
+    r"(?:不|不要|不用|无需|先不|暂不|别)(?:要|需要)?(?:帮我)?(?:再)?(?:做|进行|启动|安排)?(?:客户开发|找客户|找买家|找进口商|找采购商|找经销商|找批发商|找零售商|找代理商|客户名单|名单|leads)",
+    r"(?:不|不要|不用|无需|先不|暂不|别)[^，,。；;！？!?\n]{0,24}(?:客户开发|找客户|找买家|找进口商|找采购商|找经销商|找批发商|找零售商|找代理商|客户名单|名单|leads)",
 )
 NEGATED_MARKET_PATTERNS = (
     r"(?:不|不要|不用|无需|先不|暂不|别)(?:做|分析|生成|整理|输出).{0,10}(?:市场分析|产品出海市场分析|准入分析|关税分析|认证分析)",
@@ -89,6 +91,13 @@ EXPLICIT_SPLIT_MARKERS = (
     "并分析", "再分析", "顺便分析", "同时分析", "另外分析", "分析一下", "市场分析",
     "产品出海市场分析", "顺便确认", "同时确认", "另外确认", "顺便查", "同时查",
     "并查", "再查", "关税和准入", "准入和关税",
+)
+EXPLICIT_MARKET_SCOPE_MARKERS = ("只做", "仅做", "只要", "仅要")
+EXPLICIT_MARKET_SCOPE_LABELS = (
+    ("准入", ("准入", "认证", "测试", "注册", "标签", "sds", "un38.3", "un 38.3", "ce", "ul", "fcc", "fda")),
+    ("税费", ("关税", "税率", "税费", "进口税", "hts", "htsus", "hs code", "taric")),
+    ("出口要求", ("出口文件", "出口报关", "商检", "检验检疫", "出口管制")),
+    ("物流", ("物流", "运输", "海运", "空运", "快递", "清关", "预申报")),
 )
 
 
@@ -236,16 +245,33 @@ def _product_hint(text: str) -> str:
     return stripped[:80] if stripped else "待确认产品"
 
 
+def _explicit_market_scope_labels(text: str) -> list[str]:
+    if not contains_any(text, EXPLICIT_MARKET_SCOPE_MARKERS):
+        return []
+    return [
+        label
+        for label, markers in EXPLICIT_MARKET_SCOPE_LABELS
+        if contains_any(text, markers)
+    ]
+
+
 def _market_response(text: str, split_customer_development: bool) -> list[str]:
     product = _product_hint(text)
     target = _target_hint(text)
     export_country = _export_country_hint(text)
+    scope_labels = _explicit_market_scope_labels(text)
     lines = [
         "我理解你要做的是：产品出海市场分析。",
         f"本轮对象：{product} → {target}。",
         f"默认出口申报国：{export_country}；原产国、起运地、最终税号和技术文件不足时会保留待确认。",
-        "我会整理趋势、公开价格参考、准入、税费、出口要求、物流和外部因素；不生成客户名单，也不判断是否值得进入。",
     ]
+    if scope_labels:
+        lines.append(
+            f"本轮范围：{'、'.join(scope_labels)}；未点名模块不纳入本轮。"
+            "不生成客户名单，也不判断是否值得进入。"
+        )
+    else:
+        lines.append("我会整理趋势、公开价格参考、准入、税费、出口要求、物流和外部因素；不生成客户名单，也不判断是否值得进入。")
     if split_customer_development:
         lines.append("你提到找客户的部分建议放到第二阶段，等你看完市场分析后再单独启动批量客户开发。")
     if _has_concrete_subject_anchor(text) and re.search(r"https?://|www\.", text, re.IGNORECASE):

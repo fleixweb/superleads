@@ -76,13 +76,15 @@
               "search": {
                 "status": "verified"
               },
-              "open_source": {
-                "status": "verified",
-                "original_url": "https://example.com/products",
-                "source_title": "Example Buyer products",
-                "raw_excerpt": "Example Buyer offers sample product.",
-                "excerpt_locator": "body"
-              }
+          "open_source": {
+            "status": "verified",
+            "original_url": "https://example.com",
+            "source_id": "src_001",
+            "observation_id": "obs_001",
+            "source_title": "Example Buyer Contact",
+            "raw_excerpt": "Example Buyer sells sample product. Example Buyer Contact: sales@example.com",
+            "excerpt_locator": "body"
+          }
             }
           }
         },
@@ -105,12 +107,12 @@
     {
       "op": "replace",
       "path": "/review_attestations/0/input_graph_hash",
-      "value": "a3933f8a61ab4941102db2b1df126694f9c8dc3c591d234803298aad19aa995c"
+      "value": "b3ca342ce0cffb622296edaf654b665ff4c0dbe5f92c002fa7b5de898174c775"
     },
     {
       "op": "replace",
       "path": "/review_attestations/0/reviewed_subject_hash",
-      "value": "a3933f8a61ab4941102db2b1df126694f9c8dc3c591d234803298aad19aa995c"
+      "value": "b3ca342ce0cffb622296edaf654b665ff4c0dbe5f92c002fa7b5de898174c775"
     }
   ]
 }

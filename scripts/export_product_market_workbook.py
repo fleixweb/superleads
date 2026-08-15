@@ -562,12 +562,6 @@ def requested_market_modules(graph: dict[str, Any] | None) -> set[str] | None:
     normalized = {_SCOPE_ALIASES[token] for token in tokens}
     if not normalized or normalized == set(MARKET_MODULE_KEYS):
         return None
-    # One or two modules is the normal single-item shape.  The explicit
-    # trend/price/market-material trio is one business question that spans
-    # three tables; every other larger request defaults to the full report.
-    market_signal_trio = {"google_trends", "online_price", "market_reports"}
-    if len(normalized) > 2 and normalized != market_signal_trio:
-        return None
     return normalized
 
 
@@ -589,19 +583,22 @@ def selected_sheet_order(graph: dict[str, Any] | None = None) -> list[str]:
 
 
 def _market_scope_declaration(graph: dict[str, Any]) -> list[str]:
-    """Render the user-visible boundary for an explicit single-item report."""
+    """Render the user-visible boundary for an explicit module selection."""
     requested = requested_market_modules(graph)
     if requested is None:
         return []
     requested_groups = [label for label, keys in _SCOPE_GROUPS if requested & keys]
-    uncovered = [label for label, keys in _SCOPE_GROUPS if not requested & keys]
     if not requested_groups:
         return []
     scope_text = "、".join(requested_groups)
+    scope_line = (
+        f"本轮范围：只做了「{scope_text}」一项。"
+        if len(requested_groups) == 1
+        else f"本轮范围：只做「{scope_text}」。"
+    )
     return [
-        f"本轮范围：只做了「{scope_text}」一项。",
-        f"未覆盖：{'、'.join(uncovered)}。",
-        "需要哪一项可以继续要求。",
+        scope_line,
+        "其他模块不在本轮范围。",
         "",
     ]
 
@@ -1083,6 +1080,17 @@ def _source_rows(
     allowed_source_ids: set[str] | None = None,
 ) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
+    complete_scope = is_complete_market_scope(graph)
+    freshness_advice = (
+        "法规、关税、价格、物流和外部因素应按对应字段复核窗口重新打开来源"
+        if complete_scope
+        else "本轮相关事项应按对应字段复核窗口重新打开来源"
+    )
+    freshness_boundary = (
+        "不能仅凭来源列表或目录维护日期写成最新法规、最新税率、最新价格或最新行情"
+        if complete_scope
+        else "不能仅凭来源列表或目录维护日期写成最新或最终结论"
+    )
     observations = _observation_by_source(graph)
     for idx, source in enumerate(ensure_list(graph, "sources"), start=1):
         if not isinstance(source, dict):
@@ -1106,8 +1114,8 @@ def _source_rows(
             "URL / 文件名": url,
             "资料观察日期": _safe_cell(observed_at or "日期未见"),
             "资料时效": "来源表只显示观察日期；是否可当现行信息以对应矩阵行的资料时效为准",
-            "复核建议": "法规、关税、价格、物流和外部因素应按对应字段复核窗口重新打开来源",
-            "不能当最新结论": "不能仅凭来源列表或目录维护日期写成最新法规、最新税率、最新价格或最新行情",
+            "复核建议": freshness_advice,
+            "不能当最新结论": freshness_boundary,
             "支持字段": "来源本身仅作可追溯入口；具体支持字段以各矩阵行为准",
             "状态": status,
             "依据状态": status,
@@ -1506,6 +1514,7 @@ def _md_escape(value: Any) -> str:
 def markdown_report(sheets: dict[str, list[dict[str, str]]], graph: dict[str, Any] | None = None) -> str:
     visible_order = selected_sheet_order(graph)
     visible_sheets = {sheet_name: sheets.get(sheet_name, []) for sheet_name in visible_order}
+    complete_scope = is_complete_market_scope(graph)
     lines: list[str] = [
         "# 产品出海市场分析",
         "",
@@ -1514,10 +1523,12 @@ def markdown_report(sheets: dict[str, list[dict[str, str]]], graph: dict[str, An
     ]
     if isinstance(graph, dict):
         lines.extend(_market_scope_declaration(graph))
-        lines.extend(_brief_markdown_summary(graph))
-    lines.extend(_origin_proof_markdown_summary(visible_sheets))
-    lines.extend(_freshness_markdown_summary(visible_sheets))
-    lines.extend(_authority_markdown_summary(visible_sheets))
+        if complete_scope:
+            lines.extend(_brief_markdown_summary(graph))
+    if complete_scope:
+        lines.extend(_origin_proof_markdown_summary(visible_sheets))
+        lines.extend(_freshness_markdown_summary(visible_sheets))
+        lines.extend(_authority_markdown_summary(visible_sheets))
     for sheet_name in visible_order:
         rows = visible_sheets.get(sheet_name, [])
         headers = _headers_for_sheet(sheet_name, rows)

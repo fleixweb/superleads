@@ -25,6 +25,8 @@ Read these only as needed:
 - `../../spec/24-product-outbound-market-analysis-origin-proof-requirements.md` when COO / proof of origin appears.
 - `../../spec/29-product-outbound-market-analysis-certification-requirement-calibration.md` when certification, test, registration, labeling, packaging, SDS, UN38.3, or compliance-file requirements appear.
 - Run `../../scripts/preflight_capabilities.py --require-formal-research` before a formal analysis. It requires `search.web` plus `source.open`, `browser.render`, or `document.extract`; if blocked, give the prescribed switch-environment message and do not issue a market report or source plan as a substitute delivery.
+- When the Codex session exposes `web__run`, prefer its native operations instead of any third-party MCP: use `search_query` for SearchLog candidate locators, then `open` for each source whose facts may enter the report. For the same Run, record the verified `codex_cli_web_run` adapter report and use `concrete_tool: web__run` on SearchLogs and opened Observations. `click`, `find`, `screenshot`, and `image_query` are auxiliary operations only; they do not independently authorize a formal source or fact.
+- When `web__run.search_query` succeeds but `web__run.open` cannot provide the public HTML/text source, use `../../scripts/capture_public_http_source.py --url <public-url> --run-id <run-id> --format json`. It performs one credential-free `curl GET` per requested URL, verifies each DNS resolution and redirect target as public, and emits one matching open operation plus Source / Observation seeds per URL with `concrete_tool: curl`. Merge that report into the same Run beside the `codex_cli_web_run` search-only report. It never grants `search.web`, creates SearchLogs, Claims, EvidenceCards, MatrixRows, tax rates, certification results, or logistics conclusions. If native search fails, stop at the capability gate; `curl` cannot replace it.
 - Plan source collection with `../../scripts/plan_product_market_sources.py` before any real search/open step. Its output is `source_plan_only`, an internal execution artifact rather than evidence or a formal user delivery.
 - Before compiling compact notes, run `../../scripts/precheck_superleads_uat_input.py --route product_outbound_market_analysis --graph source-observations.json --notes compact-evidence-notes.json --format json`. It catches invalid compact enums, missing/opened Observation bindings, and non-verbatim source excerpts without running the formal validator.
 - After real sources have been opened and recorded as Source / Observation, use `../../scripts/compile_product_market_evidence.py` to compile concise evidence notes into the existing EvidenceCard / MatrixRow / Gap graph objects. It does not search, open URLs, decide authority, or promote a status.
@@ -56,13 +58,17 @@ source plan. It is the sole scope selector for the report; do not add another
 scope field.
 
 - An overall request such as “产品出海市场分析”, “出口某国分析”, or “进入某国市场分析” uses the complete report: include every module. Missing or empty `analysis_modules_requested`, an unrecognised value, or any uncertain intent also defaults to the complete report.
-- A clearly single-item request may select only the relevant module(s):
+- A clearly scoped request may select one or more relevant modules. Preserve
+  every explicitly requested module in `analysis_modules_requested`; do not
+  expand a valid multi-module request into the complete report:
   - certification, tests, registration, labels, SDS, UN38.3, CE, UL, SABER -> `certification`;
   - tariff, duty, tax rate, HS/HTS tax question -> `import_tax`;
   - COO / proof of origin -> `certification` (the origin-proof row is included in that table);
   - clearance, shipping, transport, pre-filing -> `logistics`;
   - export declaration, inspection, export controls -> `export_requirements`;
   - trends, prices, or “好不好卖” -> `google_trends`, `online_price`, and `market_reports`.
+- For example, “只做美国准入、税费、出口文件和物流” ->
+  `destination_compliance`, `import_tax`, `export_requirements`, `logistics`.
 - Keep existing planner vocabulary such as `destination_compliance`,
   `origin_proof_requirement`, and `market_signal` when they are already present
   in a Brief; exporters map those legacy keys to the corresponding table.
@@ -74,9 +80,11 @@ must state the boundary, for example:
 
 ```text
 本轮范围：只做了「目标国准入与认证要求」一项。
-未覆盖：进口税费、出口国要求、物流与申报、市场趋势与价格、季节窗口、近期外部因素。
-需要哪一项可以继续要求。
+其他模块不在本轮范围。
 ```
+
+For more than one requested module, list all selected scope groups rather than
+calling the request a single item.
 
 The complete report renders all twelve tables in the order below. Empty tables
 must explain whether collection was not run, ran without a usable public source,

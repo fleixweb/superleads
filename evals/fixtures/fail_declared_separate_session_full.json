@@ -318,13 +318,15 @@
               "search": {
                 "status": "verified"
               },
-              "open_source": {
-                "status": "verified",
-                "original_url": "https://example.com",
-                "source_title": "Example Buyer",
-                "raw_excerpt": "Example Buyer is located in Region Q. Example Buyer Contact: sales@example.com",
-                "excerpt_locator": "body"
-              }
+          "open_source": {
+            "status": "verified",
+            "original_url": "https://example.com",
+            "source_id": "src_001",
+            "observation_id": "obs_001",
+            "source_title": "Example Buyer Contact",
+            "raw_excerpt": "Example Buyer is located in Region Q. Example Buyer Contact: sales@example.com",
+            "excerpt_locator": "body"
+          }
             }
           }
         },
@@ -403,8 +405,8 @@
       "reviewed_assessment_ids": [
         "assess_001"
       ],
-      "input_graph_hash": "bb70df6cf8db947d0397ef1bee5a16afd2466fd37a86e8442c8c542f945496cb",
-      "reviewed_subject_hash": "bb70df6cf8db947d0397ef1bee5a16afd2466fd37a86e8442c8c542f945496cb",
+      "input_graph_hash": "ced540be03648e67c3c8989d525b8c623ece85cad2811d6ad6605e3f9df8f7f2",
+      "reviewed_subject_hash": "ced540be03648e67c3c8989d525b8c623ece85cad2811d6ad6605e3f9df8f7f2",
       "provenance_level": "declared_separate_session"
     }
   ],

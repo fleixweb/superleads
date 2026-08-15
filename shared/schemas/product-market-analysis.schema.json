@@ -99,6 +99,45 @@
         "brief_id": {"type": "string", "minLength": 1},
         "brief_version_id": {"type": "string", "minLength": 1},
         "default_export_declaration_country": {"type": "string", "minLength": 1},
+        "platform": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-z][a-z0-9_]{0,127}$",
+          "not": {
+            "enum": ["curl", "wget", "python_requests", "shell_curl", "native_fetch"]
+          }
+        },
+        "capabilities": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "search.web": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "source.open": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "browser.render": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "document.extract": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "image.inspect": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "mail.read": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "source.capture": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "url.canonicalize": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "entity.dedupe": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "translate.text": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "company.enrich": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "email.verify": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "domain.check": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "social.visible.read": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "registry.lookup": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "trademark.lookup": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "maps.lookup": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "memory.recall": {"$ref": "run.schema.json#/$defs/capabilityStatus"}
+          }
+        },
+        "capability_adapter_report": {"$ref": "run.schema.json#/$defs/capabilityAdapterReport"},
+        "capability_adapter_reports": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "run.schema.json#/$defs/capabilityAdapterReport"}
+        },
         "execution_mode": {
           "type": "string",
           "enum": ["planning_only", "sample_static", "source_opened", "full_research"]

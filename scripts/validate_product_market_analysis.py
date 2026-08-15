@@ -17,7 +17,20 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
-from _superleads_common import contains_local_path, has_text, is_safe_public_http_url, issue
+from _superleads_common import (
+    CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES,
+    CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES,
+    CODEX_WEB_RUN_OWNED_CAPABILITIES,
+    adapter_reports_from_run,
+    codex_adapter_observation_operation_key,
+    codex_adapter_allows_observation,
+    contains_local_path,
+    has_text,
+    is_canonical_platform_id,
+    is_safe_public_http_url,
+    issue,
+    resolve_capability_adapter_reports,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "shared" / "schemas"
@@ -1833,6 +1846,46 @@ def _market_search_collection_issues(
     brief_ids = set(ids["briefs"])
     brief_versions = {str(item.get("brief_version_id")) for item in ensure_list(graph, "briefs") if isinstance(item, dict) and has_text(item.get("brief_version_id"))}
     search_logs = [item for item in ensure_list(graph, "search_logs") if isinstance(item, dict)]
+    runs_by_id = ids["runs"]
+    run_items = [item for item in ensure_list(graph, "runs") if isinstance(item, dict)]
+    sole_run = run_items[0] if len(run_items) == 1 else None
+    used_open_operation_keys_by_run: dict[str, set[str]] = {}
+
+    for idx, run in enumerate(run_items):
+        path = f"runs[{idx}]"
+        platform = run.get("platform")
+        if platform is not None and not is_canonical_platform_id(platform):
+            _add_issue(issues, "critical", "market_run_platform_not_canonical", "Product-market Run platform must be a canonical host ID, not a concrete tool", f"{path}.platform")
+        reports = adapter_reports_from_run(run)
+        capabilities = run.get("capabilities")
+        native_capability_declared = (
+            platform == "codex_cli"
+            and isinstance(capabilities, dict)
+            and any(capabilities.get(capability) == "available" for capability in (
+                *CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES,
+                *CODEX_WEB_RUN_OWNED_CAPABILITIES,
+                *CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES,
+            ))
+        )
+        if native_capability_declared and not reports:
+            _add_issue(issues, "critical", "market_codex_native_capability_adapter_required", "Codex CLI search/source capability requires a valid, explicit capability adapter report", f"{path}.capability_adapter_reports")
+        if reports:
+            adapter_result = resolve_capability_adapter_reports(reports)
+            for report_index, report in enumerate(reports):
+                report_platform = report.get("platform") if isinstance(report, dict) else None
+                if not is_canonical_platform_id(report_platform):
+                    _add_issue(issues, "critical", "market_run_platform_not_canonical", "Capability adapter report platform must be a canonical host ID", f"{path}.capability_adapter_reports[{report_index}].platform")
+                if report_platform != platform:
+                    _add_issue(issues, "critical", "market_capability_adapter_run_platform_mismatch", "Capability adapter report platform must match its Run platform", f"{path}.capability_adapter_reports[{report_index}].platform")
+            for adapter_issue in adapter_result["issues"]:
+                _add_issue(issues, "critical", str(adapter_issue["code"]), str(adapter_issue["message"]), f"{path}.{adapter_issue['path']}")
+            if not isinstance(capabilities, dict):
+                _add_issue(issues, "critical", "market_capability_adapter_run_mapping_missing", "Run capability adapter reports require canonical Run capabilities", f"{path}.capabilities")
+            else:
+                for capability in adapter_result["owned_capabilities"]:
+                    expected_status = adapter_result["mapped_capabilities"][capability]
+                    if capabilities.get(capability) != expected_status:
+                        _add_issue(issues, "critical", "market_capability_adapter_run_mapping_mismatch", f"Run {capability} must match the verified capability adapter mapping", f"{path}.capabilities.{capability}")
 
     for idx, log in enumerate(search_logs):
         path = f"search_logs[{idx}]"
@@ -1848,6 +1901,18 @@ def _market_search_collection_issues(
             _add_issue(issues, "critical", "market_search_log_capability_invalid", "Market SearchLog capability must be search.web", f"{path}.capability")
         if str(log.get("concrete_tool") or "") in {"curl", "wget", "python_requests", "source.open", "browser.render"}:
             _add_issue(issues, "critical", "market_search_log_tool_invalid", "Market SearchLog concrete_tool must identify a search provider, not a source-opening tool", f"{path}.concrete_tool")
+        run = runs_by_id.get(str(log.get("run_id") or ""))
+        if isinstance(run, dict) and run.get("platform") == "codex_cli":
+            reports = adapter_reports_from_run(run)
+            if not reports:
+                _add_issue(issues, "critical", "market_codex_native_capability_adapter_required", "Codex CLI SearchLog requires a valid capability adapter report", f"{path}.concrete_tool")
+            else:
+                adapter_result = resolve_capability_adapter_reports(reports)
+                capabilities = run.get("capabilities")
+                if not isinstance(capabilities, dict) or capabilities.get("search.web") != "available":
+                    _add_issue(issues, "critical", "market_run_capability_not_available_for_search_log", "Market SearchLog requires search.web=available for its Run", f"{path}.capability")
+                if not codex_adapter_allows_observation(adapter_result, "search.web", log.get("concrete_tool")):
+                    _add_issue(issues, "critical", "market_search_log_tool_not_allowed_by_adapter", "Market SearchLog concrete_tool is not authorized by this Run's verified search provider", f"{path}.concrete_tool")
         if not has_text(log.get("query_text")):
             _add_issue(issues, "critical", "market_search_log_query_missing", "Market SearchLog requires query_text", f"{path}.query_text")
         if contains_local_path(log.get("query_text")) or "file:" in str(log.get("query_text") or "").casefold():
@@ -1902,6 +1967,33 @@ def _market_search_collection_issues(
             continue
         if obs.get("capability") == "search.web":
             _add_issue(issues, "critical", "market_search_result_as_observation", "Search.web output belongs in SearchLog, not Observation", f"{path}.capability")
+        observation_run_id = obs.get("run_id")
+        if len(run_items) > 1 and not has_text(observation_run_id):
+            _add_issue(issues, "critical", "market_observation_run_id_missing", "A multi-Run product-market graph requires every Observation to declare its Run", f"{path}.run_id")
+        observation_run = runs_by_id.get(str(observation_run_id)) if has_text(observation_run_id) else sole_run
+        if isinstance(observation_run, dict) and observation_run.get("platform") == "codex_cli":
+            reports = adapter_reports_from_run(observation_run)
+            capability = obs.get("capability")
+            if not reports and capability in CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES:
+                _add_issue(issues, "critical", "market_codex_native_capability_adapter_required", "Codex CLI source Observation requires a valid capability adapter report on its Run", f"{path}.capability")
+            elif reports:
+                capabilities = observation_run.get("capabilities")
+                if not isinstance(capabilities, dict) or capabilities.get(capability) != "available":
+                    _add_issue(issues, "critical", "market_run_capability_not_available_for_observation", f"Observation uses {capability}, but its Run host capability report did not verify it as available", f"{path}.capability")
+                if capability in CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES:
+                    adapter_result = resolve_capability_adapter_reports(reports)
+                    if not codex_adapter_allows_observation(adapter_result, capability, obs.get("concrete_tool")):
+                        _add_issue(issues, "critical", "market_codex_observation_tool_not_allowed_by_adapter", "Codex source Observation concrete_tool is not explicitly authorized by a verified provider", f"{path}.concrete_tool")
+                    if capability == "source.open":
+                        operation_key = codex_adapter_observation_operation_key(adapter_result, capability, obs.get("concrete_tool"), source, obs)
+                        if operation_key is None:
+                            _add_issue(issues, "critical", "market_codex_observation_open_operation_mismatch", "Codex source Observation does not match a compatible Run open operation by Source URL, title, excerpt, and locator", path)
+                        else:
+                            run_key = str(observation_run.get("run_id") or observation_run_id or "sole-run")
+                            used_keys = used_open_operation_keys_by_run.setdefault(run_key, set())
+                            if operation_key in used_keys:
+                                _add_issue(issues, "critical", "market_codex_observation_open_operation_reused", "A recorded Codex open operation cannot back more than one Observation", path)
+                            used_keys.add(operation_key)
         if source.get("medium") == "search_result":
             _add_issue(issues, "critical", "market_search_result_as_source", "Search result Source cannot produce Observation facts", path)
         if str(obs.get("access_status") or "") in SOURCE_RESTRICTED_ACCESS_STATUSES and has_text(obs.get("raw_excerpt")):

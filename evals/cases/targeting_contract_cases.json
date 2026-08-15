@@ -81,6 +81,12 @@
       "export_standard": "pass"
     },
     {
+      "fixture": "pass_codex_web_run_open_source_verified_standard_delivery.json",
+      "validate": "pass",
+      "audit_standard": "pass",
+      "export_standard": "pass"
+    },
+    {
       "fixture": "pass_codex_shell_http_source_open_standard.json",
       "validate": "pass",
       "audit_standard": "pass",

@@ -1,0 +1,29 @@
+{
+  "platform": "codex_cli",
+  "capability_adapter_report": {
+    "platform": "codex_cli",
+    "adapter": {
+      "adapter_id": "codex_cli_web_run",
+      "adapter_version": "1"
+    },
+    "detected_at": "2026-08-14T00:00:00Z",
+    "detection": "current_session_web__run_search_query",
+    "host_tools": {
+      "web__run": {
+        "status": "available",
+        "operations": {
+          "search_query": {
+            "status": "verified"
+          },
+          "open": {
+            "status": "not_verified"
+          }
+        }
+      }
+    },
+    "canonical_capabilities": {
+      "search.web": "available",
+      "source.open": "unknown"
+    }
+  }
+}

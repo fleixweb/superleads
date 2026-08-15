@@ -18,7 +18,7 @@
     {
       "op": "replace",
       "path": "/observations/0/concrete_tool",
-      "value": "web_search"
+      "value": "web__run"
     },
     {
       "op": "add",
@@ -26,19 +26,19 @@
       "value": {
         "platform": "codex_cli",
         "adapter": {
-          "adapter_id": "codex_cli_native_web_search",
+          "adapter_id": "codex_cli_web_run",
           "adapter_version": "1"
         },
-        "detected_at": "2026-07-15T00:00:00Z",
-        "detection": "current_session_tool_visibility_and_successful_source_open",
+        "detected_at": "2026-08-14T00:00:00Z",
+        "detection": "current_run_web__run_search_query_and_open",
         "host_tools": {
-          "web_search": {
+          "web__run": {
             "status": "available",
             "operations": {
-              "search": {
+              "search_query": {
                 "status": "verified"
               },
-          "open_source": {
+          "open": {
             "status": "verified",
             "original_url": "https://example.com",
             "source_id": "src_001",
@@ -59,12 +59,12 @@
     {
       "op": "replace",
       "path": "/review_attestations/0/input_graph_hash",
-      "value": "da93bfa567dee987b4571b80c09c52e054b577366789506bd93f81fd2f0b0ed3"
+      "value": "a131cb0b7e2f094214d95b9ac6e554a547d86f9faf27b00ca97121c4c6e66b80"
     },
     {
       "op": "replace",
       "path": "/review_attestations/0/reviewed_subject_hash",
-      "value": "da93bfa567dee987b4571b80c09c52e054b577366789506bd93f81fd2f0b0ed3"
+      "value": "a131cb0b7e2f094214d95b9ac6e554a547d86f9faf27b00ca97121c4c6e66b80"
     }
   ]
 }

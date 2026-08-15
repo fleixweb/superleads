@@ -60,10 +60,15 @@ when no URL is available.
   Source, Observation, Claim, ClaimEvidence, ScopeDecision, Assessment, or
   ready-contact evidence. Query text, snippets, actor/session IDs, and tool
   internals are never exported to workbooks or user-facing manifests.
-- A native host `web_search` call is still `search.web` unless that same
-  session separately verifies an opened HTTP(S) source with a source
+- A native host `web_search` call or Codex `web__run.search_query` call is
+  still `search.web` unless that same session separately verifies an opened
+  HTTP(S) source with a source
   identifier, verbatim excerpt, and locator. A search result summary, link,
   or citation cannot become an Observation or ClaimEvidence.
+- For the Codex `codex_cli_web_run` adapter, both SearchLog and opened-source
+  Observation use `concrete_tool: web__run`. `web__run.open` is the only
+  adapter operation that can authorize its `source.open` Observation; `click`,
+  `find`, `screenshot`, and `image_query` do not independently authorize one.
 - A Source exists only after a URL, document, spreadsheet, map result, directory entry, or user-provided material is opened or otherwise inspectable.
 - An Observation records visible or extracted content from a Source, including access status and locator.
 - In a graph containing multiple Runs, each Observation must carry its own

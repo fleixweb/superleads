@@ -1,0 +1,45 @@
+{
+  "extends": "market_pass_codex_web_run_open_source_verified.json",
+  "patches": [
+    {
+      "op": "remove",
+      "path": "/runs/0/capability_adapter_report"
+    },
+    {
+      "op": "add",
+      "path": "/runs/0/capability_adapter_reports"
+    ,
+      "value": [
+        {
+          "platform": "codex_cli",
+          "adapter": {"adapter_id": "codex_cli_web_run", "adapter_version": "1"},
+          "detected_at": "2026-08-14T00:00:00Z",
+          "detection": "current_run_web__run_search_query_success",
+          "host_tools": {"web__run": {"status": "available", "operations": {"search_query": {"status": "verified"}, "open": {"status": "not_verified"}}}},
+          "canonical_capabilities": {"search.web": "available", "source.open": "unknown"}
+        },
+        {
+          "platform": "codex_cli",
+          "adapter": {"adapter_id": "codex_cli_shell_http_source_open", "adapter_version": "1"},
+          "detected_at": "2026-08-14T00:01:00Z",
+          "detection": "capture_public_http_source curl GET success",
+          "host_tools": {"shell_http": {"status": "available", "allowed_concrete_tools": ["curl"], "operations": {"open_source": [
+            {"status": "verified", "request_method": "GET", "original_url": "https://www.uniqlo.com/us/en/products/E470177-000/00", "final_url": "https://www.uniqlo.com/us/en/products/E470177-000/00", "source_id": "source-uq-product-page", "observation_id": "observation-uq-product-page", "http_status": 200, "source_title": "UNIQLO Product 470177", "raw_excerpt": "Product ID: 470177; Body: 100% Cotton; Trim: 100% Cotton; Production: China; RN: 139864; 8-wale corduroy.", "excerpt_locator": "fixture-visible-excerpt"},
+            {"status": "verified", "request_method": "GET", "original_url": "https://hts.usitc.gov/", "final_url": "https://hts.usitc.gov/", "source_id": "source-us-hts-uq", "observation_id": "observation-us-hts-620520", "http_status": 200, "source_title": "HTS candidate path", "raw_excerpt": "HTS heading 6205.20 covers men's or boys' shirts of cotton, not knitted or crocheted; final classification requires physical garment review.", "excerpt_locator": "fixture-visible-excerpt"}
+          ]}}},
+          "canonical_capabilities": {"source.open": "available"}
+        }
+      ]
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/concrete_tool",
+      "value": "curl"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/1/concrete_tool",
+      "value": "curl"
+    }
+  ]
+}

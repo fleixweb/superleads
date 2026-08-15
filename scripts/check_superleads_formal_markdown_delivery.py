@@ -32,16 +32,7 @@ except Exception:  # pragma: no cover - defensive fallback for partial checkouts
 DEFAULT_CACHE_ROOT = Path.home() / ".codex" / "plugins" / "cache" / "fleix" / "superleads" / str(DEFAULT_PLUGIN_VERSION)
 SKILL_FILE_SNIPPETS = {
     "skills/using-superleads/SKILL.md": (
-        "export_superleads_markdown.py",
-        "Do not hand-render Markdown",
-        "Do not manually",
-        "saved graph",
-        "JSON path",
-        "research draft",
-        "claimed Markdown path",
-        "发现候选池样表",
-        "依据状态",
-        "已观察；来源受限",
+        "using-superleads-formal-delivery.md",
     ),
     "skills/exporting-lead-workbooks/SKILL.md": (
         "export_superleads_markdown.py",
@@ -62,6 +53,20 @@ SKILL_FILE_SNIPPETS = {
         "graph JSON",
         "Markdown exporter",
         "不要声称",
+    ),
+}
+REFERENCE_FILE_SNIPPETS = {
+    "shared/references/using-superleads-formal-delivery.md": (
+        "export_superleads_markdown.py",
+        "Do not hand-render Markdown",
+        "Do not manually",
+        "saved graph",
+        "JSON path",
+        "research draft",
+        "claimed Markdown path",
+        "发现候选池样表",
+        "依据状态",
+        "已观察；来源受限",
     ),
 }
 UAT_INTERNAL_BASIS_STATUS_SAMPLE = ROOT / "evals" / "user_visible_outputs" / "fail_bulk_customer_real_uat_internal_basis_status.md"
@@ -134,6 +139,32 @@ def check_skill_instructions(cache_root: Path, *, skip_cache: bool) -> list[dict
         for snippet in required_snippets:
             if snippet not in cached_text:
                 issues.append(_issue("formal_markdown_plugin_cache_instruction_missing", f"cached skill lacks required snippet: {snippet}", str(cached)))
+    return issues
+
+
+def check_reference_instructions(cache_root: Path, *, skip_cache: bool) -> list[dict[str, str]]:
+    issues: list[dict[str, str]] = []
+    for rel, required_snippets in REFERENCE_FILE_SNIPPETS.items():
+        source = ROOT / rel
+        if not source.exists():
+            issues.append(_issue("formal_markdown_reference_source_missing", f"missing source reference: {rel}", rel))
+            continue
+        source_text = _read(source)
+        for snippet in required_snippets:
+            if snippet not in source_text:
+                issues.append(_issue("formal_markdown_reference_instruction_missing", f"source reference lacks required snippet: {snippet}", rel))
+        if skip_cache:
+            continue
+        cached = cache_root / rel
+        if not cached.exists():
+            issues.append(_issue("formal_markdown_plugin_cache_reference_missing", f"missing cached reference: {cached}", str(cached)))
+            continue
+        cached_text = _read(cached)
+        if cached_text != source_text:
+            issues.append(_issue("formal_markdown_plugin_cache_reference_stale", f"cached reference differs from repo source: {rel}", str(cached)))
+        for snippet in required_snippets:
+            if snippet not in cached_text:
+                issues.append(_issue("formal_markdown_plugin_cache_reference_instruction_missing", f"cached reference lacks required snippet: {snippet}", str(cached)))
     return issues
 
 
@@ -342,6 +373,7 @@ def main() -> int:
 
     fixture = args.fixture if args.fixture.is_absolute() else ROOT / args.fixture
     issues = check_skill_instructions(args.cache_root, skip_cache=args.skip_cache)
+    issues.extend(check_reference_instructions(args.cache_root, skip_cache=args.skip_cache))
     issues.extend(check_real_uat_regression_sample())
     markdown_issues, export_payload, text = check_generated_markdown(fixture)
     issues.extend(markdown_issues)

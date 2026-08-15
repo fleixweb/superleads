@@ -3,6 +3,40 @@
   "validator": "scripts/validate_product_market_analysis.py",
   "cases": [
     {
+      "fixture": "market_pass_codex_web_run_search_plus_curl_source_open.json",
+      "market_validate": "pass",
+      "market_audit": "pass",
+      "market_export_csv": "pass",
+      "market_export_markdown": "pass"
+    },
+    {
+      "fixture": "market_pass_codex_web_run_open_source_verified.json",
+      "market_validate": "pass",
+      "market_audit": "pass",
+      "market_export_csv": "pass",
+      "market_export_markdown": "pass"
+    },
+    {
+      "fixture": "market_fail_codex_web_run_unapproved_tool.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_codex_observation_tool_not_allowed_by_adapter"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip"
+    },
+    {
+      "fixture": "market_fail_codex_web_run_unrelated_open_operation.json",
+      "market_validate": "fail",
+      "expected_error_codes": [
+        "market_codex_observation_open_operation_mismatch"
+      ],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip"
+    },
+    {
       "fixture": "market_pass_xingheng_minimum_boundary.json",
       "market_validate": "pass",
       "market_audit": "pass",
@@ -51,12 +85,11 @@
       "market_export_markdown": "pass",
       "market_export_present": [
         "本轮范围：只做了「目标国准入与认证要求」一项。",
-        "未覆盖：进口税费、出口国要求、物流与申报、市场趋势与价格、季节窗口、近期外部因素。",
+        "其他模块不在本轮范围。",
         "市场事实总览",
         "产品档案与触发项",
         "产品准入与合规要求",
-        "信息来源与待确认事项",
-        "用最少输入先做本轮范围内的客观核验"
+        "信息来源与待确认事项"
       ],
       "market_export_absent": [
         "\"sheet_name\": \"长期需求与搜索趋势\"",
@@ -68,11 +101,51 @@
         "\"sheet_name\": \"运输方式、路线、港口与申报节点\"",
         "\"sheet_name\": \"近期外部因素\"",
         "本轮未执行项",
+        "未覆盖：",
+        "市场趋势与价格",
+        "季节窗口",
+        "近期外部因素",
+        "## 先看贸易前提（本轮默认贸易口径）",
+        "## 资料时效 / Freshness",
+        "## 来源权威性 / Authority",
         "进口税费 / 最终 HTSUS / 最终税率",
         "运输方式、路线、港口与申报节点 / 包装资料",
         "运输方式、路线、港口与申报节点 / 起运节点",
         "HTS candidate path",
         "先做市场、准入、税费、出口与物流分析"
+      ]
+    },
+    {
+      "fixture": "market_pass_scope_access_tax_export_logistics.json",
+      "market_validate": "pass",
+      "market_audit": "pass",
+      "market_export_csv": "pass",
+      "market_export_markdown": "pass",
+      "market_export_present": [
+        "本轮范围：只做「目标国准入与认证要求、进口税费、出口国要求、物流与申报」。",
+        "其他模块不在本轮范围。",
+        "市场事实总览",
+        "产品档案与触发项",
+        "产品准入与合规要求",
+        "进口税费",
+        "出口国要求",
+        "运输方式、路线、港口与申报节点",
+        "信息来源与待确认事项"
+      ],
+      "market_export_absent": [
+        "\"sheet_name\": \"长期需求与搜索趋势\"",
+        "\"sheet_name\": \"公开市场资料与行业信息\"",
+        "\"sheet_name\": \"线上市场与价格参考\"",
+        "\"sheet_name\": \"季节、节日与销售窗口\"",
+        "\"sheet_name\": \"近期外部因素\"",
+        "本轮未执行项",
+        "未覆盖：",
+        "市场趋势与价格",
+        "季节窗口",
+        "近期外部因素",
+        "## 先看贸易前提（本轮默认贸易口径）",
+        "## 资料时效 / Freshness",
+        "## 来源权威性 / Authority"
       ]
     },
     {

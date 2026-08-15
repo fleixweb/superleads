@@ -4,8 +4,8 @@ Map platform-specific tools to Superleads capabilities before planning or execut
 
 | Superleads capability | Codex examples | Claude Code examples | Hermes examples | WorkBuddy examples | Degrade when missing |
 |---|---|---|---|---|---|
-| `search.web` | native `web_search` or another host-exposed search tool | WebSearch | Local/web search | built-in search | Use user-provided materials or write plan only. |
-| `source.open` | host operation that actually opens source text | WebFetch/browser | Local Browser | browser/source tool | Do not create Claims from search snippets. |
+| `search.web` | native `web__run.search_query`, `web_search`, or another host-exposed search tool | WebSearch | Local/web search | built-in search | Use user-provided materials or write plan only. |
+| `source.open` | native `web__run.open` or another host operation that actually opens source text | WebFetch/browser | Local Browser | browser/source tool | Do not create Claims from search snippets. |
 | `browser.render` | host-exposed rendered-page operation | browser | Local Browser | browser tool | Use text fetch or document extraction; label dynamic-page gaps. |
 | `document.extract` | local Python/PDF/CSV tools | file tools | file operations | document tools | Ask for pasted text or export initial list only. |
 | `image.inspect` | local OCR/image tools | image/file tools | local vision/file operations | image/OCR workflow | Ask for a clearer image, readable brand text, or a public link; do not infer ownership. |
@@ -24,6 +24,29 @@ Map platform-specific tools to Superleads capabilities before planning or execut
 | `memory.recall` | local memory/MemOS | project memory | memory | workflow memory | Use only to prioritize plans; never Claim/Assessment evidence. |
 
 ## Codex CLI Native Web Search
+
+### Preferred Codex `web__run` pathway
+
+When the current Codex session exposes `web__run`, Superleads prefers the
+controlled `codex_cli_web_run` adapter. It uses no third-party MCP:
+
+- `web__run.search_query` with a verified current-Run success maps to
+  `search.web` and can create SearchLog/candidate-locator records only.
+- `web__run.open` maps to `source.open` only after the same Run records the
+  public original URL, source title or identifier, non-empty verbatim excerpt,
+  and excerpt locator from the opened page.
+- SearchLogs and Source Observations record `concrete_tool: web__run`; the
+  graph validator rejects any other concrete tool under this provider.
+
+`click`, `find`, `screenshot`, and `image_query` are useful follow-up
+operations but do not independently grant a canonical formal capability. They
+may help navigate or inspect a page only after `search_query`/`open` evidence
+has been recorded through their respective gates. A search summary, citation,
+or result link is never a Source, Observation, Claim, or contact fact.
+
+The adapter report is created from actual current-Run tool results. Local
+scripts validate it; they never infer it from a visible tool list or fabricate
+an operation result.
 
 When Codex CLI starts a session with `codex --search`, the current session may
 expose the native `web_search` tool. Superleads reads only a capability report
@@ -63,13 +86,23 @@ tool, never a platform. The controlled `codex_cli_shell_http_source_open`
 adapter owns `source.open` only. It does not grant `search.web`, rendering,
 document extraction, or any other capability.
 
-The report records one actual, read-only public `GET` success with original
-and final public HTTP(S) URLs, a 2xx result, source identifier, verbatim
-excerpt, and locator. It may explicitly allow only `curl`, `wget`, or
-`python_requests`; every shell-backed Observation must use a tool in that
-Run's verified allowlist. Local/file URLs, private or loopback IP URLs,
+The report records one operation per actual, read-only public `GET` success,
+with original and final public HTTP(S) URLs, a 2xx result, source and
+Observation identifiers, verbatim excerpt, and locator. It may explicitly
+allow only `curl`, `wget`, or `python_requests`; every shell-backed Observation
+must use a tool in that Run's verified allowlist and match exactly one recorded
+operation. Local/file URLs, private or loopback IP URLs,
 credentials, cookies, Authorization data, tokens, passwords, POST requests,
 login-required pages, and restricted endpoints are outside this provider.
+
+`scripts/capture_public_http_source.py` is the supported Codex-local executor
+for this provider. It accepts one or more already discovered public URLs, uses
+a credential-free `curl GET` for each, pins each request to a freshly resolved
+global IP, and validates each redirect target before opening it. Its output is limited to
+the source-open adapter record and Source / Observation seeds. It never
+searches, creates a SearchLog, or emits business facts; failed capture emits
+no Source or Observation. It can complement a successful `web__run.search_query`,
+but cannot substitute for one.
 
 A Run may contain both this report and the native Web Search report. Their
 capability mappings are aggregated only when the mappings agree; two verified
@@ -80,11 +113,15 @@ search plus shell source opening is valid because native search records
 - A visible native `web_search` with a verified `search` operation maps only
   to `search.web=available`. Its output is a search log or initial candidate
   clue, so the maximum capability-only delivery is an initial lead list.
-- `source.open=available` requires a separately verified `open_source`
-  operation with the original HTTP(S) URL, a page title or equivalent source
-  identifier, a non-empty verbatim source excerpt, and its locator. A search
-  summary, link, citation, tool name, CLI flag, model name, or provider name
-  is not this verification.
+- `source.open=available` requires one or more separately verified
+  `open_source` operations. Every opened Observation must match exactly one
+  operation by Source URL, title, non-empty verbatim excerpt, and locator. A
+  search summary, link, citation, tool name, CLI flag, model name, or provider
+  name is not this verification.
+- A blocked, login-required, forbidden, inaccessible, or otherwise restricted
+  Observation must instead match its own `failed` open operation with the same
+  Source URL, title, excerpt, and locator. A failed operation never makes
+  `source.open` available and cannot support a Claim.
 - The adapter never maps `browser.render`. A host that exposes it must report
   that capability separately through its canonical contract; the same applies
   to `document.extract` and every other independent capability.

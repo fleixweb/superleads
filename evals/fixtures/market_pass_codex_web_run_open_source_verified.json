@@ -1,0 +1,131 @@
+{
+  "extends": "market_pass_uniqlo_minimum_boundary.json",
+  "patches": [
+    {
+      "op": "replace",
+      "path": "/runs/0/execution_mode",
+      "value": "source_opened"
+    },
+    {
+      "op": "add",
+      "path": "/runs/0/platform",
+      "value": "codex_cli"
+    },
+    {
+      "op": "add",
+      "path": "/runs/0/capabilities",
+      "value": {
+        "search.web": "available",
+        "source.open": "available",
+        "browser.render": "unknown",
+        "document.extract": "unknown"
+      }
+    },
+    {
+      "op": "add",
+      "path": "/runs/0/capability_adapter_report",
+      "value": {
+        "platform": "codex_cli",
+        "adapter": {
+          "adapter_id": "codex_cli_web_run",
+          "adapter_version": "1"
+        },
+        "detected_at": "2026-08-14T00:00:00Z",
+        "detection": "current_run_web__run_search_query_and_open",
+        "host_tools": {
+          "web__run": {
+            "status": "available",
+            "operations": {
+              "search_query": {
+                "status": "verified"
+              },
+              "open": [
+                {
+                  "status": "verified",
+                  "original_url": "https://www.uniqlo.com/us/en/products/E470177-000/00",
+                  "source_title": "UNIQLO Product 470177",
+                  "raw_excerpt": "Product ID: 470177; Body: 100% Cotton; Trim: 100% Cotton; Production: China; RN: 139864; 8-wale corduroy.",
+                  "excerpt_locator": "fixture-visible-excerpt"
+                },
+                {
+                  "status": "verified",
+                  "original_url": "https://hts.usitc.gov/",
+                  "source_title": "HTS candidate path",
+                  "raw_excerpt": "HTS heading 6205.20 covers men's or boys' shirts of cotton, not knitted or crocheted; final classification requires physical garment review.",
+                  "excerpt_locator": "fixture-visible-excerpt"
+                }
+              ]
+            }
+          }
+        },
+        "canonical_capabilities": {
+          "search.web": "available",
+          "source.open": "available"
+        }
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/run_id",
+      "value": "run-uq-us"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/0/concrete_tool",
+      "value": "web__run"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/1/run_id",
+      "value": "run-uq-us"
+    },
+    {
+      "op": "replace",
+      "path": "/observations/1/concrete_tool",
+      "value": "web__run"
+    },
+    {
+      "op": "add",
+      "path": "/search_logs",
+      "value": [
+        {
+          "search_log_id": "search-uq-product-page",
+          "run_id": "run-uq-us",
+          "brief_id": "brief-uq-us",
+          "brief_version_id": "brief-uq-us-v1",
+          "source_plan_route": "product_outbound_market_analysis_source_plan",
+          "source_plan_id": null,
+          "query_plan_id": "query-uq-product-page",
+          "query_group_id": "product_profile",
+          "pack_id": null,
+          "template_id": null,
+          "queried_at": "2026-08-14T00:00:00Z",
+          "capability": "search.web",
+          "concrete_tool": "web__run",
+          "query_text": "UNIQLO 470177 product details United States",
+          "targeted_geography_literals": [
+            "United States"
+          ],
+          "source_entry_ids": [],
+          "result_refs": [
+            {
+              "result_url": "https://www.uniqlo.com/us/en/products/E470177-000/00",
+              "result_rank": 1,
+              "result_title": "UNIQLO Product 470177",
+              "result_locator": "search result 1",
+              "candidate_source_id": "source-uq-product-page",
+              "opened_source_id": "source-uq-product-page",
+              "result_use": "opened_source_locator",
+              "snippet_or_summary": null
+            }
+          ],
+          "result_use": "source_candidate_only",
+          "must_open_source": true,
+          "reject_if_only_snippet": true,
+          "not_evidence": true,
+          "allowed_output": "search_log_or_source_locator_only"
+        }
+      ]
+    }
+  ]
+}

@@ -35,6 +35,32 @@
       "expected_adapter_valid": true
     },
     {
+      "name": "codex_web_run_open_source_verified",
+      "input": "evals/fixtures/preflight_codex_web_run_open_source_verified.json",
+      "expected_capabilities": {"search.web": "available", "source.open": "available", "browser.render": "unknown"},
+      "expected_max_output": "formal_research_ready",
+      "expected_formal_research_status": "ready",
+      "expected_adapter_valid": true
+    },
+    {
+      "name": "codex_web_run_search_only",
+      "input": "evals/fixtures/preflight_codex_web_run_search_only.json",
+      "expected_capabilities": {"search.web": "available", "source.open": "unknown", "browser.render": "unknown"},
+      "expected_max_output": "formal_research_blocked",
+      "expected_formal_research_status": "blocked",
+      "expected_formal_research_codes": ["formal_research_source_open_capability_missing"],
+      "expected_adapter_valid": true
+    },
+    {
+      "name": "codex_web_run_open_incomplete",
+      "input": "evals/fixtures/preflight_codex_web_run_open_incomplete.json",
+      "expected_capabilities": {"search.web": "unknown", "source.open": "unknown"},
+      "expected_max_output": "formal_research_blocked",
+      "expected_formal_research_status": "blocked",
+      "expected_adapter_codes": ["capability_adapter_open_source_verification_incomplete"],
+      "expected_adapter_valid": false
+    },
+    {
       "name": "codex_native_wrong_canonical_mapping",
       "input": "evals/fixtures/preflight_codex_native_wrong_canonical_mapping.json",
       "expected_capabilities": {"search.web": "unknown", "source.open": "unknown"},
@@ -73,6 +99,14 @@
     {
       "name": "codex_native_search_plus_shell_http",
       "input": "evals/fixtures/preflight_codex_native_search_plus_shell_http.json",
+      "expected_capabilities": {"search.web": "available", "source.open": "available"},
+      "expected_max_output": "formal_research_ready",
+      "expected_formal_research_status": "ready",
+      "expected_adapter_valid": true
+    },
+    {
+      "name": "codex_web_run_search_plus_shell_http",
+      "input": "evals/fixtures/preflight_codex_web_run_search_plus_shell_http.json",
       "expected_capabilities": {"search.web": "available", "source.open": "available"},
       "expected_max_output": "formal_research_ready",
       "expected_formal_research_status": "ready",

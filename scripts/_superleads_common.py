@@ -164,10 +164,15 @@ PUBLIC_SIGNAL_STATUS_LABELS = {
 CANONICAL_CAPABILITY_STATUSES = {"available", "missing", "unknown"}
 HOST_TOOL_STATUSES = {"available", "missing", "unknown", "failed"}
 HOST_OPERATION_STATUSES = {"verified", "missing", "unknown", "failed", "not_verified"}
+SOURCE_OPEN_FAILED_ACCESS_STATUSES = {"blocked", "login_wall", "login-wall", "login_required", "forbidden", "inaccessible", "not_accessed", "restricted"}
 CODEX_NATIVE_WEB_SEARCH_ADAPTER_ID = "codex_cli_native_web_search"
 CODEX_NATIVE_WEB_SEARCH_ADAPTER_VERSION = "1"
 CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES = ("search.web", "source.open")
 CODEX_NATIVE_WEB_SEARCH_ALLOWED_CONCRETE_TOOLS = ("web_search",)
+CODEX_WEB_RUN_ADAPTER_ID = "codex_cli_web_run"
+CODEX_WEB_RUN_ADAPTER_VERSION = "1"
+CODEX_WEB_RUN_OWNED_CAPABILITIES = ("search.web", "source.open")
+CODEX_WEB_RUN_ALLOWED_CONCRETE_TOOLS = ("web__run",)
 CODEX_SHELL_HTTP_SOURCE_OPEN_ADAPTER_ID = "codex_cli_shell_http_source_open"
 CODEX_SHELL_HTTP_SOURCE_OPEN_ADAPTER_VERSION = "1"
 CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES = ("source.open",)
@@ -379,7 +384,8 @@ def contains_shell_http_forbidden_data(value: Any) -> bool:
 
 def _adapter_result(adapter_id: str | None, owned: tuple[str, ...], raw_mapped: dict[str, str],
                     issues: list[dict[str, str]], recognized: bool,
-                    allowed_tools: dict[str, list[str]] | None = None) -> dict[str, Any]:
+                    allowed_tools: dict[str, list[str]] | None = None,
+                    verified_operations: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     valid = recognized and not issues
     return {
         "adapter_id": adapter_id,
@@ -389,8 +395,81 @@ def _adapter_result(adapter_id: str | None, owned: tuple[str, ...], raw_mapped: 
         "mapped_capabilities": dict(raw_mapped if valid else {capability: "unknown" for capability in owned}),
         "raw_mapped_capabilities": dict(raw_mapped),
         "allowed_concrete_tools": allowed_tools or {},
+        "verified_operations": verified_operations or [],
         "issues": issues,
     }
+
+
+def _operation_records(value: Any) -> list[dict[str, Any]]:
+    if isinstance(value, dict):
+        return [value]
+    if isinstance(value, list) and value and all(isinstance(item, dict) for item in value):
+        return value
+    return []
+
+
+def _verified_source_open_operations(adapter_id: str, records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Expose successful and explicitly failed opens for Observation binding."""
+    return [
+        {
+            "capability": "source.open",
+            "operation_key": f"{adapter_id}:source.open:{index}",
+            "operation": record,
+        }
+        for index, record in enumerate(records)
+        if _operation_status(record) in {"verified", "failed"}
+    ]
+
+
+def codex_adapter_observation_operation_key(
+    adapter_result: dict[str, Any],
+    capability: Any,
+    concrete_tool: Any,
+    source: Any,
+    observation: Any,
+) -> str | None:
+    """Return the single recorded source-open operation matching one Observation."""
+    if capability != "source.open" or not isinstance(source, dict) or not isinstance(observation, dict):
+        return None
+    source_urls = {
+        str(source.get(field))
+        for field in ("canonical_url", "final_url")
+        if has_text(source.get(field))
+    }
+    if not source_urls:
+        return None
+    for result in adapter_result.get("adapter_results", []):
+        if not isinstance(result, dict) or not result.get("valid"):
+            continue
+        if result.get("mapped_capabilities", {}).get(capability) != "available":
+            continue
+        if concrete_tool not in result.get("allowed_concrete_tools", {}).get(capability, []):
+            continue
+        expected_status = "failed" if observation.get("access_status") in SOURCE_OPEN_FAILED_ACCESS_STATUSES else "verified"
+        for binding in result.get("verified_operations", []):
+            if not isinstance(binding, dict) or binding.get("capability") != capability:
+                continue
+            operation = binding.get("operation")
+            if not isinstance(operation, dict):
+                continue
+            if operation.get("status") != expected_status:
+                continue
+            if has_text(operation.get("source_id")) and operation.get("source_id") != source.get("source_id"):
+                continue
+            if has_text(operation.get("observation_id")) and operation.get("observation_id") != observation.get("observation_id"):
+                continue
+            if operation.get("original_url") not in source_urls:
+                continue
+            if has_text(operation.get("final_url")) and operation.get("final_url") not in source_urls:
+                continue
+            if operation.get("source_title") != observation.get("title"):
+                continue
+            if operation.get("raw_excerpt") != observation.get("raw_excerpt"):
+                continue
+            if operation.get("excerpt_locator") != observation.get("page_or_dom_locator"):
+                continue
+            return str(binding.get("operation_key"))
+    return None
 
 
 def _validate_adapter_mapping(report: dict[str, Any], owned: tuple[str, ...], raw_mapped: dict[str, str],
@@ -450,26 +529,123 @@ def _resolve_native_web_search_adapter(report: Any) -> dict[str, Any]:
     if not isinstance(operations, dict) or set(operations) != {"search", "open_source"}:
         add("capability_adapter_operations_invalid", "Native web_search report must distinguish search from open_source", "capability_adapter_report.host_tools.web_search.operations")
         operations = {}
-    search_status, open_status = _operation_status(operations.get("search")), _operation_status(operations.get("open_source"))
+    search_status = _operation_status(operations.get("search"))
     if search_status not in HOST_OPERATION_STATUSES:
         add("capability_adapter_operation_status_invalid", "search operation status is invalid", "capability_adapter_report.host_tools.web_search.operations.search.status")
         search_status = "unknown"
-    if open_status not in HOST_OPERATION_STATUSES:
-        add("capability_adapter_operation_status_invalid", "open_source operation status is invalid", "capability_adapter_report.host_tools.web_search.operations.open_source.status")
-        open_status = "unknown"
     if tool_status == "available" and search_status == "verified": raw_mapped["search.web"] = "available"
     elif tool_status in {"missing", "failed"} or search_status in {"missing", "failed"}: raw_mapped["search.web"] = "missing"
-    open_record = operations.get("open_source") if isinstance(operations.get("open_source"), dict) else {}
-    open_complete = open_status == "verified" and is_safe_public_http_url(open_record.get("original_url")) and all(has_text(open_record.get(field)) for field in ("source_title", "raw_excerpt", "excerpt_locator"))
-    if open_status == "verified" and not open_complete:
-        add("capability_adapter_open_source_verification_incomplete", "open_source requires a public URL, source identifier, verbatim excerpt, and locator", "capability_adapter_report.host_tools.web_search.operations.open_source")
+    open_value = operations.get("open_source")
+    open_records = _operation_records(open_value)
+    if not open_records:
+        add("capability_adapter_operations_invalid", "open_source must be an operation object or a non-empty operation array", "capability_adapter_report.host_tools.web_search.operations.open_source")
+    open_complete = False
+    for index, open_record in enumerate(open_records):
+        open_status = _operation_status(open_record)
+        if open_status not in HOST_OPERATION_STATUSES:
+            add("capability_adapter_operation_status_invalid", "open_source operation status is invalid", f"capability_adapter_report.host_tools.web_search.operations.open_source[{index}].status")
+            continue
+        record_complete = open_status == "verified" and is_safe_public_http_url(open_record.get("original_url")) and all(has_text(open_record.get(field)) for field in ("source_title", "raw_excerpt", "excerpt_locator"))
+        if open_status == "verified" and not record_complete:
+            add("capability_adapter_open_source_verification_incomplete", "open_source requires a public URL, source identifier, verbatim excerpt, and locator", f"capability_adapter_report.host_tools.web_search.operations.open_source[{index}]")
+        open_complete = open_complete or record_complete
+        for field in ("source_title", "raw_excerpt", "excerpt_locator"):
+            if field in open_record and contains_local_path(open_record.get(field)):
+                add("capability_adapter_local_path_forbidden", "Capability adapter report may not contain a local path", f"capability_adapter_report.host_tools.web_search.operations.open_source[{index}].{field}")
     if tool_status == "available" and open_complete: raw_mapped["source.open"] = "available"
     elif tool_status in {"missing", "failed"}: raw_mapped["source.open"] = "missing"
     _validate_adapter_mapping(report, CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES, raw_mapped, issues, "Native web-search adapter")
-    for field in ("source_title", "raw_excerpt", "excerpt_locator"):
-        if field in open_record and contains_local_path(open_record.get(field)):
-            add("capability_adapter_local_path_forbidden", "Capability adapter report may not contain a local path", f"capability_adapter_report.host_tools.web_search.operations.open_source.{field}")
-    return _adapter_result(adapter_id, CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES, raw_mapped, issues, True, {"source.open": list(CODEX_NATIVE_WEB_SEARCH_ALLOWED_CONCRETE_TOOLS), "search.web": ["web_search"]})
+    return _adapter_result(
+        adapter_id,
+        CODEX_NATIVE_WEB_SEARCH_OWNED_CAPABILITIES,
+        raw_mapped,
+        issues,
+        True,
+        {"source.open": list(CODEX_NATIVE_WEB_SEARCH_ALLOWED_CONCRETE_TOOLS), "search.web": ["web_search"]},
+        _verified_source_open_operations(adapter_id, open_records),
+    )
+
+
+def _resolve_web_run_adapter(report: Any) -> dict[str, Any]:
+    """Resolve the current Codex web__run search/open provider report."""
+    raw_mapped = {"search.web": "unknown", "source.open": "unknown"}
+    issues: list[dict[str, str]] = []
+    adapter_id = CODEX_WEB_RUN_ADAPTER_ID
+
+    def add(code: str, message: str, path: str) -> None:
+        issues.append({"code": code, "message": message, "path": path})
+
+    if not isinstance(report, dict):
+        add("capability_adapter_report_invalid", "Capability adapter report must be an object", "capability_adapter_report")
+        return _adapter_result(adapter_id, CODEX_WEB_RUN_OWNED_CAPABILITIES, raw_mapped, issues, False)
+    if not is_canonical_platform_id(report.get("platform")):
+        add("capability_adapter_platform_not_canonical", "Capability adapter report platform must be a canonical host ID", "capability_adapter_report.platform")
+    if report.get("platform") != "codex_cli":
+        add("capability_adapter_platform_unsupported", "Capability adapter report platform is not codex_cli", "capability_adapter_report.platform")
+    adapter = report.get("adapter")
+    if not isinstance(adapter, dict) or adapter.get("adapter_id") != adapter_id:
+        add("capability_adapter_unsupported", "Capability adapter report does not identify the supported Codex CLI web__run adapter", "capability_adapter_report.adapter")
+    if not isinstance(adapter, dict) or not has_text(adapter.get("adapter_version")):
+        add("capability_adapter_version_missing", "Capability adapter report requires an adapter version", "capability_adapter_report.adapter.adapter_version")
+    elif adapter.get("adapter_version") != CODEX_WEB_RUN_ADAPTER_VERSION:
+        add("capability_adapter_version_unsupported", "Capability adapter report uses an unsupported adapter version", "capability_adapter_report.adapter.adapter_version")
+    for field in ("detected_at", "detection"):
+        if not has_text(report.get(field)):
+            add("capability_adapter_detection_missing", "Capability adapter report requires detection time and method", f"capability_adapter_report.{field}")
+    tools = report.get("host_tools")
+    if not isinstance(tools, dict) or set(tools) != {"web__run"}:
+        add("capability_adapter_host_tool_unsupported", "Only the explicit Codex web__run host tool may map through this adapter", "capability_adapter_report.host_tools")
+        tools = {}
+    web_run = tools.get("web__run") if isinstance(tools, dict) else None
+    if not isinstance(web_run, dict):
+        add("capability_adapter_host_tool_invalid", "Codex web__run tool report must be an object", "capability_adapter_report.host_tools.web__run")
+        web_run = {}
+    tool_status = _host_status(web_run.get("status"))
+    if tool_status not in HOST_TOOL_STATUSES:
+        add("capability_adapter_host_tool_status_invalid", "Codex web__run status is invalid", "capability_adapter_report.host_tools.web__run.status")
+        tool_status = "unknown"
+    operations = web_run.get("operations")
+    if not isinstance(operations, dict) or set(operations) != {"search_query", "open"}:
+        add("capability_adapter_operations_invalid", "Codex web__run report must distinguish search_query from open", "capability_adapter_report.host_tools.web__run.operations")
+        operations = {}
+    search_status = _operation_status(operations.get("search_query"))
+    if search_status not in HOST_OPERATION_STATUSES:
+        add("capability_adapter_operation_status_invalid", "search_query operation status is invalid", "capability_adapter_report.host_tools.web__run.operations.search_query.status")
+        search_status = "unknown"
+    if tool_status == "available" and search_status == "verified":
+        raw_mapped["search.web"] = "available"
+    elif tool_status in {"missing", "failed"} or search_status in {"missing", "failed"}:
+        raw_mapped["search.web"] = "missing"
+    open_records = _operation_records(operations.get("open"))
+    if not open_records:
+        add("capability_adapter_operations_invalid", "open must be an operation object or a non-empty operation array", "capability_adapter_report.host_tools.web__run.operations.open")
+    open_complete = False
+    for index, open_record in enumerate(open_records):
+        open_status = _operation_status(open_record)
+        if open_status not in HOST_OPERATION_STATUSES:
+            add("capability_adapter_operation_status_invalid", "open operation status is invalid", f"capability_adapter_report.host_tools.web__run.operations.open[{index}].status")
+            continue
+        record_complete = open_status == "verified" and is_safe_public_http_url(open_record.get("original_url")) and all(has_text(open_record.get(field)) for field in ("source_title", "raw_excerpt", "excerpt_locator"))
+        if open_status == "verified" and not record_complete:
+            add("capability_adapter_open_source_verification_incomplete", "Codex web__run open requires a public URL, source identifier, verbatim excerpt, and locator", f"capability_adapter_report.host_tools.web__run.operations.open[{index}]")
+        open_complete = open_complete or record_complete
+        for field in ("source_title", "raw_excerpt", "excerpt_locator"):
+            if field in open_record and contains_local_path(open_record.get(field)):
+                add("capability_adapter_local_path_forbidden", "Capability adapter report may not contain a local path", f"capability_adapter_report.host_tools.web__run.operations.open[{index}].{field}")
+    if tool_status == "available" and open_complete:
+        raw_mapped["source.open"] = "available"
+    elif tool_status in {"missing", "failed"}:
+        raw_mapped["source.open"] = "missing"
+    _validate_adapter_mapping(report, CODEX_WEB_RUN_OWNED_CAPABILITIES, raw_mapped, issues, "Codex web__run adapter")
+    return _adapter_result(
+        adapter_id,
+        CODEX_WEB_RUN_OWNED_CAPABILITIES,
+        raw_mapped,
+        issues,
+        True,
+        {"search.web": list(CODEX_WEB_RUN_ALLOWED_CONCRETE_TOOLS), "source.open": list(CODEX_WEB_RUN_ALLOWED_CONCRETE_TOOLS)},
+        _verified_source_open_operations(adapter_id, open_records),
+    )
 
 
 def _resolve_shell_http_source_open_adapter(report: Any) -> dict[str, Any]:
@@ -514,26 +690,40 @@ def _resolve_shell_http_source_open_adapter(report: Any) -> dict[str, Any]:
     if not isinstance(operations, dict) or set(operations) != {"open_source"}:
         add("capability_adapter_operations_invalid", "Shell HTTP adapter must record only open_source", "capability_adapter_report.host_tools.shell_http.operations")
         operations = {}
-    open_record = operations.get("open_source") if isinstance(operations.get("open_source"), dict) else {}
-    open_status = _operation_status(open_record)
-    if open_status not in HOST_OPERATION_STATUSES:
-        add("capability_adapter_operation_status_invalid", "open_source operation status is invalid", "capability_adapter_report.host_tools.shell_http.operations.open_source.status")
-        open_status = "unknown"
-    if open_status == "verified" and open_record.get("request_method") != "GET":
-        add("codex_shell_http_request_method_not_allowed", "Shell HTTP source opening allows GET only", "capability_adapter_report.host_tools.shell_http.operations.open_source.request_method")
-    if open_status == "verified" and (not is_safe_public_http_url(open_record.get("original_url")) or not is_safe_public_http_url(open_record.get("final_url"))):
-        add("codex_shell_http_url_not_public", "Shell HTTP source opening requires public credential-free HTTP(S) original and final URLs", "capability_adapter_report.host_tools.shell_http.operations.open_source")
-    if open_status == "verified" and (not isinstance(open_record.get("http_status"), int) or not 200 <= open_record["http_status"] < 300):
-        add("codex_shell_http_http_status_not_success", "Shell HTTP source opening requires a successful HTTP status", "capability_adapter_report.host_tools.shell_http.operations.open_source.http_status")
-    if open_status == "verified" and not all(has_text(open_record.get(field)) for field in ("source_title", "raw_excerpt", "excerpt_locator")):
-        add("capability_adapter_open_source_verification_incomplete", "Shell HTTP source opening requires source identifier, verbatim excerpt, and locator", "capability_adapter_report.host_tools.shell_http.operations.open_source")
+    open_records = _operation_records(operations.get("open_source"))
+    if not open_records:
+        add("capability_adapter_operations_invalid", "open_source must be an operation object or a non-empty operation array", "capability_adapter_report.host_tools.shell_http.operations.open_source")
+    open_complete = False
+    for index, open_record in enumerate(open_records):
+        open_status = _operation_status(open_record)
+        operation_path = f"capability_adapter_report.host_tools.shell_http.operations.open_source[{index}]"
+        if open_status not in HOST_OPERATION_STATUSES:
+            add("capability_adapter_operation_status_invalid", "open_source operation status is invalid", f"{operation_path}.status")
+            continue
+        if open_status == "verified" and open_record.get("request_method") != "GET":
+            add("codex_shell_http_request_method_not_allowed", "Shell HTTP source opening allows GET only", f"{operation_path}.request_method")
+        if open_status == "verified" and (not is_safe_public_http_url(open_record.get("original_url")) or not is_safe_public_http_url(open_record.get("final_url"))):
+            add("codex_shell_http_url_not_public", "Shell HTTP source opening requires public credential-free HTTP(S) original and final URLs", operation_path)
+        if open_status == "verified" and (not isinstance(open_record.get("http_status"), int) or not 200 <= open_record["http_status"] < 300):
+            add("codex_shell_http_http_status_not_success", "Shell HTTP source opening requires a successful HTTP status", f"{operation_path}.http_status")
+        record_complete = open_status == "verified" and open_record.get("request_method") == "GET" and is_safe_public_http_url(open_record.get("original_url")) and is_safe_public_http_url(open_record.get("final_url")) and isinstance(open_record.get("http_status"), int) and 200 <= open_record["http_status"] < 300 and all(has_text(open_record.get(field)) for field in ("source_title", "raw_excerpt", "excerpt_locator")) and bool(allowed_tools)
+        if open_status == "verified" and not record_complete:
+            add("capability_adapter_open_source_verification_incomplete", "Shell HTTP source opening requires source identifier, verbatim excerpt, and locator", operation_path)
+        open_complete = open_complete or record_complete
     if contains_shell_http_forbidden_data(report):
         add("codex_shell_http_forbidden_request_data", "Shell HTTP adapter report may not contain local paths or credential/request-secret data", "capability_adapter_report")
-    open_complete = open_status == "verified" and open_record.get("request_method") == "GET" and is_safe_public_http_url(open_record.get("original_url")) and is_safe_public_http_url(open_record.get("final_url")) and isinstance(open_record.get("http_status"), int) and 200 <= open_record["http_status"] < 300 and all(has_text(open_record.get(field)) for field in ("source_title", "raw_excerpt", "excerpt_locator")) and bool(allowed_tools)
     if tool_status == "available" and open_complete: raw_mapped["source.open"] = "available"
     elif tool_status in {"missing", "failed"}: raw_mapped["source.open"] = "missing"
     _validate_adapter_mapping(report, CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES, raw_mapped, issues, "Shell HTTP adapter")
-    return _adapter_result(adapter_id, CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES, raw_mapped, issues, True, {"source.open": list(allowed_tools)})
+    return _adapter_result(
+        adapter_id,
+        CODEX_SHELL_HTTP_SOURCE_OPEN_OWNED_CAPABILITIES,
+        raw_mapped,
+        issues,
+        True,
+        {"source.open": list(allowed_tools)},
+        _verified_source_open_operations(adapter_id, open_records),
+    )
 
 
 def resolve_capability_adapter_report(report: Any) -> dict[str, Any]:
@@ -542,6 +732,8 @@ def resolve_capability_adapter_report(report: Any) -> dict[str, Any]:
     adapter_id = adapter.get("adapter_id") if isinstance(adapter, dict) else None
     if adapter_id == CODEX_NATIVE_WEB_SEARCH_ADAPTER_ID:
         return _resolve_native_web_search_adapter(report)
+    if adapter_id == CODEX_WEB_RUN_ADAPTER_ID:
+        return _resolve_web_run_adapter(report)
     if adapter_id == CODEX_SHELL_HTTP_SOURCE_OPEN_ADAPTER_ID:
         return _resolve_shell_http_source_open_adapter(report)
     return _adapter_result(
@@ -566,6 +758,7 @@ def resolve_capability_adapter_reports(reports: Any) -> dict[str, Any]:
     owned: set[str] = set()
     active_owners: dict[str, list[str]] = {}
     raw_statuses: dict[str, list[str]] = {}
+    verified_operations: list[dict[str, Any]] = []
     for index, result in enumerate(adapter_results):
         for item in result["issues"]:
             issues.append({**item, "path": f"capability_adapter_reports[{index}].{item['path']}"})
@@ -574,6 +767,9 @@ def resolve_capability_adapter_reports(reports: Any) -> dict[str, Any]:
             raw_statuses.setdefault(capability, []).append(result["mapped_capabilities"].get(capability, "unknown"))
             if result["valid"] and result["mapped_capabilities"].get(capability) == "available":
                 active_owners.setdefault(capability, []).append(str(result.get("adapter_id") or "unknown"))
+        for operation in result.get("verified_operations", []):
+            if isinstance(operation, dict):
+                verified_operations.append(operation)
     for capability, owners in active_owners.items():
         if len(owners) > 1:
             issues.append({"code": "capability_adapter_capability_owner_conflict", "message": f"Multiple verified adapters claim {capability}: {', '.join(owners)}", "path": "capability_adapter_reports"})
@@ -592,6 +788,7 @@ def resolve_capability_adapter_reports(reports: Any) -> dict[str, Any]:
         "issues": issues,
         "adapter_results": adapter_results,
         "active_owners": active_owners,
+        "verified_operations": verified_operations,
     }
 
 

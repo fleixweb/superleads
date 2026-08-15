@@ -443,12 +443,18 @@ def validate(text: str, route: str, *, min_tables: int = 3, extra_required: list
     if required is None:
         return [_issue("user_visible_unknown_route", f"unknown route: {route}", route)]
     if route == "product_outbound_market_analysis" and "本轮范围：" in text:
-        # A scoped report must retain the fixed tables and name its boundary,
-        # but must not be forced to mention unrelated tax or logistics work.
+        # A scoped report names what the user requested and keeps only its
+        # fixed tables plus selected modules. It must not repeat unrequested
+        # module names merely to describe their absence.
         required = [
-            phrase for phrase in required
-            if phrase not in {"进口税费", "运输方式"}
-        ] + ["本轮范围：", "未覆盖："]
+            "本轮范围：",
+            "其他模块不在本轮范围。",
+            "依据状态",
+            "产品档案与触发项",
+            "信息来源与待确认事项",
+            "待确认",
+            "不能",
+        ]
 
     table_count = _count_markdown_tables(text)
     if table_count < min_tables:

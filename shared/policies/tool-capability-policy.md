@@ -37,6 +37,18 @@ research report.
 
 ## Codex CLI Native Web Search
 
+When a current Codex session exposes `web__run`, use
+`codex_cli_web_run` rather than treating it as the older `web_search` tool.
+Its verified `search_query` operation maps to `search.web`; its verified
+`open` operation maps to `source.open` only with the actual public URL, source
+identifier, non-empty verbatim excerpt, and locator. Each related SearchLog
+and Observation records `concrete_tool: web__run` in that same Run.
+
+`click`, `find`, `screenshot`, and `image_query` do not independently map to
+formal canonical capabilities. They cannot upgrade a search summary into a
+Source or fact, and no adapter report is written without actual current-Run
+operation results.
+
 For a Codex CLI session launched with `codex --search`, the Agent may report
 the current session's native `web_search` through the controlled
 `codex_cli_native_web_search` adapter format. The adapter is host-neutral at
@@ -71,6 +83,14 @@ discovery clues. It cannot use POST, cookies, Authorization headers, tokens,
 passwords, private/loopback/local URLs, login-only pages, or any mechanism to
 avoid access controls. A missing provider report, unverified GET, unlisted
 tool, or conflicting source-opening provider fails closed.
+
+For a discovered public HTML/text URL, `scripts/capture_public_http_source.py`
+is the local `curl` executor for this provider. It only sends a credential-free
+GET, records a successful 2xx final URL, title, visible verbatim excerpt, and
+locator, and returns no record on failure. It validates the initial URL, each
+DNS resolution, and every redirect target as public. It must be paired with a
+separately successful `web__run.search_query` or `web_search` adapter report
+to meet formal-research preflight; it never creates or promotes `search.web`.
 
 The graph gate accepts only canonical host IDs when a platform is recorded:
 lowercase ASCII letters, digits, and underscores. This preserves generic hosts

@@ -25,16 +25,67 @@
               "curl"
             ],
             "operations": {
-              "open_source": {
-                "status": "verified",
-                "request_method": "GET",
-                "original_url": "https://www.chillys.com/pages/terms",
-                "final_url": "https://www.chillys.com/pages/terms",
-                "http_status": 200,
-                "source_title": "Terms - Chilly's",
-                "raw_excerpt": "This website is operated by Chilly's Bottles Limited, a company incorporated in England and Wales with registration number 07326177.",
-                "excerpt_locator": "meta description / Overview"
-              }
+          "open_source": [
+            {
+              "status": "verified",
+              "request_method": "GET",
+              "original_url": "https://www.chillys.com/pages/terms",
+              "final_url": "https://www.chillys.com/pages/terms",
+              "source_id": "src_chillys_terms",
+              "observation_id": "obs_chillys_terms_identity",
+              "http_status": 200,
+              "source_title": "Terms - Chilly's",
+              "raw_excerpt": "OVERVIEW This website is operated by Chilly's Bottles Limited, a company incorporated in England and Wales with registration number 07326177 (\"Chilly's Bottles\"). Throughout the site, the terms \"we\", \"us\" and \"our\" refer to Chilly's Bottles. Registered UK address: 1a Royle Studios, 41 Wenlock Road London N1 7SG United Kingdom. Company number: 07326177. Chilly's Bottles Limited Email: support@chillysbottles.com. Copyright Registered in England and Wales with registration number 07326177.",
+              "excerpt_locator": "meta description + Contact Information"
+            },
+            {
+              "status": "verified",
+              "request_method": "GET",
+              "original_url": "https://www.chillys.com/",
+              "final_url": "https://www.chillys.com/",
+              "source_id": "src_chillys_home",
+              "observation_id": "obs_chillys_home",
+              "http_status": 200,
+              "source_title": "Reusable Water Bottles | Reusable Coffee Cups | Chilly's",
+              "raw_excerpt": "Reusable Water Bottles | Reusable Coffee Cups | Chilly's. Reusable Water Bottles from Chilly's, A Revolutionary Reusable Bottle That Keeps Drinks Ice Cold For Up To 24 Hours. Organization name Chilly's; url https://www.chillys.com/; address 1a Royle Studios, 41 Wenlock Road, London N1 7SG; contactPoint customer support email orders@chillys.com.",
+              "excerpt_locator": "title/meta description + Organization JSON-LD"
+            },
+            {
+              "status": "verified",
+              "request_method": "GET",
+              "original_url": "https://www.chillys.com/pages/mission",
+              "final_url": "https://www.chillys.com/pages/mission",
+              "source_id": "src_chillys_mission",
+              "observation_id": "obs_chillys_mission",
+              "http_status": 200,
+              "source_title": "Mission - Chilly's",
+              "raw_excerpt": "Chilly's mission is to accelerate the adoption and everyday use of reusable products. We aim to do this through creating products for an active urban lifestyle, with the perfect balance of distinctive style and unrivalled performance. The Idea Chilly's was founded in 2010 by James Butterfield and Tim Bouscarle, with the aim of providing people with the ability to always have cold water on-the-go, without having to buy single-use plastic water bottles. The result was the Chilly's Bottle.",
+              "excerpt_locator": "Mission page body"
+            },
+            {
+              "status": "verified",
+              "request_method": "GET",
+              "original_url": "https://www.chillys.com/pages/wholesale",
+              "final_url": "https://www.chillys.com/pages/wholesale",
+              "source_id": "src_chillys_wholesale",
+              "observation_id": "obs_chillys_wholesale",
+              "http_status": 200,
+              "source_title": "Wholesale - Chilly's",
+              "raw_excerpt": "Wholesale. To personalise products and add your logo click here for Co-Brand. Are you an existing wholesale customer? Please click here for the wholesale store. If you would like to enquire about stocking Chilly's products, please email the below with your name, contact information and detail about where you'd like to sell our products: UK Customers: uk-wholesale@chillys.com EU Customers: eu-wholesale@chillys.com.",
+              "excerpt_locator": "Wholesale page body"
+            },
+            {
+              "status": "failed",
+              "request_method": "GET",
+              "original_url": "https://www.similarweb.com/website/chillys.com/",
+              "final_url": "https://www.similarweb.com/website/chillys.com/",
+              "source_id": "src_similarweb_chillys",
+              "observation_id": "obs_similarweb_restricted",
+              "source_title": "Similarweb chillys.com",
+              "raw_excerpt": "403 ERROR. The request could not be satisfied. Request blocked.",
+              "excerpt_locator": "HTTP response body"
+            }
+          ]
             }
           }
         },
