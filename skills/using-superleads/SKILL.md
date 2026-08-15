@@ -11,7 +11,7 @@ Activate Superleads, identify the user's task entry, create Run Context, decide 
 
 ## Required references
 
-Read `../../shared/references/user-intake.md` for intake modes and minimum research targets. Read `../../shared/references/route-map.md` for routing. For product outbound market analysis, read `../../shared/references/product-outbound-market-intake.md`. Read `../../shared/policies/tool-capability-policy.md` when tool availability affects deliverable level. For default discovery, read `../../shared/references/default-discovery-reference.md`; begin with `default-discovery-minimal-skeleton.example.json`, and open the complete reference only for status/contact/conflict boundaries.
+Read `../../shared/references/user-intake.md` for intake modes and minimum research targets. Read `../../shared/references/route-map.md` for routing. For product outbound market analysis, read `../../shared/references/product-outbound-market-intake.md`. Read `../../shared/policies/tool-capability-policy.md` when tool availability affects deliverable level. For default discovery, read `../../shared/references/default-discovery-reference.md`; begin with `default-discovery-minimal-skeleton.example.json`, and open the complete reference only for status/contact/conflict boundaries. Before any formal public-source route or real-business UAT, read `../../shared/references/using-superleads-formal-delivery.md`.
 
 ## Workflow
 

@@ -537,6 +537,14 @@ class SuperleadsUatMeasurementTest(unittest.TestCase):
             self.assertEqual(payload["git_after"]["path"], "git-after.txt")
             self.assertEqual(ledger["final_metrics_path"], "uat_metrics.json")
 
+    def test_portable_uat_entry_skill_links_formal_delivery_reference(self) -> None:
+        skill = ROOT / "skills" / "using-superleads" / "SKILL.md"
+
+        self.assertIn(
+            "../../shared/references/using-superleads-formal-delivery.md",
+            skill.read_text(encoding="utf-8"),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
