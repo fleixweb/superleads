@@ -44,6 +44,7 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
                 self.assertEqual("using-superleads", response["next_skill"])
                 self.assertEqual("static_first_use_help", response["response_contract"])
                 self.assertEqual(language, response["language"])
+                self.assertEqual("metadata", response["interaction_mode"])
                 self.assertEqual(
                     "shared/references/superleads-user-guidance.md",
                     response["guidance_reference"],

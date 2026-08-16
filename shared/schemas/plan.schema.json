@@ -31,7 +31,9 @@
         "additionalProperties": true,
         "properties": {
           "targeting_rule_ids": {"type": "array", "items": {"type": "string"}},
-          "query_purpose": {"type": "string"}
+          "query_purpose": {"type": "string"},
+          "execution_order": {"type": "string", "enum": ["independent", "serial"]},
+          "candidate_limit": {"type": "integer", "minimum": 1}
         }
       }
     },
@@ -96,6 +98,20 @@
         "max_opens_per_category_per_candidate": {"type": "integer", "minimum": 1},
         "same_run_url_dedupe": {"const": "canonical_or_final_url"},
         "over_budget_status": {"const": "not_searched"}
+      }
+    },
+    "execution_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "query_group_limit": {"type": "integer", "minimum": 1},
+        "max_candidates_per_group": {"type": "integer", "minimum": 1},
+        "max_core_opens_per_candidate": {"type": "integer", "minimum": 1},
+        "include_contacts": {"type": "boolean"},
+        "include_trade_records": {"type": "boolean"},
+        "include_historical_references": {"type": "boolean"},
+        "coverage_completion_condition": {"type": "string", "minLength": 1},
+        "low_increment_stop_condition": {"type": "string", "minLength": 1}
       }
     }
     }

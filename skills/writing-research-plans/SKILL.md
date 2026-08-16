@@ -12,6 +12,8 @@ Turn a Research Brief into a plan for searching, opening sources, collecting con
 For default discovery, this is an internal/on-demand guide within the single
 `discovery` phase, not a mandatory separately routed stage for every round.
 
+Every plan must state finite query-group, candidate, and core-source-open limits; whether contacts, trade summaries, or historical references are included; and coverage/low-increment stop conditions. Mark only independent search/open groups `execution_order: independent`. Entity merge, conflict treatment, Claim promotion, Review, Audit, and formal export remain `serial`. Record stage checkpoints for Brief, groups, SearchLogs, opened sources, Observations, dedupe results, and incomplete work. Reuse a same-Run normalized URL by recording a group association rather than reopening it; older Run material is only “历史参考，需重新核验”.
+
 ## Required references
 
 Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/claim-and-source-policy.md`, and `../../shared/schemas/plan.schema.json`.

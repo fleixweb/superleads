@@ -249,7 +249,7 @@ def check_generated_markdown(fixture: Path) -> tuple[list[dict[str, str]], dict[
             issues.append(_issue("formal_markdown_raw_workbook_render_detected", f"generated Markdown looks like raw workbook sheet render: {needle}"))
 
     row_expectations = {
-        "HydraTrade Supplies": ("发现候选池样表（候选池不是正式开发名单）", ("可优先人工跟进", "直接相关", "已有明确依据")),
+        "HydraTrade Supplies": ("发现候选池样表（候选池不是正式开发名单）", ("公开信号已匹配当前范围", "直接相关", "已有明确依据")),
         "Northshore Drinkware Distributors": ("发现候选池样表（候选池不是正式开发名单）", ("待确认", "可能相关", "来源受限")),
         "Peak Bottle Co": ("发现候选池样表（候选池不是正式开发名单）", ("待确认", "信息不足", "来源受限")),
         "Summit Trading": ("发现候选池样表（候选池不是正式开发名单）", ("待确认", "主体待确认", "说法冲突待复核")),
@@ -285,7 +285,7 @@ def check_customer_background_export_support() -> tuple[list[dict[str, str]], di
             str(BACKGROUND_FIXTURE),
         ))
         return issues, payload
-    for needle in ("# 单一客户背调", "怎么联系、先找谁", "客户、品牌与关联方"):
+    for needle in ("# 单一客户背调", "公开联系入口与关联依据", "客户、品牌与关联方"):
         if needle not in text:
             issues.append(_issue("formal_markdown_background_required_text_missing", f"background Markdown missing: {needle}"))
     return issues, payload

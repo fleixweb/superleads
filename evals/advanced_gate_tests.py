@@ -988,14 +988,14 @@ def _assert_background_report_export(directory: Path) -> list[str]:
     if result.returncode != 0:
         return errors + [f"background_report_chillys: resolved report did not export\n{result.stdout}"]
     rendered = "\n".join(path.read_text(encoding="utf-8-sig") for path in output_dir.glob("*.csv"))
-    required_sheets = {"客户一眼看懂.csv", "客户、品牌与关联方.csv", "我们看到的业务机会.csv", "怎么联系、先找谁.csv", "跟进前要注意什么.csv", "信息从哪里来.csv"}
+    required_sheets = {"客户一眼看懂.csv", "客户、品牌与关联方.csv", "公开业务信号与待核验事项.csv", "公开联系入口与关联依据.csv", "待核验事项与来源限制.csv", "信息从哪里来.csv"}
     present_sheets = {path.name for path in output_dir.glob("*.csv")}
     if required_sheets != present_sheets:
         errors.append(f"background_report_chillys: unexpected CSV sheets {sorted(present_sheets)}")
     for needle in ("Chilly's Bottles Limited", "Chilly's", "reusable bottles", "wholesale@chillys.example", "来源受限"):
         if needle not in rendered:
             errors.append(f"background_report_chillys: missing expected report content {needle}")
-    for needle in ("值不值得继续跟", "建议联系谁/哪里", "要注意的事", "上面哪条信息"):
+    for needle in ("是否具备继续核验基础", "公开联系入口或职业线索", "待核验事项", "上面哪条信息"):
         if needle not in rendered:
             errors.append(f"background_report_chillys: missing business-language heading {needle}")
     for internal_term in ("has_address", "is_registered_in", "EntityRelationship", "ClaimEvidence"):

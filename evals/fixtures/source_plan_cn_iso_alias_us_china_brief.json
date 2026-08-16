@@ -6,12 +6,12 @@
   "origin_country": "CN",
   "export_declaration_country": "CN",
   "analysis_modules_requested": [
-    "destination_compliance",
-    "origin_proof_requirement",
+    "market_trends",
+    "public_price",
+    "market_access",
     "import_tax",
     "export_requirements",
     "logistics",
-    "market_reports",
     "external_factors"
   ],
   "business_decision_policy": "ISO-2 country aliases must normalize before source-pack selection."

@@ -15,7 +15,6 @@
     "workbooks"
   ],
   "skills": "./skills/",
-  "hooks": "./hooks/codex-hooks.json",
   "interface": {
     "displayName": "Superleads",
     "shortDescription": "批量开发客户、单一客户背调、目标市场分析。",

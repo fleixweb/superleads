@@ -16,7 +16,7 @@ Standard development workbook:
 
 - 客户信息总表
 - 联系方式汇总
-- 开发建议
+- 公开信息与待核查事项
 - 官网与来源链接
 - 待核查事项
 - 风险与说明
@@ -28,7 +28,7 @@ Full review workbook:
 - 发现候选池
 - 客户信息总表
 - 联系方式汇总
-- 开发建议
+- 公开信息与待核查事项
 - 官网与来源链接
 - 待核查事项
 - 已排除客户
@@ -66,7 +66,7 @@ them or that the product is fully compliant.
 发现候选池以 `directly_related` 和 `possibly_related` 为主体，并单独保留
 `identity_pending`、`insufficient_information` 和明确排除记录。默认输出展示：
 
-- 分区：可优先人工跟进 / 待确认 / 已排除或仅作参考
+- 分区：公开信号已匹配当前范围 / 待确认 / 已排除或仅作参考
 - 发现来源与发现链接
 - 去重依据
 - 国家/地区与可能客户角色（客户类型为自由文本；无依据不猜）
@@ -91,11 +91,14 @@ fragment route 内嵌 query）、本地/
 
 ## Current-direction presentation for standard delivery
 
-Standard and full customer main tables, contact summaries, and development
-suggestions include only entities that are `符合本次方向` in the current task.
+Standard and full customer main tables, contact summaries, and public
+information / pending-check sections include only entities that are `符合本次方向`
+in the current task.
 `需确认`, `不符合本次方向`, and `仅作参考` may appear only in initial samples,
 pending items, or a separate full-review reference/exclusion section; they are
-never shown as recommended customers.
+never shown as customer recommendations. `标准开发名单` is a mechanical projection
+of the user's pre-stated rules and verified public information; it is not an AI
+recommendation or commercial-value judgment.
 
 Use business labels only. Do not emit targeting-contract or scope-decision
 names, rule IDs, Claim/ClaimEvidence identifiers, Candidate/Assessment/

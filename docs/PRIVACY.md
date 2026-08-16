@@ -6,11 +6,12 @@ Superleads is distributed as a local Skill Suite. It does not operate a
 Superleads-hosted account service, database, analytics service, or user
 tracking endpoint.
 
-The optional update hook reads the locally installed plugin version and makes
-one anonymous `GET` request to the public GitHub plugin manifest. It sends no
-prompt, customer, product, contact, file, credential, or workspace data. The
-hook is disabled when `SUPERLEADS_DISABLE_UPDATE_CHECK=1` or
-`DISABLE_TELEMETRY=1` is set, or when the user disables or removes the hook.
+Superleads does not register a startup or session-resume update hook. It does
+not contact a remote version source for help, current-version, installed-status,
+or ordinary research intake. When a user explicitly asks to check for updates,
+the host may make one request per session to the project's public version
+source. That request sends no prompt, customer, product, contact, file,
+credential, or workspace data.
 
 When a user asks an Agent to research public sources, the Agent and its host
 environment determine which search, browser, document, and network tools are

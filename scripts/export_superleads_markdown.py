@@ -313,7 +313,7 @@ def _bulk_partition(relevance: str, status: str) -> str:
     if relevance in {"已排除", "不相关", "明确排除", "明确排除/不相关", "explicitly_excluded_or_unrelated"}:
         return "已排除 / 仅作参考"
     if relevance in {"直接相关", "可能相关", "directly_related", "possibly_related"} and status in {"已有明确依据", "多来源方向一致", "可作为线索"}:
-        return "可优先人工跟进"
+        return "公开信号已匹配当前范围"
     return "待确认"
 
 
@@ -622,11 +622,18 @@ def _sanitize_background_overview_row(row: dict[str, Any]) -> dict[str, Any]:
         conclusion = conclusion.replace("建议继续跟进", "可继续人工核验")
     if "建议继续了解" in conclusion:
         conclusion = conclusion.replace("建议继续了解", "可继续补充核验")
+    if question == "现在能不能开始联系":
+        question = "公开联系入口与待确认事项"
+        detail = "只汇总当前可核实的公开联系入口及其数量；入口存在不代表采购需求、采购权限或应跟进。"
+        conclusion = "公开联系入口与具体负责范围仍需分别核验"
+    if question == "下一步怎么做":
+        question = "下一步待确认什么"
+        conclusion = "保留为待确认事项，不代表是否应跟进的结论"
     return {
         "问题": question,
         "当前看到什么": detail,
         "状态": conclusion,
-        "业务上怎么用": "作为沟通前核验依据，不写成采购意愿或采购负责人已确认。",
+        "核验边界": "作为公开信息与待确认事项，不写成采购意愿、采购负责人或跟进结论。",
     }
 
 
@@ -647,10 +654,10 @@ def _background_business_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]
         if not isinstance(row, dict):
             continue
         result.append({
-            "公开看到的信号": _first_nonempty(row.get("我们看到的情况"), row.get("说明")),
-            "可以怎么问": _first_nonempty(row.get("建议怎么切入"), "先问流程、负责部门和资料要求"),
-            "状态": _first_nonempty(row.get("把握程度"), "待确认"),
-            "不能推出什么": "不代表客户已有采购需求、采购量或采购决定。",
+            "公开看到的信号": _first_nonempty(row.get("公开看到的信号"), row.get("说明")),
+            "公开关联依据": _first_nonempty(row.get("公开关联依据"), "公开关联依据待补充"),
+            "待核验事项": _first_nonempty(row.get("待核验事项"), "公开信息不代表采购需求、采购权限或合作安排。"),
+            "状态": _first_nonempty(row.get("状态"), "待确认"),
         })
     return result
 
@@ -665,17 +672,17 @@ def _background_caution_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]
         if "来源受限" in text:
             has_restricted = True
         result.append({
-            "要注意的事": _first_nonempty(row.get("要注意的事"), row.get("说明")),
-            "可能影响": _first_nonempty(row.get("可能影响"), "影响判断把握"),
-            "建议动作": _first_nonempty(row.get("建议动作"), "人工核验后再使用"),
-            "当前状态": _first_nonempty(row.get("目前状态"), row.get("状态"), "待确认"),
+            "待核验事项": _first_nonempty(row.get("待核验事项"), row.get("说明")),
+            "公开依据或来源限制": _first_nonempty(row.get("公开依据或来源限制"), "公开依据或来源限制待补充"),
+            "状态": _first_nonempty(row.get("状态"), "待确认"),
+            "处理边界": _first_nonempty(row.get("处理边界"), "待确认前不作为公司事实或业务结论。"),
         })
     if not has_restricted:
         result.append({
-            "要注意的事": "来源受限",
-            "可能影响": "未打开或受限来源不能用来补公司事实。",
-            "建议动作": "保留为待确认线索，补充可打开来源后再判断。",
-            "当前状态": "待确认",
+            "待核验事项": "来源受限",
+            "公开依据或来源限制": "未打开或受限来源不能用来补公司事实。",
+            "状态": "待确认",
+            "处理边界": "保留为待确认线索，不作为公司事实或业务结论。",
         })
     return result
 
@@ -695,13 +702,13 @@ def build_background_markdown(graph: dict[str, Any]) -> tuple[str | None, list[d
             "问题": "是否能直接说有采购需求",
             "当前看到什么": "公开资料未直接证明当前采购计划。",
             "状态": "待确认",
-            "业务上怎么用": "只能把公开业务入口当作询问方向，不能写成正在采购。",
+            "核验边界": "不写成正在采购或采购意愿已确认。",
         },
         {
             "问题": "是否能直接找采购负责人",
             "当前看到什么": "公开人员、董事、Founder 或 Owner 线索不等于采购负责人。",
             "状态": "待确认",
-            "业务上怎么用": "优先通过公开业务入口请求转接，不猜负责人。",
+            "核验边界": "不猜采购负责人或未公开的采购权限。",
         },
     ])
 
@@ -710,15 +717,15 @@ def build_background_markdown(graph: dict[str, Any]) -> tuple[str | None, list[d
         "",
     ]
     _append_table(lines, "一句话先说清", ["项目", "人话结论"], [{"项目": "当前判断", "人话结论": _background_target_text(scope, sheets)}])
-    _append_table(lines, "客户一眼看懂", ["问题", "当前看到什么", "状态", "业务上怎么用"], overview_rows)
+    _append_table(lines, "客户一眼看懂", ["问题", "当前看到什么", "状态", "核验边界"], overview_rows)
     _append_table(lines, "客户、品牌与关联方", ["名称", "它是什么", "和客户的关系", "目前把握", "我们依据什么"], sheets.get("客户、品牌与关联方", []))
-    _append_table(lines, "公开业务信号与可沟通角度", ["公开看到的信号", "可以怎么问", "状态", "不能推出什么"], _background_business_rows(sheets.get("我们看到的业务机会", [])))
+    _append_table(lines, "公开业务信号与待核验事项", ["公开看到的信号", "公开关联依据", "待核验事项", "状态"], _background_business_rows(sheets.get("公开业务信号与待核验事项", [])))
     contact_rows = [
-        row for row in sheets.get("怎么联系、先找谁", [])
-        if isinstance(row, dict) and "已隐藏联系方式" not in _safe_text(row.get("建议联系谁/哪里"))
+        row for row in sheets.get("公开联系入口与关联依据", [])
+        if isinstance(row, dict) and "已隐藏联系方式" not in _safe_text(row.get("公开联系入口或职业线索"))
     ]
-    _append_table(lines, "怎么联系、先找谁", ["建议联系谁/哪里", "为什么先找这里", "联系时先问什么", "状态"], contact_rows)
-    _append_table(lines, "跟进前要注意什么", ["要注意的事", "可能影响", "建议动作", "当前状态"], _background_caution_rows(sheets.get("跟进前要注意什么", [])))
+    _append_table(lines, "公开联系入口与关联依据", ["公开联系入口或职业线索", "与主体的公开关联依据", "待核验事项", "状态"], contact_rows)
+    _append_table(lines, "待核验事项与来源限制", ["待核验事项", "公开依据或来源限制", "状态", "处理边界"], _background_caution_rows(sheets.get("待核验事项与来源限制", [])))
     if "疑似进出口记录（第三方聚合，待核实）" in sheets:
         _append_table(
             lines,

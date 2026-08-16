@@ -1,5 +1,11 @@
 # User Intake
 
+## Intake Modes
+
+Classify the interaction before business routing. `metadata` covers `@superleads`, help, current/installed-version questions, current-capability questions, and the feedback entry; it returns static information with `operations: []` and does not create a Run/Brief, run preflight, search, open sources, scan caches, or export. Read a version only from an explicitly supplied active plugin root's `.codex-plugin/plugin.json`. A remote version check is allowed only after an explicit update request through an injected callback; failure is `本次未能确认远端版本`.
+
+`material_triage` is the user-visible `资料初审` path for material-only PDF, Excel/CSV, or screenshot requests. It organizes only supplied material and pending checks; it does not start public research or create a Run/Brief. `discovery_snapshot` is the ordinary bounded discovery mode. `formal_research` requires explicit intent such as `完整报告`, `正式开发名单`, `标准交付`, `深度背调`, or `联系人归属核验`.
+
 Start from the user's actual task:
 
 1. Company website, company name, or social link.

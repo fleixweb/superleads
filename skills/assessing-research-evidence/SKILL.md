@@ -35,7 +35,9 @@ Read `../../shared/policies/claim-and-source-policy.md`, `../../shared/reference
 
 Evidence validity and current customer direction are separate checks. For a
 new customer-development Brief, create a ScopeDecision for the same Run,
-Brief, contract, and Entity before assigning `重点开发` or `推荐跟进`. Evaluate
+Brief, contract, and Entity before assigning an internal compatibility
+disposition. `重点开发` and `推荐跟进` are legacy internal enum values only; they
+must never be projected as user-facing recommendations. Evaluate
 every current free-text selection and exclusion rule. `supported_match` and
 `supported_conflict` need same-Entity Claims with usable formal support;
 `not_observed` means only the reviewed material did not show a signal;
@@ -82,12 +84,21 @@ observed signal. `identity_pending` and `insufficient_information` may instead
 preserve matching ambiguity, unknowns, and source gaps; do not manufacture an
 observed signal or require Claim/ClaimEvidence merely to keep the Candidate.
 
-## Tiering for deep-check work
+## Internal compatibility dispositions for deep-check work
 
-- 重点开发: high-trust support, clear match, clearer contact association, actionable angle, no serious identity conflict.
-- 推荐跟进: at least one opened source, some product/type/market match, contact or reachable entry.
-- 需人工核查: conflicts, unclear contact ownership, uncertain type, unavailable official site but valuable directory/fair lead, same-name uncertainty.
-- 暂不建议/排除: clear mismatch, supplier/competitor when excluded, wrong country/channel, wrong entity, no development value.
+These enums preserve audit compatibility only. They do not rank customer value,
+predict purchase intent, or instruct the user whom to contact. User-visible
+delivery instead states the relevant public signals, evidence status, conflicts,
+source restrictions, and next verification items.
+
+- `重点开发`: high-trust support, a clear current-scope match, clearer contact
+  association, and no serious identity conflict.
+- `推荐跟进`: at least one opened source plus some product/type/market match and
+  a contact or reachable entry.
+- `需人工核查`: conflicts, unclear contact ownership, uncertain type,
+  unavailable official site, or same-name uncertainty.
+- `暂不建议` / `排除`: a documented mismatch, excluded supplier/competitor,
+  wrong country/channel, wrong entity, or another explicit user boundary.
 
 ## Hard constraints
 

@@ -63,9 +63,9 @@ def _export_background(py: str, fixture: Path, tmp_path: Path, index: int, case:
     required_sheets = {
         "客户一眼看懂.csv",
         "客户、品牌与关联方.csv",
-        "我们看到的业务机会.csv",
-        "怎么联系、先找谁.csv",
-        "跟进前要注意什么.csv",
+        "公开业务信号与待核验事项.csv",
+        "公开联系入口与关联依据.csv",
+        "待核验事项与来源限制.csv",
         "信息从哪里来.csv",
     }
     required_sheets.update(str(item) for item in case.get("conditional_csv_sheets", []) if isinstance(item, str))

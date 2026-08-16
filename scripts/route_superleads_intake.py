@@ -9,9 +9,16 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from collections.abc import Callable, MutableMapping
+from pathlib import Path
 from typing import Any
 
 from superleads_user_guidance import static_help_response
+from superleads_task_modes import (
+    classify_task_mode,
+    detect_language,
+    metadata_response,
+)
 
 COUNTRY_HINTS = (
     "美国", "德国", "加拿大", "英国", "法国", "意大利", "西班牙", "越南", "中国", "日本",
@@ -28,7 +35,7 @@ MARKET_FACT_DOMAIN_MARKERS = (
     "趋势", "google trends", "公开价格", "价格区间", "价格带",
     "能不能做", "好不好卖", "市场怎么样", "风险", "风险判断",
     "淡旺季", "节假日", "认证", "标签要求", "包装要求", "准入", "关税", "税率",
-    "进口税", "vat", "gst", "hts", "htsus", "hs code", "taric", "反倾销", "301",
+    "进口税", "vat", "gst", "hts", "htsus", "hs code", "taric", "tariff", "duty", "anti-dumping", "反倾销", "301",
     "物流", "运输", "海运", "空运", "快递", "铁路", "陆运", "散杂", "滚装", "清关",
     "sds", "un38.3", "un 38.3", "msds", "coo", "原产地证书", "原产地证明", "原产地证",
     "产地证", "certificate of origin", "proof of origin", "商检", "检验检疫", "检疫",
@@ -44,6 +51,7 @@ CUSTOMER_DEVELOPMENT_MARKERS = (
     "leads", "lead list", "buyers", "importers", "prospects", "distributor",
     "distributors", "wholesaler", "wholesalers", "retailer", "retailers", "retail chains",
     "dealer", "dealers", "reseller", "resellers", "agent", "agents", "prospect list",
+    "正式开发名单",
 )
 CUSTOMER_TYPE_MARKERS = (
     "客户", "买家", "进口商", "采购商", "经销商", "批发商", "零售商", "代理商",
@@ -59,6 +67,8 @@ CUSTOMER_ACTION_MARKERS = (
 )
 BACKGROUND_MARKERS = (
     "背调", "客户背调", "背景调查", "调查一下", "尽调", "due diligence", "background check",
+    "full report", "deep background check",
+    "背景",
     "靠不靠谱", "是否靠谱", "靠谱不靠谱", "真买家", "真实买家", "中间商", "背后的公司",
     "是谁", "公司是谁", "核实一下", "查一下", "查查", "查下",
 )
@@ -72,13 +82,13 @@ PRODUCT_MARKERS = (
     "配件", "零件", "汽车配件", "户外家具", "柴油发电机", "发电机", "电水壶", "保温杯",
     "钢材", "粮食", "矿产", "水果", "蔬菜", "茶", "工装", "灯芯绒",
     "steel", "battery", "textile", "fabric", "shirt", "product", "parts",
-    "accessories", "furniture", "generator", "kettle",
+    "accessories", "furniture", "generator", "kettle", "kettles", "mug", "mugs",
 )
 MARKET_QUESTION_OR_ANALYSIS_MARKERS = (
     "分析", "查", "查询", "核实", "确认", "判断", "看一下", "了解", "研究", "评估",
     "要不要", "需不需要", "是否需要", "需要什么", "需要哪些", "需要", "要求是什么",
     "有什么要求", "要什么文件", "还要什么文件", "怎么办", "到底要不要",
-    "need", "needs", "require", "required", "requirement", "requirements",
+    "need", "needs", "require", "required", "requirement", "requirements", "analyze", "analysis",
 )
 NEGATED_CUSTOMER_PATTERNS = (
     r"(?:不|不要|不用|无需|先不|暂不|别)(?:帮我)?(?:再)?(?:找|开发|生成|整理|输出|给).{0,10}(?:客户|买家|进口商|采购商|经销商|批发商|零售商|代理商|客户名单|名单|leads)",
@@ -94,12 +104,26 @@ EXPLICIT_SPLIT_MARKERS = (
     "产品出海市场分析", "顺便确认", "同时确认", "另外确认", "顺便查", "同时查",
     "并查", "再查", "关税和准入", "准入和关税",
 )
-EXPLICIT_MARKET_SCOPE_MARKERS = ("只做", "仅做", "只要", "仅要")
-EXPLICIT_MARKET_SCOPE_LABELS = (
-    ("准入", ("准入", "认证", "测试", "注册", "标签", "sds", "un38.3", "un 38.3", "ce", "ul", "fcc", "fda")),
-    ("税费", ("关税", "税率", "税费", "进口税", "hts", "htsus", "hs code", "taric")),
-    ("出口要求", ("出口文件", "出口报关", "商检", "检验检疫", "出口管制")),
-    ("物流", ("物流", "运输", "海运", "空运", "快递", "清关", "预申报")),
+MARKET_ANALYSIS_MODULES = (
+    ("market_trends", "趋势", ("趋势", "google trends", "淡旺季", "节假日", "搜索热度")),
+    ("public_price", "公开价格", ("公开价格", "价格区间", "价格带", "价格")),
+    ("market_access", "准入", ("准入", "认证", "测试", "注册", "标签", "sds", "un38.3", "un 38.3", "ce", "ul", "fcc", "fda")),
+    ("import_tax", "税费", ("关税", "税率", "税费", "进口税", "vat", "gst", "hts", "htsus", "hs code", "taric", "tariff", "duty", "anti-dumping", "反倾销", "301")),
+    ("export_requirements", "出口要求", ("出口文件", "出口报关", "商检", "检验检疫", "出口管制")),
+    ("logistics", "物流", ("物流", "运输", "海运", "空运", "快递", "铁路", "陆运", "清关", "预申报")),
+    ("external_factors", "外部因素", ("外部因素", "汇率", "政策变化", "制裁", "地缘")),
+)
+COMPLETE_MARKET_ANALYSIS_MARKERS = (
+    "完整市场分析",
+    "整体市场分析",
+    "全面市场分析",
+    "完整报告",
+    "整体分析",
+    "全面分析",
+    "complete analysis",
+    "complete market analysis",
+    "full market analysis",
+    "overall market analysis",
 )
 
 
@@ -109,7 +133,14 @@ def norm(value: str) -> str:
 
 def contains_any(text: str, markers: tuple[str, ...]) -> bool:
     haystack = norm(text)
-    return any(marker.casefold() in haystack for marker in markers)
+    for marker in markers:
+        normalized_marker = marker.casefold()
+        if re.fullmatch(r"[a-z0-9][a-z0-9 ._-]*", normalized_marker):
+            if re.search(rf"(?<![a-z0-9]){re.escape(normalized_marker)}(?![a-z0-9])", haystack):
+                return True
+        elif normalized_marker in haystack:
+            return True
+    return False
 
 
 def _strip_patterns(text: str, patterns: tuple[str, ...]) -> str:
@@ -167,6 +198,19 @@ def _has_market_intent(text: str) -> bool:
     if "产品出海市场分析" in clean:
         return True
     if contains_any(clean, MARKET_TOPIC_MARKERS):
+        return True
+    if (
+        contains_any(clean, COMPLETE_MARKET_ANALYSIS_MARKERS)
+        and contains_any(clean, PRODUCT_MARKERS)
+        and contains_any(clean, COUNTRY_HINTS)
+        and any(marker in clean for marker in ("出口", "进入", "进口", "销往", "卖到", "发到", "export", "import", "into", "to"))
+    ):
+        return True
+    if (
+        "市场" in clean
+        and contains_any(clean, MARKET_QUESTION_OR_ANALYSIS_MARKERS)
+        and (contains_any(clean, PRODUCT_MARKERS) or contains_any(clean, COUNTRY_HINTS))
+    ):
         return True
     fact = contains_any(clean, MARKET_FACT_DOMAIN_MARKERS)
     if not fact:
@@ -247,33 +291,55 @@ def _product_hint(text: str) -> str:
     return stripped[:80] if stripped else "待确认产品"
 
 
-def _explicit_market_scope_labels(text: str) -> list[str]:
-    if not contains_any(text, EXPLICIT_MARKET_SCOPE_MARKERS):
-        return []
+def _requested_market_modules(text: str) -> list[str]:
+    if contains_any(text, COMPLETE_MARKET_ANALYSIS_MARKERS):
+        return [module for module, _, _ in MARKET_ANALYSIS_MODULES]
+    # A same-sentence exclusion such as “不要趋势、价格” must not select
+    # those modules merely because its keywords are present.
+    requested_text = re.sub(
+        r"(?:不|不要|不用|无需|先不|暂不|别)(?:要|做|查|看|包含|纳入)?[^，,。；;！？!?]{0,64}",
+        " ",
+        norm(text),
+    )
     return [
-        label
-        for label, markers in EXPLICIT_MARKET_SCOPE_LABELS
-        if contains_any(text, markers)
+        module
+        for module, _, markers in MARKET_ANALYSIS_MODULES
+        if contains_any(requested_text, markers)
     ]
+
+
+def _market_module_labels(modules: list[str]) -> list[str]:
+    selected = set(modules)
+    return [label for module, label, _ in MARKET_ANALYSIS_MODULES if module in selected]
 
 
 def _market_response(text: str, split_customer_development: bool) -> list[str]:
     product = _product_hint(text)
     target = _target_hint(text)
     export_country = _export_country_hint(text)
-    scope_labels = _explicit_market_scope_labels(text)
+    modules = _requested_market_modules(text)
+    scope_labels = _market_module_labels(modules)
+    complete = len(modules) == len(MARKET_ANALYSIS_MODULES)
     lines = [
         "我理解你要做的是：产品出海市场分析。",
         f"本轮对象：{product} → {target}。",
         f"默认出口申报国：{export_country}；原产国、起运地、最终税号和技术文件不足时会保留待确认。",
     ]
-    if scope_labels:
+    if complete:
+        lines.append("本轮范围：完整市场分析，覆盖趋势、公开价格、准入、税费、出口要求、物流和外部因素；不生成客户名单，也不判断是否值得进入。")
+    elif scope_labels:
+        unexecuted = _market_module_labels([
+            module
+            for module, _, _ in MARKET_ANALYSIS_MODULES
+            if module not in modules
+        ])
         lines.append(
             f"本轮范围：{'、'.join(scope_labels)}；未点名模块不纳入本轮。"
             "不生成客户名单，也不判断是否值得进入。"
         )
+        lines.append(f"本轮未执行：{'、'.join(unexecuted)}。")
     else:
-        lines.append("我会整理趋势、公开价格参考、准入、税费、出口要求、物流和外部因素；不生成客户名单，也不判断是否值得进入。")
+        lines.append("请说明本轮想了解：趋势、公开价格、准入、税费、出口要求、物流或外部因素；收到范围后再开始相应研究。不生成客户名单，也不判断是否值得进入。")
     if split_customer_development:
         lines.append("你提到找客户的部分建议放到第二阶段，等你看完市场分析后再单独启动批量客户开发。")
     if _has_concrete_subject_anchor(text) and re.search(r"https?://|www\.", text, re.IGNORECASE):
@@ -281,10 +347,63 @@ def _market_response(text: str, split_customer_development: bool) -> list[str]:
     return lines
 
 
-def classify(text: str) -> dict[str, Any]:
-    static_help = static_help_response(text)
-    if static_help is not None:
-        return static_help
+def _with_interaction_mode(response: dict[str, Any], interaction_mode: str) -> dict[str, Any]:
+    response["interaction_mode"] = interaction_mode
+    return response
+
+
+def _material_triage_response(text: str) -> dict[str, Any]:
+    language = detect_language(text)
+    if language == "zh":
+        lines = [
+            "我理解你要做的是：资料初审。",
+            "本轮只整理你提供的材料与待确认项，不创建 Run/Brief，不做预检、公开搜索、来源打开、缓存扫描或导出。",
+        ]
+    else:
+        lines = [
+            "I understand this as material triage (资料初审).",
+            "This only organizes the material you supplied and items to confirm; it does not create a Run/Brief or perform preflight, public research, source opens, cache scans, or exports.",
+        ]
+    return {
+        "route": "material_triage",
+        "next_skill": "using-superleads",
+        "split_customer_development": False,
+        "secondary_routes": [],
+        "route_order": [],
+        "missing_fields": [],
+        "response_contract": "material_triage",
+        "language": language,
+        "interaction_mode": "material_triage",
+        "operations": [],
+        "response_lines": lines,
+    }
+
+
+def classify(
+    text: str,
+    *,
+    active_root: str | Path | None = None,
+    fetch_latest_version: Callable[[], Any] | None = None,
+    session_cache: MutableMapping[str, str] | None = None,
+    preflight_callback: Callable[[], Any] | None = None,
+    network_callback: Callable[[], Any] | None = None,
+    cache_scan_callback: Callable[[], Any] | None = None,
+) -> dict[str, Any]:
+    """Route intake without invoking caller-supplied operational callbacks."""
+    del preflight_callback, network_callback, cache_scan_callback
+    interaction_mode = classify_task_mode(text)
+    if interaction_mode == "metadata":
+        static_help = static_help_response(text)
+        if static_help is not None:
+            return static_help
+        return metadata_response(
+            text,
+            active_root=active_root,
+            fetch_latest_version=fetch_latest_version,
+            session_cache=session_cache,
+        )
+    if interaction_mode == "material_triage":
+        return _material_triage_response(text)
 
     has_customer_development = _has_customer_development_intent(text)
     has_background = _has_background_intent(text)
@@ -297,7 +416,7 @@ def classify(text: str) -> dict[str, Any]:
 
     if has_background and not direct_market:
         missing_fields = [] if _has_concrete_subject_anchor(text) else ["target_subject"]
-        return {
+        return _with_interaction_mode({
             "route": "customer_background_research",
             "next_skill": "researching-customer-background",
             "split_customer_development": False,
@@ -308,10 +427,10 @@ def classify(text: str) -> dict[str, Any]:
                 "我理解你要做的是：客户背调报告。",
                 "本轮会围绕你指定的公司/品牌/域名/材料做核验，不扩展成批量找客户。",
             ],
-        }
+        }, interaction_mode)
 
     if has_table and not direct_market:
-        return {
+        return _with_interaction_mode({
             "route": "existing_table_enrichment",
             "next_skill": "scoping-lead-research",
             "split_customer_development": False,
@@ -322,7 +441,7 @@ def classify(text: str) -> dict[str, Any]:
                 "我理解你要处理的是：已有客户表格补全。",
                 "本轮只围绕你提供的表格行/单元格补充，不自动创建新的客户开发方向。",
             ],
-        }
+        }, interaction_mode)
 
     if market_intent and has_customer_development and not (
         _looks_like_customer_attribute_request(text) and not _has_explicit_split_market_clause(text)
@@ -332,21 +451,22 @@ def classify(text: str) -> dict[str, Any]:
             missing_fields.append("target_country_or_region")
         if not has_product_material:
             missing_fields.append("product_identity")
-        return {
+        return _with_interaction_mode({
             "route": "product_outbound_market_analysis",
             "next_skill": "analyzing-product-outbound-market",
             "split_customer_development": True,
             "secondary_routes": ["bulk_customer_development"],
             "route_order": ["product_outbound_market_analysis", "bulk_customer_development"],
             "missing_fields": missing_fields,
+            "analysis_modules_requested": _requested_market_modules(text),
             "response_lines": _market_response(text, True),
-        }
+        }, interaction_mode)
 
     if has_customer_development and not direct_market:
         # Customer words have priority unless the user also asks for explicit
         # market/compliance/tax/logistics analysis; “找美国锂电池进口商客户”
         # is customer development, while “分析市场然后找客户” is split-stage.
-        return {
+        return _with_interaction_mode({
             "route": "bulk_customer_development",
             "next_skill": "scoping-lead-research",
             "split_customer_development": False,
@@ -357,7 +477,7 @@ def classify(text: str) -> dict[str, Any]:
                 "我理解你要做的是：批量客户开发。",
                 "我会先确认你卖什么、本次优先找什么、不纳入什么，以及用哪些公开信号判断。",
             ],
-        }
+        }, interaction_mode)
 
     if direct_market or market_intent:
         missing_fields: list[str] = []
@@ -365,18 +485,19 @@ def classify(text: str) -> dict[str, Any]:
             missing_fields.append("target_country_or_region")
         if not has_product_material and not direct_market:
             missing_fields.append("product_identity")
-        return {
+        return _with_interaction_mode({
             "route": "product_outbound_market_analysis",
             "next_skill": "analyzing-product-outbound-market",
             "split_customer_development": False,
             "secondary_routes": [],
             "route_order": ["product_outbound_market_analysis"],
             "missing_fields": missing_fields,
+            "analysis_modules_requested": _requested_market_modules(text),
             "response_lines": _market_response(text, False),
-        }
+        }, interaction_mode)
 
     if has_customer_development:
-        return {
+        return _with_interaction_mode({
             "route": "bulk_customer_development",
             "next_skill": "scoping-lead-research",
             "split_customer_development": False,
@@ -387,9 +508,9 @@ def classify(text: str) -> dict[str, Any]:
                 "我理解你要做的是：批量客户开发。",
                 "我会先确认你卖什么、本次优先找什么、不纳入什么，以及用哪些公开信号判断。",
             ],
-        }
+        }, interaction_mode)
 
-    return {
+    return _with_interaction_mode({
         "route": "unknown",
         "next_skill": "using-superleads",
         "split_customer_development": False,
@@ -400,7 +521,7 @@ def classify(text: str) -> dict[str, Any]:
             "我还不能确定你要做产品市场分析、找客户、客户背调，还是补全表格。",
             "请补一句你的目标：分析产品市场、找客户、背调某家公司，或补全已有客户表。",
         ],
-    }
+    }, interaction_mode)
 
 
 def main() -> int:

@@ -31,7 +31,7 @@ Update:
 claude plugin update superleads@fleix
 ```
 
-Claude Code applies an update after restart. The optional version banner runs directly on macOS. On Windows it needs working `bash` and `curl`, normally supplied by Git Bash from Git for Windows. An unavailable banner does not affect Superleads; deleting the repository `hooks/` directory does not affect other functionality.
+Claude Code applies an update after restart. Superleads does not make an automatic network version check when a session starts; updating does not affect other functionality.
 
 ## Codex CLI And Codex App
 
@@ -88,11 +88,11 @@ Claude Code users should remove the former `superleads-dev` marketplace or plugi
 
 If an initial installation uses a local ZIP snapshot or local directory because GitHub is unreachable, that source is one-time only and cannot receive GitHub updates through `codex plugin marketplace upgrade`. Once the network works again, remove the local marketplace and add the official Git source above.
 
-### Optional Version Notice
+### Check For Updates On Demand
 
-Where Codex supports plugin hooks, Superleads reads the local version when a session starts or resumes and makes one anonymous GET of the public manifest on the `master` branch. It prints one update line only when a newer remote version is available. A 3-second timeout, no network, or any check failure is silent; it does not block the session, write to disk, or send user, project, or prompt data.
+Superleads does not use the network when a session starts or resumes, or for help, current-version, or installed-status requests. Only an explicit user request to check for updates may read the project's official public version source, and it is checked at most once per session. If the remote source is unavailable, times out, or returns an invalid response, the result is only "Unable to confirm the remote version this time"; it never reports that the installed version is current by mistake, blocks the session, or sends user, project, or prompt data.
 
-When Codex first discovers this hook, the user must review and trust it through `/hooks`; it does not run before that approval. Set `SUPERLEADS_DISABLE_UPDATE_CHECK=1` or `DISABLE_TELEMETRY=1` to disable it, or disable it in `/hooks`. Deleting `hooks/codex-hooks.json` from the installed plugin also disables the notice without affecting Skills; a later update restores that optional file. If the current Codex host does not execute plugin hooks, GitHub **Watch -> Custom -> Releases** remains the reliable release-notification path.
+The current runtime package does not register a SessionStart update hook. GitHub **Watch -> Custom -> Releases** remains an available release-notification option.
 
 ## Hermes
 
@@ -129,4 +129,4 @@ Start a new Hermes chat after updating. Do not use `hermes plugins install`: tha
 ## Version Notifications
 
 - The simplest release notification is **Watch -> Custom -> Releases** in the GitHub repository.
-- Claude Code's and Codex's optional session-start banners make one anonymous GET to the public manifest. Set `SUPERLEADS_DISABLE_UPDATE_CHECK=1` or `DISABLE_TELEMETRY=1` to disable them.
+- Superleads does not make a remote version check when a Claude Code or Codex session starts.

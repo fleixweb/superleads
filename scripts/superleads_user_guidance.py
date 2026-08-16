@@ -122,6 +122,7 @@ def static_help_response(text: str) -> dict[str, Any] | None:
         "response_contract": "static_first_use_help",
         "language": language,
         "guidance_reference": GUIDANCE_REFERENCE,
+        "interaction_mode": "metadata",
         "operations": [],
         "response_lines": _guide_lines(language),
     }

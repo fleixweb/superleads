@@ -60,21 +60,22 @@ Set the existing Brief field `analysis_modules_requested` before writing the
 source plan. It is the sole scope selector for the report; do not add another
 scope field.
 
-- An overall request such as “产品出海市场分析”, “出口某国分析”, or “进入某国市场分析” uses the complete report: include every module. Missing or empty `analysis_modules_requested`, an unrecognised value, or any uncertain intent also defaults to the complete report.
+- Only an explicit complete request such as “完整市场分析”, “整体市场分析”, “全面分析”, or their clear English equivalents uses the complete report and includes every module. A product/market request with no stated information domain is ambiguous: ask one short scope question, or provide a clearly labelled minimum research snapshot; do not silently select every module.
 - A clearly scoped request may select one or more relevant modules. Preserve
   every explicitly requested module in `analysis_modules_requested`; do not
   expand a valid multi-module request into the complete report:
-  - certification, tests, registration, labels, SDS, UN38.3, CE, UL, SABER -> `certification`;
+  - certification, tests, registration, labels, SDS, UN38.3, CE, UL, SABER -> `market_access`;
   - tariff, duty, tax rate, HS/HTS tax question -> `import_tax`;
   - COO / proof of origin -> `certification` (the origin-proof row is included in that table);
   - clearance, shipping, transport, pre-filing -> `logistics`;
   - export declaration, inspection, export controls -> `export_requirements`;
-  - trends, prices, or “好不好卖” -> `google_trends`, `online_price`, and `market_reports`.
+  - trends -> `market_trends`; public-price questions -> `public_price`. Do not turn either request into a complete report.
 - For example, “只做美国准入、税费、出口文件和物流” ->
-  `destination_compliance`, `import_tax`, `export_requirements`, `logistics`.
+  `market_access`, `import_tax`, `export_requirements`, `logistics`.
 - Keep existing planner vocabulary such as `destination_compliance`,
   `origin_proof_requirement`, and `market_signal` when they are already present
-  in a Brief; exporters map those legacy keys to the corresponding table.
+  in a Brief; planning and exporters map both the compact user-facing keys and
+  those legacy keys to the corresponding query groups and tables.
 
 The three fixed tables are always included: `市场事实总览`, `产品档案与触发项`,
 and `信息来源与待确认事项`. A scoped report is not a partial complete report:
@@ -83,7 +84,7 @@ must state the boundary, for example:
 
 ```text
 本轮范围：只做了「目标国准入与认证要求」一项。
-其他模块不在本轮范围。
+本轮未执行：进口税费、出口国要求、物流与申报、市场趋势与价格、季节窗口、近期外部因素。
 ```
 
 For more than one requested module, list all selected scope groups rather than
@@ -92,8 +93,9 @@ calling the request a single item.
 The complete report renders all twelve tables in the order below. Empty tables
 must explain whether collection was not run, ran without a usable public source,
 was not applicable to the current product triggers, or was source-restricted;
-do not use an unexplained “本表暂无矩阵行”. In a scoped report, unrequested
-modules are omitted rather than listed as individual not-executed items.
+do not use an unexplained “本表暂无矩阵行”. A scoped report must visibly state
+which modules are `本轮未执行`; it must not imply that omitted research found no
+information.
 
 Canonical source-planning Brief field names are: `product_name`, `target_country_or_region` / `destination_country_or_region`, `candidate_hs_hts`, `export_declaration_country`, `origin_country_or_region`, `manufacturing_country_clue`, `departure_country_or_region`, `departure_node`, `destination_node`, `product_trigger_tags`, `model_or_sku`, and `manufacturer_or_brand`. Treat other common words such as `hs_code` or `hts_code` as user clues to map into the canonical field before running source planning. Do not map `made_in_country`, `production_country`, `manufacturing_country`, or `coo_country` into `origin_country_or_region`; keep them as manufacturing clues unless the user explicitly states a customs-origin premise.
 

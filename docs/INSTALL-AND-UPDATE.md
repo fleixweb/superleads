@@ -31,7 +31,7 @@ claude plugin list
 claude plugin update superleads@fleix
 ```
 
-Claude Code 要在重启后应用更新。若启用了可选的版本横幅，macOS 可直接运行；Windows 需要可用的 `bash` 与 `curl`，通常由 Git for Windows 的 Git Bash 提供。横幅不可用不会影响 Superleads；删除仓库中的 `hooks/` 也不会影响其它功能。
+Claude Code 要在重启后应用更新。Superleads 不会在会话启动时自动联网检查版本；更新不会影响其它功能。
 
 ## Codex CLI 与 Codex app
 
@@ -86,11 +86,11 @@ Claude Code 用户请在 `/plugin` 中移除旧的 `superleads-dev` marketplace 
 
 如果初次安装因网络问题改用本地 ZIP 快照或本地目录注册 marketplace，该来源只能用于一次性安装，不能通过 `codex plugin marketplace upgrade` 获得 GitHub 更新。网络恢复后，应移除该本地 marketplace，再使用上面的官方 Git 来源重新添加。
 
-### 可选版本提醒
+### 按需检查更新
 
-Superleads 在 Codex 支持插件 hooks 的环境中，启动或恢复会话时会读取本地版本，并对 `master` 分支中的公开 manifest 发起一次匿名 GET。远端版本更高时才显示一行更新提示；3 秒超时、无网络或检查过程中的其他错误都会静默跳过，不会阻塞会话，也不会写入磁盘或发送用户、项目、prompt 数据。
+Superleads 不会在会话启动、恢复、帮助、当前版本或已安装状态查询时联网。只有用户明确要求“检查更新”时，宿主才可以读取项目官方公开版本来源；同一会话最多检查一次。远端不可达、超时或返回异常时，只会显示“本次未能确认远端版本”，不会误报已经是最新版本，也不会阻塞会话或发送用户、项目、prompt 数据。
 
-Codex 首次发现此 hook 时会要求用户在 `/hooks` 审核并信任；未信任前不会运行。可通过环境变量 `SUPERLEADS_DISABLE_UPDATE_CHECK=1` 或 `DISABLE_TELEMETRY=1` 关闭，也可在 `/hooks` 中禁用。删除已安装插件内的 `hooks/codex-hooks.json` 也可关闭它，不影响 Skills；下次更新会恢复该可选文件。若当前 Codex host 未执行插件 hooks，GitHub 的 **Watch -> Custom -> Releases** 仍是可靠的发布通知方式。
+当前运行时包未注册 SessionStart 更新 hook。GitHub 的 **Watch -> Custom -> Releases** 仍可用于接收发布通知。
 
 ## Hermes
 
@@ -127,4 +127,4 @@ git -C "$HOME\.hermes\skills\superleads" pull --ff-only
 ## 版本通知
 
 - 最简单的更新通知：在 GitHub 仓库点 **Watch -> Custom -> Releases**。
-- Claude Code 和 Codex 的可选启动横幅只对公开 manifest 做一次匿名 GET；可设置 `SUPERLEADS_DISABLE_UPDATE_CHECK=1` 或 `DISABLE_TELEMETRY=1` 关闭。
+- Superleads 不会在 Claude Code 或 Codex 的会话启动时执行远端版本检查。

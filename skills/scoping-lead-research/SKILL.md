@@ -9,6 +9,8 @@ description: "Use after Superleads intake when a foreign-trade research request 
 
 Create a Research Brief that captures the user's task without turning optional context into core ICP rules, and decide whether the run is default discovery or explicit deep verification.
 
+Before creating a Brief, confirm the interaction is not `metadata` or `material_triage`. Help, version, capability, feedback, and explicit update requests create no Brief. Material triage only organizes user-provided material and pending checks; it does not begin public research. Ordinary bulk work is a discovery snapshot; only explicit complete/standard/formal/deep intent uses formal research.
+
 ## Required references
 
 Read `../../shared/references/user-intake.md` and `../../shared/references/product-profile-input.md`. Use `../../shared/schemas/brief.schema.json` for fields.

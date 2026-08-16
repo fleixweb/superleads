@@ -8,13 +8,13 @@
 
 ## 客户一眼看懂
 
-| 问题 | 当前看到什么 | 状态 | 业务上怎么用 |
+| 问题 | 当前看到什么 | 状态 | 核验边界 |
 |---|---|---|---|
-| 它是谁 | CHILLY'S BOTTLES LIMITED，公司号 `07326177`，Companies House 显示 Active | 已核实公开来源 | 可作为指定背调对象继续跟进 |
-| 做什么产品 | 官网展示 Bottles、Cups、Food、Accessories 等 reusable products | 已核实公开来源 | 与保温杯、水杯、礼品、联名定制等方向相关 |
-| 是否有 B2B 入口 | Wholesale 页面给出 UK / EU wholesale 邮箱；Terms 有 Co-Brand 条款 | 已核实公开来源 | 可以先走 wholesale/co-brand 入口询问供应商或合作路径 |
+| 它是谁 | CHILLY'S BOTTLES LIMITED，公司号 `07326177`，Companies House 显示 Active | 已核实公开来源 | 主体可核验；不代表客户价值或是否应跟进 |
+| 做什么产品 | 官网展示 Bottles、Cups、Food、Accessories 等 reusable products | 已核实公开来源 | 公开业务范围仍需按当前来源复核 |
+| 是否有 B2B 入口 | Wholesale 页面给出 UK / EU wholesale 邮箱；Terms 有 Co-Brand 条款 | 已核实公开来源 | 公开入口的负责范围、供应商角色和合作路径仍待确认 |
 | 是否能直接说有采购需求 | 公开页面未显示当前采购计划 | 待确认 | 不能写成正在采购或采购意愿强 |
-| 是否能直接找老板采购 | Companies House 有董事信息，但不是采购负责人证明 | 待确认 | 董事只可作为主体确认线索，不作为首选采购联系人 |
+| 是否能直接找采购负责人 | Companies House 有董事信息，但不是采购负责人证明 | 待确认 | 董事只可作为主体确认线索，不作为采购联系人 |
 
 ## 客户、品牌与关联方
 
@@ -25,23 +25,30 @@
 | Timothy Claude Bouscarle | Companies House 公开董事 | 主体注册信息中的人员 | 已核实为董事 | Companies House officers |
 | James Butterfield | Companies House 公开董事 | 主体注册信息中的人员 | 已核实为董事 | Companies House officers |
 
-## 怎么联系、先找谁
+## 公开业务信号与待核验事项
 
-| 建议入口 | 为什么先找这里 | 联系时先问什么 | 状态 |
+| 公开看到的信号 | 公开关联依据 | 待核验事项 | 状态 |
 |---|---|---|---|
-| `uk-wholesale@chillys.com` | 官网 Wholesale 页面点名 UK customers | 是否有 supplier / sourcing / procurement 对接入口；是否接受外部供应商资料 | 可直接使用，但需说明来意 |
-| `eu-wholesale@chillys.com` | 官网 Wholesale 页面点名 EU customers | 如果用户目标是欧盟分销/合作，可询问区域入口 | 可直接使用，但需说明来意 |
-| `support@chillysbottles.com` | Terms 的公开联系邮箱 | 只适合转接或确认正确部门 | 建议核查后使用 |
-| 官网 Co-Brand / Wholesale 表单或页面 | 与定制和批发入口相关 | 先问流程、MOQ、文件要求、是否有供应商入口 | 可作为补充入口 |
+| 官网展示 reusable products | Chilly's Mission、官网产品页 | 公开产品描述不代表当前采购需求、采购权限或合作安排 | 已有明确依据 |
+| Wholesale / Co-Brand 页面 | Chilly's Wholesale、Terms | 页面公开入口的适用范围和当前负责主体仍待核验 | 可作为线索 |
 
-## 跟进前要注意什么
+## 公开联系入口与关联依据
 
-| 要注意的事 | 可能影响 | 建议动作 | 当前状态 |
+| 公开联系入口或职业线索 | 与主体的公开关联依据 | 待核验事项 | 状态 |
 |---|---|---|---|
-| wholesale 入口可能面向想经销 Chilly's 产品的客户 | 供应商直接推销可能不对口 | 邮件里先问正确 sourcing / procurement 入口 | 待确认 |
-| 董事不等于采购负责人 | 直接找董事可能降低回复率 | 除非做高层介绍，否则先走公开业务入口 | 待确认 |
-| Co-brand 条款偏向客户定制采购 | 如果用户卖的是代工/供应链能力，需要换一种表达 | 先提供产品能力、认证、案例、可定制项，不直接报最低价 | 待确认 |
-| Similarweb 等第三方页面曾出现访问受限 | 不能用受限页面补流量或规模结论 | 流量/访客规模另行核验 | 来源受限 |
+| `uk-wholesale@chillys.com` | 官网 Wholesale 页面点名 UK customers | 公开邮箱不代表采购负责人、采购权限或当前采购需求 | 可直接使用 |
+| `eu-wholesale@chillys.com` | 官网 Wholesale 页面点名 EU customers | 公开邮箱不代表采购负责人、采购权限或当前采购需求 | 可直接使用 |
+| `support@chillysbottles.com` | Terms 的公开联系邮箱 | 公开邮箱与具体负责范围的关联仍待核验 | 建议核查后使用 |
+| Companies House 公开董事 | Companies House officers | 董事不等于采购负责人 | 待确认 |
+
+## 待核验事项与来源限制
+
+| 待核验事项 | 公开依据或来源限制 | 状态 | 处理边界 |
+|---|---|---|---|
+| Wholesale 入口适用范围 | 页面可能面向想经销 Chilly's 产品的客户 | 待确认 | 待确认前不作为采购需求或合作安排结论 |
+| 董事与采购角色的关系 | Companies House 只显示董事身份 | 待确认 | 不把董事身份写成采购负责人 |
+| Co-brand 条款与当前业务关系 | 条款偏向客户定制采购 | 待确认 | 不把条款写成当前采购或合作事实 |
+| Similarweb 等第三方页面曾出现访问受限 | 受限页面不能用来补流量或规模结论 | 来源受限 | 不把受限页面内容作为公司事实 |
 
 ## 信息从哪里来
 

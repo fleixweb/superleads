@@ -10,7 +10,59 @@
       "expected_split_customer_development": false,
       "expected_missing_fields": [],
       "expected_response_contract": "static_first_use_help",
-      "expected_language": "zh"
+      "expected_language": "zh",
+      "expected_interaction_mode": "metadata",
+      "expected_operations": []
+    },
+    {
+      "name": "current version is metadata without an active-root read",
+      "text": "Superleads 当前版本是什么？",
+      "expected_route": "metadata",
+      "expected_next_skill": "using-superleads",
+      "expected_split_customer_development": false,
+      "expected_missing_fields": [],
+      "expected_response_contract": "metadata",
+      "expected_language": "zh",
+      "expected_interaction_mode": "metadata",
+      "expected_operations": []
+    },
+    {
+      "name": "current capability is side-effect-free metadata",
+      "text": "Superleads 当前能力是什么？",
+      "expected_route": "metadata",
+      "expected_next_skill": "using-superleads",
+      "expected_split_customer_development": false,
+      "expected_missing_fields": [],
+      "expected_response_contract": "metadata",
+      "expected_language": "zh",
+      "expected_interaction_mode": "metadata",
+      "expected_operations": []
+    },
+    {
+      "name": "feedback entry is side-effect-free metadata",
+      "text": "Superleads 的反馈入口在哪里？",
+      "expected_route": "metadata",
+      "expected_next_skill": "using-superleads",
+      "expected_split_customer_development": false,
+      "expected_missing_fields": [],
+      "expected_response_contract": "metadata",
+      "expected_language": "zh",
+      "expected_interaction_mode": "metadata",
+      "expected_operations": [],
+      "response_must_contain": ["https://github.com/fleixweb/superleads/issues"]
+    },
+    {
+      "name": "material-only spreadsheet stays at triage",
+      "text": "请初审我上传的客户名单.xlsx",
+      "expected_route": "material_triage",
+      "expected_next_skill": "using-superleads",
+      "expected_split_customer_development": false,
+      "expected_missing_fields": [],
+      "expected_response_contract": "material_triage",
+      "expected_language": "zh",
+      "expected_interaction_mode": "material_triage",
+      "expected_operations": [],
+      "response_must_contain": ["资料初审"]
     },
     {
       "name": "Chinese capability question shows static help",
@@ -49,6 +101,7 @@
       "expected_next_skill": "analyzing-product-outbound-market",
       "expected_split_customer_development": false,
       "expected_missing_fields": [],
+      "expected_interaction_mode": "discovery_snapshot",
       "response_must_contain": ["产品出海市场分析", "越南"]
     },
     {
@@ -58,6 +111,7 @@
       "expected_next_skill": "scoping-lead-research",
       "expected_split_customer_development": false,
       "expected_missing_fields": [],
+      "expected_interaction_mode": "discovery_snapshot",
       "response_must_contain": ["批量客户开发"]
     },
     {
@@ -67,6 +121,7 @@
       "expected_next_skill": "researching-customer-background",
       "expected_split_customer_development": false,
       "expected_missing_fields": [],
+      "expected_interaction_mode": "discovery_snapshot",
       "response_must_contain": ["客户背调报告"]
     },
     {
@@ -441,6 +496,20 @@
       "expected_split_customer_development": false,
       "expected_secondary_routes": [],
       "expected_missing_fields": [],
+      "expected_interaction_mode": "discovery_snapshot",
+      "response_must_contain": [
+        "批量客户开发"
+      ]
+    },
+    {
+      "name": "formal customer-list intent keeps bulk route",
+      "text": "给我一份德国工业传感器的正式开发名单",
+      "expected_route": "bulk_customer_development",
+      "expected_next_skill": "scoping-lead-research",
+      "expected_split_customer_development": false,
+      "expected_secondary_routes": [],
+      "expected_missing_fields": [],
+      "expected_interaction_mode": "formal_research",
       "response_must_contain": [
         "批量客户开发"
       ]

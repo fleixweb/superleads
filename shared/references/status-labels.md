@@ -1,6 +1,6 @@
 # Status Labels
 
-Lead dispositions:
+Internal compatibility lead dispositions (not user-facing recommendations):
 
 - 重点开发
 - 推荐跟进
@@ -28,6 +28,20 @@ Internal delivery statuses:
 Review modes: `independent`, `self_review_fallback`, `not_run`.
 
 Inquiry statuses: `new`, `triaged`, `needs_entity_resolution`, `ready_for_follow_up`, `closed`. They are workflow states, not qualification, buyer-verification, or purchase-confirmation claims.
+
+`标准开发名单` is a mechanical projection of the user's pre-stated rules and
+verified public information. It does not express an AI recommendation, a
+customer-value ranking, or a follow-up decision.
+
+Default discovery user-visible partitions:
+
+- `公开信号已匹配当前范围`: opened public material contains signals that match
+  the user's stated product, market, customer-type, or other scope boundary.
+- `待确认`: the current public material leaves the subject, business relation,
+  contact association, or other required fact unresolved.
+- `已排除 / 仅作参考`: opened material shows an explicit user-boundary mismatch,
+  or the record is retained only as a reference. Neither status is a customer
+  value judgment.
 
 # Business Relevance Labels
 
@@ -75,7 +89,8 @@ Inquiry statuses: `new`, `triaged`, `needs_entity_resolution`, `ready_for_follow
 
 投影优先级：未执行 / 不适用 / 冲突 / 来源受限 / 资料过旧 / 权威未核实 / 缺材料 优先于 `verified`。用户可见表格必须分开展示业务/规则结论、依据状态和用户材料状态。
 
-批量客户开发的默认发现候选池同样遵守该优先级：同一 Candidate 的任一公开信号为
+批量客户开发的默认发现候选池同样遵守该优先级：分区只描述公开信号与当前用户边界的关系，
+不表示客户价值、跟进优先级或采购意愿。同一 Candidate 的任一公开信号为
 `identity_pending` 时，`依据状态` 应显示 `说法冲突待复核`；任一公开信号为
 `source_restricted` 或 Candidate 记录了 `source_restrictions` 时，应显示 `来源受限`。
 只有在没有这些降级信号时，`business_match.status = observed` 才可投影为

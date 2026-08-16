@@ -351,12 +351,12 @@
         "seed_us_market_access_general",
         "seed_us_import_tax_general",
         "seed_us_origin_proof_general",
-        "seed_market_signal_global_to_us",
         "seed_product_original_sources"
       ],
       "must_not_select_pack_ids": [
         "seed_cn_export_general",
-        "seed_vn_export_general"
+        "seed_vn_export_general",
+        "seed_market_signal_global_to_us"
       ],
       "must_include_template_ids": [
         "qt_us_market_access_by_trigger",
@@ -426,12 +426,11 @@
       "expected_returncode": 1,
       "expected_ok": false,
       "must_select_pack_ids": [
-        "seed_cn_export_general",
         "seed_lithium_battery_common_rules",
         "seed_product_original_sources"
       ],
+      "must_not_select_pack_ids": ["seed_cn_export_general"],
       "must_include_template_ids": [
-        "qt_cn_export_country_requirements",
         "qt_lithium_battery_transport_docs",
         "qt_product_original_docs"
       ],

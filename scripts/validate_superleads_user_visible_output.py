@@ -30,7 +30,7 @@ ROUTE_REQUIRED: dict[str, list[str]] = {
         "还要确认什么",
         "来源 / 来源状态",
         "候选池",
-        "可优先人工跟进",
+        "公开信号已匹配当前范围",
         "已排除 / 仅作参考",
         "联系方式汇总",
         "社媒与公开职业线索",
@@ -45,8 +45,9 @@ ROUTE_REQUIRED: dict[str, list[str]] = {
         "一句话先说清",
         "客户一眼看懂",
         "客户、品牌与关联方",
-        "怎么联系、先找谁",
-        "跟进前要注意什么",
+        "公开业务信号与待核验事项",
+        "公开联系入口与关联依据",
+        "待核验事项与来源限制",
         "信息从哪里来",
         "采购需求",
         "采购负责人",
@@ -86,6 +87,15 @@ ROUTE_FORBIDDEN: dict[str, list[str]] = {
         "产品出海市场分析",
         "推荐客户",
         "采购概率",
+        "我们看到的业务机会",
+        "公开业务信号与可沟通角度",
+        "可以怎么问",
+        "怎么联系、先找谁",
+        "建议联系谁/哪里",
+        "为什么先找这里",
+        "联系时先问什么",
+        "跟进前要注意什么",
+        "建议动作",
     ],
     "product_outbound_market_analysis": [
         "候选客户池",
@@ -135,7 +145,40 @@ GENERIC_VALUE_JUDGMENTS = [
     "推荐价格",
     "最终税率就是",
     "承诺交期",
+    # User-visible delivery describes public evidence and open questions, not
+    # which company the model thinks should be pursued.
+    "重点开发",
+    "推荐跟进",
+    "暂不建议",
+    "开发建议",
+    "开发分层",
+    "可优先人工跟进",
+    "建议继续跟进",
+    "建议继续了解",
+    "重点跟进",
+    "值不值得继续跟",
+    "建议优先联系",
+    "建议先联系",
+    "建议联系这家公司",
+    "继续跟进",
+    "priority lead",
+    "high priority prospect",
+    "recommended follow-up",
+    "recommend following up",
+    "recommend contacting",
+    "should follow up",
+    "do not recommend pursuing",
+    "worth pursuing",
+    "worth developing",
+    "development recommendation",
+    "best prospect",
+    "high-value lead",
+    "worth continuing to follow up",
 ]
+
+CHINESE_VALUE_JUDGMENT_TERMS = tuple(
+    phrase for phrase in GENERIC_VALUE_JUDGMENTS if re.search(r"[\u4e00-\u9fff]", phrase)
+)
 
 GENERIC_EVIDENCE_UPGRADES = [
     "搜索摘要已核实",
@@ -292,11 +335,82 @@ def _phrase_matches(text: str, phrase: str, *, allow_negated: bool = False) -> b
     if not allow_negated:
         return bool(matches)
     for match in matches:
-        window = text[max(0, match.start() - 36):match.start()].casefold()
-        after_window = text[match.end():match.end() + 36].casefold()
+        # Negation must live in the same visible line or sentence as the
+        # phrase.  A later support footer says “请勿提交密码”, for example,
+        # and must not excuse a positive recommendation immediately before it.
+        before_break = max(
+            text.rfind("\n", 0, match.start()),
+            text.rfind("。", 0, match.start()),
+            text.rfind("！", 0, match.start()),
+            text.rfind("？", 0, match.start()),
+            text.rfind("，", 0, match.start()),
+            text.rfind(",", 0, match.start()),
+            text.rfind(";", 0, match.start()),
+        )
+        after_candidates = [
+            index for index in (
+                text.find("\n", match.end()),
+                text.find("。", match.end()),
+                text.find("！", match.end()),
+                text.find("？", match.end()),
+                text.find("，", match.end()),
+                text.find(",", match.end()),
+                text.find(";", match.end()),
+            ) if index >= 0
+        ]
+        after_break = min(after_candidates) if after_candidates else len(text)
+        window = text[max(before_break + 1, match.start() - 36):match.start()].casefold()
+        after_window = text[match.end():min(after_break, match.end() + 36)].casefold()
         negated_before = any(marker.casefold() in window for marker in NEGATION_MARKERS)
         negated_after = any(marker.casefold() in after_window for marker in AFTER_NEGATION_MARKERS)
         if not (negated_before or negated_after):
+            return True
+    return False
+
+
+def _value_judgment_matches(text: str, phrase: str) -> bool:
+    """Return true for a commercial judgment that is not a local boundary rule.
+
+    A broad search for any earlier ``不``/``not`` let prose such as “公开信息
+    不足但仍推荐跟进” evade the guardrail.  A negative boundary is allowed only
+    when the negation directly governs the phrase in that same clause.
+    """
+    if ENGLISH_TOKEN_RE.fullmatch(phrase):
+        pattern = re.compile(rf"(?<![A-Za-z0-9_-]){re.escape(phrase)}(?![A-Za-z0-9_-])", re.IGNORECASE)
+    else:
+        pattern = re.compile(re.escape(phrase), re.IGNORECASE)
+    for match in pattern.finditer(text):
+        line_start = text.rfind("\n", 0, match.start()) + 1
+        sentence_start = max(
+            line_start,
+            text.rfind("。", line_start, match.start()) + 1,
+            text.rfind("！", line_start, match.start()) + 1,
+            text.rfind("？", line_start, match.start()) + 1,
+            text.rfind("，", line_start, match.start()) + 1,
+            text.rfind(",", line_start, match.start()) + 1,
+            text.rfind("；", line_start, match.start()) + 1,
+            text.rfind(";", line_start, match.start()) + 1,
+            text.rfind(".", line_start, match.start()) + 1,
+            text.rfind("!", line_start, match.start()) + 1,
+            text.rfind("?", line_start, match.start()) + 1,
+        )
+        prefix = text[sentence_start:match.start()].casefold()
+        chinese_terms = "|".join(re.escape(term) for term in CHINESE_VALUE_JUDGMENT_TERMS)
+        chinese_boundary = (
+            re.search(
+                r"(?:(?:也|仍|都)?不替用户|(?:也|仍|都)?不(?:做|作|给|提供|产生|生成|写成)|(?:也|仍|都)?不能(?:作为|用于|证明|写成)?|(?:也|仍|都)?不得(?:作为|用于|写成)?|不(?:做|作)?判断\s*是否|不决定\s*是否)\s*$",
+                prefix,
+            )
+            or re.search(
+                rf"(?:不(?:做|作|给|提供|产生|生成|写成)|不能(?:作为|用于|证明|写成)|不得(?:作为|用于|写成))(?:(?:{chinese_terms})|[、或和及与\s])*$",
+                prefix,
+            )
+        )
+        english_boundary = re.search(
+            r"(?:superleads|this assistant)\s+(?:does not|do not)\s+(?:decide|judge)\s+(?:whether\s+)?(?:it\s+is\s+)?$|(?:superleads|this assistant)\s+(?:does not|do not)\s+$",
+            prefix,
+        )
+        if not (chinese_boundary or english_boundary):
             return True
     return False
 
@@ -449,12 +563,12 @@ def validate(text: str, route: str, *, min_tables: int = 3, extra_required: list
     if required is None:
         return [_issue("user_visible_unknown_route", f"unknown route: {route}", route)]
     if route == "product_outbound_market_analysis" and "本轮范围：" in text:
-        # A scoped report names what the user requested and keeps only its
-        # fixed tables plus selected modules. It must not repeat unrequested
-        # module names merely to describe their absence.
+        # A scoped report names both the selected scope and the modules not
+        # executed this round. It still renders only fixed tables plus the
+        # selected modules.
         required = [
             "本轮范围：",
-            "其他模块不在本轮范围。",
+            "本轮未执行：",
             "依据状态",
             "产品档案与触发项",
             "信息来源与待确认事项",
@@ -479,7 +593,7 @@ def validate(text: str, route: str, *, min_tables: int = 3, extra_required: list
             issues.append(_issue("user_visible_internal_language", f"internal language leaked: {phrase}", phrase))
 
     for phrase in GENERIC_VALUE_JUDGMENTS:
-        if _phrase_matches(text, phrase, allow_negated=True):
+        if _value_judgment_matches(text, phrase):
             issues.append(_issue("user_visible_value_judgment", f"value judgment present: {phrase}", phrase))
 
     for phrase in GENERIC_EVIDENCE_UPGRADES:

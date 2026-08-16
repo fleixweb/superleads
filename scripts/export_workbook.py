@@ -31,8 +31,8 @@ from user_visible_status_projection import project_market_row_status
 from background_report import background_contact_values_to_redact, build_background_report_sheets, validate_background_report
 
 MODE_TO_STATUS={"initial":"initial_lead_list","standard":"standard_development_list","full":"full_review_package","inquiry":"inquiry_followup_queue"}
-DEFAULT_SHEETS=["客户信息总表","联系方式汇总","开发建议","官网与来源链接","待核查事项","风险与说明"]
-FULL_SHEETS=["开发需求","关键词与搜索思路","发现候选池","客户信息总表","联系方式汇总","开发建议","官网与来源链接","待核查事项","已排除客户","检查说明"]
+DEFAULT_SHEETS=["客户信息总表","联系方式汇总","公开信息与待核查事项","官网与来源链接","待核查事项","风险与说明"]
+FULL_SHEETS=["开发需求","关键词与搜索思路","发现候选池","客户信息总表","联系方式汇总","公开信息与待核查事项","官网与来源链接","待核查事项","已排除客户","检查说明"]
 INITIAL_SHEETS=["发现候选池","联系方式汇总","官网与来源链接","搜索覆盖与收敛","待核查事项","已排除客户","风险与说明"]
 INQUIRY_SHEETS=["询盘待办","来信联系人","询盘信息摘要","待补充信息","来源说明"]
 
@@ -626,8 +626,20 @@ def _initial_partition(relevance:str, basis_status:str)->str:
     if relevance == "explicitly_excluded_or_unrelated":
         return "已排除 / 仅作参考"
     if relevance in {"directly_related","possibly_related"} and basis_status in {"已有明确依据","多来源方向一致","可作为线索"}:
-        return "可优先人工跟进"
+        return "公开信号已匹配当前范围"
     return "待确认"
+
+
+def _assessment_visible_status(disposition: Any, direction_status: Any = None) -> str:
+    """Project legacy disposition enums without making a commercial judgment."""
+    value = str(disposition or "").strip()
+    if value in {"重点开发", "推荐跟进"}:
+        return "公开信号已匹配当前范围"
+    if value in {"暂不建议", "排除"}:
+        return "命中用户明确排除条件" if str(direction_status or "") in {"out_of_scope", "reference_only"} else "公开信号不足"
+    if value == "需人工核查":
+        return "需补充资料"
+    return "需补充资料"
 
 
 def initial_contact_rows(graph:dict[str,Any])->list[dict[str,Any]]:
@@ -879,7 +891,7 @@ def build_sheets(graph:dict[str,Any], audit:dict[str,Any], mode:str)->dict[str,l
         a=assessment_for_current_brief(graph,entity_id,brief_id,run_id)
         decision=scope_decision_for_current_brief(graph,entity_id,brief_id,run_id)
         if entity_id in allowed_entities:
-            row={"公司名称":entity.get("name") or entity.get("legal_name"),"官网":_safe_website_or_domain_output(entity),"国家/地区":entity.get("country_or_region"),"客户类型":entity.get("customer_type"),"开发分层":a.get("disposition"),"缺失项":stringify(a.get("missing_requirements")),"需人工核查":stringify(a.get("manual_review_required"))}
+            row={"公司名称":entity.get("name") or entity.get("legal_name"),"官网":_safe_website_or_domain_output(entity),"国家/地区":entity.get("country_or_region"),"客户类型":entity.get("customer_type"),"公开信息状态":_assessment_visible_status(a.get("disposition"), decision.get("overall_status")),"缺失项":stringify(a.get("missing_requirements")),"需人工核查":stringify(a.get("manual_review_required"))}
             if exception_label:
                 row.update({"结果类型":exception_label,"说明":"仅针对当前用户指定输入完成核查，不表示符合本次开发方向。"})
             else:
@@ -895,17 +907,19 @@ def build_sheets(graph:dict[str,Any], audit:dict[str,Any], mode:str)->dict[str,l
         cp=contacts.get(cc.get("contact_id"),{}); ent=entities.get(cc.get("entity_id"),{}); obs=observations.get(cc.get("association_observation_id"),{}); src=sources.get(obs.get("source_id"),{}) if isinstance(obs,dict) else {}
         contact_rows.append({"公司名称":ent.get("name") or cc.get("entity_id"),"联系方式类型":cp.get("contact_type"),"联系方式":cp.get("normalized_value"),"原文":cp.get("source_literal"),"联系人":cc.get("person_name"),"职位/部门":cc.get("job_title") or cc.get("department"),"状态":contact_user_status(cc.get("export_status")),"来源上下文":cc.get("source_context"),"归属证据":cc.get("association_evidence_text"),"来源说明":source_display(src,obs),"来源链接":safe_public_source_url(src),"需人工核查说明":cc.get("manual_check_note")})
     sheets["联系方式汇总"]=contact_rows
-    hypotheses=idx(graph,"hypotheses","hypothesis_id")
-    sheets["开发建议"]=[]
+    sheets["公开信息与待核查事项"]=[{
+        "说明":"按用户事先提供的规则和已核验公开信息机械筛选；不代表 AI 推荐或价值判断。",
+    }]
     for assessment in current_assessments:
         if str(assessment.get("entity_id")) not in allowed_entities:
             continue
-        row={"公司名称":entities.get(assessment.get("entity_id"),{}).get("name") or assessment.get("entity_id"),"开发分层":assessment.get("disposition"),"建议切入点":"；".join(str(hypotheses.get(hypothesis_id,{}).get("hypothesis_text") or "") for hypothesis_id in assessment.get("related_hypothesis_ids_for_outreach",[]) if hypotheses.get(hypothesis_id)) or "结合公开业务信息准备首次沟通。","缺失项":stringify(assessment.get("missing_requirements"))}
+        decision=scope_decision_for_current_brief(graph,str(assessment.get("entity_id")),brief_id,run_id)
+        row={"公司名称":entities.get(assessment.get("entity_id"),{}).get("name") or assessment.get("entity_id"),"公开信息状态":_assessment_visible_status(assessment.get("disposition"),decision.get("overall_status")),"待核查事项":stringify(assessment.get("missing_requirements")),"需人工核查":stringify(assessment.get("manual_review_required"))}
         if exception_label:
             row["结果类型"]=exception_label
         else:
             row["方向状态"]="符合本次方向"
-        sheets["开发建议"].append(row)
+        sheets["公开信息与待核查事项"].append(row)
     pending=[]
     for lead in ensure_list(graph,"unassigned_contact_leads"):
         if isinstance(lead,dict):

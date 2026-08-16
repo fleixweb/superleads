@@ -23,9 +23,9 @@ from validate_research_graph import BLOCKED_ACCESS, validate_graph
 BACKGROUND_SHEETS = [
     "客户一眼看懂",
     "客户、品牌与关联方",
-    "我们看到的业务机会",
-    "怎么联系、先找谁",
-    "跟进前要注意什么",
+    "公开业务信号与待核验事项",
+    "公开联系入口与关联依据",
+    "待核验事项与来源限制",
     "信息从哪里来",
 ]
 
@@ -441,24 +441,6 @@ def _business_claim_summary(claim: dict[str, Any]) -> str:
     return f"公开资料显示：{subject} {value}".strip()
 
 
-def _business_opportunity_guidance(claim: dict[str, Any]) -> tuple[str, str]:
-    claim_type = str(claim.get("claim_type") or "")
-    if claim_type == "product_match":
-        return (
-            "可用来判断产品方向是否匹配，但不代表客户已有采购需求。",
-            "结合这项产品先确认是否有供应商、定制或补货需求。",
-        )
-    if claim_type == "certification":
-        return (
-            "可能涉及供应商准入或合规要求，具体要求仍需确认。",
-            "先了解适用市场、证书范围和供应商准入要求。",
-        )
-    return (
-        "可用来了解其公开展示的渠道或经营定位，不代表已有采购需求。",
-        "围绕这项业务信息，先确认相关品类、合作方式和当前需求。",
-    )
-
-
 def _relationship_endpoints(relationship: dict[str, Any]) -> tuple[str | None, str | None]:
     source = next((relationship.get(field) for field in ("source_entity_id", "from_entity_id", "parent_entity_id") if has_text(relationship.get(field))), None)
     target = next((relationship.get(field) for field in ("target_entity_id", "to_entity_id", "child_entity_id") if has_text(relationship.get(field))), None)
@@ -485,16 +467,6 @@ def _claim_evidence_maps(scope: dict[str, Any]) -> tuple[dict[str, list[dict[str
         by_claim.setdefault(str(evidence.get("claim_id")), []).append(evidence)
         by_observation.setdefault(str(evidence.get("observation_id")), []).append(evidence)
     return by_claim, by_observation
-
-
-def _contact_first_question(contact_type: Any, contact_status: Any) -> str:
-    if contact_status == "待确认归属":
-        return "先确认这个入口是否仍归属该公司，以及应转给哪位负责同事。"
-    if contact_type == "form":
-        return "先问是否接受新供应商，以及该由谁负责对接。"
-    if contact_type == "phone":
-        return "先确认负责品类或供应商准入的同事和合适的联系渠道。"
-    return "先确认是否由其负责相关品类或供应商合作；不是则请其转接。"
 
 
 def _first_evidence_context(
@@ -633,22 +605,25 @@ def build_background_report_sheets(scope: dict[str, Any]) -> dict[str, list[dict
         if claim.get("claim_type") not in {"product_match", "channel_role", "certification"}:
             continue
         scope_status = claim.get("claim_scope")
-        meaning, suggested_action = _business_opportunity_guidance(claim)
+        evidence_source = _source_display(source, observation)
+        if observation.get("observed_at"):
+            evidence_source += f"（观察于 {observation['observed_at']}）"
         opportunity_rows.append({
-            "我们看到的情况": _business_claim_summary(claim),
-            "对我们意味着什么": meaning,
-            "建议怎么切入": suggested_action,
-            "把握程度": "历史信息，需确认现在是否仍有效" if scope_status in {"source_snapshot", "point_in_time"} else "已确认公开信息",
+            "公开看到的信号": _business_claim_summary(claim),
+            "公开关联依据": evidence_source,
+            "待核验事项": "确认历史信息是否仍有效；公开业务信息不代表当前采购需求、采购权限或合作安排。" if scope_status in {"source_snapshot", "point_in_time"} else "公开业务信息不代表当前采购需求、采购权限或合作安排。",
+            "状态": "资料过旧需复核" if scope_status in {"source_snapshot", "point_in_time"} else "已有明确依据",
         })
 
     for hypothesis in ensure_list(projection, "hypotheses"):
         if not isinstance(hypothesis, dict) or not has_text(hypothesis.get("hypothesis_text")):
             continue
+        unknowns = [str(item) for item in as_list(hypothesis.get("unknowns")) if has_text(item)]
         opportunity_rows.append({
-            "我们看到的情况": hypothesis.get("hypothesis_text"),
-            "对我们意味着什么": "这是可尝试的沟通角度，不等于客户已有采购需求或采购决定。",
-            "建议怎么切入": hypothesis.get("suggested_action") or hypothesis.get("next_verification_action") or "在首轮沟通中先确认相关情况。",
-            "把握程度": "待确认",
+            "公开看到的信号": "待核验研究说明",
+            "公开关联依据": "未形成可打开来源支持的研究说明，不作为公司事实。",
+            "待核验事项": "；".join(unknowns) or "主体、公开业务范围及公开联系入口仍待核验。",
+            "状态": "待确认",
         })
 
     raw_contact_rows = _background_contact_rows(projection, entities, contacts, observations, sources)
@@ -656,27 +631,37 @@ def build_background_report_sheets(scope: dict[str, Any]) -> dict[str, list[dict
     for row in raw_contact_rows:
         person = str(row.get("联系人/公开职业线索") or "").strip()
         entry = str(row.get("公开联系入口") or "").strip()
+        association = "；".join(
+            item for item in (
+                str(row.get("归属状态") or "").strip(),
+                str(row.get("说明") or "").strip(),
+                str(row.get("来源") or "").strip(),
+            ) if item
+        )
+        pending = "公开联系入口不代表采购负责人、采购权限或当前采购需求。"
+        if row.get("联系方式状态") == "待确认归属":
+            pending = "公开联系入口与当前主体的关联仍待核验；不代表采购负责人、采购权限或当前采购需求。"
         contact_rows.append({
-            "建议联系谁/哪里": "；".join(item for item in (person, entry) if item) or "待确认联系入口",
-            "为什么先找这里": _contact_reason(row),
-            "联系时先问什么": _contact_first_question(row.get("联系方式类型"), row.get("联系方式状态")),
+            "公开联系入口或职业线索": "；".join(item for item in (person, entry) if item) or "待确认联系入口",
+            "与主体的公开关联依据": association or "公开关联依据待补充",
+            "待核验事项": pending,
             "状态": row.get("联系方式状态") or "待确认",
         })
 
     caution_rows = []
     for row in _background_question_rows(scope, claims, observations, sources):
         caution_rows.append({
-            "要注意的事": row.get("待确认问题"),
-            "可能影响": row.get("依据/状态"),
-            "建议动作": "把这一项作为下一步核实问题；在确认前不按结论使用。",
-            "目前状态": "待确认",
+            "待核验事项": row.get("待确认问题"),
+            "公开依据或来源限制": row.get("依据/状态"),
+            "状态": "待确认",
+            "处理边界": "待确认前不作为公司事实或业务结论。",
         })
     for row in _background_unresolved_rows(scope, claims, observations, sources):
         caution_rows.append({
-            "要注意的事": "：".join(item for item in (str(row.get("类型") or ""), str(row.get("线索/来源") or "")) if item),
-            "可能影响": row.get("受限或冲突原因"),
-            "建议动作": row.get("建议"),
-            "目前状态": row.get("状态") or "待确认",
+            "待核验事项": "：".join(item for item in (str(row.get("类型") or ""), str(row.get("线索/来源") or "")) if item),
+            "公开依据或来源限制": row.get("受限或冲突原因"),
+            "状态": row.get("状态") or "待确认",
+            "处理边界": "来源受限、冲突或用户材料线索不作为公司事实或业务结论。",
         })
 
     raw_evidence_rows = _background_evidence_rows(projection, claims, observations, sources, evidence_by_observation)
@@ -704,37 +689,37 @@ def build_background_report_sheets(scope: dict[str, Any]) -> dict[str, list[dict
             "状态": _suspected_trade_record_status(record),
         })
 
-    business_signals = [str(row.get("我们看到的情况")) for row in opportunity_rows if row.get("把握程度") != "待确认"]
+    business_signals = [str(row.get("公开看到的信号")) for row in opportunity_rows if row.get("状态") != "待确认"]
     usable_contacts = [row for row in raw_contact_rows if row.get("联系方式状态") == "可直接使用"]
     if resolution_status != "resolved":
-        next_step = "先确认这家公司对应的主体，再判断该找谁联系。"
-        contact_stage = "先补充或核实合适的联系入口"
+        next_step = "确认这家公司对应的主体，以及公开联系入口与该主体的关联。"
+        contact_stage = "主体或公开联系入口仍待核实"
     elif usable_contacts:
-        next_step = "可准备首轮沟通，先确认负责品类或供应商准入的人。"
-        contact_stage = "可以从已核实的公开入口开始"
+        next_step = "核对公开联系入口的负责范围，以及是否对应当前需要确认的事项。"
+        contact_stage = f"已观察到 {len(usable_contacts)} 个可直接使用的公开联系入口"
     elif business_signals:
-        next_step = "先核实合适的联系入口和负责角色，再进行首轮沟通。"
+        next_step = "补充公开联系入口及其与主体、部门或角色的关联依据。"
         contact_stage = "尚未找到可直接使用的公开入口"
     else:
         next_step = "先补充可检查的官网、公开目录或用户材料。"
         contact_stage = "当前没有可用的公开联系入口"
 
     if resolution_status == "resolved" and business_signals and usable_contacts:
-        follow_up_advice = "建议继续跟进"
+        verification_basis = "主体、公开业务和公开联系入口均有明确依据"
     elif resolution_status == "resolved" and business_signals:
-        follow_up_advice = "建议继续了解，先补联系人"
+        verification_basis = "主体和公开业务有依据，公开联系入口仍待补充"
     else:
-        follow_up_advice = "先补信息，再决定是否重点跟进"
+        verification_basis = "公开信息不足，需补充资料"
 
     overview_rows = [
         {"你最关心的事": "这是谁", "目前了解到的情况": primary_entity.get("legal_name") or primary_entity.get("name") or target.get("user_statement"), "结论": resolution_label},
         {"你最关心的事": "它公开在做什么", "目前了解到的情况": "；".join(business_signals) or "暂未找到可核实的公开业务信息", "结论": "已有公开业务信息" if business_signals else "还需补充信息"},
-        {"你最关心的事": "值不值得继续跟", "目前了解到的情况": "依据当前可核实的主体、业务和联系信息作出的跟进建议。", "结论": follow_up_advice},
-        {"你最关心的事": "现在能不能开始联系", "目前了解到的情况": f"已核实可直接使用的公开入口：{len(usable_contacts)} 个。", "结论": contact_stage},
-        {"你最关心的事": "下一步怎么做", "目前了解到的情况": next_step, "结论": "按上表的联系入口和待确认事项推进"},
+        {"你最关心的事": "是否具备继续核验基础", "目前了解到的情况": "只汇总当前可核实的主体、业务和公开联系信息；不判断客户价值、采购意愿或是否应跟进。", "结论": verification_basis},
+        {"你最关心的事": "公开联系入口与待确认事项", "目前了解到的情况": f"已核实可直接使用的公开入口：{len(usable_contacts)} 个。", "结论": contact_stage},
+        {"你最关心的事": "下一步待确认什么", "目前了解到的情况": next_step, "结论": "保留为待确认事项，不代表是否应跟进的结论"},
     ]
     if any(observation.get("access_status") in BLOCKED_ACCESS for observation in observations.values()):
-        overview_rows.append({"你最关心的事": "信息有没有缺口", "目前了解到的情况": "部分来源无法访问，未把受限内容当作公司事实。", "结论": "见“跟进前要注意什么”"})
+        overview_rows.append({"你最关心的事": "信息有没有缺口", "目前了解到的情况": "部分来源无法访问，未把受限内容当作公司事实。", "结论": "见“待核验事项与来源限制”"})
 
     result = {
         "客户一眼看懂": overview_rows,
@@ -743,20 +728,20 @@ def build_background_report_sheets(scope: dict[str, Any]) -> dict[str, list[dict
             "主体尚未解析；暂无可展示的关联信息。",
             ("名称", "它是什么", "和客户的关系", "目前把握", "我们依据什么"),
         ),
-        "我们看到的业务机会": _background_placeholder_rows(
+        "公开业务信号与待核验事项": _background_placeholder_rows(
             opportunity_rows,
             "暂无可核实的公开业务信息；不能据此判断采购需求。",
-            ("我们看到的情况", "对我们意味着什么", "建议怎么切入", "把握程度"),
+            ("公开看到的信号", "公开关联依据", "待核验事项", "状态"),
         ),
-        "怎么联系、先找谁": _background_placeholder_rows(
+        "公开联系入口与关联依据": _background_placeholder_rows(
             contact_rows,
             "暂无可展示的公开联系入口；不展示未确认或不可导出的联系方式值。",
-            ("建议联系谁/哪里", "为什么先找这里", "联系时先问什么", "状态"),
+            ("公开联系入口或职业线索", "与主体的公开关联依据", "待核验事项", "状态"),
         ),
-        "跟进前要注意什么": _background_placeholder_rows(
+        "待核验事项与来源限制": _background_placeholder_rows(
             caution_rows,
             "暂无额外待确认事项。",
-            ("要注意的事", "可能影响", "建议动作", "目前状态"),
+            ("待核验事项", "公开依据或来源限制", "状态", "处理边界"),
         ),
         "信息从哪里来": _background_placeholder_rows(
             evidence_rows,
@@ -859,18 +844,6 @@ def _background_contact_rows(
             "来源 URL": safe_public_source_url(source) if isinstance(source, dict) else "",
         })
     return rows
-
-
-def _contact_reason(row: dict[str, Any]) -> str:
-    status = row.get("联系方式状态")
-    note = str(row.get("说明") or "")
-    if status == "可直接使用":
-        return "这是已核实的公开业务联系入口；仍需先确认具体负责范围。"
-    if status == "建议核查后使用":
-        return "这是公开展示的联系入口；建议先确认是否仍由该团队负责。"
-    if "创始" in note or "董事" in note:
-        return "公开职业线索，可用于请求转接；不代表采购负责人。"
-    return "这是待核实的公开线索，暂不能直接按业务联系人使用。"
 
 
 def _background_hypothesis_rows(

@@ -40,6 +40,7 @@ def _run_case(py: str, case: dict[str, Any]) -> tuple[bool, str]:
             ("split_customer_development", "expected_split_customer_development"),
             ("response_contract", "expected_response_contract"),
             ("language", "expected_language"),
+            ("interaction_mode", "expected_interaction_mode"),
         ):
             if expected_key in case and actual.get(key) != case.get(expected_key):
                 problems.append(f"{key} expected {case.get(expected_key)!r} got {actual.get(key)!r}")
@@ -48,6 +49,7 @@ def _run_case(py: str, case: dict[str, Any]) -> tuple[bool, str]:
             ("missing_fields", "expected_missing_fields"),
             ("secondary_routes", "expected_secondary_routes"),
             ("route_order", "expected_route_order"),
+            ("operations", "expected_operations"),
         ):
             if expected_key in case:
                 expected_items = list(case.get(expected_key, []))

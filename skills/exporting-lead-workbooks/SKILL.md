@@ -33,13 +33,17 @@ Completed CSV/XLSX and chat-readable exports follow the shared footer rules only
 
 Default discovery version: 发现候选池, 联系方式汇总, 官网与来源链接, 搜索覆盖与收敛, 待核查事项, 已排除客户, 风险与说明.
 
-Standard development version: 客户信息总表, 联系方式汇总, 开发建议, 官网与来源链接, 待核查事项, 风险与说明.
+Standard development version: 客户信息总表, 联系方式汇总, 公开信息与待核查事项, 官网与来源链接, 待核查事项, 风险与说明.
 
-Full review version: 开发需求, 关键词与搜索思路, 发现候选池, 客户信息总表, 联系方式汇总, 开发建议, 官网与来源链接, 待核查事项, 已排除客户, 检查说明.
+Full review version: 开发需求, 关键词与搜索思路, 发现候选池, 客户信息总表, 联系方式汇总, 公开信息与待核查事项, 官网与来源链接, 待核查事项, 已排除客户, 检查说明.
+
+`标准开发名单` only mechanically projects the user's pre-stated rules and
+verified public information. It is not an AI recommendation, customer-value
+ranking, or follow-up decision.
 
 Inquiry version: 询盘待办, 来信联系人, 询盘信息摘要, 待补充信息, 来源说明. It is not a standard development list and does not claim buyer verification.
 
-Customer background version: 客户一眼看懂, 客户、品牌与关联方, 我们看到的业务机会, 怎么联系、先找谁, 跟进前要注意什么, 信息从哪里来. Use `--mode background` only for `customer_background_research` with output mode `客户背调报告`; it uses the current Brief scope projection, never creates a DeliveryManifest, and does not enter the formal audit chain.
+Customer background version: 客户一眼看懂, 客户、品牌与关联方, 公开业务信号与待核验事项, 公开联系入口与关联依据, 待核验事项与来源限制, 信息从哪里来. It describes public signals, public association evidence, open questions, and source limits only; it does not tell the user whom to contact, how to approach them, or what action to take. Use `--mode background` only for `customer_background_research` with output mode `客户背调报告`; it uses the current Brief scope projection, never creates a DeliveryManifest, and does not enter the formal audit chain.
 
 ## Markdown delivery
 

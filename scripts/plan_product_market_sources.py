@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from _superleads_common import contains_local_path, is_safe_public_http_url
+from superleads_execution_state import create_execution_state_from_plan
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REGISTRY = ROOT / "shared" / "source_packs" / "product_market_seed_packs.json"
@@ -231,13 +232,19 @@ COMMON_TRIGGER_PACKS = {
 
 MODULE_TO_QUERY_GROUPS = {
     "product_profile": {"product_original_sources"},
+    # Intake uses these compact, user-facing module names.  They deliberately
+    # map to the existing query-group vocabulary so planning stays bounded
+    # without renaming source packs or older Brief fixtures.
+    "market_trends": {"market_trends"},
+    "public_price": {"public_price"},
+    "market_access": {"destination_compliance", "origin_proof_requirement"},
     # ``certification`` is the user-facing single-item scope.  The source
     # registry still uses its established query-group ids, so keep this alias
     # here rather than renaming packs or old fixtures.
     "certification": {"destination_compliance", "origin_proof_requirement"},
     "destination_compliance": {"destination_compliance", "origin_proof_requirement"},
     "origin_proof_requirement": {"origin_proof_requirement"},
-    "import_tax": {"import_tax", "origin_proof_requirement"},
+    "import_tax": {"import_tax"},
     "export_requirements": {"export_requirements"},
     "logistics": {"logistics", "lithium_battery_common_rules"},
     "google_trends": {"market_signal"},
@@ -385,6 +392,70 @@ def _brief_value(brief: dict[str, Any], *names: str) -> Any:
         if name in brief and brief[name] not in (None, ""):
             return brief[name]
     return None
+
+
+def _analysis_modules_requested(brief: dict[str, Any]) -> set[str]:
+    return set(_str_list(_brief_value(brief, "analysis_modules_requested", "modules_requested")))
+
+
+def _analysis_scope_is_explicitly_pending(brief: dict[str, Any]) -> bool:
+    """Whether intake explicitly supplied an empty market-module scope.
+
+    Missing legacy fields keep their established full-plan behavior.  An
+    explicitly empty field is new intake's scope-confirmation state and must
+    not silently expand into a complete market plan.
+    """
+    for field in ("analysis_modules_requested", "modules_requested"):
+        if field in brief and not _str_list(brief.get(field)):
+            return True
+    return False
+
+
+def _is_complete_market_scope(requested_modules: set[str]) -> bool:
+    current_complete_scope = {
+        "market_trends",
+        "public_price",
+        "market_access",
+        "import_tax",
+        "export_requirements",
+        "logistics",
+        "external_factors",
+    }
+    legacy_complete_scope = {
+        "product_profile",
+        "destination_compliance",
+        "origin_proof_requirement",
+        "import_tax",
+        "export_requirements",
+        "logistics",
+        "season_holiday",
+        "external_factors",
+    }
+    return current_complete_scope.issubset(requested_modules) or legacy_complete_scope.issubset(requested_modules)
+
+
+def _query_group_is_in_requested_scope(group: str, requested_modules: set[str]) -> bool:
+    allowed = set().union(*(MODULE_TO_QUERY_GROUPS.get(module, set()) for module in requested_modules))
+    if requested_modules & {"market_access", "certification", "destination_compliance"}:
+        allowed.add("textile_apparel_common_rules")
+    always_needed = {"product_original_sources"}
+    if _is_complete_market_scope(requested_modules):
+        always_needed.update({"lithium_battery_common_rules", "textile_apparel_common_rules", "market_signal"})
+    return group in allowed | always_needed
+
+
+def _trigger_pack_is_in_requested_scope(pack_id: str, requested_modules: set[str]) -> bool:
+    """Keep product-triggered packs only when the requested module needs them."""
+    pack_to_query_group = {
+        "seed_lithium_battery_common_rules": "lithium_battery_common_rules",
+        "seed_textile_apparel_common_rules": "textile_apparel_common_rules",
+        "seed_transpacific_logistics_general": "logistics",
+        "seed_market_signal_global_to_us": "market_signal",
+    }
+    group = pack_to_query_group.get(pack_id)
+    if group == "textile_apparel_common_rules":
+        return bool(requested_modules & {"market_access", "certification", "destination_compliance"})
+    return bool(group and _query_group_is_in_requested_scope(group, requested_modules))
 
 
 def _candidate_hs_hts(brief: dict[str, Any]) -> str:
@@ -576,15 +647,23 @@ def _select_pack_ids(brief: dict[str, Any], registry: dict[str, Any]) -> tuple[l
     origin_country = _brief_origin_country(brief)
     departure_country = _country(raw_departure_country)
     candidate_hs = _candidate_hs_hts(brief)
-    requested_modules = set(_str_list(_brief_value(brief, "analysis_modules_requested", "modules_requested")))
+    requested_modules = _analysis_modules_requested(brief)
 
     selected: list[str] = []
     warnings: list[dict[str, str]] = []
     route_notes: list[str] = []
 
+    if _analysis_scope_is_explicitly_pending(brief):
+        warnings.append({
+            "code": "market_source_plan_scope_pending",
+            "message": "本轮尚未指定要分析的市场模块；请先确认范围，未生成来源查询计划。",
+        })
+        return selected, warnings, route_notes
+
     if target in COUNTRY_TO_PACK and "destination" in COUNTRY_TO_PACK[target]:
-        selected.extend(COUNTRY_TO_PACK[target]["destination"])
-        route_notes.append(f"target_country_or_region={target} -> destination/import/origin-proof/market-signal packs")
+        if not requested_modules:
+            selected.extend(COUNTRY_TO_PACK[target]["destination"])
+            route_notes.append(f"target_country_or_region={target} -> destination/import/origin-proof/market-signal packs")
     elif target:
         if _looks_like_unmapped_country_code(raw_target, target):
             warnings.append({"code": "market_source_plan_country_code_unrecognized", "message": f"目标国家/地区 {raw_target} 看起来像国家代码但未完成规范化；需确认后再判断是否有内置目的国 Source Pack。"})
@@ -592,42 +671,57 @@ def _select_pack_ids(brief: dict[str, Any], registry: dict[str, Any]) -> tuple[l
     else:
         warnings.append({"code": "market_source_plan_missing_target_country", "message": "缺少目标销售国家/地区；目的国准入、税费、COO 和市场信号查询只能停在计划缺口。"})
 
-    if export_country in COUNTRY_TO_PACK and "export" in COUNTRY_TO_PACK[export_country]:
-        selected.extend(COUNTRY_TO_PACK[export_country]["export"])
-        route_notes.append(f"export_declaration_country={export_country} -> export-country pack")
-    elif export_country:
-        if _looks_like_unmapped_country_code(raw_export_country, export_country):
-            warnings.append({"code": "market_source_plan_country_code_unrecognized", "message": f"出口申报国 {raw_export_country} 看起来像国家代码但未完成规范化；需确认后再判断是否有内置出口国 Source Pack。"})
-        warnings.append({"code": "market_source_pack_export_country_missing", "message": f"出口申报国 {export_country} 暂无内置出口国 Source Pack；只能保留人工 Query Plan。"})
-    elif origin_country:
-        warnings.append({"code": "market_export_country_unconfirmed", "message": f"只看到原产/制造来源 {origin_country}，不能自动当成出口申报国；出口国要求查询需用户确认。"})
-    else:
-        warnings.append({"code": "market_source_plan_missing_export_country", "message": "未设置出口申报国；默认出口国应由用户可见设置，不从原产国或卖方国猜。"})
+    export_requirements_requested = not requested_modules or "export_requirements" in requested_modules
+    if export_requirements_requested:
+        if export_country in COUNTRY_TO_PACK and "export" in COUNTRY_TO_PACK[export_country]:
+            selected.extend(COUNTRY_TO_PACK[export_country]["export"])
+            route_notes.append(f"export_declaration_country={export_country} -> export-country pack")
+        elif export_country:
+            if _looks_like_unmapped_country_code(raw_export_country, export_country):
+                warnings.append({"code": "market_source_plan_country_code_unrecognized", "message": f"出口申报国 {raw_export_country} 看起来像国家代码但未完成规范化；需确认后再判断是否有内置出口国 Source Pack。"})
+            warnings.append({"code": "market_source_pack_export_country_missing", "message": f"出口申报国 {export_country} 暂无内置出口国 Source Pack；只能保留人工 Query Plan。"})
+        elif origin_country:
+            warnings.append({"code": "market_export_country_unconfirmed", "message": f"只看到原产/制造来源 {origin_country}，不能自动当成出口申报国；出口国要求查询需用户确认。"})
+        else:
+            warnings.append({"code": "market_source_plan_missing_export_country", "message": "未设置出口申报国；默认出口国应由用户可见设置，不从原产国或卖方国猜。"})
+    elif not export_country and origin_country:
+        warnings.append({"code": "market_export_country_unconfirmed", "message": f"只看到原产/制造来源 {origin_country}，不能自动当成出口申报国；出口国要求未纳入本轮范围。"})
 
     transpacific_applies = _transpacific_pack_applies(target, export_country, departure_country, origin_country)
 
-    if transpacific_applies:
+    if transpacific_applies and (not requested_modules or "logistics" in requested_modules):
         selected.append("seed_transpacific_logistics_general")
         route_notes.append("US target + China/Vietnam trade premise -> transpacific logistics pack")
 
-    for tag in tags:
-        for pack_id in COMMON_TRIGGER_PACKS.get(tag, []):
-            if pack_id.startswith("seed_us_") and target != "United States":
-                continue
-            if pack_id == "seed_market_signal_global_to_us" and target != "United States":
-                continue
-            if pack_id == "seed_transpacific_logistics_general" and not transpacific_applies:
-                continue
-            selected.append(pack_id)
-            route_notes.append(f"product_trigger_tag={tag} -> {pack_id}")
+    if not requested_modules or _is_complete_market_scope(requested_modules):
+        for tag in tags:
+            for pack_id in COMMON_TRIGGER_PACKS.get(tag, []):
+                if pack_id.startswith("seed_us_") and target != "United States":
+                    continue
+                if pack_id == "seed_market_signal_global_to_us" and target != "United States":
+                    continue
+                if pack_id == "seed_transpacific_logistics_general" and not transpacific_applies:
+                    continue
+                selected.append(pack_id)
+                route_notes.append(f"product_trigger_tag={tag} -> {pack_id}")
+    else:
+        for tag in tags:
+            for pack_id in COMMON_TRIGGER_PACKS.get(tag, []):
+                if _trigger_pack_is_in_requested_scope(pack_id, requested_modules):
+                    selected.append(pack_id)
+                    route_notes.append(f"product_trigger_tag={tag} -> {pack_id}")
 
     if _norm(_brief_value(brief, "product_name", "display_name", "product")) or _brief_value(brief, "product_source_urls", "source_urls", "user_files"):
         selected.append("seed_product_original_sources")
         route_notes.append("product identity/source material present -> product original sources pack")
 
-    if candidate_hs and target == "United States":
-        selected.extend(["seed_us_import_tax_general", "seed_us_origin_proof_general"])
-        route_notes.append("candidate_hs_hts present + target US -> official tariff/origin-proof query packs")
+    if candidate_hs and target == "United States" and (not requested_modules or "import_tax" in requested_modules):
+        selected.append("seed_us_import_tax_general")
+        if not requested_modules:
+            selected.append("seed_us_origin_proof_general")
+            route_notes.append("candidate_hs_hts present + target US -> official tariff/origin-proof query packs")
+        else:
+            route_notes.append("candidate_hs_hts present + target US -> official tariff query pack")
 
     # If the user explicitly requested a module, keep its pack even if trigger tags are sparse.
     if requested_modules:
@@ -636,9 +730,9 @@ def _select_pack_ids(brief: dict[str, Any], registry: dict[str, Any]) -> tuple[l
                 selected.append("seed_transpacific_logistics_general")
             else:
                 warnings.append({"code": "market_source_pack_logistics_lane_missing", "message": "当前贸易前提不满足中国/越南至美国物流 Pack；物流只能保留人工查询计划或待补路线 Pack。"})
-        if requested_modules & {"google_trends", "online_price", "market_reports", "season_holiday", "external_factors"} and target == "United States":
+        if requested_modules & {"market_trends", "public_price", "google_trends", "online_price", "market_reports", "season_holiday", "external_factors"} and target == "United States":
             selected.append("seed_market_signal_global_to_us")
-        if requested_modules & {"certification", "destination_compliance", "origin_proof_requirement"} and target == "United States":
+        if requested_modules & {"market_access", "certification", "destination_compliance", "origin_proof_requirement"} and target == "United States":
             selected.extend(["seed_us_market_access_general", "seed_us_origin_proof_general"])
         if requested_modules & {"import_tax"} and target == "United States":
             selected.append("seed_us_import_tax_general")
@@ -657,7 +751,7 @@ def _template_should_run(template: dict[str, Any], brief: dict[str, Any], pack_i
     group = str(template.get("query_group_id") or "")
     tags = set(_brief_product_tags(brief))
     required_tags = set(_str_list(template.get("required_product_trigger_tags")))
-    requested_modules = set(_str_list(_brief_value(brief, "analysis_modules_requested", "modules_requested")))
+    requested_modules = _analysis_modules_requested(brief)
     target = _country(_brief_value(brief, "target_country_or_region", "destination_country_or_region"))
     export_country = _country(_brief_value(brief, "export_declaration_country", "default_export_declaration_country"))
 
@@ -670,14 +764,55 @@ def _template_should_run(template: dict[str, Any], brief: dict[str, Any], pack_i
             return False, "export declaration country is not Vietnam"
     if group in {"destination_compliance", "import_tax", "origin_proof_requirement", "market_signal", "season_holiday", "external_factors"} and target != "United States":
         return False, "seed destination pack currently covers United States only"
-    # When modules are supplied, keep required module groups; product_original and trigger-specific docs are always useful.
+    if _analysis_scope_is_explicitly_pending(brief):
+        return False, "market analysis scope is pending"
+    # A compact scope keeps only its requested query groups plus product-source
+    # verification. Product-specific regulatory packs remain for explicit full scope.
     if requested_modules:
-        allowed = set().union(*(MODULE_TO_QUERY_GROUPS.get(module, set()) for module in requested_modules))
-        always = {"product_original_sources", "lithium_battery_common_rules", "textile_apparel_common_rules", "export_requirements"}
-        if group not in allowed | always:
-            # Still keep trigger/source/export query groups because they are boundary checks, not facts.
+        if not _query_group_is_in_requested_scope(group, requested_modules):
             return False, f"query group {group} not requested"
     return True, None
+
+
+def _scoped_market_signal_template(template: dict[str, Any], brief: dict[str, Any]) -> dict[str, Any]:
+    """Split the legacy combined signal template for one-module requests."""
+    if template.get("query_group_id") != "market_signal":
+        return template
+    requested = _analysis_modules_requested(brief)
+    if not requested or _is_complete_market_scope(requested):
+        return template
+
+    trend_requested = bool(requested & {"market_trends", "google_trends", "market_reports"})
+    price_requested = bool(requested & {"public_price", "online_price"})
+    if trend_requested == price_requested:
+        return template
+
+    scoped = dict(template)
+    if trend_requested:
+        scoped.update({
+            "query_group_id": "market_trends",
+            "purpose": "组织 Google Trends、公开统计和行业报告入口查询；只输出可打开来源计划。",
+            "source_entry_scope": ["entry_google_trends", "entry_public_market_report_locator"],
+            "expected_observation_fields": ["keyword", "region", "time_range", "metric_definition", "date", "limitations"],
+            "expected_matrix_sheet": "长期需求与搜索趋势 / 公开市场资料与行业信息",
+            "query_blueprints": [
+                "Google Trends {product_name} {target_country_or_region} 2004 present",
+                "public market trend report {product_name} {target_country_or_region}",
+            ],
+        })
+    else:
+        scoped.update({
+            "query_group_id": "public_price",
+            "purpose": "组织公开平台和公开报告中的价格参考入口查询；不写成成交价或报价建议。",
+            "source_entry_scope": ["entry_market_platform_price", "entry_public_market_report_locator"],
+            "expected_observation_fields": ["price_terms", "date", "specification", "limitations"],
+            "expected_matrix_sheet": "线上市场与价格参考",
+            "query_blueprints": [
+                "public price reference {product_name} {target_country_or_region} specification",
+                "marketplace public listing price {product_name} {target_country_or_region}",
+            ],
+        })
+    return scoped
 
 
 def _inputs_used_for_template(template: dict[str, Any], brief: dict[str, Any]) -> dict[str, Any]:
@@ -757,13 +892,13 @@ def _manual_authority_discovery_steps(brief: dict[str, Any]) -> list[dict[str, A
     and create AuthorityVerificationRecords before any determinate MatrixRow.
     """
     target = _country(_brief_value(brief, "target_country_or_region", "destination_country_or_region"))
-    if not target or target == "United States":
+    if not target or target == "United States" or _analysis_scope_is_explicitly_pending(brief):
         return []
 
     product = _brief_product_query_term(brief) or "<product:待确认>"
     candidate_hs = _candidate_hs_hts(brief) or "<candidate_hs:待确认>"
     tags = set(_brief_product_tags(brief))
-    requested = set(_str_list(_brief_value(brief, "analysis_modules_requested", "modules_requested")))
+    requested = _analysis_modules_requested(brief)
     steps: list[dict[str, Any]] = []
 
     def add(step_id: str, group: str, purpose: str, queries: list[str], domains: list[str], sheet: str, priority: list[str] | None = None) -> None:
@@ -816,7 +951,7 @@ def _manual_authority_discovery_steps(brief: dict[str, Any]) -> list[dict[str, A
             "boundary_note": NOT_EVIDENCE_NOTE + " 开放世界国家/地区必须先核实机构身份、事实域、管辖范围和时效，再生成 AuthorityVerificationRecord。",
         })
 
-    if requested & {"certification", "destination_compliance", "origin_proof_requirement"} or not requested:
+    if requested & {"market_access", "certification", "destination_compliance", "origin_proof_requirement"} or not requested:
         add(
             "destination_market_access",
             "authority_discovery_destination_compliance",
@@ -852,6 +987,47 @@ def _manual_authority_discovery_steps(brief: dict[str, Any]) -> list[dict[str, A
             ],
             ["import_tax", "trade_remedy"],
             "进口税费",
+        )
+    trend_requested = bool(requested & {"market_trends", "google_trends", "market_reports"})
+    price_requested = bool(requested & {"public_price", "online_price"})
+    if not requested or trend_requested:
+        add(
+            "market_trends",
+            "market_trends" if requested else "market_signal",
+            f"为 {target} 发现公开市场趋势来源；只形成公开信号来源路径，不形成需求或销量结论。",
+            [
+                f"{target} official market statistics {product}",
+                f"{target} industry association market report {product}",
+            ],
+            ["market_signal"],
+            "长期需求与搜索趋势 / 公开市场资料与行业信息",
+            ["official_statistics", "industry_association"],
+        )
+    if price_requested:
+        add(
+            "public_price",
+            "public_price",
+            f"为 {target} 发现公开市场价格参考来源；不写成成交价或报价建议。",
+            [
+                f"{target} public price reference {product}",
+                f"{target} marketplace public listing price {product}",
+            ],
+            ["public_price_reference"],
+            "线上市场与价格参考",
+            ["industry_association", "public_marketplace_reference_only"],
+        )
+    if requested & {"external_factors"} or not requested:
+        add(
+            "external_factors",
+            "external_factors",
+            f"为 {target} 发现近期公开政策、制裁、灾害、金融或供应链因素来源；不预测市场结果。",
+            [
+                f"{target} official trade policy sanctions supply chain notice",
+                f"{target} official emergency logistics disruption notice",
+            ],
+            ["external_factor"],
+            "近期外部因素",
+            ["primary_official", "news_reference"],
         )
     if requested & {"logistics"} or not requested:
         add(
@@ -896,10 +1072,13 @@ def _manual_authority_discovery_steps(brief: dict[str, Any]) -> list[dict[str, A
 
 def _manual_gap_steps(brief: dict[str, Any], selected_pack_ids: list[str], templates: list[dict[str, Any]]) -> list[dict[str, Any]]:
     steps: list[dict[str, Any]] = []
+    if _analysis_scope_is_explicitly_pending(brief):
+        return steps
     target = _country(_brief_value(brief, "target_country_or_region", "destination_country_or_region"))
     export_country = _country(_brief_value(brief, "export_declaration_country", "default_export_declaration_country"))
+    requested = _analysis_modules_requested(brief)
     steps.extend(_manual_authority_discovery_steps(brief))
-    if target and target != "United States":
+    if target and target != "United States" and (not requested or _is_complete_market_scope(requested)):
         steps.append({
             "query_plan_id": "qp_manual_destination_pack_gap",
             "pack_id": None,
@@ -921,7 +1100,7 @@ def _manual_gap_steps(brief: dict[str, Any], selected_pack_ids: list[str], templ
             "blocked_outputs": BOUNDARY_BLOCKED_FACTS,
             "boundary_note": NOT_EVIDENCE_NOTE,
         })
-    logistics_requested = "logistics" in set(_str_list(_brief_value(brief, "analysis_modules_requested", "modules_requested")))
+    logistics_requested = "logistics" in requested
     origin_country = _brief_origin_country(brief)
     departure_country = _country(_brief_value(brief, "departure_country_or_region", "departure_country"))
     if logistics_requested and not _transpacific_pack_applies(target, export_country, departure_country, origin_country):
@@ -946,7 +1125,7 @@ def _manual_gap_steps(brief: dict[str, Any], selected_pack_ids: list[str], templ
             "blocked_outputs": BOUNDARY_BLOCKED_FACTS,
             "boundary_note": NOT_EVIDENCE_NOTE,
         })
-    if export_country and export_country not in {"China", "Vietnam"}:
+    if export_country and export_country not in {"China", "Vietnam"} and (not requested or "export_requirements" in requested):
         steps.append({
             "query_plan_id": "qp_manual_export_pack_gap",
             "pack_id": None,
@@ -1001,6 +1180,7 @@ def build_query_plan(brief_payload: dict[str, Any], registry: dict[str, Any]) ->
             template = templates.get(template_id)
             if not template:
                 continue
+            template = _scoped_market_signal_template(template, brief)
             should_run, skip_reason = _template_should_run(template, brief, pack_id)
             if not should_run:
                 continue
@@ -1097,16 +1277,51 @@ def build_query_plan(brief_payload: dict[str, Any], registry: dict[str, Any]) ->
 
 
 
-def build_empty_collection_run(plan: dict[str, Any]) -> dict[str, Any]:
+def build_empty_collection_run(
+    plan: dict[str, Any],
+    *,
+    business_route: str = "product_outbound_market_analysis",
+) -> dict[str, Any]:
     """Create an empty, auditable collection-run shell from a Query Plan.
 
     This is Slice J glue: it does not search or open sources.  It only records
     which query-plan steps are ready to be executed and which guardrails must
     survive into SearchLog / Source / Observation collection.
     """
+    pending_steps = [
+        {
+            "query_plan_id": step.get("query_plan_id"),
+            "query_group_id": step.get("query_group_id"),
+            "pack_id": step.get("pack_id"),
+            "template_id": step.get("template_id"),
+            "query_strings": step.get("query_strings", []),
+            "must_open_source": True,
+            "reject_if_only_snippet": True,
+            "search_log_allowed_output": "search_log_or_source_locator_only",
+            "observation_allowed_only_after_open_source": True,
+            "not_evidence": True,
+        }
+        for step in _as_list(plan.get("query_plan"))
+        if isinstance(step, dict)
+    ]
+    group_ids = sorted({
+        str(step.get("query_group_id") or "").strip()
+        for step in pending_steps
+        if str(step.get("query_group_id") or "").strip()
+    })
+    collection_run_id = "collection_run_manual_source_collection"
+    execution_state = create_execution_state_from_plan(
+        collection_run_id,
+        plan={
+            "query_groups": [{"group_id": group_id, "execution_order": "independent"} for group_id in group_ids],
+            "execution_budget": plan.get("execution_budget"),
+            "stop_conditions": plan.get("stop_conditions"),
+        },
+        route=business_route,
+    )
     return {
-        "collection_run_id": "collection_run_manual_source_collection",
-        "route": "product_outbound_market_analysis_source_collection",
+        "collection_run_id": collection_run_id,
+        "route": f"{business_route}_source_collection",
         "source_plan_route": plan.get("route"),
         "source_plan_generated_at": plan.get("generated_at"),
         "execution_level": "collection_record_shell_only",
@@ -1117,22 +1332,8 @@ def build_empty_collection_run(plan: dict[str, Any]) -> dict[str, Any]:
         "search_logs": [],
         "sources": [],
         "observations": [],
-        "pending_query_plan_steps": [
-            {
-                "query_plan_id": step.get("query_plan_id"),
-                "query_group_id": step.get("query_group_id"),
-                "pack_id": step.get("pack_id"),
-                "template_id": step.get("template_id"),
-                "query_strings": step.get("query_strings", []),
-                "must_open_source": True,
-                "reject_if_only_snippet": True,
-                "search_log_allowed_output": "search_log_or_source_locator_only",
-                "observation_allowed_only_after_open_source": True,
-                "not_evidence": True,
-            }
-            for step in _as_list(plan.get("query_plan"))
-            if isinstance(step, dict)
-        ],
+        "pending_query_plan_steps": pending_steps,
+        "execution_state": execution_state,
         "guardrails": [
             "Query Plan 不能直接生成 EvidenceCard 或 MatrixRow",
             "SearchLog 只能记录查询和候选来源定位，不能写事实",

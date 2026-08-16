@@ -14,6 +14,8 @@ For default discovery, this is an internal/on-demand guide within the single
 opened source, visible contact, or identity conflict actually requires an
 optional Source, Observation, Contact, or Entity record.
 
+Execute and report phase boundaries as `breadth_search`, `source_verification`, `supplement`, and `serial_decision`. At each boundary record scope, query coverage, candidate count, opened-source count, unconfirmed count, source-restricted count, unexecuted count, and the next phase. Without a host-reported parallel or streaming facility, say “分批执行”; do not claim background or concurrent execution. On interruption, restore the last same-Run checkpoint and continue only incomplete groups. A cache hit is a reused current opened source, never a new observation or a historical fact.
+
 ## Required references
 
 Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/claim-and-source-policy.md`, and `../../shared/schemas/source-observation.schema.json`. For default discovery, follow `../../shared/references/default-discovery-reference.md` and start from `default-discovery-minimal-skeleton.example.json` for Candidate and SearchLog shape. Consult the complete reference only when actual sources, contact visibility, or identity conflict require those optional objects.

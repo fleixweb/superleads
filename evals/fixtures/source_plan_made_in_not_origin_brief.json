@@ -4,11 +4,13 @@
   "made_in_country": "Vietnam",
   "destination_country_or_region": "US",
   "analysis_modules_requested": [
-    "destination_compliance",
-    "origin_proof_requirement",
+    "market_trends",
+    "public_price",
+    "market_access",
     "import_tax",
+    "export_requirements",
     "logistics",
-    "market_reports"
+    "external_factors"
   ],
   "business_decision_policy": "Made in / production clue must not satisfy customs-origin proof or suppress origin gap warnings."
 }

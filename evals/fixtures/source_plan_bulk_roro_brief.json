@@ -22,14 +22,12 @@
     "commodity_index_reference"
   ],
   "analysis_modules_requested": [
-    "product_profile",
-    "destination_compliance",
-    "origin_proof_requirement",
+    "market_trends",
+    "public_price",
+    "market_access",
     "import_tax",
     "export_requirements",
     "logistics",
-    "market_reports",
-    "online_price",
     "external_factors"
   ],
   "attributes": {

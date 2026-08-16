@@ -303,7 +303,11 @@ MARKET_MODULE_KEYS: frozenset[str] = frozenset({
 })
 
 _SCOPE_ALIASES: dict[str, str] = {
-    # Current user-facing keys.
+    # Compact user-facing intake keys map to the established per-sheet keys.
+    "market_trends": "google_trends",
+    "public_price": "online_price",
+    "market_access": "destination_compliance",
+    # Current user-facing and source-plan keys.
     "certification": "certification",
     "google_trends": "google_trends",
     "online_price": "online_price",
@@ -545,8 +549,14 @@ def requested_market_modules(graph: dict[str, Any] | None) -> set[str] | None:
     if not isinstance(brief, dict):
         return None
     raw = brief.get("analysis_modules_requested")
-    if not isinstance(raw, list) or not raw:
+    if not isinstance(raw, list):
         return None
+
+    # A deliberately empty list is the intake contract for a market prompt
+    # that still needs a scope answer.  It must not silently become the
+    # complete report merely because a downstream caller built a Brief.
+    if not raw:
+        return set()
 
     tokens = {
         str(item).strip().lower()
@@ -587,6 +597,13 @@ def _market_scope_declaration(graph: dict[str, Any]) -> list[str]:
     requested = requested_market_modules(graph)
     if requested is None:
         return []
+    if not requested:
+        all_groups = "、".join(label for label, _ in _SCOPE_GROUPS)
+        return [
+            "本轮范围待确认：请说明要看趋势、公开价格、准入、税费、出口要求、物流或外部因素。",
+            f"本轮未执行：{all_groups}。",
+            "",
+        ]
     requested_groups = [label for label, keys in _SCOPE_GROUPS if requested & keys]
     if not requested_groups:
         return []
@@ -596,9 +613,14 @@ def _market_scope_declaration(graph: dict[str, Any]) -> list[str]:
         if len(requested_groups) == 1
         else f"本轮范围：只做「{scope_text}」。"
     )
+    unexecuted_groups = [
+        label
+        for label, keys in _SCOPE_GROUPS
+        if not (requested & keys)
+    ]
     return [
         scope_line,
-        "其他模块不在本轮范围。",
+        f"本轮未执行：{'、'.join(unexecuted_groups)}。",
         "",
     ]
 
@@ -1330,9 +1352,9 @@ def _brief_markdown_summary(graph: dict[str, Any]) -> list[str]:
         if isinstance(brief, dict)
         else None
     )
-    # In an explicit single-item report, unrequested modules are outside the
-    # scope rather than work that was attempted and failed; do not list them
-    # as per-module "未执行" declarations.
+    # Explicit scope declarations already identify modules the user did not
+    # request as 本轮未执行. Run-level records add only work that was selected
+    # but not completed.
     not_executed = _not_executed_modules(graph) if is_complete_market_scope(graph) else []
     origin_export_scope = _origin_export_scope_for_preamble(premise, graph)
     departure_scope = _departure_scope_for_preamble(premise)
