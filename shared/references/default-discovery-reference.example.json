@@ -43,8 +43,8 @@
           "queries": ["insulated bottle supplier directory UK", "drinkware trade fair exhibitor UK"]
         }
       ],
-      "source_categories": ["website", "directory", "document", "search_result"],
-      "contact_collection_targets": ["email", "phone", "contact_form"],
+      "source_categories": ["website", "directory", "document", "social", "map", "trade_aggregator", "search_result"],
+      "contact_collection_targets": ["email", "phone", "contact_form", "social_company", "social_person", "person_name", "job_title", "address", "map_phone", "public_trade_summary"],
       "lead_tiering_criteria": {
         "directly_related": "Observed business signal matches product/channel boundary.",
         "possibly_related": "Useful public clue exists but exact business fit is unconfirmed.",
@@ -54,7 +54,8 @@
       },
       "claim_evidence_requirements": {"formal_deep_check_only": "Default discovery does not require Claims."},
       "stop_conditions": ["Finish planned query groups and source categories before calling convergence."],
-      "downgrade_strategy": ["Keep insufficient or unresolved candidates with explicit statuses.", "Do not delete a candidate only because formal evidence is missing."]
+      "downgrade_strategy": ["Keep insufficient or unresolved candidates with explicit statuses.", "Do not delete a candidate only because formal evidence is missing."],
+      "candidate_enrichment_policy": {"apply_to": "all_output_scope_candidates", "max_queries_per_category_per_candidate": 2, "max_opens_per_category_per_candidate": 1, "same_run_url_dedupe": "canonical_or_final_url", "over_budget_status": "not_searched"}
     }
   ],
   "candidates": [
@@ -87,7 +88,10 @@
       "signal_summary": {
         "business_match": {"status": "observed", "items": [{"summary": "官网写明 wholesale insulated water bottles across the UK", "source_label": "HydraTrade 批发页", "source_url": "https://hydratrade.example/wholesale", "observed_at": "2026-07-19"}]},
         "website_contact": {"status": "observed", "items": [{"summary": "公开销售邮箱 sales@hydratrade.example", "source_label": "HydraTrade 批发页", "source_url": "https://hydratrade.example/wholesale", "observed_at": "2026-07-19"}]},
-        "trade_record": {"status": "not_searched", "notes": ["本轮未检索贸易数据库"]},
+        "social_company": {"status": "not_searched", "collection_status": "not_searched", "notes": ["本轮未检索公司公开社媒页面"]},
+        "social_person": {"status": "not_searched", "collection_status": "not_searched", "notes": ["本轮未检索公开职业联系人"]},
+        "map_listing": {"status": "not_searched", "collection_status": "not_searched", "notes": ["本轮未检索公开地图页面"]},
+        "trade_record": {"status": "not_searched", "collection_status": "not_searched", "notes": ["本轮未检索第三方贸易数据聚合站公开摘要"]},
         "china_relation": {"status": "not_searched", "notes": ["尚未检索 China 关联"]},
         "product_description_or_hs": {"status": "not_searched", "notes": ["尚未检索货描/HS"]}
       }
@@ -118,7 +122,10 @@
       "signal_summary": {
         "business_match": {"status": "observed", "items": [{"summary": "目录列为 drinkware distributor 含 accessories", "source_label": "行业目录 Northshore 条目", "source_url": "https://directory.example/northshore", "observed_at": "2026-07-19"}]},
         "website_contact": {"status": "observed", "items": [{"summary": "公开电话 +44 20 7000 2222 与 contact form", "source_label": "Northshore 联系页", "source_url": "https://northshore-drinkware.example/contact", "observed_at": "2026-07-19"}]},
-        "trade_record": {"status": "source_restricted", "searched_scopes": ["public trade directory 2024-2026"], "notes": ["详情页登录受限，暂不能读取交易字段"]},
+        "social_company": {"status": "source_restricted", "collection_status": "details_restricted", "notes": ["来源受限：公司公开社媒页面需要登录；请用户手动打开并核查公开内容"]},
+        "social_person": {"status": "not_searched", "collection_status": "not_searched", "notes": ["本轮未检索公开职业联系人"]},
+        "map_listing": {"status": "not_observed", "collection_status": "searched_not_found", "notes": ["已检索公开地图页面，未见可可靠关联商户"]},
+        "trade_record": {"status": "source_restricted", "collection_status": "details_restricted", "searched_scopes": ["public trade directory 2024-2026"], "notes": ["详情页登录受限，暂不能读取交易字段；第三方贸易数据聚合站公开摘要，非官方海关记录"]},
         "china_relation": {"status": "not_searched", "notes": ["未单独检索 China 关联"]},
         "product_description_or_hs": {"status": "not_observed", "searched_scopes": ["官网 contact 页", "目录摘要页"], "notes": ["已查页面未见 HS 或货描"]}
       }
@@ -147,7 +154,10 @@
       "signal_summary": {
         "business_match": {"status": "not_searched", "notes": ["尚未找到可打开官网"]},
         "website_contact": {"status": "source_restricted", "notes": ["仅有展会名单摘要页，无联系方式正文"]},
-        "trade_record": {"status": "not_searched"},
+        "social_company": {"status": "not_searched", "collection_status": "not_searched", "notes": ["本轮未检索公司公开社媒页面"]},
+        "social_person": {"status": "not_searched", "collection_status": "not_searched", "notes": ["本轮未检索公开职业联系人"]},
+        "map_listing": {"status": "not_searched", "collection_status": "not_searched", "notes": ["本轮未检索公开地图页面"]},
+        "trade_record": {"status": "not_searched", "collection_status": "not_searched", "notes": ["本轮未检索第三方贸易数据聚合站公开摘要"]},
         "china_relation": {"status": "not_searched"},
         "product_description_or_hs": {"status": "not_searched"}
       }
@@ -176,7 +186,10 @@
       "signal_summary": {
         "business_match": {"status": "identity_pending", "notes": ["名称相同但主体未可靠归并"]},
         "website_contact": {"status": "identity_pending", "notes": ["目录电话存在但归属待确认"]},
-        "trade_record": {"status": "identity_pending", "notes": ["出现同名贸易记录，但地址不一致，暂不绑定"]},
+        "social_company": {"status": "identity_pending", "collection_status": "identity_pending", "notes": ["同名社媒页面无法可靠归属当前候选，暂不合并"]},
+        "social_person": {"status": "identity_pending", "collection_status": "identity_pending", "notes": ["公开职业页面仅显示同名公司，人员关联待确认"]},
+        "map_listing": {"status": "identity_pending", "collection_status": "identity_pending", "notes": ["同名地图商户地址不一致，不能自动合并"]},
+        "trade_record": {"status": "identity_pending", "collection_status": "identity_pending", "notes": ["出现同名贸易记录，但地址不一致，暂不绑定；第三方贸易数据聚合站公开摘要，非官方海关记录"]},
         "china_relation": {"status": "identity_pending", "notes": ["China 关联依附于未解决贸易主体"]},
         "product_description_or_hs": {"status": "identity_pending", "notes": ["货描/HS 依附于未解决贸易主体"]}
       }
@@ -206,7 +219,10 @@
       "signal_summary": {
         "business_match": {"status": "observed", "items": [{"summary": "官网写明 manufacturer of competing insulated bottles", "source_label": "Ironforge About 页", "source_url": "https://ironforge-mfg.example/about", "observed_at": "2026-07-19"}]},
         "website_contact": {"status": "not_observed", "searched_scopes": ["官网 About 页"], "notes": ["已查页面未见联系方式，且已归为排除项"]},
-        "trade_record": {"status": "not_searched"},
+        "social_company": {"status": "not_searched", "collection_status": "not_searched", "notes": ["本轮未检索公司公开社媒页面"]},
+        "social_person": {"status": "not_searched", "collection_status": "not_searched", "notes": ["本轮未检索公开职业联系人"]},
+        "map_listing": {"status": "not_searched", "collection_status": "not_searched", "notes": ["本轮未检索公开地图页面"]},
+        "trade_record": {"status": "not_searched", "collection_status": "not_searched", "notes": ["本轮未检索第三方贸易数据聚合站公开摘要"]},
         "china_relation": {"status": "not_searched"},
         "product_description_or_hs": {"status": "not_searched"}
       }

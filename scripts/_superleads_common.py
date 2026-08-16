@@ -128,6 +128,7 @@ CONTACT_SOURCE_ALLOWED_TYPES = {
     "registry",
     "directory",
     "map",
+    "trade_aggregator",
     "document",
     "spreadsheet",
     "image",
@@ -1340,6 +1341,8 @@ def source_evidence_scope(source: Any, observation: Any, purpose: str) -> tuple[
         return False, "source_evidence_purpose_invalid"
     if not isinstance(source, dict) or not isinstance(observation, dict):
         return False, "formal_source_not_eligible"
+    if source.get("medium") == "trade_aggregator" and purpose != "candidate_clue":
+        return False, f"trade_aggregator_not_allowed_for_{purpose}"
     if observation.get("capability") == "image.inspect" and purpose != "candidate_clue":
         return False, f"image_inspect_not_allowed_for_{purpose}"
     provenance = source.get("provenance")

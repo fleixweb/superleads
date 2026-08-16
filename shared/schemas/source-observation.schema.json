@@ -58,6 +58,7 @@
             "registry",
             "directory",
             "map",
+            "trade_aggregator",
             "document",
             "spreadsheet",
             "image",

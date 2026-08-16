@@ -342,6 +342,9 @@ def _candidate_signal_summary(candidate:dict[str,Any], relevance:str)->dict[str,
     signal_summary = candidate.get("signal_summary") if isinstance(candidate.get("signal_summary"),dict) else {}
     result = {
         "website_contact": _status_and_detail(signal_summary.get("website_contact")),
+        "social_company": _status_and_detail(signal_summary.get("social_company")),
+        "social_person": _status_and_detail(signal_summary.get("social_person")),
+        "map_listing": _status_and_detail(signal_summary.get("map_listing")),
         "trade_record": _status_and_detail(signal_summary.get("trade_record")),
         "china_relation": _status_and_detail(signal_summary.get("china_relation")),
         "product_description_or_hs": _status_and_detail(signal_summary.get("product_description_or_hs")),
@@ -352,6 +355,229 @@ def _candidate_signal_summary(candidate:dict[str,Any], relevance:str)->dict[str,
     else:
         result["business_match"] = _status_and_detail(signal_summary.get("business_match"))
     return result
+
+
+PUBLIC_ENRICHMENT_COLLECTION_LABELS = {
+    "not_searched": "本轮未检索",
+    "searched_not_found": "已检索未见",
+    "search_summary_visible": "搜索摘要可见",
+    "public_page_opened": "公开页面已打开",
+    "details_restricted": "来源受限",
+    "identity_pending": "疑似，主体待确认",
+    "user_provided_material": "用户提供资料",
+}
+PUBLIC_SOURCE_RESTRICTED_MANUAL_HINT = (
+    "来源受限：该公开页面需要登录、验证码、付费访问、人工验证或当前 AI 无法正常读取。"
+    "Superleads 不会绕过这些限制。请你手动打开并查询该页面；如果确认后可以提供公开链接、截图、PDF、Excel 或脱敏资料，我可以继续帮你整理和核对。"
+)
+DYNAMIC_CONTENT_MANUAL_HINT = (
+    "来源受限：页面可以访问，但当前 AI 无法自动读取其中的动态内容。"
+    "请你手动查看并把需要核对的公开内容或截图发给我。"
+)
+TRADE_DETAILS_RESTRICTED_MANUAL_HINT = (
+    "来源受限：第三方贸易数据详情页需要登录、付费或无法正常打开。"
+    "当前 AI 不能自动化完成该详情查询，请你使用自己的贸易数据渠道手动核实。"
+)
+TRADE_AGGREGATOR_DISCLOSURE = "第三方贸易数据聚合站公开摘要，非官方海关记录"
+PUBLIC_TRADE_SUBJECT_MATCH_LABELS = {
+    "name_exact_address_match": "名称与公开地址一致",
+    "name_domain_match": "名称与官网域名一致",
+    "name_only": "仅名称相同，主体待确认",
+    "conflicted": "公开信息冲突，主体待确认",
+    "unresolved": "主体待确认",
+}
+
+
+def _enrichment_collection_label(state:dict[str,Any])->str:
+    raw = state.get("collection_status") if isinstance(state,dict) else None
+    if raw in PUBLIC_ENRICHMENT_COLLECTION_LABELS:
+        return PUBLIC_ENRICHMENT_COLLECTION_LABELS[str(raw)]
+    return public_signal_status_user_label(state.get("status") if isinstance(state,dict) else "not_searched")
+
+
+def _enrichment_detail(state:dict[str,Any])->str:
+    if not isinstance(state,dict):
+        return "本轮未检索"
+    collection_status = str(state.get("collection_status") or "")
+    if collection_status == "search_summary_visible":
+        return "搜索摘要可见，页面未打开验证"
+    if collection_status == "user_provided_material":
+        return "用户提供资料，主体关联待确认"
+    details=[]
+    for item in ensure_list(state,"items"):
+        if isinstance(item,dict) and item.get("summary"):
+            details.append(str(item["summary"]))
+    if not details:
+        details.extend(str(item) for item in ensure_list(state,"notes") if item)
+        details.extend(str(item) for item in ensure_list(state,"searched_scopes") if item)
+    return "；".join(details) if details else _enrichment_collection_label(state)
+
+
+def _enrichment_source_text(item:dict[str,Any])->str:
+    label = str(item.get("source_label") or item.get("platform") or "公开来源")
+    url = item.get("source_url")
+    return f"{label}；{url}" if is_safe_public_http_url(url) else label
+
+
+def _enrichment_manual_action(kind:str, state:dict[str,Any])->str:
+    status = str(state.get("collection_status") or "") if isinstance(state,dict) else "not_searched"
+    detail = _enrichment_detail(state)
+    if status == "search_summary_visible":
+        return "仅搜索摘要可见，页面未打开验证；请手动打开链接或提供公开材料后再核对。"
+    if status == "details_restricted" or state.get("status") == "source_restricted":
+        if kind == "trade":
+            return TRADE_DETAILS_RESTRICTED_MANUAL_HINT
+        if "动态" in detail:
+            return DYNAMIC_CONTENT_MANUAL_HINT
+        return PUBLIC_SOURCE_RESTRICTED_MANUAL_HINT
+    if status == "not_searched" or state.get("status") == "not_searched":
+        return f"本轮未检索：{detail}。"
+    if status == "searched_not_found" or state.get("status") == "not_observed":
+        return f"已检索未见：{detail}。"
+    if status == "identity_pending" or state.get("status") == "identity_pending":
+        return "主体待确认：请核对公司名称、域名、地址和公开来源后再合并。"
+    return "保留为公开资料线索，后续按来源和主体关联继续核对。"
+
+
+def _displayable_enrichment_item(state:dict[str,Any], item:dict[str,Any])->dict[str,Any]:
+    """Only opened public pages may populate company/person/map fact columns."""
+    if state.get("collection_status") == "public_page_opened":
+        return item
+    result = {
+        "source_label": item.get("source_label"),
+        "source_url": item.get("source_url") if state.get("collection_status") == "search_summary_visible" else None,
+        "cannot_conclude": item.get("cannot_conclude"),
+    }
+    return result
+
+
+def _trade_row_disclosure(value:Any)->str:
+    text = str(value or "").strip()
+    return TRADE_AGGREGATOR_DISCLOSURE if not text else f"{TRADE_AGGREGATOR_DISCLOSURE}；{text}"
+
+
+def _trade_record_state(record:dict[str,Any])->dict[str,Any]:
+    collection_status = str(record.get("collection_status") or "not_searched")
+    status = {
+        "not_searched": "not_searched",
+        "searched_not_found": "not_observed",
+        "search_summary_visible": "not_observed",
+        "public_page_opened": "observed",
+        "details_restricted": "source_restricted",
+        "identity_pending": "identity_pending",
+        "user_provided_material": "identity_pending",
+    }.get(collection_status, "not_searched")
+    return {"collection_status": collection_status, "status": status}
+
+
+def _trade_subject_match_label(record:dict[str,Any])->str:
+    return PUBLIC_TRADE_SUBJECT_MATCH_LABELS.get(
+        str(record.get("subject_match_status") or ""),
+        "主体待确认",
+    )
+
+
+def _public_enrichment_sheets(graph:dict[str,Any])->dict[str,list[dict[str,Any]]]:
+    """Project candidate-level public enrichment without creating new facts."""
+    social_rows=[]; map_rows=[]; trade_rows=[]; pending=[]
+    for candidate in ensure_list(graph,"candidates"):
+        if not isinstance(candidate,dict):
+            continue
+        name = candidate.get("company_name") or candidate.get("name") or "待确认对象"
+        summary = candidate.get("signal_summary") if isinstance(candidate.get("signal_summary"),dict) else {}
+        for key, page_label in (("social_company","公司页 / 品牌页"),("social_person","个人职业页")):
+            state = summary.get(key) if isinstance(summary.get(key),dict) else {"status":"not_searched","collection_status":"not_searched"}
+            items=[item for item in ensure_list(state,"items") if isinstance(item,dict)] or [{}]
+            for item in items:
+                item = _displayable_enrichment_item(state, item)
+                social_rows.append({
+                    "公司名称":name,
+                    "平台":item.get("platform") or "未提供",
+                    "页面类型":item.get("page_type") or page_label,
+                    "页面名称 / 人员":item.get("display_name") or "未提供",
+                    "公开职位或部门":item.get("job_title") or "未提供",
+                    "公开联系入口":item.get("public_contact") or "未提供",
+                    "主体关联依据":item.get("association_basis") or _enrichment_detail(state),
+                    "来源状态":_enrichment_collection_label(state),
+                    "观察时间":item.get("observed_at") or "未提供",
+                    "来源 / 链接":_enrichment_source_text(item),
+                    "不能推出的内容":item.get("cannot_conclude") or "公开职位只是角色线索，不等于采购负责人或采购权限。",
+                })
+            if _enrichment_collection_label(state) != "公开页面已打开":
+                pending.append({"类型":"社媒 / 公开职业线索","对象":name,"原因":f"{page_label}：{_enrichment_collection_label(state)}；{_enrichment_detail(state)}","建议动作":_enrichment_manual_action("social",state)})
+
+        state = summary.get("map_listing") if isinstance(summary.get("map_listing"),dict) else {"status":"not_searched","collection_status":"not_searched"}
+        items=[item for item in ensure_list(state,"items") if isinstance(item,dict)] or [{}]
+        for item in items:
+            item = _displayable_enrichment_item(state, item)
+            map_rows.append({
+                "公司名称":name,
+                "地图平台":item.get("platform") or "未提供",
+                "商户名称":item.get("display_name") or "未提供",
+                "地址":item.get("address") or "未提供",
+                "公开电话":item.get("public_phone") or "未提供",
+                "经营场景":item.get("business_scene") or "未提供",
+                "主体关联依据":item.get("association_basis") or _enrichment_detail(state),
+                "来源状态":_enrichment_collection_label(state),
+                "观察时间":item.get("observed_at") or "未提供",
+                "来源 / 链接":_enrichment_source_text(item),
+                "不能推出的内容":item.get("cannot_conclude") or "地图地址或电话不能证明法律主体或采购部门归属。",
+            })
+        if _enrichment_collection_label(state) != "公开页面已打开":
+            pending.append({"类型":"地图与经营地址","对象":name,"原因":f"地图页面：{_enrichment_collection_label(state)}；{_enrichment_detail(state)}","建议动作":_enrichment_manual_action("map",state)})
+
+        trade_state = summary.get("trade_record") if isinstance(summary.get("trade_record"),dict) else {"status":"not_searched","collection_status":"not_searched"}
+        trade_parent_status = str(trade_state.get("collection_status") or "not_searched")
+        trade_parent_label = _enrichment_collection_label(trade_state)
+        records=[item for item in ensure_list(candidate,"public_trade_summaries") if isinstance(item,dict)]
+        if records:
+            for record in records:
+                record_state = _trade_record_state(record)
+                display_record = record if record_state["collection_status"] in {"public_page_opened", "search_summary_visible"} else {}
+                record_label = PUBLIC_ENRICHMENT_COLLECTION_LABELS.get(str(record.get("collection_status")), "待确认")
+                visible_status = record_label
+                if trade_parent_status == "details_restricted" and record_state["collection_status"] != "details_restricted":
+                    visible_status = f"{record_label}；{trade_parent_label}"
+                trade_rows.append({
+                    "公司名称":name,
+                    "状态":visible_status,
+                    "进出口方向":display_record.get("direction") or "未提供",
+                    "对方名称":display_record.get("counterparty_name") or "未提供",
+                    "记录日期":display_record.get("record_date") or "未提供",
+                    "产品名称或 HS":display_record.get("product_or_hs") or "未提供",
+                    "起运地或目的地":display_record.get("origin_or_destination") or "未提供",
+                    "主体匹配状态":_trade_subject_match_label(record),
+                    "来源 / 链接":f"{TRADE_AGGREGATOR_DISCLOSURE}：{record.get('aggregator_source_name') or '第三方贸易数据聚合站'}；{record.get('aggregator_source_url') or '未提供'}",
+                    "观察时间":record.get("observed_at") or "未提供",
+                    "不能推出的内容":_trade_row_disclosure(record.get("cannot_conclude") or "不能推出采购量、采购金额、采购周期、采购意愿、从中国采购事实或未来订单。"),
+                })
+                if record_state["collection_status"] != "public_page_opened":
+                    action = _enrichment_manual_action("trade", record_state)
+                    next_step = str(record.get("next_step_for_user") or "").strip()
+                    if next_step and next_step not in action:
+                        action = f"{action} {next_step}"
+                    pending.append({"类型":"第三方贸易摘要","对象":name,"原因":f"{TRADE_AGGREGATOR_DISCLOSURE}：{PUBLIC_ENRICHMENT_COLLECTION_LABELS.get(record_state['collection_status'], '待确认')}","建议动作":action})
+            if trade_parent_status == "details_restricted" and any(
+                _trade_record_state(record)["collection_status"] != "details_restricted"
+                for record in records
+            ):
+                pending.append({
+                    "类型":"第三方贸易摘要",
+                    "对象":name,
+                    "原因":f"{TRADE_AGGREGATOR_DISCLOSURE}：{trade_parent_label}；{_enrichment_detail(trade_state)}",
+                    "建议动作":_enrichment_manual_action("trade", trade_state),
+                })
+        else:
+            trade_rows.append({
+                "公司名称":name,
+                "状态":_enrichment_collection_label(trade_state),
+                "进出口方向":"未提供", "对方名称":"未提供", "记录日期":"未提供", "产品名称或 HS":"未提供", "起运地或目的地":"未提供",
+                "主体匹配状态":"未提供", "来源 / 链接":_enrichment_detail(trade_state), "观察时间":"未提供",
+                "不能推出的内容":f"{TRADE_AGGREGATOR_DISCLOSURE}；不能推出采购量、采购金额、采购周期、采购意愿、从中国采购事实或未来订单。",
+            })
+        if not records and _enrichment_collection_label(trade_state) != "公开页面已打开":
+            pending.append({"类型":"第三方贸易摘要","对象":name,"原因":f"第三方贸易数据聚合站公开摘要：{_enrichment_collection_label(trade_state)}；{_enrichment_detail(trade_state)}","建议动作":_enrichment_manual_action("trade",trade_state)})
+    return {"社媒与公开职业线索":social_rows,"地图与经营地址":map_rows,"第三方贸易摘要":trade_rows,"pending":pending}
 
 
 def default_discovery_relevance_label_to_raw(relevance_label: str) -> str:
@@ -451,6 +677,8 @@ def initial_contact_rows(graph:dict[str,Any])->list[dict[str,Any]]:
             continue
         source_obs=observations.get(cp.get("source_observation_id"),{})
         src=sources.get(source_obs.get("source_id"),{}) if isinstance(source_obs,dict) else {}
+        if isinstance(src, dict) and src.get("medium") == "trade_aggregator":
+            continue
         if not source_evidence_scope(src, source_obs, "candidate_clue")[0]:
             continue
         key=(str(cp.get("normalized_value")), "")
@@ -498,6 +726,7 @@ def build_initial_sheets(graph:dict[str,Any], audit:dict[str,Any])->dict[str,lis
         row = {
             "分区": _initial_partition(relevance, basis_status),
             "公司名称": candidate.get("company_name") or candidate.get("name") or entity.get("name") or entity.get("legal_name"),
+            "品牌名称": candidate.get("brand_name") or "未提供",
             "国家/地区": candidate.get("country_or_region") or entity.get("country_or_region"),
             "客户类型": _candidate_role(candidate, entity),
             "官网/域名": _candidate_website_or_domain(candidate, entity),
@@ -513,6 +742,9 @@ def build_initial_sheets(graph:dict[str,Any], audit:dict[str,Any])->dict[str,lis
             "已观察业务/产品/应用信号": "；".join(str(item) for item in ensure_list(candidate,"observed_business_signals") if item),
             "官网与联系方式信号状态": signal_info["website_contact"][0],
             "官网与联系方式信号说明": signal_info["website_contact"][1],
+            "公司公开社媒状态": signal_info["social_company"][0],
+            "公开职业联系人状态": signal_info["social_person"][0],
+            "地图与经营地址状态": signal_info["map_listing"][0],
             "贸易记录状态": signal_info["trade_record"][0],
             "贸易记录说明": signal_info["trade_record"][1],
             "China 关联状态": signal_info["china_relation"][0],
@@ -580,6 +812,8 @@ def build_initial_sheets(graph:dict[str,Any], audit:dict[str,Any])->dict[str,lis
     risk_rows=[{"提示级别":i.get("severity"),"说明":i.get("message")} for i in audit.get("issues",[])] or [{"提示级别":"提示","说明":"本轮公开发现可继续扩展；当前输出不宣称已覆盖全部企业。"}]
     if "not_run" in review_modes(graph):
         risk_rows.append({"提示级别":"说明","说明":"本次为发现优先交付；严格复核、审计和正式开发名单门禁未启用。"})
+    enrichment_sheets = _public_enrichment_sheets(graph)
+    pending.extend(enrichment_sheets.pop("pending", []))
     return {
         "发现候选池": candidate_rows or [{"说明":"未形成候选记录"}],
         "联系方式汇总": contact_rows or [{"说明":"未发现可展示的公开联系方式"}],
@@ -588,6 +822,9 @@ def build_initial_sheets(graph:dict[str,Any], audit:dict[str,Any])->dict[str,lis
         "待核查事项": pending or [{"说明":"暂无额外待核查事项"}],
         "已排除客户": excluded_rows or [{"说明":"暂无明确排除记录"}],
         "风险与说明": risk_rows,
+        "社媒与公开职业线索": enrichment_sheets["社媒与公开职业线索"],
+        "地图与经营地址": enrichment_sheets["地图与经营地址"],
+        "第三方贸易摘要": enrichment_sheets["第三方贸易摘要"],
     }
 
 def build_inquiry_sheets(graph:dict[str,Any])->dict[str,list[dict[str,Any]]]:

@@ -51,12 +51,23 @@
       "source_categories": [
         "website",
         "directory",
+        "document",
+        "social",
+        "map",
+        "trade_aggregator",
         "search_result"
       ],
       "contact_collection_targets": [
         "email",
         "phone",
-        "contact_form"
+        "contact_form",
+        "social_company",
+        "social_person",
+        "person_name",
+        "job_title",
+        "address",
+        "map_phone",
+        "public_trade_summary"
       ],
       "lead_tiering_criteria": {
         "default_discovery": "Classify only current-task business relevance and preserve unknowns."
@@ -69,7 +80,14 @@
       ],
       "downgrade_strategy": [
         "Keep weak or restricted discovery clues as Candidates with explicit signal statuses."
-      ]
+      ],
+      "candidate_enrichment_policy": {
+        "apply_to": "all_output_scope_candidates",
+        "max_queries_per_category_per_candidate": 2,
+        "max_opens_per_category_per_candidate": 1,
+        "same_run_url_dedupe": "canonical_or_final_url",
+        "over_budget_status": "not_searched"
+      }
     }
   ],
   "candidates": [
@@ -127,10 +145,32 @@
             "当前名单页未展示联系方式正文"
           ]
         },
+        "social_company": {
+          "status": "not_searched",
+          "collection_status": "not_searched",
+          "notes": [
+            "本轮未检索公司公开社媒页面"
+          ]
+        },
+        "social_person": {
+          "status": "not_searched",
+          "collection_status": "not_searched",
+          "notes": [
+            "本轮未检索公开职业联系人"
+          ]
+        },
+        "map_listing": {
+          "status": "not_searched",
+          "collection_status": "not_searched",
+          "notes": [
+            "本轮未检索公开地图页面"
+          ]
+        },
         "trade_record": {
           "status": "not_searched",
+          "collection_status": "not_searched",
           "notes": [
-            "本轮未检索贸易数据"
+            "本轮未检索第三方贸易数据聚合站公开摘要"
           ]
         },
         "china_relation": {

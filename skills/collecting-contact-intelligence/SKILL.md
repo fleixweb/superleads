@@ -48,6 +48,16 @@ from content that was actually opened and inspected; a search-result snippet
 can keep a URL as an unverified lead marked `仅搜索结果可见，未打开验证`, but
 must not expose the snippet's person name or title as a verified contact.
 
+For a public social or map page, use only normally accessible visible content
+that was opened in the current Run. A social company page is separate from a
+public professional-person page. A map address or phone is a public contact
+clue, not proof of legal-entity identity or procurement ownership. Stop at
+login, CAPTCHA, 403, Cloudflare/human verification, payment wall, explicit
+automation restriction, or unreadable dynamic content; record 来源受限 and ask
+the user to manually check or provide a public link, screenshot, PDF, Excel,
+or de-identified material. Do not request or use platform credentials,
+Cookies, Tokens, API Keys, paid APIs, or proxy/access-control workarounds.
+
 For `published_source_copy`, source and association Observations must each be eligible `document.extract` records with matching artifact-hash locators. Preserve literal, normalization, and Entity association checks exactly as for public sources; a row or page containing multiple companies is not enough by itself. Historical CRM/dataset and correspondence exports can only be `export_with_source_note`, with explicit same-Entity context. Pasted notes and image/OCR contacts remain Candidate or UnassignedContactLead until independently verified.
 
 Inbound `mail.read` can capture a reply email as a sourced contact lead only when the literal occurs in the bounded mail Observation and entity context is explicit. It is `export_with_source_note` at most and must display as 来信联系人/待核验, never ready, official, or procurement-authority evidence. A From address alone has no automatic company ownership or authority.

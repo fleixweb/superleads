@@ -46,7 +46,7 @@ ROUTES = (
 )
 
 MIN_TABLES = {
-    "bulk_customer_development": 7,
+    "bulk_customer_development": 10,
     "customer_background_research": 6,
     "product_outbound_market_analysis": 7,
 }
@@ -420,6 +420,7 @@ def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[st
         candidate_rows.append({
             "分区": _bulk_partition(relevance, basis_status),
             "候选客户": name,
+            "品牌名称": _first_nonempty(row.get("品牌名称"), candidate.get("brand_name")),
             "国家/地区": _candidate_country(candidate, row),
             "可能客户角色": _candidate_role(candidate, row),
             "当前看到的业务信号": signal,
@@ -532,6 +533,10 @@ def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[st
             "链接": _safe_text(row.get("来源链接")),
         })
 
+    social_rows = [row for row in sheets.get("社媒与公开职业线索", []) if isinstance(row, dict)]
+    map_rows = [row for row in sheets.get("地图与经营地址", []) if isinstance(row, dict)]
+    trade_rows = [row for row in sheets.get("第三方贸易摘要", []) if isinstance(row, dict)]
+
     risk_rows: list[dict[str, Any]] = []
     for row in sheets.get("风险与说明", []):
         if not isinstance(row, dict):
@@ -556,7 +561,7 @@ def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[st
     _append_table(
         lines,
         "发现候选池样表（候选池不是正式开发名单）",
-        ["分区", "候选客户", "国家/地区", "可能客户角色", "当前看到的业务信号", "业务相关性", "依据状态", "可用联系入口", "还要确认什么", "来源 / 来源状态"],
+        ["分区", "候选客户", "品牌名称", "国家/地区", "可能客户角色", "当前看到的业务信号", "业务相关性", "依据状态", "可用联系入口", "还要确认什么", "来源 / 来源状态"],
         candidate_rows,
     )
     _append_table(
@@ -565,6 +570,29 @@ def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[st
         ["对象", "联系人 / 公开职业线索", "联系方式", "类型", "可用状态", "待确认原因", "来源 / 链接"],
         contact_rows,
     )
+    _append_table(
+        lines,
+        "社媒与公开职业线索",
+        ["公司名称", "平台", "页面类型", "页面名称 / 人员", "公开职位或部门", "公开联系入口", "主体关联依据", "来源状态", "观察时间", "来源 / 链接", "不能推出的内容"],
+        social_rows,
+    )
+    _append_table(
+        lines,
+        "地图与经营地址",
+        ["公司名称", "地图平台", "商户名称", "地址", "公开电话", "经营场景", "主体关联依据", "来源状态", "观察时间", "来源 / 链接", "不能推出的内容"],
+        map_rows,
+    )
+    lines.extend([
+        "## 第三方贸易摘要",
+        "",
+        "第三方贸易数据聚合站公开摘要，非官方海关记录。只保留本轮可见字段，不代表完整贸易记录，也不能推出采购意愿、采购权限、从中国采购事实或未来订单。",
+        "",
+    ])
+    lines.extend(_table(
+        ["公司名称", "状态", "进出口方向", "对方名称", "记录日期", "产品名称或 HS", "起运地或目的地", "主体匹配状态", "来源 / 链接", "观察时间", "不能推出的内容"],
+        trade_rows,
+    ))
+    lines.append("")
     _append_table(lines, "搜索覆盖与收敛", ["本轮查了哪些方向", "覆盖国家/语言/来源类型", "新增/重复", "来源受限或未执行", "覆盖/收敛说明"], coverage_rows)
     _append_table(lines, "待确认事项", ["对象", "待确认事项", "下一步", "状态"], pending_rows)
     _append_table(lines, "已排除 / 仅作参考", ["分区", "对象", "归入原因", "依据状态", "是否可由用户改判", "来源 / 来源状态"], excluded_rows)

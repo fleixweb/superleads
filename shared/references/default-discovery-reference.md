@@ -19,7 +19,7 @@
 
 默认批量发现先从**最小骨架**开始：`runs / briefs / plans / candidates / search_logs`。Candidate 不要求 Entity、Source、Observation、ContactPoint 或 ContactClaim。只有 Agent 实际打开来源并需要保存可核验原文、展示可见联系方式或处理主体冲突时，才按需增加 Source / Observation / Contact 等对象。
 
-完整参考样例用于理解五类相关性、五类信号状态、联系方式三态和排除记录；它不是每轮默认发现要照抄的图谱模板。
+完整参考样例用于理解五类相关性、公开信息覆盖状态、联系方式三态和排除记录；它不是每轮默认发现要照抄的图谱模板。
 
 ---
 
@@ -33,7 +33,7 @@
 - `dedupe_basis`（非空，去重依据）
 - `business_relevance_status`（五取一，见下）
 - `business_relevance_basis`（非空）
-- `signal_summary`，含五个信号键，每个都有合法 `status`（见下）
+- `signal_summary`，含八个信号键（`business_match`、`website_contact`、`social_company`、`social_person`、`map_listing`、`trade_record`、`china_relation`、`product_description_or_hs`），每个都有合法 `status`（见下）
 - `unknowns` 与 `source_restrictions`（列表，可为空）
 
 `website` 若填写：只接受**安全公开 HTTP(S) URL 或纯公开域名**（如 `example.com`），不自动补协议，不接受 userinfo / 敏感 query/fragment 参数 / 私网 / 非 HTTP(S)。`source_url`、`discovery_refs[].url`、信号 `items[].source_url`、SearchLog `result_url` 同样只接受安全公开 HTTP(S) URL。
@@ -63,9 +63,24 @@
 
 ---
 
-## 五类公开信号状态
+## 默认公开信息覆盖
 
-用于 `signal_summary` 的每个键（`business_match` / `website_contact` / `trade_record` / `china_relation` / `product_description_or_hs`）：
+批量开发客户的默认 Plan 至少覆盖以下公开来源类别：
+
+- `website`、`directory`、`document`、`social`、`map`、`trade_aggregator`、`search_result`
+
+默认联系方式和公开信息补全目标至少包括：
+
+- `email`、`phone`、`contact_form`、`social_company`、`social_person`
+- `person_name`、`job_title`、`address`、`map_phone`、`public_trade_summary`
+
+这些是覆盖计划，不表示每个候选都已经查到结果。对进入本轮输出范围的每个 Candidate，分别记录官网/联系方式、公司公开社媒、公开职业线索、地图和第三方贸易摘要的状态；不能只补查模型主观认为更有价值的候选。
+
+每个来源类别设置有限的每候选查询和打开预算；同一 Run 对相同 canonical/final URL 去重。超过预算必须写 `not_searched` 和“本轮未检索”，不能写成未发现或不存在。
+
+## 公开信号状态
+
+用于 `signal_summary` 的每个键：
 
 | 状态 | 含义 |
 |---|---|
@@ -73,9 +88,23 @@
 | `not_observed` | 只表示**已查明示范围内**未见，须保留已查来源/期间；不是「已证明不存在」 |
 | `not_searched` | 尚未检索，表示未知 |
 | `identity_pending` | 信号无法可靠归属同一主体，禁止拼接 |
-| `source_restricted` | 登录/付费墙/403/415/工具限制/可见内容不足 |
+| `source_restricted` | 登录、验证码、403、Cloudflare、付费墙、工具限制、动态空壳或可见内容不足 |
 
 真实网络中 403 / 415 / 429 / JS 空壳很常见，应如实记为 `source_restricted` 或 `not_observed` 并保留 Candidate，**不能因来源打不开就判定企业不存在或不相关**（见 `docs/validation/claude-code-web-access-baseline.md`）。
+
+社媒、地图和贸易摘要还用 `collection_status` 区分：`not_searched`（本轮未检索）、`searched_not_found`（已检索未见）、`search_summary_visible`（仅搜索摘要可见）、`public_page_opened`（公开页面已打开）、`details_restricted`（来源受限）、`identity_pending`（疑似，主体待确认）和 `user_provided_material`（用户提供资料）。社媒和地图搜索摘要只能保存同一 Run SearchLog 绑定的未验证 URL 线索；其中的人名、职位、电话、地址或经营场景不得写成已观察事实。贸易摘要可保留同一 Run SearchLog `visible_excerpt` 中逐字可见的方向、对方名称、日期、产品/HS、起运地或目的地，但仍只是第三方摘要，不能升级为已观察事实、联系人或正式证据。
+
+## 公开页面与受限处理
+
+只使用当前 Run 实际成功并报告为 `available` 的 `search.web`、`source.open`、`browser.render` 或 `document.extract`。`social.visible.read`、`maps.lookup` 等能力名称不能证明宿主一定提供了相应工具；没有独立读取器时，正常打开的公司社媒和地图页面分别作为 `medium: social`、`medium: map` 的普通公开来源记录。已打开的社媒、地图或贸易项必须绑定 `discovered_public`、`access_boundary: public_no_login` 的 Source，以及同一 Run 的 Observation；所有展示字段都要能在 Observation 的可见摘录中复核。名称相同或地址相同不足以归并，必须保留主体待确认。
+
+页面需要登录、出现验证码、返回 403、Cloudflare/人工验证、付费墙、明确禁止自动化、动态空壳或无可靠主体关联时，立即停止该 URL 的自动读取，不重试、不绕过、不使用账号、Cookie、Token、密钥、代理或付费 API。记录“来源受限”，并在 Candidate、覆盖/收敛说明和待确认事项中给出以下对应建议：
+
+- 一般受限：`来源受限：该公开页面需要登录、验证码、付费访问、人工验证或当前 AI 无法正常读取。Superleads 不会绕过这些限制。请你手动打开并查询该页面；如果确认后可以提供公开链接、截图、PDF、Excel 或脱敏资料，我可以继续帮你整理和核对。`
+- 动态内容：`来源受限：页面可以访问，但当前 AI 无法自动读取其中的动态内容。请你手动查看并把需要核对的公开内容或截图发给我。`
+- 贸易详情：`来源受限：第三方贸易数据详情页需要登录、付费或无法正常打开。当前 AI 不能自动化完成该详情查询，请你使用自己的贸易数据渠道手动核实。`
+
+第三方贸易信息统一显示为“第三方贸易数据聚合站公开摘要，非官方海关记录”。只保留页面或摘要实际可见的方向、对方名称、日期、产品/HS、起运地或目的地及主体匹配状态；不能推出完整采购量、金额、采购周期、采购意愿、采购权限、从中国采购事实、未来订单或该公司一定是目标客户。
 
 ---
 

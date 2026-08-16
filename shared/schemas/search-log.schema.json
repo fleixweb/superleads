@@ -84,6 +84,7 @@
           "registry",
           "directory",
           "map",
+          "trade_aggregator",
           "document",
           "spreadsheet",
           "search_result"
@@ -135,6 +136,7 @@
           "result_url": {"type": "string", "minLength": 1, "pattern": "^https?://"},
           "result_rank": {"type": ["integer", "null"], "minimum": 1},
           "result_title": {"type": ["string", "null"], "minLength": 1, "maxLength": 256},
+          "visible_excerpt": {"type": ["string", "null"], "minLength": 1, "maxLength": 4096},
           "result_locator": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9._=&;:#?/-]+$"}
         }
       }

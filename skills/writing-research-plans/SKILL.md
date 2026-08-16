@@ -19,12 +19,29 @@ Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/c
 ## Plan components
 
 1. Query groups tied to the current brief only.
-2. Source categories: website, social visible page, registry, directory, map, document, spreadsheet, search result.
-3. Contact collection targets covering emails, phones, forms, portals, LinkedIn visible pages, names, titles, addresses, PDFs, directories, and maps when relevant.
+2. Default bulk-discovery source categories: `website`, `directory`, `document`, `social`, `map`, `trade_aggregator`, and `search_result`. A social or map category means a normally accessible public page, not an assumed platform API.
+3. Default contact/public-information targets: `email`, `phone`, `contact_form`, `social_company`, `social_person`, `person_name`, `job_title`, `address`, `map_phone`, and `public_trade_summary`.
 4. Default business-relevance criteria for `directly_related`, `possibly_related`, `explicitly_excluded_or_unrelated`, `identity_pending`, and `insufficient_information`.
 5. Public-signal collection targets and statuses for website/contact, trade record, China relation, and product description/HS.
 6. Claim evidence requirements only for explicit deep-check tasks, including which claims need first-party or high-authority sources.
 7. Stop conditions and downgrade strategy when tools or evidence are missing.
+
+For every Candidate in the current output scope, plan the same public-information
+coverage categories. Do not enrich only candidates that appear more valuable.
+Set a finite per-candidate query/open budget for each category, dedupe the same
+canonical/final URL in the current Run, and mark an unexecuted over-budget path
+as `not_searched` / 本轮未检索. It is not `not_observed` and never means the
+information does not exist.
+
+For social, map, and third-party trade aggregation paths, plan the collection
+status separately: 本轮未检索, 已检索未见, 仅搜索摘要可见, 公开页面已打开,
+来源受限, or 主体待确认. Social/map search snippets may retain only an
+unverified URL clue, never a person, title, address, phone, or business scene.
+For trade, plan a same-Run SearchLog `visible_excerpt` binding before retaining
+any visible direction, counterparty, date, product/HS, or origin/destination;
+those fields remain an unverified third-party summary, not an Observation,
+contact, or formal evidence. Third-party trade material is always planned for
+user-facing labeling as “第三方贸易数据聚合站公开摘要，非官方海关记录”.
 
 For `contact_collection_targets`, include concrete, object-anchored queries when
 public people or role clues are requested:
@@ -35,6 +52,10 @@ public people or role clues are requested:
 - `"<公司名>" + <展会名> / <行业协会> / <公开目录站>`
 - `"<人名>" "<公司名>"` for same-person cross-checking
 - Public Facebook / Instagram / X / YouTube company and personal pages
+
+For maps and third-party trade aggregation, anchor the query to company/brand,
+domain, city, country, address, or public phone. Do not plan a paid API,
+account login, Cookie, Token, API Key, proxy, or access-control workaround.
 
 Collect public founders, shareholders, general managers, sales staff, and
 technical leads as well as purchasing contacts. A job title is a role clue only;
@@ -82,3 +103,7 @@ public-source check for every geography inclusion decision.
 - Do not stop after one page or one source merely because a few matches were
   found. Plan coverage expansion across product terms, roles, geography, and
   source categories before calling discovery converged.
+- A page needing login, CAPTCHA, 403, Cloudflare or equivalent verification,
+  payment, an explicit automation restriction, or unreadable dynamic content
+  is a stop condition for that URL, not a retry target. Plan it as 来源受限
+  with a manual-check action.

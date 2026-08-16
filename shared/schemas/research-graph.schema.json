@@ -18,7 +18,21 @@
         },
         "observed_at": {"type": ["string", "null"]},
         "period": {"type": ["string", "null"]},
-        "locator": {"type": ["string", "null"]}
+        "locator": {"type": ["string", "null"]},
+        "source_id": {"type": ["string", "null"]},
+        "observation_id": {"type": ["string", "null"]},
+        "search_log_id": {"type": ["string", "null"]},
+        "platform": {"type": ["string", "null"]},
+        "page_type": {"type": ["string", "null"]},
+        "display_name": {"type": ["string", "null"]},
+        "job_title": {"type": ["string", "null"]},
+        "public_contact": {"type": ["string", "null"]},
+        "association_basis": {"type": ["string", "null"]},
+        "subject_match_status": {"type": ["string", "null"], "enum": ["name_exact_address_match", "name_domain_match", "name_only", "conflicted", "unresolved", null]},
+        "address": {"type": ["string", "null"]},
+        "public_phone": {"type": ["string", "null"]},
+        "business_scene": {"type": ["string", "null"]},
+        "cannot_conclude": {"type": ["string", "null"]}
       }
     },
     "CandidateSignalState": {
@@ -29,6 +43,10 @@
         "status": {
           "type": "string",
           "enum": ["observed", "not_observed", "not_searched", "identity_pending", "source_restricted"]
+        },
+        "collection_status": {
+          "type": ["string", "null"],
+          "enum": ["not_searched", "searched_not_found", "search_summary_visible", "public_page_opened", "details_restricted", "identity_pending", "user_provided_material", null]
         },
         "items": {
           "type": "array",
@@ -78,6 +96,7 @@
           },
           "name": {"type": ["string", "null"]},
           "company_name": {"type": ["string", "null"]},
+          "brand_name": {"type": ["string", "null"]},
           "entity_id": {"type": ["string", "null"]},
           "website": {
             "type": ["string", "null"],
@@ -171,12 +190,42 @@
             "type": "array",
             "items": {"type": "string"}
           },
+          "public_trade_summaries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["summary_id", "collection_status", "subject_match_status", "aggregator_source_name", "aggregator_source_url", "observed_at", "cannot_conclude", "next_step_for_user"],
+              "properties": {
+                "summary_id": {"type": "string", "minLength": 1},
+                "collection_status": {"type": "string", "enum": ["search_summary_visible", "public_page_opened", "details_restricted", "identity_pending", "user_provided_material"]},
+                "subject_match_status": {"type": "string", "enum": ["name_exact_address_match", "name_domain_match", "name_only", "conflicted", "unresolved"]},
+                "aggregator_source_name": {"type": "string", "minLength": 1},
+                "aggregator_source_url": {"type": "string", "pattern": "^https?://"},
+                "source_id": {"type": ["string", "null"]},
+                "observation_id": {"type": ["string", "null"]},
+                "search_log_id": {"type": ["string", "null"]},
+                "association_basis": {"type": ["string", "null"]},
+                "direction": {"type": ["string", "null"], "enum": ["import", "export", "unknown", null]},
+                "counterparty_name": {"type": ["string", "null"]},
+                "record_date": {"type": ["string", "null"]},
+                "product_or_hs": {"type": ["string", "null"]},
+                "origin_or_destination": {"type": ["string", "null"]},
+                "observed_at": {"type": "string", "minLength": 1},
+                "cannot_conclude": {"type": "string", "minLength": 1},
+                "next_step_for_user": {"type": "string", "minLength": 1}
+              }
+            }
+          },
           "signal_summary": {
             "type": ["object", "null"],
             "additionalProperties": false,
             "properties": {
               "business_match": {"$ref": "#/$defs/CandidateSignalState"},
               "website_contact": {"$ref": "#/$defs/CandidateSignalState"},
+              "social_company": {"$ref": "#/$defs/CandidateSignalState"},
+              "social_person": {"$ref": "#/$defs/CandidateSignalState"},
+              "map_listing": {"$ref": "#/$defs/CandidateSignalState"},
               "trade_record": {"$ref": "#/$defs/CandidateSignalState"},
               "china_relation": {"$ref": "#/$defs/CandidateSignalState"},
               "product_description_or_hs": {"$ref": "#/$defs/CandidateSignalState"}

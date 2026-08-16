@@ -76,7 +76,7 @@ DISPOSITION_ENUM = {"重点开发", "推荐跟进", "需人工核查", "暂不�
 CLAIM_EVIDENCE_RELATIONS = {"supports", "contradicts", "contextual"}
 EXPORT_STATUS_ENUM = {"ready", "export_with_source_note", "needs_manual_association_review", "hold_no_source", "hold_inferred"}
 POSITIVE_DISPOSITIONS = {"重点开发", "推荐跟进"}
-BLOCKED_ACCESS = {"blocked", "login_wall", "login-wall", "login_required", "forbidden", "inaccessible", "not_accessed"}
+BLOCKED_ACCESS = {"blocked", "login_wall", "login-wall", "login_required", "forbidden", "inaccessible", "not_accessed", "restricted"}
 PLAN_REQUIRED_FIELDS = [
     "plan_id",
     "brief_id",
@@ -688,6 +688,385 @@ def _search_log_issues(
 
 DEFAULT_DISCOVERY_OUTPUT_MODES = {"发现候选池", "初筛客户名单"}
 DEPRECATED_INITIAL_SCREENING_OUTPUT_MODE = "初筛客户名单"
+PUBLIC_ENRICHMENT_SIGNAL_MEDIA = {
+    "social_company": "social",
+    "social_person": "social",
+    "map_listing": "map",
+}
+PUBLIC_ENRICHMENT_SIGNAL_KEYS = set(PUBLIC_ENRICHMENT_SIGNAL_MEDIA) | {"trade_record"}
+PUBLIC_ENRICHMENT_COLLECTION_STATUS = {
+    "not_searched": "not_searched",
+    "searched_not_found": "not_observed",
+    "search_summary_visible": "not_observed",
+    "public_page_opened": "observed",
+    "details_restricted": "source_restricted",
+    "identity_pending": "identity_pending",
+    "user_provided_material": "identity_pending",
+}
+PUBLIC_ENRICHMENT_OBSERVED_ASSOCIATION_STATUSES = {
+    "name_exact_address_match",
+    "name_domain_match",
+}
+PUBLIC_ENRICHMENT_ALLOWED_OPEN_CAPABILITIES = {
+    "source.open",
+    "browser.render",
+    "document.extract",
+}
+PUBLIC_ENRICHMENT_VALUE_FIELDS = {
+    "display_name",
+    "job_title",
+    "public_contact",
+    "address",
+    "public_phone",
+    "business_scene",
+}
+PUBLIC_ENRICHMENT_SEARCH_SUMMARY_FORBIDDEN_FIELDS = (
+    PUBLIC_ENRICHMENT_VALUE_FIELDS | {"source_id", "observation_id", "association_basis", "subject_match_status"}
+)
+PUBLIC_TRADE_VISIBLE_FIELDS = (
+    "direction",
+    "counterparty_name",
+    "record_date",
+    "product_or_hs",
+    "origin_or_destination",
+)
+PUBLIC_ENRICHMENT_SOURCE_CATEGORIES = {
+    "website", "directory", "document", "social", "map", "trade_aggregator", "search_result",
+}
+PUBLIC_ENRICHMENT_CONTACT_TARGETS = {
+    "email", "phone", "contact_form", "social_company", "social_person",
+    "person_name", "job_title", "address", "map_phone", "public_trade_summary",
+}
+
+
+def _normalized_excerpt_contains(excerpt: Any, value: Any) -> bool:
+    if not has_text(excerpt) or not has_text(value):
+        return False
+    normalized_excerpt = " ".join(str(excerpt).casefold().split())
+    normalized_value = " ".join(str(value).casefold().split())
+    return normalized_value in normalized_excerpt
+
+
+def _candidate_identity_is_anchored(candidate: dict[str, Any], literal: Any) -> bool:
+    """Check an exact candidate name, brand, domain, or address appears in a visible literal."""
+    if not has_text(literal):
+        return False
+    values = [
+        candidate.get(field)
+        for field in ("company_name", "name", "brand_name", "brand", "website", "domain", "address")
+        if has_text(candidate.get(field))
+    ]
+    values.extend(
+        normalized_identity_domain(candidate.get(field))
+        for field in ("website", "domain")
+        if normalized_identity_domain(candidate.get(field))
+    )
+    return any(_normalized_excerpt_contains(literal, value) for value in values)
+
+
+def _public_enrichment_association_issues(
+    *,
+    candidate: dict[str, Any],
+    excerpt: Any,
+    association_basis: Any,
+    item_path: str,
+    code_prefix: str,
+) -> list[dict[str, str]]:
+    """Require a visible basis that identifies the current Candidate."""
+    issues: list[dict[str, str]] = []
+    if not has_text(association_basis):
+        return [issue("critical", f"{code_prefix}_association_basis_missing", "Enrichment requires a visible candidate association basis", f"{item_path}.association_basis")]
+    if not _normalized_excerpt_contains(excerpt, association_basis):
+        issues.append(issue("critical", f"{code_prefix}_association_basis_not_in_excerpt", "Enrichment association basis must occur in its bound visible excerpt", f"{item_path}.association_basis"))
+    if not _candidate_identity_is_anchored(candidate, association_basis) or not _candidate_identity_is_anchored(candidate, excerpt):
+        issues.append(issue("critical", f"{code_prefix}_association_not_candidate_identity", "Enrichment association must visibly identify the current Candidate by name, brand, domain, or address", f"{item_path}.association_basis"))
+    return issues
+
+
+def _matching_search_result(
+    log: Any,
+    candidate: dict[str, Any],
+    source_url: Any,
+    run_id: Any,
+) -> dict[str, Any] | None:
+    if not isinstance(log, dict):
+        return None
+    if (
+        log.get("run_id") != run_id
+        or log.get("brief_id") != candidate.get("brief_id")
+        or log.get("plan_id") != candidate.get("plan_id")
+    ):
+        return None
+    for result_ref in as_list(log.get("result_refs")):
+        if (
+            isinstance(result_ref, dict)
+            and result_ref.get("candidate_id") == candidate.get("candidate_id")
+            and result_ref.get("result_url") == source_url
+        ):
+            return result_ref
+    return None
+
+
+def _public_enrichment_open_issues(
+    *,
+    source: Any,
+    observation: Any,
+    candidate: dict[str, Any],
+    candidate_id: Any,
+    run: Any,
+    run_id: Any,
+    medium: str,
+    source_url: Any,
+    item_path: str,
+    item: dict[str, Any],
+    code_prefix: str,
+    require_association: bool = True,
+) -> list[dict[str, str]]:
+    """Require a concrete public-page read before exposing enrichment values."""
+    issues: list[dict[str, str]] = []
+    if not has_text(source_url):
+        issues.append(issue("critical", f"{code_prefix}_source_url_missing", "Opened enrichment item requires its public source URL", f"{item_path}.source_url"))
+    elif not is_safe_public_http_url(source_url):
+        issues.append(issue("critical", f"{code_prefix}_source_url_not_public", "Opened enrichment item URL must be a safe public HTTP(S) URL", f"{item_path}.source_url"))
+    if not isinstance(source, dict) or not isinstance(observation, dict):
+        issues.append(issue("critical", f"{code_prefix}_opened_observation_missing", "Opened enrichment item must bind an existing Source and Observation", item_path))
+        return issues
+    if source.get("medium") != medium:
+        issues.append(issue("critical", f"{code_prefix}_source_medium_mismatch", f"Opened enrichment must bind a {medium} Source", f"{item_path}.source_id"))
+    source_urls = {str(value) for value in (source.get("canonical_url"), source.get("final_url")) if has_text(value)}
+    if has_text(source_url) and (not source_urls or source_url not in source_urls):
+        issues.append(issue("critical", f"{code_prefix}_source_url_mismatch", "Opened enrichment item URL must match its bound Source canonical or final URL", f"{item_path}.source_url"))
+    if source.get("provenance") != "discovered_public" or source.get("access_boundary") != "public_no_login":
+        issues.append(issue("critical", f"{code_prefix}_source_not_public", "Opened enrichment requires a discovered public, no-login Source", f"{item_path}.source_id"))
+    if observation.get("source_id") != source.get("source_id") or observation.get("candidate_id") != candidate_id:
+        issues.append(issue("critical", f"{code_prefix}_observation_candidate_mismatch", "Opened enrichment Observation must bind the same Candidate and Source", item_path))
+    if has_text(run_id) and observation.get("run_id") != run_id:
+        issues.append(issue("critical", f"{code_prefix}_observation_run_mismatch", "Opened enrichment Observation must belong to the current Run", item_path))
+    if observation.get("access_status") not in {"ok", "opened", "captured", "extracted", "rendered"}:
+        issues.append(issue("critical", f"{code_prefix}_observation_not_opened", "Opened enrichment item cannot use a restricted or unreadable Observation", item_path))
+    if observation.get("capability") not in PUBLIC_ENRICHMENT_ALLOWED_OPEN_CAPABILITIES:
+        issues.append(issue("critical", f"{code_prefix}_capability_not_allowed", "Opened enrichment must use source.open, browser.render, or document.extract", f"{item_path}.observation_id"))
+    if not has_text(observation.get("raw_excerpt")):
+        issues.append(issue("critical", f"{code_prefix}_excerpt_missing", "Opened enrichment requires a non-empty visible excerpt", f"{item_path}.observation_id"))
+    if isinstance(run, dict):
+        capabilities = run.get("capabilities")
+        capability = observation.get("capability")
+        if not isinstance(capabilities, dict) or capabilities.get(capability) != "available":
+            issues.append(issue("critical", f"{code_prefix}_run_capability_not_available", "Opened enrichment capability must be reported available by the current Run", f"{item_path}.observation_id"))
+    for field in PUBLIC_ENRICHMENT_VALUE_FIELDS:
+        value = item.get(field)
+        if has_text(value) and not _normalized_excerpt_contains(observation.get("raw_excerpt"), value):
+            issues.append(issue("critical", f"{code_prefix}_value_not_in_excerpt", f"Opened enrichment {field} must occur in its Observation excerpt", f"{item_path}.{field}"))
+    if require_association and (not has_text(item.get("association_basis")) or item.get("subject_match_status") not in PUBLIC_ENRICHMENT_OBSERVED_ASSOCIATION_STATUSES):
+        issues.append(issue("critical", f"{code_prefix}_identity_pending_required", "Opened enrichment must have a reliable company association; name-only or unresolved matches remain identity_pending", item_path))
+    elif require_association:
+        association_basis = item.get("association_basis")
+        raw_excerpt = observation.get("raw_excerpt")
+        if not _normalized_excerpt_contains(raw_excerpt, association_basis):
+            issues.append(issue("critical", f"{code_prefix}_association_basis_not_in_excerpt", "Opened enrichment association_basis must occur in its Observation excerpt", f"{item_path}.association_basis"))
+        if not _candidate_identity_is_anchored(candidate, association_basis) or not _candidate_identity_is_anchored(candidate, raw_excerpt):
+            issues.append(issue("critical", f"{code_prefix}_association_not_candidate_identity", "Opened enrichment association must visibly identify the current Candidate by name, brand, domain, or address", f"{item_path}.association_basis"))
+    return issues
+
+
+def _public_enrichment_issues(graph: dict[str, Any], candidate: dict[str, Any], candidate_path: str,
+                              ids: dict[str, dict[str, dict[str, Any]]], run_id: Any, run: Any) -> list[dict[str, str]]:
+    """Validate candidate-level enrichment without promoting it to a Claim."""
+    issues: list[dict[str, str]] = []
+    summary = candidate.get("signal_summary")
+    if not isinstance(summary, dict):
+        return issues
+    candidate_id = candidate.get("candidate_id")
+    accessible = {"ok", "opened", "captured", "extracted", "rendered"}
+    for signal_key, medium in PUBLIC_ENRICHMENT_SIGNAL_MEDIA.items():
+        state = summary.get(signal_key)
+        state_path = f"{candidate_path}.signal_summary.{signal_key}"
+        if not isinstance(state, dict):
+            issues.append(issue("critical", "default_discovery_enrichment_signal_missing", f"Candidate enrichment requires {signal_key}", state_path))
+            continue
+        collection_status = state.get("collection_status")
+        expected_status = PUBLIC_ENRICHMENT_COLLECTION_STATUS.get(collection_status)
+        if expected_status is None:
+            issues.append(issue("critical", "default_discovery_enrichment_collection_status_invalid", f"{signal_key} requires a valid collection_status", f"{state_path}.collection_status"))
+            continue
+        if state.get("status") != expected_status:
+            issues.append(issue("critical", "default_discovery_enrichment_status_mismatch", f"{signal_key} collection_status {collection_status} requires status {expected_status}", f"{state_path}.status"))
+        if collection_status == "user_provided_material":
+            items = [item for item in as_list(state.get("items")) if isinstance(item, dict)]
+            if not items:
+                issues.append(issue("critical", "default_discovery_enrichment_user_material_item_missing", f"{signal_key} user-provided material requires a labeled item", f"{state_path}.items"))
+            for item_idx, item in enumerate(items):
+                if "用户提供" not in str(item.get("source_label") or ""):
+                    issues.append(issue("critical", "default_discovery_enrichment_user_material_label_missing", "User-provided enrichment must be labeled 用户提供资料 and not presented as independent retrieval", f"{state_path}.items[{item_idx}].source_label"))
+        if collection_status == "search_summary_visible":
+            items = [item for item in as_list(state.get("items")) if isinstance(item, dict)]
+            if not items:
+                issues.append(issue("critical", "default_discovery_enrichment_search_summary_item_missing", f"{signal_key} search-summary status requires a linked URL clue", f"{state_path}.items"))
+            for item_idx, item in enumerate(items):
+                item_path = f"{state_path}.items[{item_idx}]"
+                search_log_id = item.get("search_log_id")
+                result = _matching_search_result(ids["search_logs"].get(search_log_id), candidate, item.get("source_url"), run_id)
+                if result is None:
+                    issues.append(issue("critical", "default_discovery_enrichment_search_summary_binding_missing", "Search-summary enrichment must bind a same-Run SearchLog result URL for this Candidate", item_path))
+                for field in PUBLIC_ENRICHMENT_SEARCH_SUMMARY_FORBIDDEN_FIELDS:
+                    if has_text(item.get(field)):
+                        issues.append(issue("critical", "default_discovery_enrichment_search_summary_field_forbidden", "Search summaries are URL clues only and cannot expose people, contact, map, or association facts", f"{item_path}.{field}"))
+        if collection_status != "public_page_opened":
+            continue
+        items = [item for item in as_list(state.get("items")) if isinstance(item, dict)]
+        if not items:
+            issues.append(issue("critical", "default_discovery_enrichment_opened_item_missing", f"Opened {signal_key} requires at least one visible item", f"{state_path}.items"))
+        for item_idx, item in enumerate(items):
+            item_path = f"{state_path}.items[{item_idx}]"
+            source_id = item.get("source_id")
+            observation_id = item.get("observation_id")
+            source = ids["sources"].get(source_id)
+            observation = ids["observations"].get(observation_id)
+            issues.extend(_public_enrichment_open_issues(
+                source=source,
+                observation=observation,
+                candidate=candidate,
+                candidate_id=candidate_id,
+                run=run,
+                run_id=run_id,
+                medium=medium,
+                source_url=item.get("source_url"),
+                item_path=item_path,
+                item=item,
+                code_prefix="default_discovery_enrichment",
+            ))
+
+    trade_state = summary.get("trade_record")
+    trade_state_path = f"{candidate_path}.signal_summary.trade_record"
+    if not isinstance(trade_state, dict) or not has_text(trade_state.get("collection_status")):
+        issues.append(issue("critical", "default_discovery_enrichment_trade_collection_status_missing", "Trade coverage requires an explicit collection_status", f"{trade_state_path}.collection_status"))
+    else:
+        trade_expected_status = PUBLIC_ENRICHMENT_COLLECTION_STATUS.get(trade_state.get("collection_status"))
+        if trade_expected_status is None:
+            issues.append(issue("critical", "default_discovery_enrichment_collection_status_invalid", "trade_record requires a valid collection_status", f"{trade_state_path}.collection_status"))
+        elif trade_state.get("status") != trade_expected_status:
+            issues.append(issue("critical", "default_discovery_enrichment_status_mismatch", f"trade_record collection_status {trade_state.get('collection_status')} requires status {trade_expected_status}", f"{trade_state_path}.status"))
+
+    trade_records = [record for record in as_list(candidate.get("public_trade_summaries")) if isinstance(record, dict)]
+    record_statuses = {str(record.get("collection_status")) for record in trade_records}
+    if trade_records and isinstance(trade_state, dict):
+        parent_status = str(trade_state.get("collection_status"))
+        if parent_status in {"not_searched", "searched_not_found"}:
+            issues.append(issue("critical", "default_discovery_trade_signal_state_mismatch", "Trade records cannot coexist with an unsearched or no-result trade coverage state", trade_state_path))
+        elif parent_status == "public_page_opened" and "public_page_opened" not in record_statuses:
+            issues.append(issue("critical", "default_discovery_trade_signal_state_mismatch", "Opened trade coverage requires at least one opened trade record", trade_state_path))
+        elif parent_status == "search_summary_visible" and not record_statuses <= {"search_summary_visible", "details_restricted"}:
+            issues.append(issue("critical", "default_discovery_trade_signal_state_mismatch", "Search-summary trade coverage cannot contain opened or user-material records", trade_state_path))
+        elif parent_status == "details_restricted" and not record_statuses <= {"details_restricted", "search_summary_visible"}:
+            issues.append(issue("critical", "default_discovery_trade_signal_state_mismatch", "Restricted trade coverage cannot contain opened or user-material records", trade_state_path))
+        elif parent_status == "identity_pending" and not record_statuses <= {"identity_pending"}:
+            issues.append(issue("critical", "default_discovery_trade_signal_state_mismatch", "Identity-pending trade coverage cannot contain opened, search-summary, restricted, or user-material records", trade_state_path))
+        elif parent_status == "user_provided_material" and not record_statuses <= {"user_provided_material"}:
+            issues.append(issue("critical", "default_discovery_trade_signal_state_mismatch", "User-provided trade coverage cannot contain independently opened, search-summary, restricted, or identity-pending records", trade_state_path))
+
+    for trade_idx, record in enumerate(trade_records):
+        if not isinstance(record, dict):
+            continue
+        trade_path = f"{candidate_path}.public_trade_summaries[{trade_idx}]"
+        if not is_safe_public_http_url(record.get("aggregator_source_url")):
+            issues.append(issue("critical", "default_discovery_trade_summary_url_not_public", "Third-party trade summary URL must be a safe public credential-free HTTP(S) URL", f"{trade_path}.aggregator_source_url"))
+        collection_status = record.get("collection_status")
+        subject_status = record.get("subject_match_status")
+        if subject_status != "name_exact_address_match" and collection_status != "identity_pending":
+            issues.append(issue("critical", "default_discovery_trade_summary_identity_pending_required", "A trade summary without an exact name-and-address match must remain identity_pending", f"{trade_path}.collection_status"))
+        if collection_status in {"search_summary_visible", "details_restricted"}:
+            result = _matching_search_result(ids["search_logs"].get(record.get("search_log_id")), candidate, record.get("aggregator_source_url"), run_id)
+            if result is None:
+                issues.append(issue("critical", "default_discovery_trade_summary_search_binding_missing", "Trade summary must bind a same-Run SearchLog result URL for this Candidate", trade_path))
+            elif collection_status == "search_summary_visible":
+                visible_excerpt = result.get("visible_excerpt")
+                if not has_text(visible_excerpt):
+                    issues.append(issue("critical", "default_discovery_trade_summary_search_excerpt_missing", "Visible trade-summary fields require the recorded SearchLog visible_excerpt", f"{trade_path}.search_log_id"))
+                for field in PUBLIC_TRADE_VISIBLE_FIELDS:
+                    if has_text(record.get(field)) and not _normalized_excerpt_contains(visible_excerpt, record.get(field)):
+                        issues.append(issue("critical", "default_discovery_trade_summary_value_not_in_search_excerpt", f"Trade {field} must occur in the bound SearchLog visible_excerpt", f"{trade_path}.{field}"))
+            if subject_status in PUBLIC_ENRICHMENT_OBSERVED_ASSOCIATION_STATUSES:
+                issues.extend(_public_enrichment_association_issues(
+                    candidate=candidate,
+                    excerpt=result.get("visible_excerpt") if isinstance(result, dict) else None,
+                    association_basis=record.get("association_basis"),
+                    item_path=trade_path,
+                    code_prefix="default_discovery_trade_summary",
+                ))
+        if collection_status == "public_page_opened":
+            source = ids["sources"].get(record.get("source_id"))
+            observation = ids["observations"].get(record.get("observation_id"))
+            if not isinstance(source, dict) or source.get("publisher_relation") != "third_party":
+                issues.append(issue("critical", "default_discovery_trade_summary_source_not_third_party", "Opened trade summaries must bind a third-party trade_aggregator Source", f"{trade_path}.source_id"))
+            issues.extend(_public_enrichment_open_issues(
+                source=source,
+                observation=observation,
+                candidate=candidate,
+                candidate_id=candidate_id,
+                run=run,
+                run_id=run_id,
+                medium="trade_aggregator",
+                source_url=record.get("aggregator_source_url"),
+                item_path=trade_path,
+                item=record,
+                code_prefix="default_discovery_trade_summary",
+                require_association=True,
+            ))
+            for field in PUBLIC_TRADE_VISIBLE_FIELDS:
+                if has_text(record.get(field)) and not _normalized_excerpt_contains(observation.get("raw_excerpt") if isinstance(observation, dict) else None, record.get(field)):
+                    issues.append(issue("critical", "default_discovery_trade_summary_value_not_in_excerpt", f"Opened trade {field} must occur in its Observation excerpt", f"{trade_path}.{field}"))
+    return issues
+
+
+def _public_enrichment_plan_issues(plan: dict[str, Any], path: str) -> list[dict[str, str]]:
+    policy = plan.get("candidate_enrichment_policy")
+    if not isinstance(policy, dict):
+        return [issue("critical", "default_discovery_enrichment_policy_missing", "Bulk discovery requires a candidate_enrichment_policy covering every output-scope Candidate", f"{path}.candidate_enrichment_policy")]
+    issues: list[dict[str, str]] = []
+    categories = {str(value) for value in as_list(plan.get("source_categories"))}
+    targets = {str(value) for value in as_list(plan.get("contact_collection_targets"))}
+    missing_categories = sorted(PUBLIC_ENRICHMENT_SOURCE_CATEGORIES - categories)
+    missing_targets = sorted(PUBLIC_ENRICHMENT_CONTACT_TARGETS - targets)
+    if missing_categories:
+        issues.append(issue("critical", "default_discovery_enrichment_source_categories_missing", f"Candidate enrichment plan must cover: {', '.join(missing_categories)}", f"{path}.source_categories"))
+    if missing_targets:
+        issues.append(issue("critical", "default_discovery_enrichment_contact_targets_missing", f"Candidate enrichment plan must target: {', '.join(missing_targets)}", f"{path}.contact_collection_targets"))
+    return issues
+
+
+def _public_enrichment_open_url_dedupe_issues(graph: dict[str, Any], ids: dict[str, dict[str, dict[str, Any]]]) -> list[dict[str, str]]:
+    """Reject repeated public-enrichment URL attempts in a default-discovery Run."""
+    current = current_run(graph)
+    brief = current_brief(graph, current)
+    if not isinstance(brief, dict) or brief.get("output_mode") not in DEFAULT_DISCOVERY_OUTPUT_MODES:
+        return []
+    planned_runs = {
+        str(run.get("run_id"))
+        for run in ensure_list(graph, "runs")
+        if isinstance(run, dict) and run.get("brief_id") == brief.get("brief_id")
+    }
+    seen: dict[tuple[str, str], str] = {}
+    issues: list[dict[str, str]] = []
+    for observation in ensure_list(graph, "observations"):
+        if not isinstance(observation, dict) or str(observation.get("run_id")) not in planned_runs:
+            continue
+        source = ids["sources"].get(observation.get("source_id"))
+        if not isinstance(source, dict) or source.get("medium") not in {"social", "map", "trade_aggregator"}:
+            continue
+        urls = {
+            str(url)
+            for url in (source.get("canonical_url"), source.get("final_url"))
+            if is_safe_public_http_url(url)
+        }
+        observation_id = str(observation.get("observation_id"))
+        for url in urls:
+            key = (str(observation.get("run_id")), url)
+            prior_observation_id = seen.get(key)
+            if prior_observation_id is not None and prior_observation_id != observation_id:
+                issues.append(issue("critical", "default_discovery_enrichment_open_url_reused", "The same public enrichment URL may be attempted only once per Run, including after a restricted result", f"observations.{observation.get('observation_id')}"))
+                break
+            seen[key] = observation_id
+    return issues
 
 
 def _default_discovery_candidate_structure_issues(graph: dict[str, Any]) -> list[dict[str, str]]:
@@ -713,6 +1092,15 @@ def _default_discovery_candidate_structure_issues(graph: dict[str, Any]) -> list
         "brief_id": brief.get("brief_id"),
         "plan_id": run.get("plan_id") if isinstance(run, dict) else None,
     }
+    ids = all_id_maps(graph)
+    plans_by_id = {
+        str(plan.get("plan_id")): plan
+        for plan in ensure_list(graph, "plans")
+        if isinstance(plan, dict) and has_text(plan.get("plan_id"))
+    }
+    for plan_idx, plan in enumerate(ensure_list(graph, "plans")):
+        if isinstance(plan, dict) and plan.get("plan_id") == expected_bindings["plan_id"]:
+            issues.extend(_public_enrichment_plan_issues(plan, f"plans[{plan_idx}]"))
     signal_keys = {
         "business_match",
         "website_contact",
@@ -744,7 +1132,10 @@ def _default_discovery_candidate_structure_issues(graph: dict[str, Any]) -> list
         if not isinstance(summary, dict):
             issues.append(issue("critical", "default_discovery_candidate_signal_summary_missing", "Discovery Candidate requires a public-signal summary", f"{path}.signal_summary"))
         else:
-            for signal_key in signal_keys:
+            candidate_plan = plans_by_id.get(str(candidate.get("plan_id")))
+            candidate_enrichment_enabled = candidate.get("plan_id") == expected_bindings["plan_id"]
+            required_signal_keys = signal_keys | (PUBLIC_ENRICHMENT_SIGNAL_KEYS if candidate_enrichment_enabled else set())
+            for signal_key in required_signal_keys:
                 state = summary.get(signal_key)
                 if not isinstance(state, dict) or state.get("status") not in signal_statuses:
                     issues.append(issue("critical", "default_discovery_candidate_signal_status_missing", f"Discovery Candidate requires a valid {signal_key} signal status", f"{path}.signal_summary.{signal_key}"))
@@ -764,9 +1155,12 @@ def _default_discovery_candidate_structure_issues(graph: dict[str, Any]) -> list
                         for item in business_items
                     ):
                         issues.append(issue("critical", "default_discovery_business_match_source_missing", "Material business relevance requires an observed business signal with a source label or safe public URL", f"{path}.signal_summary.business_match.items"))
+            if candidate_enrichment_enabled:
+                issues.extend(_public_enrichment_issues(graph, candidate, path, ids, expected_bindings["run_id"], run))
         for field in ("unknowns", "source_restrictions"):
             if field not in candidate or not isinstance(candidate.get(field), list):
                 issues.append(issue("critical", f"default_discovery_candidate_{field}_missing", f"Discovery Candidate requires a {field} list, which may be empty", f"{path}.{field}"))
+    issues.extend(_public_enrichment_open_url_dedupe_issues(graph, ids))
     return issues
 
 
@@ -1345,6 +1739,9 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
             issues.append(issue("critical", "contact_point_observation_missing", f"ContactPoint {cp.get('contact_id')} references missing Observation {obs_id}", f"contact_points[{idx}].source_observation_id"))
         obs = ids["observations"].get(obs_id)
         if isinstance(obs, dict):
+            source = ids["sources"].get(obs.get("source_id"))
+            if isinstance(source, dict) and source.get("medium") == "trade_aggregator":
+                issues.append(issue("critical", "trade_aggregator_contact_point_forbidden", "Third-party trade aggregation may provide a non-official trade summary but cannot create a ContactPoint", f"contact_points[{idx}].source_observation_id"))
             if not contact_literal_is_present(cp.get("contact_type"), cp.get("source_literal"), obs.get("raw_excerpt")):
                 issues.append(issue("critical", "contact_literal_not_in_observation", f"ContactPoint {cp.get('contact_id')} source_literal is not present in cited Observation raw_excerpt", f"contact_points[{idx}].source_literal"))
             if not normalized_contact_derives_from_literal(cp.get("contact_type"), cp.get("normalized_value"), cp.get("source_literal")):
@@ -1423,6 +1820,12 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
         contact_id = lead.get("contact_id")
         if contact_id not in ids["contact_points"]:
             issues.append(issue("major", "unassigned_contact_missing_contact_point", f"UnassignedContactLead references missing ContactPoint {contact_id}", f"unassigned_contact_leads[{idx}].contact_id"))
+            continue
+        contact = ids["contact_points"].get(contact_id)
+        source_observation = ids["observations"].get(contact.get("source_observation_id")) if isinstance(contact, dict) else None
+        source = ids["sources"].get(source_observation.get("source_id")) if isinstance(source_observation, dict) else None
+        if isinstance(source, dict) and source.get("medium") == "trade_aggregator":
+            issues.append(issue("critical", "trade_aggregator_contact_lead_forbidden", "Third-party trade aggregation may provide a non-official trade summary but cannot create a contact lead", f"unassigned_contact_leads[{idx}].contact_id"))
 
     for idx, rel in enumerate(ensure_list(graph, "entity_relationships")):
         if not isinstance(rel, dict): continue

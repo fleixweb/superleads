@@ -35,6 +35,11 @@ Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/c
 7. For every Candidate, keep discovery source, dedupe basis, business
    relevance clue, unknowns, restricted paths, and next verification tasks
    even when formal evidence is insufficient.
+8. For every Candidate in the current output scope, execute or explicitly
+   retain `not_searched` coverage for website/contact, company social page,
+   public professional-person page, public map listing, and third-party trade
+   aggregation summary. Use finite per-category query/open budgets and dedupe
+   canonical/final URLs within the same Run.
 
 ## Codex CLI Native Search
 
@@ -58,6 +63,12 @@ verbatim excerpt, and a locator may the Agent report `source.open` as verified
 for this Run. Then create a separate Source and Observation with the existing
 formal fields. Search summaries, result links, citations, and remembered text
 are not source text and never support a formal fact or a contact.
+
+Use only the capability actually reported and successfully exercised in the
+current Run. `social.visible.read` or `maps.lookup` in a schema never proves
+that the host exposes those tools. When normal Web Search plus Source Open or
+Browser Render can read a public social or map URL, record it as an ordinary
+`social` or `map` Source. Do not fabricate an independent API operation.
 
 If source opening is unavailable or returns only summaries, retain the search
 records and deliver at most an initial lead list. Do not install, configure,
@@ -91,7 +102,33 @@ For an approved connected mailbox, use `mail.read` only for bounded inbound head
 
 ## Access handling
 
-If a page is blocked, inaccessible, login-wall, or unavailable, record that status. Do not invent page content and do not let that observation support a Claim.
+If a page needs login, shows a CAPTCHA, returns 403, Cloudflare or equivalent
+human verification, payment wall, explicit automation restriction, dynamic
+empty shell, or cannot be reliably tied to the Candidate, stop automatic
+reading for that URL. Do not retry indefinitely, use a proxy, masquerade a
+browser, supply an account/Cookie/Token/API Key, or otherwise bypass it.
+Record 来源受限 on the Candidate and SearchLog coverage, with the applicable
+user action:
+
+- `来源受限：该公开页面需要登录、验证码、付费访问、人工验证或当前 AI 无法正常读取。Superleads 不会绕过这些限制。请你手动打开并查询该页面；如果确认后可以提供公开链接、截图、PDF、Excel 或脱敏资料，我可以继续帮你整理和核对。`
+- For a readable URL whose dynamic content cannot be extracted: `来源受限：页面可以访问，但当前 AI 无法自动读取其中的动态内容。请你手动查看并把需要核对的公开内容或截图发给我。`
+- For restricted trade details: `来源受限：第三方贸易数据详情页需要登录、付费或无法正常打开。当前 AI 不能自动化完成该详情查询，请你使用自己的贸易数据渠道手动核实。`
+
+Social and map search summaries can retain only unverified URL clues. They
+cannot create a verified Observation or expose a person name, job title, email,
+phone, address, business scene, or purchasing role as observed. Mark the path
+`search_summary_visible`; do not turn it into `public_page_opened`. A trade
+summary may retain only a direction, counterparty, date, product/HS, or
+origin/destination that appears verbatim in the same-Run SearchLog
+`result_refs[].visible_excerpt` for the same Candidate and URL. It remains a
+third-party summary, never a Contact, Claim, ClaimEvidence, Assessment basis,
+or official customs record.
+
+For third-party trade aggregation, retain only page-visible or summary-visible
+direction, counterparty, date, product/HS, and origin/destination. Label every
+user-facing record “第三方贸易数据聚合站公开摘要，非官方海关记录”; do not infer
+volume, value, purchasing cycle, purchasing intent/authority, China sourcing,
+or future orders.
 
 ## Hard constraints
 

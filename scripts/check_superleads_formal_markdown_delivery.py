@@ -198,6 +198,27 @@ def _line_containing(text: str, needle: str) -> str:
     return ""
 
 
+def _markdown_table_rows(text: str, heading: str) -> list[str]:
+    """Return only data rows from one named Markdown table."""
+    marker = f"## {heading}"
+    if marker not in text:
+        return []
+    section = text.split(marker, 1)[1].split("\n## ", 1)[0]
+    rows = [line for line in section.splitlines() if line.startswith("|")]
+    return [line for line in rows if not set(line.replace("|", "").strip()) <= {"-", ":", " "} and "候选客户" not in line]
+
+
+def _candidate_pool_rows(text: str) -> list[str]:
+    return _markdown_table_rows(text, "发现候选池样表（候选池不是正式开发名单）")
+
+
+def _candidate_pool_row_containing_all(rows: list[str], name: str, expected_parts: tuple[str, ...]) -> str:
+    for line in rows:
+        if name in line and all(part in line for part in expected_parts):
+            return line
+    return ""
+
+
 def check_generated_markdown(fixture: Path) -> tuple[list[dict[str, str]], dict[str, Any], str]:
     issues: list[dict[str, str]] = []
     with tempfile.TemporaryDirectory() as tmp:
@@ -228,21 +249,25 @@ def check_generated_markdown(fixture: Path) -> tuple[list[dict[str, str]], dict[
             issues.append(_issue("formal_markdown_raw_workbook_render_detected", f"generated Markdown looks like raw workbook sheet render: {needle}"))
 
     row_expectations = {
-        "HydraTrade Supplies": ("可优先人工跟进", "直接相关", "已有明确依据"),
-        "Northshore Drinkware Distributors": ("待确认", "可能相关", "来源受限"),
-        "Peak Bottle Co": ("待确认", "信息不足", "来源受限"),
-        "Summit Trading": ("待确认", "主体待确认", "说法冲突待复核"),
-        "Ironforge Manufacturing": ("已排除 / 仅作参考", "已排除 / 仅作参考", "已有明确依据"),
+        "HydraTrade Supplies": ("发现候选池样表（候选池不是正式开发名单）", ("可优先人工跟进", "直接相关", "已有明确依据")),
+        "Northshore Drinkware Distributors": ("发现候选池样表（候选池不是正式开发名单）", ("待确认", "可能相关", "来源受限")),
+        "Peak Bottle Co": ("发现候选池样表（候选池不是正式开发名单）", ("待确认", "信息不足", "来源受限")),
+        "Summit Trading": ("发现候选池样表（候选池不是正式开发名单）", ("待确认", "主体待确认", "说法冲突待复核")),
+        "Ironforge Manufacturing": ("已排除 / 仅作参考", ("已排除 / 仅作参考", "已排除 / 仅作参考", "已有明确依据")),
     }
-    for name, expected_parts in row_expectations.items():
-        line = _line_containing(text, name)
+    candidate_rows = _candidate_pool_rows(text)
+    for name, (heading, expected_parts) in row_expectations.items():
+        rows = _markdown_table_rows(text, heading)
+        line = _candidate_pool_row_containing_all(rows, name, expected_parts)
         if not line:
-            issues.append(_issue("formal_markdown_expected_row_missing", f"missing row for {name}"))
-            continue
-        for part in expected_parts:
-            if part not in line:
-                issues.append(_issue("formal_markdown_expected_row_status_missing", f"{name} row missing expected text: {part}", name))
-    northshore = _line_containing(text, "Northshore Drinkware Distributors")
+            candidates = [candidate for candidate in rows if name in candidate]
+            if not candidates:
+                issues.append(_issue("formal_markdown_expected_row_missing", f"missing row for {name}"))
+            else:
+                for part in expected_parts:
+                    if not any(part in candidate for candidate in candidates):
+                        issues.append(_issue("formal_markdown_expected_row_status_missing", f"{name} row missing expected text: {part}", name))
+    northshore = next((line for line in candidate_rows if "Northshore Drinkware Distributors" in line), "")
     if "已观察" in northshore:
         issues.append(_issue("formal_markdown_signal_status_used_as_basis", "Northshore row must not use 已观察 as 依据状态", "Northshore Drinkware Distributors"))
     return issues, payload, text

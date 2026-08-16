@@ -9,7 +9,7 @@
       "route": "auto",
       "expected_route": "bulk_customer_development",
       "expected": "pass",
-      "min_tables": 7,
+      "min_tables": 10,
       "must_contain": [
         "我理解你卖的是",
         "本次优先找",
@@ -24,6 +24,10 @@
         "可优先人工跟进",
         "已排除 / 仅作参考",
         "联系方式汇总",
+        "社媒与公开职业线索",
+        "地图与经营地址",
+        "第三方贸易摘要",
+        "第三方贸易数据聚合站公开摘要，非官方海关记录",
         "联系人 / 公开职业线索",
         "待确认原因",
         "Jordan Lee",
@@ -53,7 +57,7 @@
       "route": "auto",
       "expected_route": "bulk_customer_development",
       "expected": "pass",
-      "min_tables": 7,
+      "min_tables": 10,
       "must_contain": [
         "The Telegraph",
         "Photograph",
@@ -83,7 +87,7 @@
       "fixture": "evals/fixtures/pass_hold_inferred_filtered_export.json",
       "route": "bulk_customer_development",
       "expected": "pass",
-      "min_tables": 7,
+      "min_tables": 10,
       "must_contain": [
         "联系方式汇总",
         "待确认归属"
