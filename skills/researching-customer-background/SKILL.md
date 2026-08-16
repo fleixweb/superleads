@@ -21,6 +21,8 @@ Superleads 的主路径不变：
 
 客户背调不是批量找客户的前置门槛，不替代批量发现；发现的关联实体默认不成为新 Lead，也不会自动把当前对象升级为标准开发名单。
 
+若同一次请求包含任意两个或以上明确业务目标，例如客户背调加产品市场分析或客户背调加表格补全，创建一个父级组合任务；不得要求用户为了内部架构而拆成多次调用。客户背调保留为独立子任务，并与兄弟子任务隔离来源用途和事实边界。
+
 当前已支持 `task_mode=customer_background_research`、`output_mode=客户背调报告`、`background_research_target` 和独立背景报告 XLSX/CSV 导出。报告导出使用轻验证与当前 Brief 范围投影，不生成 `DeliveryManifest`，不进入 delivery status、正式 audit profile 或跨会话 Candidate/Lead 持久化。
 
 ## 何时开始与研究锚点

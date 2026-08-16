@@ -1,4 +1,4 @@
 interface:
-  display_name: "Assessing Research Evidence"
-  short_description: "Assess lead evidence and tiers"
-  default_prompt: "Use $assessing-research-evidence for a Superleads lead-research task."
+  display_name: "内部阶段：研究证据评估"
+  short_description: "父路线触发：executing-research-plans：当前 Run 已有已打开来源或待评估证据"
+  default_prompt: "内部阶段。不要直接调用；缺少上述上下文必须停止，不得虚构报告。"

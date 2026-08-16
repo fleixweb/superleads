@@ -1,6 +1,6 @@
 {
   "name": "superleads",
-  "version": "0.1.20",
+  "version": "0.2.0",
   "description": "Foreign-trade customer discovery Skill Suite with public signals and optional deep verification.",
   "author": {
     "name": "Fleix"
@@ -31,9 +31,9 @@
     ],
     "brandColor": "#2563EB",
     "defaultPrompt": [
-      "批量开发客户",
-      "单一客户背调",
-      "目标市场分析"
+      "批量发现公开客户信息（只交付带来源状态的候选池，不推荐客户）",
+      "背调指定公司、品牌、域名或地址（事实受公开来源约束）",
+      "分析产品出口到目标市场的客观信息（不判断是否进入市场）"
     ]
   }
 }

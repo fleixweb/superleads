@@ -23,10 +23,14 @@ DEFAULT_REQUIRED_FILES = (
     Path("shared/references/product-outbound-market-intake.md"),
 )
 RELATIVE_REFERENCE_RE = re.compile(r"\.\./\.\./(?:scripts|spec|shared)/[A-Za-z0-9._/\-]+")
-HOOK_COMMAND_TARGET_RE = re.compile(r"(?:\$\{PLUGIN_ROOT\}|%PLUGIN_ROOT%)[/\\]([^\"'\s]+)")
-RUNTIME_TOP_LEVEL_NAMES = {".claude-plugin", ".codex-plugin", "hooks", "scripts", "shared", "skills", "spec"}
-FORBIDDEN_RUNTIME_NAMES = {".agents", ".git", ".plugin-eval", "docs", "evals", "tests", "tmp"}
+RUNTIME_TOP_LEVEL_NAMES = {".claude-plugin", ".codex-plugin", "scripts", "shared", "skills", "spec"}
+FORBIDDEN_RUNTIME_NAMES = {".agents", ".git", ".plugin-eval", "docs", "evals", "hooks", "tests", "tmp"}
 FORBIDDEN_RUNTIME_SUFFIXES = {".pyc", ".pyo", ".pyd"}
+AUTOMATIC_HOOK_EVENT_RE = re.compile(r"\b(?:sessionstart|session[-_ ]?start|resume)\b", re.IGNORECASE)
+REMOTE_MANIFEST_FETCH_RE = re.compile(
+    r"https?://[^\s\"']*(?:raw\.githubusercontent\.com|github\.com)[^\s\"']*(?:plugin\.json|manifest)",
+    re.IGNORECASE,
+)
 
 
 def _issue(code: str, message: str, **extra: str) -> dict[str, str]:
@@ -90,111 +94,89 @@ def _scan_skill_references(plugin_root: Path) -> tuple[list[dict[str, str]], int
     return issues, checked
 
 
-def _hook_command_values(value: Any) -> list[str]:
-    commands: list[str] = []
-    if isinstance(value, dict):
-        for key, item in value.items():
-            if key in {"command", "commandWindows"} and isinstance(item, str):
-                commands.append(item)
-            commands.extend(_hook_command_values(item))
-    elif isinstance(value, list):
-        for item in value:
-            commands.extend(_hook_command_values(item))
-    return commands
-
-
-def _check_manifest_hook(plugin_root: Path) -> tuple[list[dict[str, str]], str | None, int]:
+def _check_codex_manifest(plugin_root: Path) -> list[dict[str, str]]:
+    """Require a valid Codex manifest before scanning optional artifacts."""
     manifest_path = plugin_root / ".codex-plugin" / "plugin.json"
-    if not manifest_path.exists():
-        return [
-            _issue(
-                "plugin_distribution_manifest_missing",
-                "plugin distribution lacks .codex-plugin/plugin.json",
-                path=str(manifest_path.relative_to(plugin_root)),
-            )
-        ], None, 0
+    if not manifest_path.exists() or not manifest_path.is_file():
+        return [_issue(
+            "plugin_distribution_manifest_missing",
+            "plugin distribution lacks .codex-plugin/plugin.json",
+            path=".codex-plugin/plugin.json",
+        )]
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except Exception as exc:
-        return [
-            _issue(
-                "plugin_distribution_manifest_invalid",
-                f"failed to parse plugin manifest: {exc}",
-                path=str(manifest_path.relative_to(plugin_root)),
-            )
-        ], None, 0
+    except (OSError, ValueError) as exc:
+        return [_issue(
+            "plugin_distribution_manifest_invalid",
+            f"failed to parse plugin manifest: {exc}",
+            path=".codex-plugin/plugin.json",
+        )]
     if not isinstance(manifest, dict):
-        return [
-            _issue(
-                "plugin_distribution_manifest_invalid",
-                "plugin manifest must be a JSON object",
-                path=str(manifest_path.relative_to(plugin_root)),
-            )
-        ], None, 0
-    hook_path = manifest.get("hooks")
-    if hook_path is None:
-        return [], None, 0
-    if not isinstance(hook_path, str) or not hook_path.startswith("./"):
-        return [
-            _issue(
-                "plugin_distribution_manifest_hook_invalid",
-                "manifest hooks path must be a plugin-relative string starting with './'",
-                path=str(manifest_path.relative_to(plugin_root)),
-            )
-        ], None, 0
-    target = plugin_root / hook_path
-    target_resolved = target.resolve(strict=False)
-    if not _is_relative_to(target_resolved, plugin_root.resolve()):
-        return [
-            _issue(
-                "plugin_distribution_manifest_hook_escapes_root",
-                "manifest hooks path escapes the plugin root",
-                path=str(manifest_path.relative_to(plugin_root)),
-                hook_path=hook_path,
-            )
-        ], hook_path, 0
-    if not target.exists() or not target.is_file():
-        return [
-            _issue(
-                "plugin_distribution_manifest_hook_missing",
-                f"manifest-declared hook is missing from plugin distribution: {hook_path}",
-                path=hook_path,
-            )
-        ], hook_path, 0
-    try:
-        hook_config = json.loads(target.read_text(encoding="utf-8"))
-    except Exception as exc:
-        return [
-            _issue(
-                "plugin_distribution_manifest_hook_config_invalid",
-                f"failed to parse manifest-declared hook config: {exc}",
-                path=hook_path,
-            )
-        ], hook_path, 0
+        return [_issue(
+            "plugin_distribution_manifest_invalid",
+            "plugin manifest must be a JSON object",
+            path=".codex-plugin/plugin.json",
+        )]
+    if "hooks" in manifest:
+        return [_issue(
+            "plugin_distribution_hook_configuration_forbidden",
+            "plugin manifests must not declare hooks",
+            path=".codex-plugin/plugin.json",
+        )]
+    return []
 
+
+def _check_hook_artifacts(plugin_root: Path) -> tuple[list[dict[str, str]], int]:
+    """Reject all startup hooks and automatic remote-update artifacts."""
     issues: list[dict[str, str]] = []
-    checked_targets = 0
-    for command in _hook_command_values(hook_config):
-        for match in HOOK_COMMAND_TARGET_RE.finditer(command):
-            checked_targets += 1
-            rel = match.group(1).replace("\\", "/")
-            command_target = plugin_root / rel
-            command_target_resolved = command_target.resolve(strict=False)
-            if not _is_relative_to(command_target_resolved, plugin_root.resolve()):
-                issues.append(_issue(
-                    "plugin_distribution_hook_command_target_escapes_root",
-                    "hook command target escapes the plugin root",
-                    path=hook_path,
-                    target=rel,
-                ))
-            elif not command_target.exists() or not command_target.is_file():
-                issues.append(_issue(
-                    "plugin_distribution_hook_command_target_missing",
-                    f"hook command target is missing from plugin distribution: {rel}",
-                    path=hook_path,
-                    target=rel,
-                ))
-    return issues, hook_path, checked_targets
+    checked = 0
+    hooks_dir = plugin_root / "hooks"
+    if hooks_dir.exists():
+        issues.append(_issue(
+            "plugin_distribution_hook_directory_forbidden",
+            "Superleads runtime and source packages must not contain hooks/",
+            path="hooks",
+        ))
+
+    candidates: list[tuple[Path, bool]] = []
+    if hooks_dir.exists() and hooks_dir.is_dir():
+        candidates.extend((path, True) for path in hooks_dir.rglob("*") if path.is_file())
+    scripts_dir = plugin_root / "scripts"
+    if scripts_dir.exists() and scripts_dir.is_dir():
+        candidates.extend(
+            (path, False)
+            for path in scripts_dir.rglob("*")
+            if path.is_file()
+            and path.suffix.lower() not in FORBIDDEN_RUNTIME_SUFFIXES
+            and "__pycache__" not in path.parts
+        )
+    for path, is_hook_artifact in candidates:
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            issues.append(_issue(
+                "plugin_distribution_hook_artifact_read_failed",
+                f"failed to read hook artifact: {exc}",
+                path=path.relative_to(plugin_root).as_posix(),
+            ))
+            continue
+        checked += 1
+        relative = path.relative_to(plugin_root).as_posix()
+        has_event = AUTOMATIC_HOOK_EVENT_RE.search(text) is not None
+        has_remote_manifest = REMOTE_MANIFEST_FETCH_RE.search(text) is not None
+        if is_hook_artifact and has_event:
+            issues.append(_issue(
+                "plugin_distribution_automatic_hook_forbidden",
+                "startup or resume hook artifacts are forbidden",
+                path=relative,
+            ))
+        if has_remote_manifest and (is_hook_artifact or has_event):
+            issues.append(_issue(
+                "plugin_distribution_automatic_remote_update_forbidden",
+                "automatic hook artifacts must not fetch remote version manifests",
+                path=relative,
+            ))
+    return issues, checked
 
 
 def _runtime_package_issues(plugin_root: Path) -> tuple[list[dict[str, str]], int, int]:
@@ -332,8 +314,9 @@ def check_distribution(
         runtime_issues, runtime_file_count, runtime_byte_count = _runtime_package_issues(plugin_root)
         issues.extend(runtime_issues)
 
-    manifest_hook_issues, manifest_hook_path, checked_hook_command_target_count = _check_manifest_hook(plugin_root)
-    issues.extend(manifest_hook_issues)
+    issues.extend(_check_codex_manifest(plugin_root))
+    hook_issues, checked_hook_artifact_count = _check_hook_artifacts(plugin_root)
+    issues.extend(hook_issues)
 
     reference_issues, reference_count = _scan_skill_references(plugin_root)
     issues.extend(reference_issues)
@@ -351,8 +334,9 @@ def check_distribution(
         "checked_skill_relative_reference_count": reference_count,
         "required_skills": list(required_skills),
         "required_files": [path.as_posix() for path in required_files],
-        "manifest_hook_path": manifest_hook_path,
-        "checked_hook_command_target_count": checked_hook_command_target_count,
+        "manifest_hook_path": None,
+        "checked_hook_command_target_count": 0,
+        "checked_hook_artifact_count": checked_hook_artifact_count,
         "runtime_package": runtime_package,
         "runtime_file_count": runtime_file_count,
         "runtime_byte_count": runtime_byte_count,

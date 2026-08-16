@@ -1,4 +1,4 @@
 interface:
-  display_name: "Verification Before Delivery"
-  short_description: "Verify lead delivery readiness"
-  default_prompt: "Use $verification-before-delivery for a Superleads lead-research task."
+  display_name: "内部阶段：交付前验证"
+  short_description: "父路线触发：executing-research-plans 或 reviewing-lead-research：当前待交付 graph"
+  default_prompt: "内部阶段。不要直接调用；缺少上述上下文必须停止，不得虚构报告。"

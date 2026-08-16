@@ -89,7 +89,7 @@ codex plugin add superleads@fleix
 python3 scripts/check_superleads_plugin_distribution.py --plugin-root "$HOME/.codex/plugins/cache/fleix/superleads/0.1.15" --source-root . --runtime-package --format json
 ```
 
-运行时工件包含 `.codex-plugin`、Claude manifest、`hooks`、`skills`、`scripts`、
+运行时工件包含 `.codex-plugin`、Claude manifest、`skills`、`scripts`、
 `shared` 和 `spec`。它不应包含 `tmp/`、`evals/`、`tests/`、`docs/` 或 Git 元数据。软链接
 命令只适用于 marketplace source 为 `$HOME/plugins/superleads` 的 Linux/macOS 本机布局；其它
 本地路径改为对应 source。缓存版本号应替换为本次 manifest 的版本。

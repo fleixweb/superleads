@@ -5,6 +5,11 @@ description: "Use when a Superleads discovery pool, deep check, or standard list
 
 # Exporting Lead Workbooks
 
+## 内部阶段前置条件
+
+父路线触发：verification-before-delivery：当前合法已验证 graph 与允许的输出模式。
+不要直接调用；缺少上述上下文必须停止，不得虚构报告、工作簿或 Markdown 交付。
+
 ## Purpose
 
 Create user-facing workbook or Markdown outputs after verification. Default

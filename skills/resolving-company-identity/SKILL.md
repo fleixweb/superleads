@@ -5,6 +5,11 @@ description: "Use when Superleads research has company, brand, domain, branch, o
 
 # Resolving Company Identity
 
+## 内部阶段前置条件
+
+父路线触发：executing-research-plans：当前 Run 中已打开来源出现主体冲突。
+不要直接调用；缺少上述上下文必须停止，不得虚构报告、主体关系或身份结论。
+
 ## Purpose
 
 Analyze whether company names, brands, legal entities, domains, branches, dealers, and platform sellers refer to the same Entity or require split/manual review.

@@ -5,6 +5,11 @@ description: "Use when public business contacts need collection, source tracking
 
 # Collecting Contact Intelligence
 
+## 内部阶段前置条件
+
+父路线触发：executing-research-plans：当前 Run、Brief 与已打开来源。
+不要直接调用；缺少上述上下文必须停止，不得虚构报告、联系方式或归属关系。
+
 ## Purpose
 
 Maximize recall of sourced contact intelligence while preventing guessed, source-less, or misassigned contacts from being exported as ready.

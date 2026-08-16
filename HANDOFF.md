@@ -1,5 +1,12 @@
 # Handoff
 
+## 2026-08-16 0.2.0 routing, composite-task, and update-flow release
+
+- Superleads now routes metadata, supplied-material review, discovery snapshots, formal research, and composite requests before any research setup. The displayed layer exposes only three foreign-trade business entries; internal stages require valid upstream context instead of competing as standalone user functions.
+- Composite requests create one parent task with isolated subtasks for customer background, market facts, customer discovery, table enrichment, public-contact supplementation, and export. Only real data dependencies serialize; source use remains scoped to the subtask and fact domain that recorded it.
+- SessionStart and resume hooks have been removed. Help, installed-version, normal research, and ordinary startup do not check GitHub or scan caches. Explicit update requests use the active manifest and a host-supplied session cache only; update notices remain outside research evidence and deliveries.
+- Verification after the release bump: `python3 -m unittest discover -s tests` `205/205`; `python3 evals/run_evals.py --suite all` `743/743`; strict runtime package build/distribution `128` files, `2,151,318` bytes, zero issues. Source manifests are `0.2.0`; the runtime package was rebuilt under `dist/superleads` and no installed cache was changed. Preserve `tmp/stage5_chillys/` unchanged.
+
 ## 2026-08-15 0.1.20 preflight adapter ownership repair
 
 - The repair derives `CODEX_CLI_ADAPTER_OWNED_CAPABILITIES` from native web search, `web__run`, and shell HTTP adapter constants. Codex preflight now reconciles those capabilities independently: an unmapped self-reported `available` becomes `unknown`, an explicit `missing` remains `missing`, and an invalid extra report does not erase a valid provider mapping.

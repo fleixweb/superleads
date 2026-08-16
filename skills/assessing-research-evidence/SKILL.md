@@ -5,6 +5,11 @@ description: "Use when Superleads research needs business-relevance classificati
 
 # Assessing Research Evidence
 
+## 内部阶段前置条件
+
+父路线触发：executing-research-plans：当前 Run 已有已打开来源或待评估证据。
+不要直接调用；缺少上述上下文必须停止，不得虚构报告、证据结论或客户判断。
+
 ## Purpose
 
 Default responsibility: classify business relevance, summarize public signals, and separate facts from inferences. Create evidence-backed Claims and formal Assessments only for explicit deep-check tasks.

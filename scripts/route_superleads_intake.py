@@ -14,9 +14,12 @@ from pathlib import Path
 from typing import Any
 
 from superleads_user_guidance import static_help_response
+from superleads_composite_tasks import plan_composite_task
 from superleads_task_modes import (
     classify_task_mode,
     detect_language,
+    is_export_help_request,
+    is_status_request,
     metadata_response,
 )
 
@@ -35,7 +38,7 @@ MARKET_FACT_DOMAIN_MARKERS = (
     "趋势", "google trends", "公开价格", "价格区间", "价格带",
     "能不能做", "好不好卖", "市场怎么样", "风险", "风险判断",
     "淡旺季", "节假日", "认证", "标签要求", "包装要求", "准入", "关税", "税率",
-    "进口税", "vat", "gst", "hts", "htsus", "hs code", "taric", "tariff", "duty", "anti-dumping", "反倾销", "301",
+    "进口税", "vat", "gst", "hts", "htsus", "hs code", "taric", "tariff", "tariffs", "duty", "anti-dumping", "反倾销", "301",
     "物流", "运输", "海运", "空运", "快递", "铁路", "陆运", "散杂", "滚装", "清关",
     "sds", "un38.3", "un 38.3", "msds", "coo", "原产地证书", "原产地证明", "原产地证",
     "产地证", "certificate of origin", "proof of origin", "商检", "检验检疫", "检疫",
@@ -65,8 +68,12 @@ CUSTOMER_ACTION_MARKERS = (
     "整理", "列出", "筛选", "给我一批", "给我找", "帮我找", "名单",
     "find", "source", "develop", "prospect", "list",
 )
+EXPLICIT_DISCOVERY_ACTION_MARKERS = (
+    "找", "寻找", "开发", "开拓", "拓展", "拓客", "获客", "挖掘", "收集",
+    "find", "source", "develop", "prospect",
+)
 BACKGROUND_MARKERS = (
-    "背调", "客户背调", "背景调查", "调查一下", "尽调", "due diligence", "background check",
+    "背调", "客户背调", "背景调查", "调查", "尽调", "due diligence", "background check",
     "full report", "deep background check",
     "背景",
     "靠不靠谱", "是否靠谱", "靠谱不靠谱", "真买家", "真实买家", "中间商", "背后的公司",
@@ -76,7 +83,18 @@ SUBJECT_ANCHOR_MARKERS = (
     "这家公司", "这个公司", "该公司", "这个客户", "这个网站", "官网", "域名", "邮箱",
     "linkedin", "领英", "facebook", "instagram", "whatsapp", "网址", "网站",
 )
-TABLE_MARKERS = ("客户表", "客户名单表", "excel", "csv", "表格补全", "补全表格", "补全已有")
+TABLE_MARKERS = (
+    "客户表", "客户名单表", "excel", "csv", "表格补全", "补全表格", "补全已有",
+    "client list", "client table", "customer list", "customer table",
+    "attached client", "attached customer", "attached list", "attached table",
+)
+CONTACT_REQUEST_MARKERS = ("联系人", "联系方式", "公开邮箱", "邮箱", "电话", "contact", "email", "phone")
+EXPORT_REQUEST_MARKERS = ("导出", "export")
+FEEDBACK_CORRECTION_MARKERS = ("不符合要求", "不符合", "这个候选不对", "纠正", "does not match", "not suitable")
+SINGLE_OBJECT_REQUEST_MARKERS = (
+    "这家公司", "这个公司", "该公司", "这个客户", "这个网站", "官网", "域名", "网址", "网站",
+    "linkedin", "领英", "facebook", "instagram", "whatsapp", "地址",
+)
 PRODUCT_MARKERS = (
     "产品", "型号", "电池", "锂电", "纺织", "衬衫", "面料", "化工", "农产品", "机械",
     "配件", "零件", "汽车配件", "户外家具", "柴油发电机", "发电机", "电水壶", "保温杯",
@@ -157,6 +175,8 @@ def _has_question_punctuation(text: str) -> bool:
 def _has_concrete_subject_anchor(text: str) -> bool:
     low = norm(text)
     if re.search(r"https?://|www\.|[a-z0-9.-]+\.[a-z]{2,}|[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}", low):
+        return True
+    if re.search(r"\b(?:gmbh|ltd|limited|inc\.?|llc|corp\.?|co\.?|s\.a\.?|s\.r\.l\.?)\b|(?:有限责任公司|股份有限公司)", low):
         return True
     return contains_any(text, SUBJECT_ANCHOR_MARKERS)
 
@@ -379,12 +399,99 @@ def _material_triage_response(text: str) -> dict[str, Any]:
     }
 
 
+def _status_response(text: str, execution_state: dict[str, Any] | None) -> dict[str, Any]:
+    language = detect_language(text)
+    has_state = isinstance(execution_state, dict)
+    lines = (
+        ["本轮任务状态由宿主记录的阶段信息决定；当前没有可显示的任务状态。"]
+        if language == "zh" and not has_state
+        else ["Task status is available only from host-recorded stage information; there is no current task status to show."]
+        if not has_state
+        else ["本轮任务正在按已记录的阶段处理。"]
+        if language == "zh"
+        else ["The current task is being handled in recorded stages."]
+    )
+    return {
+        "route": "metadata",
+        "next_skill": "using-superleads",
+        "split_customer_development": False,
+        "secondary_routes": [],
+        "route_order": [],
+        "missing_fields": [],
+        "response_contract": "current_status",
+        "language": language,
+        "interaction_mode": "metadata",
+        "operations": [],
+        "response_lines": lines,
+    }
+
+
+def _export_help_response(text: str) -> dict[str, Any]:
+    language = detect_language(text)
+    lines = (
+        ["导出需要已有本轮已核验结果；完成后可要求整理为 Excel 或 CSV。"]
+        if language == "zh"
+        else ["Export needs a validated result from the current task; after that, you can request Excel or CSV."]
+    )
+    return {
+        "route": "metadata",
+        "next_skill": "using-superleads",
+        "split_customer_development": False,
+        "secondary_routes": [],
+        "route_order": [],
+        "missing_fields": [],
+        "response_contract": "export_help",
+        "language": language,
+        "interaction_mode": "metadata",
+        "operations": [],
+        "response_lines": lines,
+    }
+
+
+def _has_single_object_contact_request(text: str) -> bool:
+    low = norm(text)
+    has_literal_subject = re.search(
+        r"https?://|www\.|[a-z0-9.-]+\.[a-z]{2,}|[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}",
+        low,
+    ) is not None
+    contact_only = re.search(
+        r"(?:只|仅).{0,12}(?:联系人|联系方式|公开邮箱|邮箱|电话)|"
+        r"\b(?:only|just)\s+(?:public\s+)?(?:contact|email|phone)\b",
+        low,
+        re.IGNORECASE,
+    ) is not None
+    return (
+        contact_only
+        and contains_any(text, CONTACT_REQUEST_MARKERS)
+        and (has_literal_subject or contains_any(text, SINGLE_OBJECT_REQUEST_MARKERS))
+    )
+
+
+def _has_export_request(text: str) -> bool:
+    table_enrichment = contains_any(text, TABLE_MARKERS) and contains_any(
+        text,
+        ("补全", "enrich", "enrichment"),
+    )
+    return (
+        contains_any(text, EXPORT_REQUEST_MARKERS)
+        and not is_export_help_request(text)
+        and not table_enrichment
+    )
+
+
+def _has_feedback_correction(text: str) -> bool:
+    return contains_any(text, FEEDBACK_CORRECTION_MARKERS)
+
+
 def classify(
     text: str,
     *,
     active_root: str | Path | None = None,
     fetch_latest_version: Callable[[], Any] | None = None,
     session_cache: MutableMapping[str, str] | None = None,
+    current_result_valid: bool = False,
+    current_run_id: str | None = None,
+    current_execution_state: dict[str, Any] | None = None,
     preflight_callback: Callable[[], Any] | None = None,
     network_callback: Callable[[], Any] | None = None,
     cache_scan_callback: Callable[[], Any] | None = None,
@@ -396,6 +503,10 @@ def classify(
         static_help = static_help_response(text)
         if static_help is not None:
             return static_help
+        if is_status_request(text):
+            return _status_response(text, current_execution_state)
+        if is_export_help_request(text):
+            return _export_help_response(text)
         return metadata_response(
             text,
             active_root=active_root,
@@ -405,14 +516,164 @@ def classify(
     if interaction_mode == "material_triage":
         return _material_triage_response(text)
 
-    has_customer_development = _has_customer_development_intent(text)
-    has_background = _has_background_intent(text)
     has_table = contains_any(text, TABLE_MARKERS)
+    has_customer_development = _has_customer_development_intent(text)
+    if has_table and not contains_any(text, EXPLICIT_DISCOVERY_ACTION_MARKERS):
+        # A supplied customer table is a bounded enrichment scope. “整理客户表”
+        # must not create a new discovery task merely because it contains 客户.
+        has_customer_development = False
+    has_background = _has_background_intent(text) or (
+        _has_concrete_subject_anchor(text) and contains_any(text, BACKGROUND_MARKERS)
+    )
     has_product = contains_any(text, PRODUCT_MARKERS)
     has_country = contains_any(text, COUNTRY_HINTS)
     direct_market = "产品出海市场分析" in _strip_patterns(text, NEGATED_MARKET_PATTERNS)
     market_intent = _has_market_intent(text)
     has_product_material = has_product or (market_intent and _has_concrete_subject_anchor(text))
+    requested_market_modules = _requested_market_modules(text)
+    language = detect_language(text)
+    # Table enrichment may include public email, phone, or a contact field. It
+    # becomes a separate contact subtask only when the user explicitly asks to
+    # verify or supplement public contacts, rather than merely fill a column.
+    contact_requested = re.search(
+        r"(?:核查|验证|check|verify).{0,12}(?:公开)?(?:联系人|联系方式|邮箱|电话|contact(?:s| person)?|email|phone)|"
+        r"(?:补充|补全|supplement|enrich).{0,12}(?:公开)?(?:联系人|contact(?:s| person)?)|"
+        r"(?:联系人|contact(?:s| person)?).{0,12}(?:核查|验证|check|verify)",
+        text,
+        re.IGNORECASE,
+    ) is not None
+    composite_market_intent = (
+        (direct_market or market_intent)
+        and not (
+            _looks_like_customer_attribute_request(text)
+            and not _has_explicit_split_market_clause(text)
+        )
+    )
+
+    composite = plan_composite_task(text, {
+        "has_background": has_background,
+        "has_market": composite_market_intent,
+        "has_batch": has_customer_development,
+        "has_table": has_table and bool(re.search(r"上传|附件|provided|attached|补全|enrich", text, re.IGNORECASE)),
+        "has_contact": contact_requested,
+        "has_export": contains_any(text, EXPORT_REQUEST_MARKERS) and not is_export_help_request(text),
+        "has_product": has_product_material,
+        "has_country": has_country,
+        "analysis_modules_requested": requested_market_modules,
+        "language": language,
+        "contact_scope": (
+            "upstream"
+            if has_table or has_customer_development
+            else "same_request"
+            if has_background
+            else None
+        ),
+        "contact_requires_upstream": bool(has_table or has_customer_development),
+    })
+    if composite["route"] == "composite":
+        subtasks = composite["subtasks"]
+        first = next((item for item in subtasks if item["status"] == "ready"), subtasks[0])
+        skill_by_route = {
+            "customer_background_research": "researching-customer-background",
+            "product_outbound_market_analysis": "analyzing-product-outbound-market",
+            "bulk_customer_development": "using-superleads",
+            "existing_table_enrichment": "scoping-lead-research",
+            "contact_supplement": "collecting-contact-intelligence",
+            "export_delivery": "exporting-lead-workbooks",
+        }
+        names = ("、" if language == "zh" else ", ").join(item["display_name"] for item in subtasks)
+        status_lines = (
+            [
+                f"本次包含 {len(subtasks)} 项工作：{names}。",
+                "每项会保留独立的公开来源、待确认项和来源受限状态；只有明确依赖时才等待。",
+            ]
+            if language == "zh"
+            else [
+                f"This request contains {len(subtasks)} work items: {names}.",
+                "Each item keeps separate public sources, items to confirm, and source restrictions; it waits only for explicit dependencies.",
+            ]
+        )
+        for item in subtasks:
+            if item["status"] == "waiting_for_required_input":
+                status_lines.append(
+                    f"{item['display_name']}：等待必要信息。"
+                    if language == "zh"
+                    else f"{item['display_name']}: Waiting for required information."
+                )
+            elif item["status"] == "ready":
+                status_lines.append(
+                    f"{item['display_name']}：正在规划本轮公开信息范围。"
+                    if language == "zh"
+                    else f"{item['display_name']}: Planning the public-information scope for this run."
+                )
+        return _with_interaction_mode({
+            "route": "composite_superleads_task",
+            "next_skill": skill_by_route[first["route"]],
+            "split_customer_development": False,
+            "secondary_routes": [item["route"] for item in subtasks[1:]],
+            "route_order": [item["route"] for item in subtasks],
+            "subtasks": subtasks,
+            "scheduling": composite["scheduling"],
+            "analysis_modules_requested": requested_market_modules,
+            "missing_fields": [],
+            "language": language,
+            "parent_title": composite["parent_title"],
+            "response_lines": status_lines,
+        }, interaction_mode)
+
+    if _has_feedback_correction(text):
+        if current_run_id:
+            return _with_interaction_mode({
+                "route": "current_run_feedback_correction",
+                "next_skill": "learning-from-feedback",
+                "split_customer_development": False,
+                "secondary_routes": [],
+                "route_order": ["current_run_feedback_correction"],
+                "missing_fields": [],
+                "feedback_scope": "current_run",
+                "response_lines": ["我会只在本轮结果中记录这项范围或事实纠正，不会自动保存为长期偏好。"],
+            }, interaction_mode)
+        return _with_interaction_mode({
+            "route": "feedback_requires_current_run",
+            "next_skill": "using-superleads",
+            "split_customer_development": False,
+            "secondary_routes": [],
+            "route_order": [],
+            "missing_fields": ["current_run"],
+            "response_lines": ["请先说明这项反馈对应哪一轮当前结果；没有当前结果时不会自动保存为长期偏好。"],
+        }, interaction_mode)
+
+    if _has_export_request(text):
+        if current_result_valid:
+            return _with_interaction_mode({
+                "route": "export_delivery",
+                "next_skill": "exporting-lead-workbooks",
+                "split_customer_development": False,
+                "secondary_routes": [],
+                "route_order": ["export_delivery"],
+                "missing_fields": [],
+                "response_lines": ["已识别到本轮已核验结果，可以开始准备导出。"],
+            }, interaction_mode)
+        return _with_interaction_mode({
+            "route": "export_requires_current_result",
+            "next_skill": "using-superleads",
+            "split_customer_development": False,
+            "secondary_routes": [],
+            "route_order": [],
+            "missing_fields": ["current_validated_result"],
+            "response_lines": ["导出需要已有本轮已核验结果；当前不会生成空白或猜测性文件。"],
+        }, interaction_mode)
+
+    if _has_single_object_contact_request(text):
+        return _with_interaction_mode({
+            "route": "single_object_contact",
+            "next_skill": "researching-customer-background",
+            "split_customer_development": False,
+            "secondary_routes": [],
+            "route_order": ["single_object_contact"],
+            "missing_fields": [],
+            "response_lines": ["我会围绕这个指定对象核对公开联系方式及其公开关联，不扩展为批量找客户。"],
+        }, interaction_mode)
 
     if has_background and not direct_market:
         missing_fields = [] if _has_concrete_subject_anchor(text) else ["target_subject"]

@@ -13,6 +13,8 @@ Route and run the Superleads product outbound market analysis path:
 
 This skill is parallel to bulk customer development and single-customer background research. It does not create Leads, customer lists, recommended customer types, market-entry advice, recommended prices, or best shipping choices.
 
+若同一次请求包含任意两个或以上明确业务目标，例如产品市场分析加客户背调或批量客户发现，创建一个父级组合任务；不得要求用户为了内部架构而拆成多次调用。产品市场分析保留为独立子任务，并与兄弟子任务隔离来源用途和事实边界。
+
 ## Required references and scripts
 
 Read these only as needed:
@@ -49,7 +51,7 @@ The final market report, or the terminal capability-stop message when formal res
    - optional user materials: certificates, test reports, SDS, UN38.3, labels, BOM, registration files, invoices, packing lists, or COO. These help scope matching; they are not prerequisites for analyzing destination requirements.
 3. Ask at most three short questions only when missing information changes the route or blocks useful analysis. The only first-pass blocking questions are product identity and target country/region. A product name, category, use description, URL/PDF/image clue, or HS/HTS code is enough to start category-level analysis; a missing model/version lowers precision but does not stop the run.
 4. First-pass intake must not ask the user for IOR/importer of record, Incoterms/trade term, transaction value or quantity, expected entry date, customs broker, BOM, product photos, actual departure port, original certificates, test reports, SDS, or UN38.3. Ask for these only when the user explicitly requests final duty, formal customs filing, clearance readiness, or actual shipment arrangement.
-5. If the user also asks to find customers, split the job into two stages: do product market analysis first; only start customer development after the user separately confirms.
+5. If the user also asks to find customers, investigate a company, supplement a table, collect public contacts, or export a current result, do not force separate confirmation. 当同次请求包含“任意两个或以上明确业务目标”时，创建一个父级组合任务；本市场路径保留为独立子任务，只等待自身确实缺少的输入或依赖。
 6. If the user asks whether the market is worth entering, translate it into objective analysis and state that the business decision is theirs.
 7. If the user asks about certification without having certificates, do not block on the missing certificates. First analyze what the destination market may require, then list which user/supplier/professional materials are needed to verify applicability.
 8. Category-level analysis changes only the object granularity. It does not lower the evidence standard: every user-visible fact still needs current-run source support, visible gap/conflict status, or an explicit not-executed row; never use category-level analysis to output final classification, final duty, no-certification, general-cargo, clearance-ready, or transportability conclusions.

@@ -5,6 +5,11 @@ description: "Use after Superleads intake when a foreign-trade research request 
 
 # Scoping Lead Research
 
+## 内部阶段前置条件
+
+父路线触发：using-superleads：已确认的批量客户发现请求。
+不要直接调用；缺少上述上下文必须停止，不得虚构报告、Brief 或客户范围。
+
 ## Purpose
 
 Create a Research Brief that captures the user's task without turning optional context into core ICP rules, and decide whether the run is default discovery or explicit deep verification.

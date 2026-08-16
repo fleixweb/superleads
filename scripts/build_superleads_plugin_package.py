@@ -3,7 +3,7 @@
 
 The source repository retains development assets and historical research under
 ``tmp/``. Codex and Claude runtime installs need only the Skill instructions,
-their referenced scripts and rules, and optional hooks.
+their referenced scripts and rules.
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from check_superleads_plugin_distribution import check_distribution
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "dist" / "superleads"
-RUNTIME_DIRECTORIES = (".codex-plugin", "hooks", "scripts", "shared", "skills", "spec")
+RUNTIME_DIRECTORIES = (".codex-plugin", "scripts", "shared", "skills", "spec")
 RUNTIME_FILES = (Path(".claude-plugin/plugin.json"),)
 EXCLUDED_DIRECTORY_NAMES = {"__pycache__", ".plugin-eval", ".pytest_cache"}
 EXCLUDED_SUFFIXES = {".pyc", ".pyo", ".pyd"}

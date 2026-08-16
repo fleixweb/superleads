@@ -10,6 +10,18 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 - **MINOR**: adds capabilities without breaking existing research graphs.
 - **PATCH**: fixes bugs or changes copy.
 
+## [0.2.0] - 2026-08-16
+
+### Added
+
+- Add deterministic metadata, supplied-material, discovery-snapshot, formal-research, and composite-task routing with isolated subtask evidence scopes and user-visible stage summaries.
+- Add an explicit active-manifest version reader and on-demand remote-version result handling that keeps update information out of research evidence and formal deliveries.
+
+### Changed
+
+- Limit the displayed Superleads layer to three foreign-trade business entries while requiring internal stages to receive valid upstream context.
+- Remove SessionStart and resume update hooks so help, version, and ordinary research requests do not perform automatic remote version checks.
+
 ## [0.1.20] - 2026-08-15
 
 ### Fixed

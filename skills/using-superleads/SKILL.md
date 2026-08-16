@@ -1,47 +1,62 @@
 ---
 name: using-superleads
-description: "Use when users need overseas B2B customer discovery, public contact collection, lead-list enrichment, foreign-trade prospect research, single-customer background research, or product outbound market analysis intake/routing."
+description: "Use for batch discovery of public overseas B2B customer information from product or keyword, target market, and customer type. Do not use for single-customer background research or product outbound market analysis."
 ---
 
-# Using Superleads
+# 批量发现公开客户信息
 
 ## Purpose
 
-Activate Superleads, classify the interaction mode before business routing, then identify the user's task entry. The four modes are `metadata`, `material_triage`, `discovery_snapshot`, and `formal_research`; they preserve the business routes for bulk development, customer background research, and product-market analysis. Do not search, generate leads, write development advice, or export workbooks here.
+批量发现公开客户信息：基于产品或关键词、目标市场和客户类型，建立带来源状态、未知项与限制说明的候选池。不得用于单一客户背调或产品出海市场分析；独立的这两项必须分别从 `researching-customer-background` 和 `analyzing-product-outbound-market` 公开入口开始。
 
-Load detailed guidance only for the chosen route: bulk discovery loads scope and query-planning rules; specified-object research loads identity/contact rules; product-market analysis loads its requested modules; full validation, audit, and export rules load only for explicit formal work. Metadata, help, material triage, and ordinary discovery snapshots do not load formal UAT or audit detail.
+只交付带来源状态的候选池，不推荐客户、不判断采购意愿，也不把搜索摘要写成 Claim。不要在此入口替单一客户背调或产品市场分析创建独立报告、计划或研究图谱。
+
+若同一次请求包含任意两个或以上明确业务目标，本入口保留批量发现子任务（如有），并创建一个父级组合任务；不得要求用户为了内部架构而拆成多次调用。组合父任务只协调已明确的子路线，不把批量发现入口改成单一客户背调或产品市场分析的独立入口。
 
 ## Required references
 
-Read `../../shared/references/superleads-user-guidance.md` first for static first-use help and final user-delivery rules. Read `../../shared/references/user-intake.md` for intake modes and minimum research targets. Read `../../shared/references/route-map.md` for routing. For product outbound market analysis, read `../../shared/references/product-outbound-market-intake.md`. Read `../../shared/policies/tool-capability-policy.md` when tool availability affects deliverable level. For default discovery, read `../../shared/references/default-discovery-reference.md`; begin with `default-discovery-minimal-skeleton.example.json`, and open the complete reference only for status/contact/conflict boundaries. Before any formal public-source route or real-business UAT, read `../../shared/references/using-superleads-formal-delivery.md`.
+Read `../../shared/references/superleads-user-guidance.md` first for static first-use help and final user-delivery rules. Read `../../shared/references/user-intake.md` for intake modes and the bulk-discovery minimum research target. Read `../../shared/policies/tool-capability-policy.md` when tool availability affects deliverable level. For default discovery, read `../../shared/references/default-discovery-reference.md`; begin with `default-discovery-minimal-skeleton.example.json`, and open the complete reference only for status/contact/conflict boundaries. Before any formal bulk public-source route or real-business UAT, read `../../shared/references/using-superleads-formal-delivery.md`.
 
 ## Workflow
 
 1. Before any business routing, run the pure mode classifier. `metadata` covers `@superleads`, help, current/installed-version questions, current-capability questions, and the feedback entry; it returns `operations: []` and never creates a Run/Brief, runs preflight, searches, opens sources, scans caches, exports, or validates. Keep `@superleads` and help on `static_help_response()` only. Read a version only from an explicitly supplied active plugin root's `.codex-plugin/plugin.json`; check a remote version only for an explicit update request through an injected callback, and report `本次未能确认远端版本` if it cannot be confirmed.
-2. `material_triage` is the user-visible `资料初审` path for material-only PDF, Excel/CSV, or screenshot requests. It organizes only the provided material and pending checks; it creates no Run/Brief and does not begin public research. Otherwise, use `discovery_snapshot` for ordinary bounded work and `formal_research` only for explicit `完整报告`, `正式开发名单`, `标准交付`, `深度背调`, or `联系人归属核验` intent.
-3. Identify the entry mode: product outbound market analysis, a specified background-research subject, single company, product plus customer-development scope, keywords, application/downstream field, country/customer type, existing table, competitor/seed, or source material list.
-   - If the core request is one product entering/exporting to a target country/region for trends, price references, compliance, import duties/taxes, export requirements, logistics, customs pre-filing, COO/proof of origin, or external factors, route to `analyzing-product-outbound-market`.
-   - If the user asks for customers, buyers, importers, lead lists, or prospect development, keep the bulk customer-development route.
-   - If the user names one company, brand, domain, email, address, Candidate, or user material and asks for background research, route to customer background research.
-   - If the user asks for market analysis and then finding customers, split it into two stages and start with product outbound market analysis only.
-   - If certification/compliance words describe the target customer attribute, such as `找需要 CE/UL 认证的进口商`, keep the bulk customer-development route. If the user asks whether the product needs CE/UL/SDS/UN38.3/COO, tariffs, labeling, customs documents, or market-access requirements for a destination, route to product outbound market analysis.
-4. Check the minimum research target. For new customer development require product/service plus at least one scope axis. A user who names one company, brand, domain, address, email, Candidate, or user material and asks for customer background research follows `using-superleads` -> `scoping-lead-research` -> `researching-customer-background`; retain the original anchor without requiring pre-resolved Entity. For single-company analysis, retain the current user's explicit company name, URL/domain, or material reference and bind the result to that Entity only. For existing-table enrichment, retain the user-provided spreadsheet and the rows/cells being supplemented. These routes do not create a direction-matched customer list without the current development contract.
+2. `material_triage` is the user-visible `资料初审` path for material-only PDF, Excel/CSV, or screenshot requests. It organizes only the provided material and pending checks; it creates no Run/Brief and does not begin public research. Otherwise, use `discovery_snapshot` for ordinary bounded batch discovery and `formal_research` only for explicit `正式开发名单` or `标准交付` intent.
+3. Confirm this is a batch customer-discovery request: the user seeks customers, buyers, importers, lead lists, or prospect development by product/service or keywords plus at least one scope axis such as market, application, customer type, or existing table. A named single company, brand, domain, email, address, or material for background investigation with no second explicit business objective must stop here and use `researching-customer-background`. A product entering a target market for trends, price, compliance, tax, export, logistics, COO, or external factors with no second explicit business objective must stop here and use `analyzing-product-outbound-market`. When the same request has any two or more clear objectives, create the composite parent described below instead of making the user split the request.
+4. Check the minimum batch-discovery target: product/service plus at least one scope axis. For existing-table enrichment, retain the user-provided spreadsheet and the rows/cells being supplemented. These results do not create a direction-matched customer list without the current development contract.
 5. Create a Run Context only for `discovery_snapshot` or `formal_research`, with `run_id`, timestamp, task entry mode, platform, detected capabilities, requested output mode, evidence depth, and whether this run defaults to discovery-first or strict deep-check.
-6. Run or emulate `scripts/preflight_capabilities.py --require-formal-research` before any formal public-source route. Formal customer development, customer background research, and product-market analysis require `search.web` plus one of `source.open`, `browser.render`, or `document.extract`. If the check is blocked, stop and tell the user: `本轮环境无法联网检索并打开可记录来源，不能完成 Superleads 正式外贸研究。请切换到具备 Web Search 和来源打开能力的 Agent/环境后重试。若只需整理已有资料，可以继续，但那不是市场分析或客户开发报告。` Do not offer a research plan or discovery candidate pool as a substitute delivery. In a Codex CLI session started with `codex --search`, inspect only the currently visible native `web_search` capability and write the controlled adapter report from actual operation results; do not assume another integration exists.
-7. Before the formal validator in a real-business UAT, run `scripts/precheck_superleads_uat_input.py --route <route> --graph <graph> --format json`. It checks only source-literal anchors, contact association, enum values, and product-attribute projection; it does not replace the formal validator. For product market compact notes, run it once with `--notes <notes>` before the compiler as `input_precheck_notes`, then once on the compiled graph as `input_precheck_graph`. Fix reported structural input errors rather than rerunning the formal validator to discover the same issue.
-8. For a real-business UAT, build the runtime package and initialize `scripts/measure_superleads_uat.py` in a UTC-named, durable `.plugin-eval/manual/uat-runs/` directory with `--runtime-package`. Record every gate's original result with `record-gate --artifact`, finish with `finalize`, then run `verify` against the completed bundle and a copied bundle. A `/tmp` run may retain a failed diagnostic record but can never establish a portable formal success. Product-market runs require `preflight -> source_evidence -> input_precheck_notes -> compiler -> input_precheck_graph -> validator -> audit -> markdown_export -> workbook_export -> user_visible -> claimed_path`; `source_evidence` retains same-Run search/open operations and the resulting Source/Observation graph. Record failed attempts with the prescribed failure class, stop active-time intervals around waits, and never describe a corrected run as first-pass success, compare Git status through hand-written text, or estimate unavailable token usage.
-9. Route to the next skill unless the task is already a pure verification/export task. Product outbound market analysis routes to `analyzing-product-outbound-market` and uses `ProductMarketAnalysisGraph`, not Candidate/Lead/Claim/Assessment. The default customer-development route remains `using-superleads` -> `scoping-lead-research` -> `discovery` -> `exporting-lead-workbooks`. A specified-object customer background request is a separate research-draft route, not default bulk discovery and not the current formal review/audit route. Do not route every "background check" into strict Review/Audit. Discovery uses the planning, execution, contact, and relevance guides internally as needed; it does not require every Candidate to have an Entity, Observation, ContactClaim, Claim, Assessment, Review, or Audit. Use the strict review/audit route only for an explicit formal verification, contact ownership verification, a contactable list, or a standard development list.
+6. Run or emulate `scripts/preflight_capabilities.py --require-formal-research` before formal batch public-source research. It requires `search.web` plus one of `source.open`, `browser.render`, or `document.extract`. If the check is blocked, stop and tell the user: `本轮环境无法联网检索并打开可记录来源，不能完成 Superleads 正式客户开发研究。请切换到具备 Web Search 和来源打开能力的 Agent/环境后重试。若只需整理已有资料，可以继续，但那不是客户开发报告。` Do not offer a research plan or discovery candidate pool as a substitute delivery. In a Codex CLI session started with `codex --search`, inspect only the currently visible native `web_search` capability and write the controlled adapter report from actual operation results; do not assume another integration exists.
+7. Before the formal validator in a real-business UAT, run `scripts/precheck_superleads_uat_input.py --route bulk_customer_development --graph <graph> --format json`. It checks only source-literal anchors, contact association, and enum values; it does not replace the formal validator. Fix reported structural input errors rather than rerunning the formal validator to discover the same issue.
+8. For a real-business UAT, build the runtime package and initialize `scripts/measure_superleads_uat.py` in a UTC-named, durable `.plugin-eval/manual/uat-runs/` directory with `--runtime-package`. Record every gate's original result with `record-gate --artifact`, finish with `finalize`, then run `verify` against the completed bundle and a copied bundle. A `/tmp` run may retain a failed diagnostic record but can never establish a portable formal success. Record failed attempts with the prescribed failure class, stop active-time intervals around waits, and never describe a corrected run as first-pass success, compare Git status through hand-written text, or estimate unavailable token usage.
+9. Route the batch request through `using-superleads` -> `scoping-lead-research` -> `writing-research-plans` -> `executing-research-plans` -> `verification-before-delivery` -> `exporting-lead-workbooks`. Discovery uses the planning, execution, contact, identity, and relevance guides internally as needed; it does not require every Candidate to have an Entity, Observation, ContactClaim, Claim, Assessment, Review, or Audit. Use the strict review/audit route only for an explicit formal verification, contact ownership verification, a contactable list, or a standard development list.
 
-## 产品出海市场分析入口
+## 组合任务
 
-When routing to product outbound market analysis, respond in user-facing Chinese with four short lines:
+本次请求包含任意两个或以上明确业务目标时，建立一个父级组合任务。批量发现只是其中一个可能的子任务；客户背调加市场分析、客户背调加表格补全、批量发现加公开联系人等组合也适用。先提取共享信息：指定公司、品牌、域名、地址、邮箱或社媒链接；产品、型号或品类；目标国家或地区；客户类型、资料范围和输出要求；以及哪一个子任务确实依赖另一个子任务的结果。
 
-`我理解你要做的是：产品出海市场分析。`
-`本轮对象：{产品/品类/候选 HS-HTS} -> {目的国/地区}。`
-`默认出口申报国/原产口径：{用户指定/中国默认}；缺型号、起运地、最终税号或技术文件时会保留为条件和待确认项，不会先要求补齐。`
-`我会整理趋势、公开价格参考、准入/认证要求、税费、出口要求、物流和外部因素；不生成客户名单，也不判断是否值得进入。`
+按用户明确目标建立独立子路线：
 
-Ask at most three short questions only if the product identity or target country/region is missing. Do not ask for export/origin details as a first-pass blocker; if the user did not specify them, show the China default as visible and replaceable.
+- 指定公司、品牌、域名、地址、邮箱或社媒链接对应客户背调子任务。
+- 产品加目的国或地区对应产品市场分析子任务。
+- 产品加客户范围对应批量客户发现子任务。
+- 用户提供表格对应表格补全子任务；范围仅限该表及用户指定字段。
+- 明确要求公开联系人对应公开联系人补充子任务；它只补充本次指定公司或候选范围内的公开关联信息。
+- 明确要求导出对应最终导出子任务；它必须等待相关上游结果有当前 Run、已打开来源和合法交付前置条件后才可开始。
+
+缺少产品或目的国等必要信息时，只把受影响的子任务标为“等待必要信息”。不得从公司主营业务、搜索摘要、其他子任务材料或模型记忆猜测补齐；其他可独立执行的子任务继续进行。不要因用户提及联系人、表格或导出而擅自创建对应子任务。
+
+### 子任务边界与调度
+
+独立子任务的查询组、不同来源页面、不同候选的公开联系人补充、不同资料文件整理和轻量结构检查可以分别规划。只有当前宿主实际提供并行工具能力时才可并行执行；不得伪造后台、流式进度或并行工具能力。没有这些能力时，在阶段边界给出简短、真实的父任务和子任务状态，不要假称正在后台处理。
+
+下列工作必须串行：同一主体的身份合并、同一来源的冲突处理、Claim 或正式证据升级、存在明确数据依赖的子任务，以及最终审核、正式导出和组合报告汇总。市场准入分析缺少必要输入时不阻塞独立的客户背调；导出只等待其对应的上游子任务。
+
+同一实际已打开来源可被多个子任务引用，但每个子任务必须各自记录用途、观察范围和证据边界。不得让一个子任务的来源自动升级为另一个子任务的事实：公司官网只支持公司业务、公开地址或公开联系人等公司事实；法规、海关、认证和监管来源只支持产品或市场准入事实。公司存在、进口记录、职位信息或市场准入要求均不能证明采购意向、买家身份或客户价值；搜索摘要仍只是线索。
+
+### 组合任务状态与交付
+
+若宿主支持中间状态，按阶段用非技术化短句显示父任务和各子任务的范围、已完成查询组、已发现候选或已打开来源数、已有明确依据、待确认、来源受限和本轮未执行数，以及“进行中”“等待必要信息”“已完成”“部分完成”“来源受限”或“无法执行”。若宿主不支持中间状态，最终交付提供同样的阶段摘要，但不得伪造实时进度或暴露内部技能名、Run ID、graph、Claim 或 Audit。
+
+最终交付为一个父报告，依次说明本次范围与已执行子任务、客户公开背景结果、产品市场或准入结果、各子任务的来源受限/待确认/未执行项、来源与检查时间；需要时按既定规则仅追加一次更新提示。一个子任务因必要信息缺失、来源受限或能力不可用而无法完成时，交付其他已经完成的子任务，并说明该子任务的原因和用户可补充的公开信息。不得把组合结果写成客户值得开发、建议优先跟进、市场值得进入、该客户会采购该产品，或其他商业判断。
 
 ## 本次方向
 
@@ -77,11 +92,7 @@ For real-business research, a formal Markdown delivery requires a saved graph JS
 
 When reporting a formal run, the claimed Markdown path must be the exact file written by `export_superleads_markdown.py` for the claimed graph JSON. Do not post-process, rewrite, or replace that file with a manually edited report while still quoting the exporter's `ok=true` / `issue_count=0` result. If a user asks for verification, compare the claimed Markdown path against a fresh exporter run from the claimed graph.
 
-Keep the three user-visible routes separate:
-
-- Bulk customer development shows a candidate customer pool and pending checks.
-- Customer background research shows one specified object's background report.
-- Product outbound market analysis shows a product market/access matrix and does not generate customer lists or market-entry recommendations.
+This entry covers only batch customer discovery: show a candidate customer pool and pending checks. Redirect single-customer background research and product-market analysis to their own public entries before any research starts.
 
 Do not expose internal graph, Claim, EvidenceCard, SearchLog, rule IDs, eval names, local paths, or artifact hashes in the user-facing report.
 

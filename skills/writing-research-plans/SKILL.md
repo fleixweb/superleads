@@ -5,6 +5,11 @@ description: "Use when a Superleads Research Brief needs a query and coverage pl
 
 # Writing Research Plans
 
+## 内部阶段前置条件
+
+父路线触发：scoping-lead-research：当前 Brief 已建立。
+不要直接调用；缺少上述上下文必须停止，不得虚构报告、计划或搜索覆盖。
+
 ## Purpose
 
 Turn a Research Brief into a plan for searching, opening sources, collecting contacts, and evaluating evidence. Default to discovery breadth first. Do not produce customers, open pages, judge commercial value, or write final advice.

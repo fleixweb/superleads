@@ -5,6 +5,11 @@ description: "Use after Superleads delivery when user feedback should improve fu
 
 # Learning From Feedback
 
+## 内部阶段前置条件
+
+父路线触发：exporting-lead-workbooks：当前交付结果与指定反馈对象。
+不要直接调用；缺少上述上下文必须停止，不得虚构报告、反馈记录或持久化结论。
+
 ## Purpose
 
 Record user feedback for future ranking, source choice, search-query optimization, and contact extraction quality.

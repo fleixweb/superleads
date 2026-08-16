@@ -1,4 +1,4 @@
 interface:
-  display_name: "单一客户背调"
-  short_description: "围绕一个指定公司、品牌、官网、邮箱、地址或用户材料做客户背调报告"
+  display_name: "公开业务入口：单一客户背调"
+  short_description: "围绕一个指定对象整理受公开来源约束的事实，不开发批量客户"
   default_prompt: "Use $researching-customer-background to research one specified customer, company, brand, website, email, address, Lead, or user-provided material."

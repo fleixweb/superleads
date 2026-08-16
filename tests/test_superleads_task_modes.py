@@ -18,6 +18,8 @@ from superleads_task_modes import (
     LATEST_VERSION_UNCONFIRMED,
     check_latest_version,
     classify_task_mode,
+    is_explicit_update_request,
+    normalize_remote_version,
     read_active_plugin_version,
 )
 
@@ -128,6 +130,35 @@ class SuperleadsTaskModesTest(unittest.TestCase):
         self.assertEqual("metadata", feedback["interaction_mode"])
         read_version.assert_not_called()
 
+    def test_status_and_export_help_are_fast_metadata_without_operations(self) -> None:
+        for text in ("Superleads 当前状态是什么", "How do I export?"):
+            with self.subTest(text=text):
+                response = classify(text)
+                self.assertEqual("metadata", response["interaction_mode"])
+                self.assertEqual([], response["operations"])
+
+    def test_one_object_contact_request_uses_single_object_route(self) -> None:
+        response = classify("只找这家公司的公开邮箱 example.com")
+
+        self.assertEqual("single_object_contact", response["route"])
+        self.assertEqual("researching-customer-background", response["next_skill"])
+        self.assertFalse(response["split_customer_development"])
+
+    def test_export_request_does_not_become_table_enrichment(self) -> None:
+        blocked = classify("把已经核验的结果导出 Excel")
+        allowed = classify("把已经核验的结果导出 Excel", current_result_valid=True)
+
+        self.assertEqual("export_requires_current_result", blocked["route"])
+        self.assertNotEqual("existing_table_enrichment", blocked["route"])
+        self.assertEqual("export_delivery", allowed["route"])
+        self.assertEqual("exporting-lead-workbooks", allowed["next_skill"])
+
+    def test_candidate_correction_stays_in_current_run_without_persistent_save(self) -> None:
+        response = classify("这个候选不符合要求", current_run_id="run-1")
+
+        self.assertEqual("current_run_feedback_correction", response["route"])
+        self.assertEqual("current_run", response["feedback_scope"])
+
     def test_product_market_document_requirements_are_not_material_triage(self) -> None:
         response = classify("48V锂电池到沙特要 SABER 吗，清关还要什么文件")
 
@@ -145,6 +176,77 @@ class SuperleadsTaskModesTest(unittest.TestCase):
                 response = classify(text)
                 self.assertEqual("discovery_snapshot", response["interaction_mode"])
                 self.assertEqual(expected_route, response["route"])
+
+    def test_composite_business_request_returns_parent_and_isolated_subtasks(self) -> None:
+        response = classify("调查 ABC GmbH，并分析保温杯出口德国的准入要求")
+
+        self.assertEqual("composite_superleads_task", response["route"])
+        self.assertEqual(
+            ["customer_background_research", "product_outbound_market_analysis"],
+            [item["route"] for item in response["subtasks"]],
+        )
+        self.assertFalse(response["split_customer_development"])
+
+    def test_background_and_uploaded_table_stay_as_two_isolated_subtasks(self) -> None:
+        response = classify("调查 ABC GmbH，并整理我上传的客户表")
+
+        self.assertEqual("composite_superleads_task", response["route"])
+        self.assertEqual(
+            ["customer_background_research", "existing_table_enrichment"],
+            [item["route"] for item in response["subtasks"]],
+        )
+        self.assertNotIn("bulk_customer_development", response["route_order"])
+
+    def test_contact_scope_is_independent_for_a_single_company_request(self) -> None:
+        response = classify("调查 ABC GmbH，并核查公开联系人")
+
+        contact = next(item for item in response["subtasks"] if item["route"] == "contact_supplement")
+        self.assertEqual([], contact["dependencies"])
+
+    def test_table_contact_and_export_requests_are_detected_in_chinese_and_english(self) -> None:
+        cases = (
+            ("我上传了客户表，请核查公开联系人并导出", {"existing_table_enrichment", "contact_supplement", "export_delivery"}),
+            ("Please enrich the attached client list, verify public contacts, and export it", {"existing_table_enrichment", "contact_supplement", "export_delivery"}),
+        )
+        for text, expected_routes in cases:
+            with self.subTest(text=text):
+                response = classify(text)
+                self.assertEqual("composite_superleads_task", response["route"])
+                self.assertEqual(expected_routes, {item["route"] for item in response["subtasks"]})
+
+    def test_english_background_and_market_request_is_a_localized_composite(self) -> None:
+        response = classify("Run a background check on ABC GmbH and analyze tariffs for mugs exported to Germany")
+
+        self.assertEqual("composite_superleads_task", response["route"])
+        self.assertEqual("en", response["language"])
+        self.assertEqual("Scope and subtask status", response["parent_title"])
+        self.assertEqual(
+            ["customer_background_research", "product_outbound_market_analysis"],
+            [item["route"] for item in response["subtasks"]],
+        )
+        self.assertNotIn("本次包含", "\n".join(response["response_lines"]))
+        self.assertIn("Planning the public-information scope", "\n".join(response["response_lines"]))
+
+    def test_composite_market_subtask_preserves_requested_module_scope(self) -> None:
+        response = classify("调查 ABC GmbH，并查保温杯出口德国的关税")
+
+        self.assertEqual("composite_superleads_task", response["route"])
+        self.assertEqual(["import_tax"], response["analysis_modules_requested"])
+        market = next(item for item in response["subtasks"] if item["route"] == "product_outbound_market_analysis")
+        self.assertEqual(["import_tax"], market["analysis_modules_requested"])
+
+    def test_customer_compliance_attribute_does_not_create_market_subtask(self) -> None:
+        for text in (
+            "帮我找需要 CE 认证的欧洲进口商",
+            "找美国需要UL认证的进口商",
+        ):
+            with self.subTest(text=text):
+                response = classify(text)
+
+                self.assertEqual("bulk_customer_development", response["route"])
+                self.assertEqual("scoping-lead-research", response["next_skill"])
+                self.assertEqual([], response["secondary_routes"])
+                self.assertNotIn("subtasks", response)
 
     def test_explicit_formal_intent_keeps_business_route(self) -> None:
         response = classify("给我一份德国工业传感器的正式开发名单")
@@ -214,7 +316,14 @@ class SuperleadsTaskModesTest(unittest.TestCase):
                 response = classify(text)
 
                 self.assertEqual("discovery_snapshot", response["interaction_mode"])
-                self.assertEqual("existing_table_enrichment", response["route"])
+                if "导出" in text:
+                    self.assertEqual("composite_superleads_task", response["route"])
+                    self.assertEqual(
+                        ["existing_table_enrichment", "export_delivery"],
+                        [item["route"] for item in response["subtasks"]],
+                    )
+                else:
+                    self.assertEqual("existing_table_enrichment", response["route"])
 
     def test_ambiguous_market_request_asks_for_scope_without_promising_full_coverage(self) -> None:
         response = classify("分析中国出口保温杯到越南的市场")
@@ -240,21 +349,91 @@ class SuperleadsTaskModesTest(unittest.TestCase):
             self.assertEqual("1.2.3", read_active_plugin_version(active_root))
             self.assertIsNone(read_active_plugin_version(root / "missing"))
 
-    def test_explicit_update_check_is_injected_cached_and_fails_closed(self) -> None:
-        calls: list[str] = []
-        session_cache: dict[str, str] = {}
+    def test_explicit_update_returns_structured_release_result_and_reuses_host_cache(self) -> None:
+        cache: dict[str, object] = {}
+        calls: list[bool] = []
 
-        def fetch() -> str:
-            calls.append("fetch")
-            return "1.2.4"
-
-        self.assertEqual("1.2.4", check_latest_version(fetch, session_cache))
-        self.assertEqual("1.2.4", check_latest_version(fetch, session_cache))
-        self.assertEqual(["fetch"], calls)
-        self.assertEqual(
-            LATEST_VERSION_UNCONFIRMED,
-            check_latest_version(lambda: (_ for _ in ()).throw(RuntimeError("offline")), {}),
+        result = check_latest_version(
+            lambda: calls.append(True) or {
+                "version": "0.2.0",
+                "source_kind": "github_release",
+                "source_url": "https://github.com/fleixweb/superleads/releases/tag/v0.2.0",
+            },
+            cache,
+            local_version="0.1.20",
+            checked_at="2026-08-16T00:00:00Z",
         )
+
+        self.assertEqual("update_available", result["status"])
+        self.assertEqual("0.1.20", result["local_version"])
+        self.assertEqual("0.2.0", result["remote_version"])
+        self.assertEqual("github_release", result["source_kind"])
+        self.assertTrue(result["stable"])
+        self.assertEqual(1, len(calls))
+        self.assertEqual(result, check_latest_version(None, cache, local_version="0.1.20"))
+
+    def test_branch_manifest_is_repository_version_not_latest_stable(self) -> None:
+        result = normalize_remote_version({"version": "0.2.0", "branch": "master"})
+
+        self.assertEqual("repository_version", result["source_kind"])
+        self.assertFalse(result["stable"])
+
+    def test_branch_manifest_cannot_claim_a_stable_release(self) -> None:
+        result = normalize_remote_version({
+            "version": "0.2.0",
+            "branch": "master",
+            "source_kind": "github_release",
+        })
+
+        self.assertEqual("repository_version", result["source_kind"])
+        self.assertFalse(result["stable"])
+
+    def test_github_release_payload_with_tag_name_remains_a_stable_release(self) -> None:
+        result = normalize_remote_version({
+            "version": "0.2.0",
+            "tag_name": "v0.2.0",
+            "html_url": "https://github.com/fleixweb/superleads/releases/tag/v0.2.0",
+        })
+
+        self.assertEqual("github_release", result["source_kind"])
+        self.assertTrue(result["stable"])
+
+    def test_explicit_update_recognizes_command_and_github_version_requests(self) -> None:
+        for text in (
+            "@superleads update",
+            "请检查 Superleads 的 GitHub 最新版本",
+            "check the latest GitHub version of Superleads",
+        ):
+            with self.subTest(text=text):
+                self.assertTrue(is_explicit_update_request(text))
+
+    def test_failed_or_missing_explicit_check_is_structured_and_localized_by_caller(self) -> None:
+        failed = check_latest_version(
+            lambda: (_ for _ in ()).throw(RuntimeError("offline")),
+            {},
+            local_version="0.1.20",
+            checked_at="2026-08-16T00:00:00Z",
+        )
+        not_checked = check_latest_version(None, None, local_version="0.1.20")
+
+        self.assertEqual("check_failed", failed["status"])
+        self.assertIsNone(failed["remote_version"])
+        self.assertEqual("not_checked", not_checked["status"])
+        self.assertEqual(LATEST_VERSION_UNCONFIRMED, failed["message_zh"])
+
+    def test_cached_remote_result_is_recomputed_for_the_current_local_version(self) -> None:
+        cache: dict[str, object] = {}
+        first = check_latest_version(
+            lambda: {"version": "0.2.0", "source_kind": "github_release"},
+            cache,
+            local_version="0.1.20",
+        )
+        second = check_latest_version(None, cache, local_version="0.3.0")
+
+        self.assertEqual("update_available", first["status"])
+        self.assertEqual("0.3.0", second["local_version"])
+        self.assertEqual("up_to_date", second["status"])
+        self.assertEqual("host_session_cache", second["cache_marker"])
 
 
 if __name__ == "__main__":

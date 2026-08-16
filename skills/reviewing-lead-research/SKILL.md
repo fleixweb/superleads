@@ -5,6 +5,11 @@ description: "Use before a Superleads deep-check or standard-list delivery needs
 
 # Reviewing Lead Research
 
+## 内部阶段前置条件
+
+父路线触发：assessing-research-evidence：显式深度核验或标准名单的当前证据。
+不要直接调用；缺少上述上下文必须停止，不得虚构报告、复核结论或交付状态。
+
 ## Purpose
 
 Perform semantic review before formal delivery. Check whether the research graph would mislead a sales user.

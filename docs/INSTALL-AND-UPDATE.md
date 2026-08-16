@@ -67,7 +67,7 @@ ln -sfnT "$PWD/dist/superleads" "$HOME/plugins/superleads"
 codex plugin add superleads@fleix
 ```
 
-工件只包含运行时所需的 manifest、hooks、Skills、scripts、shared 规则和 spec；不包含
+工件只包含运行时所需的 manifest、Skills、scripts、shared 规则和 spec；不包含
 `tmp/`、`evals/`、`tests/`、历史验证文档或 Git 元数据。保留源码 `tmp/stage5_chillys/`，
 它不会被移动或删除。上面的软链接命令适用于本机 marketplace 已注册为
 `$HOME/plugins/superleads` 的 Linux/macOS 布局；其它本地路径应改为对应的 marketplace source。
@@ -88,9 +88,11 @@ Claude Code 用户请在 `/plugin` 中移除旧的 `superleads-dev` marketplace 
 
 ### 按需检查更新
 
-Superleads 不会在会话启动、恢复、帮助、当前版本或已安装状态查询时联网。只有用户明确要求“检查更新”时，宿主才可以读取项目官方公开版本来源；同一会话最多检查一次。远端不可达、超时或返回异常时，只会显示“本次未能确认远端版本”，不会误报已经是最新版本，也不会阻塞会话或发送用户、项目、prompt 数据。
+Superleads 不会在会话启动、恢复、帮助、当前版本或已安装状态查询时联网。只有用户明确要求“检查更新”、`@superleads update` 或查询 Superleads 的 GitHub 版本时，宿主才可以读取项目官方公开版本来源。检查只读取宿主明确提供的激活插件目录中的本地 manifest；若宿主提供会话缓存，可在同一会话复用远端检查结果，用户明确要求刷新时才重新请求。不会扫描旧缓存、备份或临时目录。远端不可达、超时或返回异常时，只会显示“本次未能确认远端版本”，不会误报已经是最新版本，也不会发送用户、项目、prompt 数据。
 
-当前运行时包未注册 SessionStart 更新 hook。GitHub 的 **Watch -> Custom -> Releases** 仍可用于接收发布通知。
+优先来源是 GitHub Releases 的稳定发布。固定 tag 的 manifest 只标为标签版本，`master` 分支 manifest 只标为仓库版本，不会称为“最新稳定版”。
+
+当前源码和运行时包均不包含 SessionStart、resume 或自动远端更新 hook。GitHub 的 **Watch -> Custom -> Releases** 仍可用于接收发布通知。
 
 ## Hermes
 

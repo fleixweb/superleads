@@ -1,5 +1,12 @@
 # Tasks
 
+## 2026-08-16 已完成：0.2.0 路由、组合任务与更新机制
+
+- 新增确定性轻量路由：元数据、资料初审、发现快照、正式研究和组合任务会先分流；用户层只保留批量发现公开客户信息、指定对象背调、产品出口市场客观信息三个入口，内部阶段必须有合法上游上下文。
+- 同次多个明确业务目标会创建一个父级组合任务，并分别建立客户背调、市场事实、客户发现、表格补全、公开联系人补充与导出子任务。仅真实数据依赖串行；来源用途、事实领域和子任务边界保持隔离。
+- 删除 SessionStart / resume hook。帮助、当前版本、普通研究与启动不访问 GitHub、不扫描旧缓存；仅显式更新请求可读取激活插件 manifest 并复用宿主会话缓存，更新提示不进入研究证据或正式交付。
+- release bump 后已通过：`python3 -m unittest discover -s tests` `205/205`，`python3 evals/run_evals.py --suite all` `743/743`；严格 runtime package 构建与分发校验为 128 files / 2,151,318 bytes / 0 issues。源码 manifest 已升至 `0.2.0`，仅重建 `dist/superleads`，没有修改已安装缓存。必须保留 `tmp/stage5_chillys/`。
+
 ## 2026-08-15 已完成：0.1.20 preflight adapter ownership repair
 
 - 本次修复从 native web search、`web__run` 和 shell HTTP adapter 常量派生 `CODEX_CLI_ADAPTER_OWNED_CAPABILITIES`；Codex preflight 改为逐能力采用有效 adapter 映射。未映射的自报 `available` 降为 `unknown`，显式 `missing` 保持不变，无效附加报告不会抹掉有效 provider 映射。

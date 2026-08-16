@@ -207,14 +207,21 @@
     {
       "name": "market plus customer split",
       "text": "这个产品美国市场能不能做？顺便帮我找美国客户。",
-      "expected_route": "product_outbound_market_analysis",
+      "expected_route": "composite_superleads_task",
       "expected_next_skill": "analyzing-product-outbound-market",
-      "expected_split_customer_development": true,
+      "expected_split_customer_development": false,
+      "expected_secondary_routes": [
+        "bulk_customer_development"
+      ],
+      "expected_route_order": [
+        "product_outbound_market_analysis",
+        "bulk_customer_development"
+      ],
       "expected_missing_fields": [],
       "response_must_contain": [
-        "产品出海市场分析",
-        "第二阶段",
-        "批量客户开发"
+        "本次包含 2 项工作",
+        "产品市场准入信息整理",
+        "批量发现公开客户信息"
       ]
     },
     {
@@ -371,9 +378,9 @@
     {
       "name": "mixed importers plus tariff and access split",
       "text": "帮我找美国锂电池进口商，并分析一下关税和准入要求",
-      "expected_route": "product_outbound_market_analysis",
+      "expected_route": "composite_superleads_task",
       "expected_next_skill": "analyzing-product-outbound-market",
-      "expected_split_customer_development": true,
+      "expected_split_customer_development": false,
       "expected_secondary_routes": [
         "bulk_customer_development"
       ],
@@ -383,9 +390,9 @@
       ],
       "expected_missing_fields": [],
       "response_must_contain": [
-        "产品出海市场分析",
-        "第二阶段",
-        "批量客户开发"
+        "本次包含 2 项工作",
+        "产品市场准入信息整理",
+        "批量发现公开客户信息"
       ]
     },
     {

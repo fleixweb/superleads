@@ -68,7 +68,7 @@ ln -sfnT "$PWD/dist/superleads" "$HOME/plugins/superleads"
 codex plugin add superleads@fleix
 ```
 
-The artifact contains only the runtime manifest, hooks, Skills, scripts, shared
+The artifact contains only the runtime manifest, Skills, scripts, shared
 rules, and spec. It excludes `tmp/`, `evals/`, `tests/`, historical validation
 documents, and Git metadata. Source `tmp/stage5_chillys/` remains in place. The
 symlink command assumes a Linux/macOS local marketplace source at
@@ -90,9 +90,11 @@ If an initial installation uses a local ZIP snapshot or local directory because 
 
 ### Check For Updates On Demand
 
-Superleads does not use the network when a session starts or resumes, or for help, current-version, or installed-status requests. Only an explicit user request to check for updates may read the project's official public version source, and it is checked at most once per session. If the remote source is unavailable, times out, or returns an invalid response, the result is only "Unable to confirm the remote version this time"; it never reports that the installed version is current by mistake, blocks the session, or sends user, project, or prompt data.
+Superleads does not use the network when a session starts or resumes, or for help, current-version, or installed-status requests. Only an explicit update request, `@superleads update`, or a request for the Superleads GitHub version may read the project's official public version source. The check reads only the host-supplied active plugin manifest; when the host supplies a session cache, it can reuse a remote result in that session, and only an explicit refresh may fetch again. It never scans old caches, backups, or temporary directories. If the remote source is unavailable, times out, or returns an invalid response, the result is only "Unable to confirm the remote version this time"; it never reports that the installed version is current by mistake or sends user, project, or prompt data.
 
-The current runtime package does not register a SessionStart update hook. GitHub **Watch -> Custom -> Releases** remains an available release-notification option.
+GitHub Releases is the preferred stable source. A fixed tag manifest is labeled only as a tag version, while a `master` manifest is labeled only as a repository version and never as the latest stable release.
+
+The source tree and runtime package contain no SessionStart, resume, or automatic remote-update hook. GitHub **Watch -> Custom -> Releases** remains an available release-notification option.
 
 ## Hermes
 

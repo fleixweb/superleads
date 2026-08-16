@@ -5,6 +5,11 @@ description: "Use when a Superleads candidate pool, deep check, or standard list
 
 # Verification Before Delivery
 
+## 内部阶段前置条件
+
+父路线触发：executing-research-plans 或 reviewing-lead-research：当前待交付 graph。
+不要直接调用；缺少上述上下文必须停止，不得虚构报告、验证通过或交付状态。
+
 ## Purpose
 
 Perform deterministic checks immediately before user delivery. Use the light branch for default discovery and the strict branch for formal delivery.

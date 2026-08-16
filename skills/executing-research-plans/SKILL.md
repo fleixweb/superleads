@@ -5,6 +5,11 @@ description: "Use when a Superleads discovery or deep-research plan needs public
 
 # Executing Research Plans
 
+## 内部阶段前置条件
+
+父路线触发：writing-research-plans：当前 Run、Brief 与 Plan。
+不要直接调用；缺少上述上下文必须停止，不得虚构报告、搜索记录或来源观察。
+
 ## Purpose
 
 Collect raw research artifacts: Candidate, Source, Observation, Provisional Entity, and Search Log. Default work is discovery plus public-signal enrichment. Do not output formal development lists, final advice, purchasing-intent claims, guessed contacts, or unsupported Claims.
