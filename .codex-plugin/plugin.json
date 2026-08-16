@@ -18,8 +18,8 @@
   "hooks": "./hooks/codex-hooks.json",
   "interface": {
     "displayName": "Superleads",
-    "shortDescription": "Overseas customer discovery and optional verification.",
-    "longDescription": "Superleads is a general-purpose foreign-trade Skill Suite for discovery-first overseas candidate pools, public contact organization, and user-requested deep verification without hard-coded industry ICP defaults.",
+    "shortDescription": "批量开发客户、单一客户背调、目标市场分析。",
+    "longDescription": "Superleads 面向外贸业务，支持批量开发客户、单一客户背调和目标市场分析。",
     "developerName": "Fleix",
     "category": "Productivity",
     "websiteURL": "https://github.com/fleixweb/superleads",
@@ -32,9 +32,9 @@
     ],
     "brandColor": "#2563EB",
     "defaultPrompt": [
-      "Use Superleads to find overseas buyers for my product and target market.",
-      "Use Superleads to enrich this customer list with sourced contacts.",
-      "Use Superleads to audit these lead sources before delivery."
+      "批量开发客户",
+      "单一客户背调",
+      "目标市场分析"
     ]
   }
 }

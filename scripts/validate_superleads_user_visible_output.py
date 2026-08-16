@@ -13,6 +13,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from superleads_user_guidance import SUPPORT_FOOTER_MARKER, has_exactly_one_final_footer
+
 
 ROUTE_REQUIRED: dict[str, list[str]] = {
     "bulk_customer_development": [
@@ -491,6 +493,12 @@ def validate(text: str, route: str, *, min_tables: int = 3, extra_required: list
         for token in PRODUCT_INTERNAL_STATUS_TOKENS:
             if _phrase_matches(text, token):
                 issues.append(_issue("user_visible_internal_status_token", f"internal product-market status token leaked: {token}", token))
+
+    footer_count = text.count(SUPPORT_FOOTER_MARKER)
+    if footer_count == 0:
+        issues.append(_issue("user_visible_support_footer_missing", "final delivery must include the Superleads support and security footer"))
+    elif footer_count != 1 or not has_exactly_one_final_footer(text):
+        issues.append(_issue("user_visible_support_footer_duplicated", "final delivery must include one complete terminal support and security footer"))
 
     return issues
 

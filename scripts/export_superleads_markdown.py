@@ -35,6 +35,7 @@ from export_workbook import (
     redact_delivery_sheets,
     redact_local_paths,
 )
+from superleads_user_guidance import append_final_footer
 from validate_product_market_analysis import load_market_fixture
 from validate_superleads_user_visible_output import validate as validate_user_visible_markdown
 
@@ -804,6 +805,8 @@ def build_markdown(input_path: Path, route: str) -> tuple[str | None, list[dict[
         text, issues = build_bulk_markdown(graph)
     else:
         return None, [{"severity": "critical", "code": "markdown_delivery_unknown_route", "message": f"Unknown route: {route}", "path": "route"}], actual_route
+    if text is not None:
+        text = append_final_footer(text)
     return text, issues, actual_route
 
 

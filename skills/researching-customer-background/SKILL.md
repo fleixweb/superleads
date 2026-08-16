@@ -5,6 +5,10 @@ description: "Use when a user provides one specific company, brand, website/doma
 
 # 客户背调研究 Playbook
 
+## 最终交付
+
+Read `../../shared/references/superleads-user-guidance.md` for terminal user-delivery footer rules. The final customer background report follows those rules; progress updates and standalone clarifications do not append the footer.
+
 ## 产品定位
 
 Superleads 的主路径不变：

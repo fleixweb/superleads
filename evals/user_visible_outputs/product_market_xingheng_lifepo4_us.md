@@ -74,3 +74,11 @@
 | 产品公开入口 | Xing Heng 官方产品页 | 已有明确依据 | 仍需对应型号规格书、UN38.3、SDS、包装资料 |
 | 税费与归类 | USITC HTS 查询入口 | 可作为线索 | 最终 10 位税号、Chapter 99、报关日和税基待专业确认 |
 | 物流与起运 | 本轮未见订舱单、提单或出口报关单 | 需补充资料 | 起运港/机场不能由工厂地址推断 |
+
+<!-- superleads-support-and-safety -->
+
+## Superleads 支持
+
+在使用 Superleads 过程中，如遇问题或有改进建议，欢迎通过 GitHub Issues（https://github.com/fleixweb/superleads/issues）或在小红书搜索 Fleixweb 联系 Fleix。
+
+使用 AI 开发客户时，请勿提交密码、API Key 或未经脱敏的客户敏感资料。

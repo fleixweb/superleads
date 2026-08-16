@@ -15,7 +15,7 @@ stage or a reason to require ContactPoint or ContactClaim for every Candidate.
 
 ## Required references
 
-Read `../../shared/policies/contact-intelligence-policy.md` and `../../shared/schemas/contact-intelligence.schema.json`.
+Read `../../shared/policies/contact-intelligence-policy.md`, `../../shared/schemas/contact-intelligence.schema.json`, and `../../shared/references/superleads-user-guidance.md` for terminal user-delivery footer rules. A final public-contact check follows those rules; progress updates and standalone clarifications do not append the footer.
 
 ## Workflow
 

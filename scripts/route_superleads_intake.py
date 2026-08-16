@@ -11,6 +11,8 @@ import json
 import re
 from typing import Any
 
+from superleads_user_guidance import static_help_response
+
 COUNTRY_HINTS = (
     "美国", "德国", "加拿大", "英国", "法国", "意大利", "西班牙", "越南", "中国", "日本",
     "韩国", "澳大利亚", "欧盟", "墨西哥", "巴西", "印度", "土耳其", "沙特", "阿联酋",
@@ -67,7 +69,7 @@ SUBJECT_ANCHOR_MARKERS = (
 TABLE_MARKERS = ("客户表", "客户名单表", "excel", "csv", "表格补全", "补全表格", "补全已有")
 PRODUCT_MARKERS = (
     "产品", "型号", "电池", "锂电", "纺织", "衬衫", "面料", "化工", "农产品", "机械",
-    "配件", "零件", "汽车配件", "户外家具", "柴油发电机", "发电机", "电水壶",
+    "配件", "零件", "汽车配件", "户外家具", "柴油发电机", "发电机", "电水壶", "保温杯",
     "钢材", "粮食", "矿产", "水果", "蔬菜", "茶", "工装", "灯芯绒",
     "steel", "battery", "textile", "fabric", "shirt", "product", "parts",
     "accessories", "furniture", "generator", "kettle",
@@ -280,6 +282,10 @@ def _market_response(text: str, split_customer_development: bool) -> list[str]:
 
 
 def classify(text: str) -> dict[str, Any]:
+    static_help = static_help_response(text)
+    if static_help is not None:
+        return static_help
+
     has_customer_development = _has_customer_development_intent(text)
     has_background = _has_background_intent(text)
     has_table = contains_any(text, TABLE_MARKERS)
@@ -304,7 +310,7 @@ def classify(text: str) -> dict[str, Any]:
             ],
         }
 
-    if has_table and has_customer_development and not direct_market:
+    if has_table and not direct_market:
         return {
             "route": "existing_table_enrichment",
             "next_skill": "scoping-lead-research",

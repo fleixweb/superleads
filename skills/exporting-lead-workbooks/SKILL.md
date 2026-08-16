@@ -16,7 +16,8 @@ handoff, and fall back to UTF-8-SIG CSV files.
 ## Required references and script
 
 Read `../../shared/references/output-schema.md` and
-`../../shared/references/status-labels.md`. Use
+`../../shared/references/status-labels.md`, plus
+`../../shared/references/superleads-user-guidance.md` for terminal user-delivery footer rules. Use
 `../../scripts/export_superleads_markdown.py` for the unified three-route
 Markdown delivery layer. Use `../../scripts/export_workbook.py` for customer
 development / customer-background XLSX or CSV export. Use
@@ -25,6 +26,8 @@ CSV plus optional Markdown export. For a default-discovery workbook,
 `../../shared/references/default-discovery-reference.md` and its minimal
 skeleton show the base initial sheet set; consult the complete reference only
 for optional contact-status and conflict presentation.
+
+Completed CSV/XLSX and chat-readable exports follow the shared footer rules only when presented as a terminal user delivery. Progress updates and standalone clarifications do not append the footer.
 
 ## Sheet sets
 

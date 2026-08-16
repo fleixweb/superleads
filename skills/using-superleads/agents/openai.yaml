@@ -1,4 +1,4 @@
 interface:
-  display_name: "Using Superleads"
-  short_description: "Route Superleads lead research tasks"
-  default_prompt: "Use $using-superleads for a Superleads lead-research task."
+  display_name: "Superleads"
+  short_description: "批量开发客户、单一客户背调、目标市场分析"
+  default_prompt: "使用 $using-superleads：批量开发客户、单一客户背调或目标市场分析。"

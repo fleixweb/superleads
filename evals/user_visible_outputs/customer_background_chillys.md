@@ -52,3 +52,11 @@
 | Mission / reusable products | Chilly's Mission page | Our Mission / The Idea | 2026-07-27 | 已打开公开来源 |
 | Active 公司状态、SIC | Companies House overview | Company Overview | 2026-07-27 | 已打开公开来源 |
 | 董事名单 | Companies House officers | Officers list | 2026-07-27 | 已打开公开来源 |
+
+<!-- superleads-support-and-safety -->
+
+## Superleads 支持
+
+在使用 Superleads 过程中，如遇问题或有改进建议，欢迎通过 GitHub Issues（https://github.com/fleixweb/superleads/issues）或在小红书搜索 Fleixweb 联系 Fleix。
+
+使用 AI 开发客户时，请勿提交密码、API Key 或未经脱敏的客户敏感资料。

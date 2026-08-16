@@ -17,6 +17,7 @@ This skill is parallel to bulk customer development and single-customer backgrou
 
 Read these only as needed:
 
+- `../../shared/references/superleads-user-guidance.md` for terminal user-delivery footer rules.
 - `../../shared/references/product-outbound-market-intake.md` for the entry response, missing-info questions, and route boundaries.
 - `../../shared/references/product-market-evidence-notes.example.json` when preparing compact evidence notes from opened sources.
 - `../../spec/10-product-outbound-market-analysis-contract.md` for product boundaries.
@@ -33,6 +34,8 @@ Read these only as needed:
 - Run the same precheck on `compiled-market-graph.json` before the formal validator. That second pass catches broken EvidenceCard source refs and user-provided ProductAttribute values that would not appear in `产品档案与触发项`; it does not replace validation or audit.
 - Validate and audit existing graphs with `../../scripts/validate_product_market_analysis.py` and `../../scripts/audit_product_market_analysis.py`.
 - Export reviewed graphs with `../../scripts/export_product_market_workbook.py`.
+
+The final market report, or the terminal capability-stop message when formal research cannot proceed, follows the shared footer rules. Progress updates and standalone clarifications do not append the footer.
 
 ## Intake workflow
 

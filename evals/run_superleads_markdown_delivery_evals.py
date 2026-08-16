@@ -17,6 +17,7 @@ CASES = ROOT / "evals" / "cases" / "superleads_markdown_delivery_cases.json"
 DELIVERER = ROOT / "scripts" / "export_superleads_markdown.py"
 VALIDATOR = ROOT / "scripts" / "validate_superleads_user_visible_output.py"
 FORMAL_CHECKER = ROOT / "scripts" / "check_superleads_formal_markdown_delivery.py"
+SUPPORT_FOOTER_MARKER = "<!-- superleads-support-and-safety -->"
 
 
 def run(cmd: list[str], expect: int) -> dict[str, Any]:
@@ -106,10 +107,14 @@ def _validate_generated_markdown(py: str, markdown: Path, route: str, case: dict
     text = markdown.read_text(encoding="utf-8") if markdown.exists() else ""
     missing = _assert_contains(text, list(case.get("must_contain", []))) if case.get("must_contain") else []
     hits = _assert_absent(text, list(case.get("must_not_contain", []))) if case.get("must_not_contain") else []
-    if missing or hits:
+    footer_count = text.count(SUPPORT_FOOTER_MARKER)
+    if missing or hits or footer_count != 1:
         result["ok"] = False
         result["returncode"] = 1
-        result["output"] += f"\ngenerated Markdown assertions failed: missing={missing} forbidden_hits={hits}"
+        result["output"] += (
+            "\ngenerated Markdown assertions failed: "
+            f"missing={missing} forbidden_hits={hits} footer_count={footer_count}"
+        )
     return result
 
 
