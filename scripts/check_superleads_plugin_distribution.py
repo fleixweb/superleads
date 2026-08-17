@@ -54,12 +54,23 @@ def _skill_dirs(root: Path) -> list[str]:
     return sorted(item.name for item in skills_root.iterdir() if item.is_dir())
 
 
+def _internal_stage_files(root: Path) -> list[str]:
+    stages_root = root / "shared" / "internal-stages"
+    if not stages_root.exists() or not stages_root.is_dir():
+        return []
+    return sorted(path.name for path in stages_root.glob("*.md") if path.is_file())
+
+
 def _scan_skill_references(plugin_root: Path) -> tuple[list[dict[str, str]], int]:
     issues: list[dict[str, str]] = []
     checked = 0
     root_resolved = plugin_root.resolve()
     skills_root = plugin_root / "skills"
-    for skill_md in sorted(skills_root.glob("*/SKILL.md")) if skills_root.exists() else []:
+    stage_root = plugin_root / "shared" / "internal-stages"
+    documents = list(sorted(skills_root.glob("*/SKILL.md"))) if skills_root.exists() else []
+    if stage_root.exists():
+        documents.extend(sorted(stage_root.glob("*.md")))
+    for skill_md in documents:
         try:
             text = skill_md.read_text(encoding="utf-8")
         except Exception as exc:  # pragma: no cover - defensive IO path
@@ -289,6 +300,30 @@ def check_distribution(
             path=f"skills/{name}",
         ))
 
+    plugin_internal_stages = _internal_stage_files(plugin_root)
+    source_internal_stages = _internal_stage_files(source_root)
+    plugin_internal_stage_set = set(plugin_internal_stages)
+    source_internal_stage_set = set(source_internal_stages)
+    if source_internal_stages and len(plugin_internal_stages) != len(source_internal_stages):
+        issues.append(_issue(
+            "plugin_distribution_internal_stage_count_mismatch",
+            f"plugin internal stage count {len(plugin_internal_stages)} does not match source count {len(source_internal_stages)}",
+            plugin_count=str(len(plugin_internal_stages)),
+            source_count=str(len(source_internal_stages)),
+        ))
+    for name in sorted(source_internal_stage_set - plugin_internal_stage_set):
+        issues.append(_issue(
+            "plugin_distribution_internal_stage_missing",
+            f"on-demand internal stage is missing from plugin distribution: {name}",
+            path=f"shared/internal-stages/{name}",
+        ))
+    for name in sorted(plugin_internal_stage_set - source_internal_stage_set):
+        issues.append(_issue(
+            "plugin_distribution_unexpected_internal_stage",
+            f"plugin distribution contains an internal stage not present in source: {name}",
+            path=f"shared/internal-stages/{name}",
+        ))
+
     for name in required_skills:
         skill_file = plugin_root / "skills" / name / "SKILL.md"
         if not skill_file.exists():
@@ -331,6 +366,10 @@ def check_distribution(
         "source_skill_count": len(source_skill_names),
         "plugin_skills": plugin_skill_names,
         "source_skills": source_skill_names,
+        "plugin_internal_stage_count": len(plugin_internal_stages),
+        "source_internal_stage_count": len(source_internal_stages),
+        "plugin_internal_stages": plugin_internal_stages,
+        "source_internal_stages": source_internal_stages,
         "checked_skill_relative_reference_count": reference_count,
         "required_skills": list(required_skills),
         "required_files": [path.as_posix() for path in required_files],

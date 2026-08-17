@@ -5,64 +5,30 @@ description: "Use for a concrete batch discovery request with product or keyword
 
 # 批量发现公开客户信息
 
-## Bare Activation Fast Path
+## 裸启动
 
-This rule takes precedence over every other instruction in this Skill. For a
-bare `@`, `@superleads`, or a help/how-to-use request, call
-`static_help_response()` and return only its user-facing `response_lines`.
-For bare activation, do not read any research reference. Do not inspect files,
-use shell commands, run preflight, search, open a source, create a Run/Brief,
-export, validate, check versions, or scan caches. Do not describe this branch
-as a workflow, a plan, or an initialization step.
+用户只输入 `@`、`@superleads`，或询问帮助、怎么用、你能干嘛等简短使用方法时，直接用用户语言返回：
 
-The compact guide is the complete response for a bare activation. A user who
-explicitly asks for detailed help may receive the longer static guide from the
-same helper, still with no operational work. Match the user's language and do
-not expose Skill, route, graph, Claim, or validator terminology.
+> Superleads 可帮你批量开发客户、背调指定公司或分析目标市场。直接描述需求即可，例如：找德国做工业传感器的进口商。
 
-## Batch Discovery Path
+不运行工具：不要调用 shell；不搜索、不做能力预检，也不检查版本、创建图谱、导出或加载研究参考。明确要求“帮助”或“详细用法”时，静态阅读 `../../shared/references/superleads-user-guidance.md`；仍不运行工具。
 
-Only after the fast path does not apply, classify the request with the pure
-intake rules. Metadata and user-material-only requests stay outside batch
-research. A named single company, brand, domain, email, address, or social
-link routes to `researching-customer-background`; a product entering a target
-market routes to `analyzing-product-outbound-market`. A request containing two
-or more explicit business objectives becomes a parent composite task with
-isolated subroutes.
+## 路由
 
-Use this Skill only when the user has a concrete batch request: customers,
-buyers, importers, distributors, or a customer list tied to a product/service
-or keyword plus a scope axis such as market, application, customer type, or an
-existing table. Do not infer ICP, company size, channel, purchase intent, or
-customer value.
+对非帮助请求，先以当前用户原文运行：
 
-不得用于单一客户背调或产品出海市场分析；它们应转到各自公开入口。
+```bash
+python3 ../../scripts/route_superleads_intake.py --text "<current user message>" --format json
+```
 
-## 组合任务
+只使用其 `response_lines`、语言和任务边界；不要展示 JSON、内部阶段名或路径。元数据、资料初审、单一对象、市场分析和组合任务须立即按返回路线交接，不得因为本 Skill 已被选择而强行开始批量发现。
 
-同一次请求有任意两个或以上明确业务目标时，建立一个父级组合任务；不得要求用户为了内部架构而拆成多次调用。按目标建立客户背调子任务、产品市场分析子任务、批量客户发现子任务、表格补全子任务、公开联系人补充子任务，或在前置结果合法后建立最终导出子任务。缺少必要输入的子任务标为等待必要信息，不阻塞其他独立子任务。
+本入口仅处理“产品、关键词、型号/番号/料号 + 市场范围 + 客户类型”的具体批量发现。番号或料号只作为产品锚点，先用宿主实际暴露的公开检索核对身份，不根据编码形状猜产品。不得用于单一客户背调或产品出海市场分析；不得猜 ICP、渠道、采购意向或客户价值。
 
-不同子任务的独立查询可并行，但同一主体的身份合并、冲突处理，以及最终审核、正式导出和组合报告汇总必须串行。不得伪造后台、流式进度或并行工具能力。不得让一个子任务的来源自动升级为另一个子任务的事实；详细的隔离和交付规则见下面的按需参考。
+同一次请求有任意两个或以上明确业务目标时，建立一个父级组合任务；详细规则见 `../../shared/references/composite-task-routing.md`。
 
-For a concrete batch request, read
-`../../shared/references/batch-discovery-execution.md`. It contains the
-required evidence boundaries, discovery snapshot budget, formal-delivery gate,
-composite-task isolation, material handling, and user-visible delivery rules.
-For a real-business UAT or a formal batch delivery, also read
-`../../shared/references/using-superleads-formal-delivery.md`.
+## 执行边界
 
-## Delivery Boundary
+确认是批量发现后，按需阅读 `../../shared/references/batch-discovery-execution.md`。默认交付是带公开来源状态、未知项与待确认项的候选池，不是推荐客户名单；搜索摘要只是线索，绝不写成 Claim。
 
-Default delivery is a traceable candidate pool with public-source status,
-unknowns, and pending checks. It is not a recommended customer list and does
-not state purchase intent. Search snippets remain clues and never become
-Claims. Only an explicit request for formal verification, a formal development
-list, a complete report, contact ownership verification, or Markdown export
-may enter the strict graph, audit, and exporter path.
-
-An explicit formal request follows `using-superleads` ->
-`scoping-lead-research` -> `writing-research-plans` ->
-`executing-research-plans` -> `verification-before-delivery` -> `exporting-lead-workbooks`.
-
-Only a terminal user delivery follows the footer rules in
-`../../shared/references/superleads-user-guidance.md`; progress updates and standalone clarifications do not append the footer.
+仅在用户明确要求正式开发名单、完整核验、深度背调、联系人归属核验或正式 Markdown 导出时，按需阅读 `../../shared/internal-stages/` 中对应的阶段参考和 `../../shared/references/using-superleads-formal-delivery.md`。终局交付才附 `../../shared/references/superleads-user-guidance.md` 的支持与安全尾注；进度和单独澄清不附。

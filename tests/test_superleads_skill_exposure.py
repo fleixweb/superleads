@@ -23,13 +23,14 @@ INTERNAL_TRIGGERS = {
     "collecting-contact-intelligence": "executing-research-plans：当前 Run、Brief 与已打开来源",
     "executing-research-plans": "writing-research-plans：当前 Run、Brief 与 Plan",
     "exporting-lead-workbooks": "verification-before-delivery：当前合法已验证 graph 与允许的输出模式",
-    "learning-from-feedback": "exporting-lead-workbooks：当前交付结果与指定反馈对象",
+    "learning-from-feedback": "using-superleads 或 exporting-lead-workbooks：当前 Run 与指定反馈对象",
     "resolving-company-identity": "executing-research-plans：当前 Run 中已打开来源出现主体冲突",
     "reviewing-lead-research": "assessing-research-evidence：显式深度核验或标准名单的当前证据",
     "scoping-lead-research": "using-superleads：已确认的批量客户发现请求",
     "verification-before-delivery": "executing-research-plans 或 reviewing-lead-research：当前待交付 graph",
     "writing-research-plans": "scoping-lead-research：当前 Brief 已建立",
 }
+INTERNAL_STAGE_ROOT = ROOT / "shared" / "internal-stages"
 FORBIDDEN_PUBLIC_PROMISES = (
     "提供客户推荐",
     "推荐优先客户",
@@ -77,16 +78,31 @@ def internal_skill_names(configs: dict[str, dict[str, str]]) -> set[str]:
 
 
 class SuperleadsSkillExposureTest(unittest.TestCase):
-    def test_only_three_skill_configs_are_described_as_public_business_entries(self) -> None:
+    def test_only_three_public_skills_are_registered_for_user_discovery(self) -> None:
         configs = read_skill_interfaces(ROOT / "skills")
 
         self.assertEqual(PUBLIC_SKILLS, public_skill_names(configs))
-        self.assertEqual(set(INTERNAL_TRIGGERS), internal_skill_names(configs))
-        self.assertEqual(PUBLIC_SKILLS | set(INTERNAL_TRIGGERS), set(configs))
+        self.assertEqual(PUBLIC_SKILLS, set(configs))
         for name in PUBLIC_SKILLS:
             with self.subTest(skill=name):
                 self.assertIn("不", configs[name]["short_description"])
                 self.assertIn("公开业务入口", configs[name]["display_name"])
+
+    def test_internal_stage_guidance_is_packaged_as_on_demand_references_not_user_skills(self) -> None:
+        for skill_name, trigger in INTERNAL_TRIGGERS.items():
+            with self.subTest(stage=skill_name):
+                reference = INTERNAL_STAGE_ROOT / f"{skill_name}.md"
+                self.assertTrue(reference.is_file())
+                content = reference.read_text(encoding="utf-8")
+                self.assertIn("## 内部阶段前置条件", content)
+                self.assertIn(f"父路线触发：{trigger}", content)
+                self.assertIn("不要直接调用", content)
+                self.assertIn("不得虚构报告", content)
+
+        feedback = (INTERNAL_STAGE_ROOT / "learning-from-feedback.md").read_text(encoding="utf-8")
+        self.assertIn("current_run_correction", feedback)
+        self.assertIn("persistent_save", feedback)
+        self.assertIn("明确同意", feedback)
 
     def test_plugin_default_prompt_names_only_the_three_public_business_entries(self) -> None:
         manifest = json.loads((ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
@@ -118,33 +134,22 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
         self.assertIn("批量发现公开客户信息", content)
         self.assertIn("不得用于单一客户背调或产品出海市场分析", content)
         self.assertIn("只交付带来源状态的候选池", interface["short_description"])
-        self.assertIn("verification-before-delivery", content)
-        self.assertIn(
-            "executing-research-plans` -> `verification-before-delivery` -> `exporting-lead-workbooks",
-            content,
-        )
+        self.assertIn("internal-stages", content)
 
-    def test_batch_entry_keeps_multi_objective_requests_in_one_isolated_composite_parent(self) -> None:
-        content = (ROOT / "skills" / "using-superleads" / "SKILL.md").read_text(encoding="utf-8")
+    def test_composite_task_policy_has_one_detailed_authority(self) -> None:
+        reference = ROOT / "shared" / "references" / "composite-task-routing.md"
+        self.assertTrue(reference.is_file())
+        authority = reference.read_text(encoding="utf-8")
+        self.assertIn("一个父级组合任务", authority)
+        self.assertIn("不得要求用户为了内部架构而拆成多次调用", authority)
+        self.assertIn("不得让一个子任务的来源自动升级为另一个子任务的事实", authority)
+        self.assertIn("同一主体的身份合并", authority)
+        self.assertIn("最终审核、正式导出和组合报告汇总", authority)
 
-        self.assertIn("组合任务", content)
-        self.assertIn("不得要求用户为了内部架构而拆成多次调用", content)
-        self.assertIn("一个父级组合任务", content)
-        for subroute in (
-            "客户背调子任务",
-            "产品市场分析子任务",
-            "批量客户发现子任务",
-            "表格补全子任务",
-            "公开联系人补充子任务",
-            "最终导出子任务",
-        ):
-            with self.subTest(subroute=subroute):
-                self.assertIn(subroute, content)
-        self.assertIn("等待必要信息", content)
-        self.assertIn("不得让一个子任务的来源自动升级为另一个子任务的事实", content)
-        self.assertIn("同一主体的身份合并", content)
-        self.assertIn("最终审核、正式导出和组合报告汇总", content)
-        self.assertIn("不得伪造后台、流式进度或并行工具能力", content)
+        for skill_name in PUBLIC_SKILLS:
+            with self.subTest(skill=skill_name):
+                content = (ROOT / "skills" / skill_name / "SKILL.md").read_text(encoding="utf-8")
+                self.assertIn("../../shared/references/composite-task-routing.md", content)
 
     def test_every_public_entry_accepts_any_two_explicit_objectives_as_one_composite_parent(self) -> None:
         for skill_name in PUBLIC_SKILLS:
@@ -152,24 +157,63 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
                 content = (ROOT / "skills" / skill_name / "SKILL.md").read_text(encoding="utf-8")
 
                 self.assertIn("任意两个或以上明确业务目标", content)
-                self.assertIn("一个父级组合任务", content)
-                self.assertIn("不得要求用户为了内部架构而拆成多次调用", content)
 
-    def test_internal_stages_name_parent_trigger_and_stop_bare_calls(self) -> None:
-        for skill_name, trigger in INTERNAL_TRIGGERS.items():
+    def test_public_entries_use_the_deterministic_router_before_route_references(self) -> None:
+        router_command = "python3 ../../scripts/route_superleads_intake.py"
+        for skill_name in PUBLIC_SKILLS:
             with self.subTest(skill=skill_name):
-                interface = read_yaml_interface(skill_name)
                 content = (ROOT / "skills" / skill_name / "SKILL.md").read_text(encoding="utf-8")
+                self.assertIn(router_command, content)
+                self.assertNotIn("static_help_response()", content)
 
-                self.assertIn("内部阶段", interface["display_name"])
-                self.assertIn(f"父路线触发：{trigger}", interface["short_description"])
-                self.assertIn("不要直接调用", interface["default_prompt"])
-                self.assertIn("缺少上述上下文必须停止", interface["default_prompt"])
-                self.assertIn("## 内部阶段前置条件", content)
-                self.assertIn(f"父路线触发：{trigger}", content)
-                self.assertIn("不要直接调用", content)
-                self.assertIn("缺少上述上下文必须停止", content)
-                self.assertIn("不得虚构报告", content)
+    def test_every_public_entry_handles_help_without_tools_before_router_execution(self) -> None:
+        router_command = "python3 ../../scripts/route_superleads_intake.py"
+        for skill_name in PUBLIC_SKILLS:
+            with self.subTest(skill=skill_name):
+                content = (ROOT / "skills" / skill_name / "SKILL.md").read_text(encoding="utf-8")
+                router = content.index(router_command)
+                guard_text = content[:router]
+                self.assertRegex(guard_text, r"用户只输入 `@`|用户只输入 `@superleads`|询问简短使用方法")
+                self.assertRegex(guard_text, r"不要调用 shell|不运行工具")
+                self.assertIn("不搜索", guard_text)
+                self.assertRegex(guard_text, r"能力预检|预检")
+
+    def test_market_terminal_facts_require_validation_and_audit_before_delivery(self) -> None:
+        skill = (ROOT / "skills" / "analyzing-product-outbound-market" / "SKILL.md").read_text(encoding="utf-8")
+        runtime = (ROOT / "shared" / "references" / "product-market-runtime.md").read_text(encoding="utf-8")
+
+        for content in (skill, runtime):
+            self.assertRegex(content, r"用户可见事实|最终交付")
+            self.assertIn("validate_product_market_analysis.py", content)
+            self.assertIn("audit_product_market_analysis.py", content)
+            self.assertNotIn("只有来源已打开且用户明确要求正式报告或导出时", content)
+
+    def test_fast_discovery_uses_host_exposed_search_and_does_not_hard_stop_on_one_adapter_404(self) -> None:
+        batch = (ROOT / "shared" / "references" / "batch-discovery-execution.md").read_text(encoding="utf-8")
+        execution = (ROOT / "shared" / "internal-stages" / "executing-research-plans.md").read_text(encoding="utf-8")
+        adapters = (ROOT / "shared" / "policies" / "platform-adapters.md").read_text(encoding="utf-8")
+
+        for content in (batch, execution, adapters):
+            self.assertIn("宿主实际暴露", content)
+            self.assertIn("同一失败适配器", content)
+        self.assertNotIn("stop the fast candidate-pool path", execution)
+        self.assertNotIn("停止快速候选池", batch)
+
+    def test_part_number_is_a_valid_product_anchor_but_requires_public_identity_lookup(self) -> None:
+        intake = (ROOT / "shared" / "references" / "user-intake.md").read_text(encoding="utf-8")
+        market = (ROOT / "shared" / "references" / "product-outbound-market-intake.md").read_text(encoding="utf-8")
+
+        for content in (intake, market):
+            self.assertIn("part number", content.casefold())
+            self.assertIn("料号", content)
+            self.assertIn("公开检索", content)
+            self.assertIn("不是模型推断", content)
+
+    def test_market_entry_defers_development_specs_until_an_explicit_formal_request(self) -> None:
+        content = (ROOT / "skills" / "analyzing-product-outbound-market" / "SKILL.md").read_text(encoding="utf-8")
+
+        self.assertNotIn("../../spec/", content)
+        self.assertIn("../../shared/references/product-market-runtime.md", content)
 
 
 if __name__ == "__main__":

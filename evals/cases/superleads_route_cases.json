@@ -89,7 +89,7 @@
       "name": "customer table enrichment bypasses help and bulk discovery",
       "text": "帮我补全这份客户表的官网和公开联系方式",
       "expected_route": "existing_table_enrichment",
-      "expected_next_skill": "scoping-lead-research",
+      "expected_next_skill": "using-superleads",
       "expected_split_customer_development": false,
       "expected_missing_fields": [],
       "response_must_contain": ["已有客户表格补全"]
@@ -108,7 +108,7 @@
       "name": "copyable bulk-development guide example bypasses help",
       "text": "找德国做工业传感器的进口商",
       "expected_route": "bulk_customer_development",
-      "expected_next_skill": "scoping-lead-research",
+      "expected_next_skill": "using-superleads",
       "expected_split_customer_development": false,
       "expected_missing_fields": [],
       "expected_interaction_mode": "discovery_snapshot",
@@ -228,7 +228,7 @@
       "name": "pure customer development",
       "text": "帮我找美国锂电池进口商客户。",
       "expected_route": "bulk_customer_development",
-      "expected_next_skill": "scoping-lead-research",
+      "expected_next_skill": "using-superleads",
       "expected_split_customer_development": false,
       "expected_missing_fields": [],
       "response_must_contain": [
@@ -264,7 +264,7 @@
       "name": "bulk diesel generator parts distributors real wording",
       "text": "我要开发美国的柴油发电机配件经销商",
       "expected_route": "bulk_customer_development",
-      "expected_next_skill": "scoping-lead-research",
+      "expected_next_skill": "using-superleads",
       "expected_split_customer_development": false,
       "expected_missing_fields": [],
       "response_must_contain": [
@@ -275,7 +275,7 @@
       "name": "bulk auto parts middle east market wording",
       "text": "我们工厂做汽车配件，想开发中东市场",
       "expected_route": "bulk_customer_development",
-      "expected_next_skill": "scoping-lead-research",
+      "expected_next_skill": "using-superleads",
       "expected_split_customer_development": false,
       "expected_missing_fields": [],
       "response_must_contain": [
@@ -286,7 +286,7 @@
       "name": "bulk outdoor furniture retail chains",
       "text": "帮我找美国做户外家具的零售连锁",
       "expected_route": "bulk_customer_development",
-      "expected_next_skill": "scoping-lead-research",
+      "expected_next_skill": "using-superleads",
       "expected_split_customer_development": false,
       "expected_missing_fields": [],
       "response_must_contain": [
@@ -313,7 +313,7 @@
       "name": "bulk slice s neutral packaging aftermarket sample",
       "text": "中性包装柴油发电机后市场配件，美国，维修商/零件渠道/经销商",
       "expected_route": "bulk_customer_development",
-      "expected_next_skill": "scoping-lead-research",
+      "expected_next_skill": "using-superleads",
       "expected_split_customer_development": false,
       "expected_missing_fields": [],
       "response_must_contain": [
@@ -367,10 +367,12 @@
       "name": "bulk certified-demand importers remains customer development",
       "text": "帮我找有 CE 认证需求的欧洲进口商",
       "expected_route": "bulk_customer_development",
-      "expected_next_skill": "scoping-lead-research",
+      "expected_next_skill": "using-superleads",
       "expected_split_customer_development": false,
       "expected_secondary_routes": [],
-      "expected_missing_fields": [],
+      "expected_missing_fields": [
+        "product_or_scope"
+      ],
       "response_must_contain": [
         "批量客户开发"
       ]
@@ -436,7 +438,7 @@
       "name": "bulk negated market analysis",
       "text": "请找美国户外家具 retail chains，不要做市场分析",
       "expected_route": "bulk_customer_development",
-      "expected_next_skill": "scoping-lead-research",
+      "expected_next_skill": "using-superleads",
       "expected_split_customer_development": false,
       "expected_secondary_routes": [],
       "expected_missing_fields": [],
@@ -463,7 +465,7 @@
       "name": "bulk neutral packaging brake pads germany",
       "text": "卖汽车刹车片，自有品牌和中性包装，找德国客户。",
       "expected_route": "bulk_customer_development",
-      "expected_next_skill": "scoping-lead-research",
+      "expected_next_skill": "using-superleads",
       "expected_split_customer_development": false,
       "expected_secondary_routes": [],
       "expected_missing_fields": [],
@@ -475,10 +477,12 @@
       "name": "bulk customer attribute needs ce certification",
       "text": "帮我找需要 CE 认证的欧洲进口商",
       "expected_route": "bulk_customer_development",
-      "expected_next_skill": "scoping-lead-research",
+      "expected_next_skill": "using-superleads",
       "expected_split_customer_development": false,
       "expected_secondary_routes": [],
-      "expected_missing_fields": [],
+      "expected_missing_fields": [
+        "product_or_scope"
+      ],
       "response_must_contain": [
         "批量客户开发"
       ]
@@ -487,10 +491,12 @@
       "name": "bulk customer attribute needs ul certification",
       "text": "找美国需要UL认证的进口商",
       "expected_route": "bulk_customer_development",
-      "expected_next_skill": "scoping-lead-research",
+      "expected_next_skill": "using-superleads",
       "expected_split_customer_development": false,
       "expected_secondary_routes": [],
-      "expected_missing_fields": [],
+      "expected_missing_fields": [
+        "product_or_scope"
+      ],
       "response_must_contain": [
         "批量客户开发"
       ]
@@ -499,10 +505,12 @@
       "name": "bulk explicitly rejects product market analysis",
       "text": "我不要做产品出海市场分析，找美国客户",
       "expected_route": "bulk_customer_development",
-      "expected_next_skill": "scoping-lead-research",
+      "expected_next_skill": "using-superleads",
       "expected_split_customer_development": false,
       "expected_secondary_routes": [],
-      "expected_missing_fields": [],
+      "expected_missing_fields": [
+        "product_or_scope"
+      ],
       "expected_interaction_mode": "discovery_snapshot",
       "response_must_contain": [
         "批量客户开发"
@@ -512,11 +520,42 @@
       "name": "formal customer-list intent keeps bulk route",
       "text": "给我一份德国工业传感器的正式开发名单",
       "expected_route": "bulk_customer_development",
-      "expected_next_skill": "scoping-lead-research",
+      "expected_next_skill": "using-superleads",
       "expected_split_customer_development": false,
       "expected_secondary_routes": [],
       "expected_missing_fields": [],
       "expected_interaction_mode": "formal_research",
+      "response_must_contain": [
+        "批量客户开发"
+      ]
+    },
+    {
+      "name": "part number plus ireland distributor routes to fast bulk discovery",
+      "text": "13185402+爱尔兰经销商",
+      "expected_route": "bulk_customer_development",
+      "expected_next_skill": "using-superleads",
+      "expected_split_customer_development": false,
+      "expected_secondary_routes": [],
+      "expected_missing_fields": [],
+      "expected_interaction_mode": "discovery_snapshot",
+      "expected_product_anchor_type": "part_number",
+      "expected_product_anchor": "13185402",
+      "response_must_contain": [
+        "批量客户开发",
+        "公开检索核对产品身份"
+      ]
+    },
+    {
+      "name": "ireland distributor without product asks only for product scope",
+      "text": "爱尔兰经销商",
+      "expected_route": "bulk_customer_development",
+      "expected_next_skill": "using-superleads",
+      "expected_split_customer_development": false,
+      "expected_secondary_routes": [],
+      "expected_missing_fields": [
+        "product_or_scope"
+      ],
+      "expected_interaction_mode": "discovery_snapshot",
       "response_must_contain": [
         "批量客户开发"
       ]

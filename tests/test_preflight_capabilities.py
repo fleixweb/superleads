@@ -137,6 +137,68 @@ class PreflightCapabilitiesTest(unittest.TestCase):
         self.assertEqual("timeout", result["capability_failure"]["reason"])
         self.assertFalse(result["capability_failure"]["retry"])
 
+    def test_chatgpt_desktop_native_capabilities_are_not_overridden_by_codex_probe_failure(self) -> None:
+        result = preflight_capabilities.preflight({
+            "platform": "chatgpt_desktop",
+            "task_mode": "discovery_snapshot",
+            "capabilities": {
+                "search.web": "available",
+                "source.open": "available",
+            },
+            "capability_adapter_report": {
+                "platform": "codex_cli",
+                "adapter": {"adapter_id": "codex_cli_web_run", "adapter_version": "1"},
+                "detected_at": "2026-08-17T00:00:00Z",
+                "detection": "wrong_platform_probe",
+                "host_tools": {
+                    "web__run": {
+                        "status": "failed",
+                        "operations": {
+                            "search_query": {"status": "failed", "http_status": 404},
+                            "open": {"status": "not_verified"},
+                        },
+                    }
+                },
+                "canonical_capabilities": {"search.web": "missing", "source.open": "unknown"},
+            },
+        })
+
+        self.assertEqual("available", result["capabilities"]["search.web"]["status"])
+        self.assertEqual("available", result["capabilities"]["source.open"]["status"])
+        self.assertEqual("ready", result["discovery_snapshot_status"])
+        self.assertEqual("ready", result["formal_research_status"])
+        self.assertNotIn("capability_failure", result)
+
+    def test_codex_404_does_not_globally_block_fast_discovery_before_host_inventory_is_complete(self) -> None:
+        payload = {
+            "platform": "codex_cli",
+            "task_mode": "discovery_snapshot",
+            "host_tool_inventory_complete": False,
+            "capability_adapter_report": {
+                "platform": "codex_cli",
+                "adapter": {"adapter_id": "codex_cli_web_run", "adapter_version": "1"},
+                "detected_at": "2026-08-17T00:00:00Z",
+                "detection": "current_session_web__run_search_query",
+                "host_tools": {
+                    "web__run": {
+                        "status": "failed",
+                        "operations": {
+                            "search_query": {"status": "failed", "http_status": 404},
+                            "open": {"status": "not_verified"},
+                        },
+                    }
+                },
+                "canonical_capabilities": {"search.web": "missing", "source.open": "unknown"},
+            },
+        }
+
+        result = preflight_capabilities.preflight(payload)
+
+        self.assertEqual("blocked", result["formal_research_status"])
+        self.assertEqual("needs_host_capability_check", result["discovery_snapshot_status"])
+        self.assertIn("宿主实际暴露", result["discovery_snapshot_message"])
+        self.assertNotIn("停止快速候选池", result["discovery_snapshot_message"])
+
 
 if __name__ == "__main__":
     unittest.main()

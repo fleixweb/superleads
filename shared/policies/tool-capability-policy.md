@@ -1,5 +1,7 @@
 # Tool Capability Policy
 
+Capability discovery starts from the current host's actual tool inventory, not from a preferred adapter name in this repository. A named adapter is eligible only when the host exposes that operation. One adapter's 404, timeout, or missing-tool response is adapter-local: do not retry the same failed adapter, but do check another already-exposed native provider before declaring `search.web` unavailable. In particular, a Codex `web__run` failure must not erase a verified ChatGPT Desktop, Claude Code, Hermes, or WorkBuddy capability.
+
 | Capability | Highest allowed layer | Rule |
 |---|---|---|
 | `search.web` | 发现候选池 / SearchLog | Never supports Claim. |

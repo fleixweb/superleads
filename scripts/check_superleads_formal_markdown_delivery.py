@@ -34,7 +34,7 @@ SKILL_FILE_SNIPPETS = {
     "skills/using-superleads/SKILL.md": (
         "using-superleads-formal-delivery.md",
     ),
-    "skills/exporting-lead-workbooks/SKILL.md": (
+    "shared/internal-stages/exporting-lead-workbooks.md": (
         "export_superleads_markdown.py",
         "Do not hand-render Markdown",
         "Do not manually",

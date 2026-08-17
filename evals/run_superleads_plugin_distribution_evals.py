@@ -126,13 +126,13 @@ def run_suite() -> dict[str, Any]:
 
         dead_ref = tmp_path / "dead_reference"
         _build_distribution(dead_ref)
-        (dead_ref / "spec" / "10-product-outbound-market-analysis-contract.md").unlink()
+        (dead_ref / "shared" / "references" / "product-market-runtime.md").unlink()
         dead_ref_result = _assert_result(
             _checker(py, dead_ref, 1, runtime_package=True),
             expected_codes=["plugin_distribution_reference_missing"],
             require_ok_payload=False,
         )
-        dead_ref_result["name"] = "dead Skill spec reference is caught"
+        dead_ref_result["name"] = "dead Skill runtime reference is caught"
         results.append(dead_ref_result)
 
         missing_runtime_script = tmp_path / "missing_runtime_script"
@@ -145,6 +145,17 @@ def run_suite() -> dict[str, Any]:
         )
         missing_runtime_script_result["name"] = "missing Skill-referenced script is caught"
         results.append(missing_runtime_script_result)
+
+        missing_internal_stage = tmp_path / "missing_internal_stage"
+        _build_distribution(missing_internal_stage)
+        (missing_internal_stage / "shared" / "internal-stages" / "verification-before-delivery.md").unlink()
+        missing_internal_stage_result = _assert_result(
+            _checker(py, missing_internal_stage, 1, runtime_package=True),
+            expected_codes=["plugin_distribution_internal_stage_missing"],
+            require_ok_payload=False,
+        )
+        missing_internal_stage_result["name"] = "missing on-demand internal stage is caught"
+        results.append(missing_internal_stage_result)
 
         forbidden_tmp = tmp_path / "forbidden_tmp"
         _build_distribution(forbidden_tmp)

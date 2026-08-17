@@ -104,6 +104,7 @@ _TABLE_ENRICHMENT_OR_EXPORT_MARKERS = (
     "export",
 )
 _BUSINESS_MARKERS = (
+    "找",
     "找客户",
     "找买家",
     "开发客户",
@@ -116,6 +117,12 @@ _BUSINESS_MARKERS = (
     "出海市场",
     "出口要求",
     "进口要求",
+    "进口商",
+    "经销商",
+    "分销商",
+    "批发商",
+    "零售商",
+    "代理商",
     "find importers",
     "lead list",
     "background check",
@@ -165,9 +172,13 @@ def is_export_help_request(text: str) -> bool:
 
 def _is_metadata_request(text: str) -> bool:
     normalized = _normalized(text)
+    version_request = _VERSION_REQUEST.search(normalized) is not None
+    version_metadata = version_request and (
+        "superleads" in normalized or not _contains(text, _BUSINESS_MARKERS)
+    )
     return (
         _is_help_request(text)
-        or _VERSION_REQUEST.search(normalized) is not None
+        or version_metadata
         or _CAPABILITY_REQUEST.search(normalized) is not None
         or _FEEDBACK_REQUEST.search(normalized) is not None
         or is_status_request(text)

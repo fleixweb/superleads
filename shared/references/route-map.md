@@ -2,22 +2,21 @@
 
 The pure intake layer runs before business routing and emits exactly one mode: `metadata`, `material_triage`, `discovery_snapshot`, or `formal_research`. `metadata` keeps `@superleads`, help, current-capability questions, and the feedback entry static with `operations: []`; current/installed version reads use only an explicitly supplied active plugin root, never an installed cache. `material_triage` is user-visible as `资料初审` for material-only PDF, Excel/CSV, and screenshot requests, and creates no Run/Brief or public-research work. Ordinary bulk customer development is a bounded `discovery_snapshot`; `完整报告`, `正式开发名单`, `标准交付`, `深度背调`, and `联系人归属核验` select `formal_research`. These modes do not replace business route values such as `bulk_customer_development`, `customer_background_research`, or `product_outbound_market_analysis`.
 
-Default route: `using-superleads` → `scoping-lead-research` → `discovery` → `exporting-lead-workbooks`.
+Default batch route: `using-superleads` → bounded `discovery`. Scope, planning, collection, verification, and export guidance live under `shared/internal-stages/` and are read only when the current route and delivery mode require them.
 
-单客户背调入口：`指定一个公司/品牌/域名/地址/邮箱/Candidate/用户材料 → 客户背调报告`，路由为 `using-superleads` → `scoping-lead-research` → `researching-customer-background`。它不产生新客户批量池，不要求预先 Entity 解析，可使用独立轻验证导出背景报告；该报告不进入正式名单 audit 或 manifest。正式标准开发名单仍是独立、明确请求的严格路径。
+单客户背调入口：`指定一个公司/品牌/域名/地址/邮箱/Candidate/用户材料 → researching-customer-background`。它不产生新客户批量池，不要求预先 Entity 解析，可使用独立轻验证导出背景报告；该报告不进入正式名单 audit 或 manifest。
 
-产品出海市场分析入口：`产品/型号/产品资料 + 目标国家/地区 + 市场/准入/认证/测试/注册/标签/税费/出口/物流/COO/外部因素问题 → 产品出海市场分析`，路由为 `using-superleads` → `analyzing-product-outbound-market`。它使用 `ProductMarketAnalysisGraph`，不产生 Candidate、Lead、客户名单、推荐客户类型或市场进入建议；用户同时要求“分析市场再找客户”时拆成两步，先做产品出海市场分析，待用户确认后再另启批量客户开发。认证类问题先查目标市场要求，再单独核对用户是否已有匹配材料。
+产品出海市场分析入口：`产品/型号/产品资料 + 目标国家/地区 + 市场/准入/认证/税费/出口/物流问题 → analyzing-product-outbound-market`。它使用 `ProductMarketAnalysisGraph`，不产生 Candidate、Lead、客户名单、推荐客户类型或市场进入建议。认证类问题先查目标市场要求，再单独核对用户是否已有匹配材料。
 
-路由细分：`开发某地市场`、`找需要 CE/UL/认证需求的进口商/客户` 属于批量客户开发，因为认证词是在描述目标客户属性；`出口某国是否需要 CE/UL/SDS/UN38.3/COO/关税/清关文件` 属于产品出海市场分析，因为用户在问产品进入目标市场的条件。用户明确 `找客户，并分析关税/准入/认证要求` 时，输出拆阶段顺序：先产品出海市场分析，再批量客户开发。用户明确 `不做市场分析` 或 `不找客户` 时，应尊重否定条件。
+路由细分：`找需要 CE/UL 的进口商/客户` 属于批量客户发现，因为认证词在描述客户范围；`出口某国是否需要 CE/UL/SDS/UN38.3/COO/关税/清关文件` 属于产品市场分析。同时明确多个目标时遵循 `composite-task-routing.md`，不等待用户为内部架构拆分请求。用户明确否定某路线时应尊重。
 
 `discovery` is the default discovery-first working phase, not a new required
 file or formal gate. It internally plans query expansion, records actual
 SearchLogs, discovers and de-duplicates Candidates, supplements public signals
 and visible contacts, and assigns business-relevance states. Use
-`writing-research-plans`, `executing-research-plans`,
-`collecting-contact-intelligence`, and `assessing-research-evidence` as
-internal or on-demand guidance; do not route every discovery round through
-them as four mandatory independent stages.
+  the matching files under `shared/internal-stages/` as on-demand guidance;
+  do not route every discovery round through them as mandatory independent
+  user-visible Skills.
 
 Conditional additions:
 

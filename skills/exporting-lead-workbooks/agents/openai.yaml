@@ -1,4 +1,0 @@
-interface:
-  display_name: "内部阶段：导出研究结果"
-  short_description: "父路线触发：verification-before-delivery：当前合法已验证 graph 与允许的输出模式"
-  default_prompt: "内部阶段。不要直接调用；缺少上述上下文必须停止，不得虚构报告。"

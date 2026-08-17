@@ -2,6 +2,10 @@
 
 Map platform-specific tools to Superleads capabilities before planning or execution. If a platform cannot provide a capability, record it in Run Context and lower the deliverable tier instead of inventing evidence.
 
+Before probing a named tool, inspect the tools the current host actually exposes. ChatGPT Desktop, Codex CLI, Claude Code, Hermes, and WorkBuddy may use different concrete names for the same `search.web` or `source.open` capability. Never call `web__run`, `web_search`, WebSearch, or another adapter merely because it appears in this document; use it only when that exact operation is present in the current host. A failure from one adapter applies only to that adapter. Do not retry the same failed adapter, but do check another already-exposed native provider before concluding that the host has no Web capability.
+
+For ChatGPT Desktop, prefer the app's actually exposed built-in browsing/search and source-opening operations. A Codex-only `web__run` 404 is not evidence that ChatGPT Desktop has no search capability. Record the successful host capability and concrete operation that were actually used; do not record the failed Codex probe in a formal Run graph.
+
 | Superleads capability | Codex examples | Claude Code examples | Hermes examples | WorkBuddy examples | Degrade when missing |
 |---|---|---|---|---|---|
 | `search.web` | native `web__run.search_query`, `web_search`, or another host-exposed search tool | WebSearch | Local/web search | built-in search | Use user-provided materials or write plan only. |
@@ -22,6 +26,8 @@ Map platform-specific tools to Superleads capabilities before planning or execut
 | `trademark.lookup` | trademark MCP/browser | trademark fetch | trademark lookup | trademark workflow | Brand/trademark claims need manual or source note. |
 | `maps.lookup` | maps MCP/browser | map/browser | map lookup | map workflow | Map phone/address can be contact clue with source note. |
 | `memory.recall` | local memory/MemOS | project memory | memory | workflow memory | Use only to prioritize plans; never Claim/Assessment evidence. |
+
+快速候选池不运行正式研究 preflight。若同一失败适配器返回 404 或超时，停止重试该适配器，并检查宿主实际暴露的其他原生检索。只有宿主能力清单已确认没有可用搜索时，才降级为用户资料整理或查询计划；不得伪造候选、来源或正式图谱。
 
 ## Codex CLI Native Web Search
 

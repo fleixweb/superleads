@@ -13,6 +13,12 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CASES = ROOT / "evals" / "cases" / "superleads_route_cases.json"
 ROUTER = ROOT / "scripts" / "route_superleads_intake.py"
+PUBLIC_NEXT_SKILLS = {
+    None,
+    "using-superleads",
+    "researching-customer-background",
+    "analyzing-product-outbound-market",
+}
 
 
 def _run_case(py: str, case: dict[str, Any]) -> tuple[bool, str]:
@@ -34,6 +40,8 @@ def _run_case(py: str, case: dict[str, Any]) -> tuple[bool, str]:
         problems.append(f"router output is not JSON: {exc}")
 
     if actual is not None:
+        if actual.get("next_skill") not in PUBLIC_NEXT_SKILLS:
+            problems.append(f"next_skill exposes unregistered internal stage {actual.get('next_skill')!r}")
         for key, expected_key in (
             ("route", "expected_route"),
             ("next_skill", "expected_next_skill"),
@@ -41,6 +49,8 @@ def _run_case(py: str, case: dict[str, Any]) -> tuple[bool, str]:
             ("response_contract", "expected_response_contract"),
             ("language", "expected_language"),
             ("interaction_mode", "expected_interaction_mode"),
+            ("product_anchor_type", "expected_product_anchor_type"),
+            ("product_anchor", "expected_product_anchor"),
         ):
             if expected_key in case and actual.get(key) != case.get(expected_key):
                 problems.append(f"{key} expected {case.get(expected_key)!r} got {actual.get(key)!r}")

@@ -26,9 +26,9 @@ from superleads_task_modes import (
 COUNTRY_HINTS = (
     "美国", "德国", "加拿大", "英国", "法国", "意大利", "西班牙", "越南", "中国", "日本",
     "韩国", "澳大利亚", "欧盟", "墨西哥", "巴西", "印度", "土耳其", "沙特", "阿联酋",
-    "中东", "东南亚", "欧洲", "南美", "北美", "非洲",
+    "中东", "东南亚", "欧洲", "南美", "北美", "非洲", "爱尔兰",
     "united states", "usa", "u.s.", "america", "germany", "canada", "uk", "eu",
-    "european union", "vietnam", "china", "japan", "korea", "australia", "mexico",
+    "european union", "vietnam", "china", "japan", "korea", "australia", "mexico", "ireland",
 )
 MARKET_TOPIC_MARKERS = (
     "产品出海市场分析", "出海市场", "分析市场", "市场分析", "出口要求", "进入门槛",
@@ -62,6 +62,12 @@ CUSTOMER_TYPE_MARKERS = (
     "经销", "批发", "零售", "代理", "dealer", "distributor", "wholesaler",
     "retailer", "importer", "buyer", "reseller", "agent", "chain",
     "service company", "repair shop", "repair companies",
+)
+TERSE_CUSTOMER_TYPE_MARKERS = (
+    "买家", "进口商", "采购商", "经销商", "批发商", "零售商", "代理商",
+    "渠道商", "分销商", "连锁", "维修商", "服务商", "零件渠道", "贸易商",
+    "dealer", "distributor", "wholesaler", "retailer", "importer", "buyer",
+    "reseller", "agent", "chain", "service company", "repair shop", "repair companies",
 )
 CUSTOMER_ACTION_MARKERS = (
     "找", "寻找", "开发", "开拓", "拓展", "拓客", "获客", "挖掘", "收集",
@@ -98,11 +104,11 @@ SINGLE_OBJECT_REQUEST_MARKERS = (
 PRODUCT_MARKERS = (
     "产品", "型号", "电池", "锂电", "纺织", "衬衫", "面料", "化工", "农产品", "机械",
     "配件", "零件", "汽车配件", "户外家具", "柴油发电机", "发电机", "电水壶", "保温杯",
-    "音响", "巡演音响", "专业音响", "扩声系统",
+    "音响", "巡演音响", "专业音响", "扩声系统", "传感器", "工业传感器", "刹车片",
     "钢材", "粮食", "矿产", "水果", "蔬菜", "茶", "工装", "灯芯绒",
     "steel", "battery", "textile", "fabric", "shirt", "product", "parts",
     "accessories", "furniture", "generator", "kettle", "kettles", "mug", "mugs",
-    "audio", "sound system", "touring sound",
+    "audio", "sound system", "touring sound", "sensor", "sensors", "brake pad", "brake pads",
 )
 MARKET_QUESTION_OR_ANALYSIS_MARKERS = (
     "分析", "查", "查询", "核实", "确认", "判断", "看一下", "了解", "研究", "评估",
@@ -151,6 +157,97 @@ def norm(value: str) -> str:
     return re.sub(r"\s+", " ", value or "").strip().casefold()
 
 
+def _part_number_anchor(text: str) -> str | None:
+    """Return an explicit model/part-number token without identifying its product."""
+    token_chars = r"A-Za-z0-9._/-"
+    pattern = rf"(?<![{token_chars}])(?=[{token_chars}]{{5,32}}(?![{token_chars}]))(?=[{token_chars}]*\d)[A-Za-z0-9][{token_chars}]{{4,31}}"
+    for match in re.finditer(pattern, text):
+        value = match.group(0).strip("._/-")
+        prefix = text[max(0, match.start() - 32):match.start()]
+        if re.search(r"(?i)(?:api\s*key|token|secret|password|密码|密钥|令牌)\s*[:：=]?\s*$", prefix):
+            continue
+        if not value or re.fullmatch(r"(?:19|20)\d{2}[-/.]\d{1,2}[-/.]\d{1,2}", value):
+            continue
+        if re.fullmatch(r"\d{1,2}[-/.]\d{1,2}[-/.](?:19|20)\d{2}", value):
+            continue
+        if re.match(r"(?:19|20)\d{2}[-/.]\d{1,2}[-/.]\d{1,2}[tT_]\d", value):
+            continue
+        if re.fullmatch(r"(?i)v?\d+(?:\.\d+){2,}", value):
+            continue
+        if re.match(r"(?i)version[._/-]", value):
+            continue
+        if re.match(r"(?i)(?:un|iso|iec|en|din|astm|ul|fcc|gbt?)[._/-]?\d", value):
+            continue
+        if re.fullmatch(r"(?:\d{1,3}\.){3}\d{1,3}", value):
+            continue
+        compact_digits = re.sub(r"[._/-]", "", value)
+        if compact_digits.isdigit():
+            if len(compact_digits) >= 9:
+                continue
+            if re.fullmatch(r"(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])", compact_digits):
+                continue
+        if re.match(
+            r"(?i)(?:sk|pk|api[_-]?key|token|secret)[._-]|(?:akia|asia)[a-z0-9]|gh[pousr]_|github_pat_|xox[baprs]-|aiza",
+            value,
+        ):
+            continue
+        return value
+    return None
+
+
+def _remove_intake_markers(text: str, markers: tuple[str, ...]) -> str:
+    result = text
+    for marker in sorted(set(markers), key=len, reverse=True):
+        normalized_marker = norm(marker)
+        if re.fullmatch(r"[a-z0-9][a-z0-9 ._-]*", normalized_marker):
+            result = re.sub(
+                rf"(?<![a-z0-9]){re.escape(normalized_marker)}(?![a-z0-9])",
+                " ",
+                result,
+                flags=re.IGNORECASE,
+            )
+        else:
+            result = result.replace(normalized_marker, " ")
+    return result
+
+
+def _has_explicit_bulk_product_scope(text: str) -> bool:
+    """Detect a user-written product phrase without maintaining a closed product catalog."""
+    cleaned = _strip_patterns(text, NEGATED_MARKET_PATTERNS)
+    if re.search(
+        r"(?i)api\s*key|token|secret|password|密码|密钥|令牌|"
+        r"(?:sk|pk)[._-][a-z0-9]|(?:akia|asia)[a-z0-9]|gh[pousr]_|github_pat_|xox[baprs]-|aiza",
+        cleaned,
+    ):
+        return False
+    cleaned = _remove_intake_markers(
+        cleaned,
+        COUNTRY_HINTS + CUSTOMER_TYPE_MARKERS + CUSTOMER_ACTION_MARKERS + CUSTOMER_DEVELOPMENT_MARKERS,
+    )
+    cleaned = re.sub(
+        r"(?i)(?:有|需要|具备)?\s*(?:ce|ul|fcc|fda|rohs|reach|ukca)\s*(?:认证)?\s*(?:需求|要求)?(?:的)?",
+        " ",
+        cleaned,
+    )
+    cleaned = re.sub(
+        r"(?:帮我|请|我要|我想|给我|一份|我们|工厂|做|卖|想|最新版本|正式|产品|有|需要|需求|要求|认证|的)",
+        " ",
+        cleaned,
+    )
+    cleaned = re.sub(r"[\s+＋,，。；;:：!?！？()（）\[\]{}]+", " ", cleaned).strip(" ._/-")
+    if not cleaned:
+        return False
+    if re.fullmatch(r"\d{1,2}[-/.]\d{1,2}[-/.](?:19|20)\d{2}", cleaned):
+        return False
+    if re.match(r"(?:19|20)\d{2}[-/.]\d{1,2}[-/.]\d{1,2}[tT_]\d", cleaned):
+        return False
+    if re.fullmatch(r"(?i)(?:v?\d+(?:\.\d+){2,}|version[._/-].+)", cleaned):
+        return False
+    if re.fullmatch(r"\d{9,}", re.sub(r"[._/-]", "", cleaned)):
+        return False
+    return bool(re.search(r"[\u4e00-\u9fff]{2,}|[a-zA-Z]{3,}", cleaned))
+
+
 def contains_any(text: str, markers: tuple[str, ...]) -> bool:
     haystack = norm(text)
     for marker in markers:
@@ -194,6 +291,10 @@ def _has_customer_development_intent(text: str) -> bool:
     if has_action and has_type:
         return True
     if has_type and contains_any(clean, PRODUCT_MARKERS):
+        return True
+    if contains_any(clean, TERSE_CUSTOMER_TYPE_MARKERS) and (
+        contains_any(clean, COUNTRY_HINTS) or _part_number_anchor(clean)
+    ):
         return True
     # 外贸口语里“开发某某市场”常等于找该地区客户；只有同时问准入/税费/认证等，
     # 才拆成产品市场分析 + 后续客户开发。
@@ -547,13 +648,29 @@ def classify(
     has_background = _has_background_intent(text) or (
         _has_concrete_subject_anchor(text) and contains_any(text, BACKGROUND_MARKERS)
     )
-    has_product = contains_any(text, PRODUCT_MARKERS)
+    part_number = _part_number_anchor(text)
+    product_scope_text = _strip_patterns(text, NEGATED_MARKET_PATTERNS)
     has_country = contains_any(text, COUNTRY_HINTS)
+    has_product = (
+        contains_any(product_scope_text, PRODUCT_MARKERS)
+        or part_number is not None
+        or (
+            has_customer_development
+            and has_country
+            and contains_any(text, TERSE_CUSTOMER_TYPE_MARKERS)
+            and _has_explicit_bulk_product_scope(text)
+        )
+    )
     direct_market = "产品出海市场分析" in _strip_patterns(text, NEGATED_MARKET_PATTERNS)
     market_intent = _has_market_intent(text)
     has_product_material = has_product or (market_intent and _has_concrete_subject_anchor(text))
     requested_market_modules = _requested_market_modules(text)
     language = detect_language(text)
+    product_anchor_contract = (
+        {"product_anchor_type": "part_number", "product_anchor": part_number}
+        if part_number is not None
+        else {}
+    )
     # Table enrichment may include public email, phone, or a contact field. It
     # becomes a separate contact subtask only when the user explicitly asks to
     # verify or supplement public contacts, rather than merely fill a column.
@@ -599,9 +716,14 @@ def classify(
             "customer_background_research": "researching-customer-background",
             "product_outbound_market_analysis": "analyzing-product-outbound-market",
             "bulk_customer_development": "using-superleads",
-            "existing_table_enrichment": "scoping-lead-research",
-            "contact_supplement": "collecting-contact-intelligence",
-            "export_delivery": "exporting-lead-workbooks",
+            "existing_table_enrichment": "using-superleads",
+            "contact_supplement": "using-superleads",
+            "export_delivery": "using-superleads",
+        }
+        stage_by_route = {
+            "existing_table_enrichment": "shared/internal-stages/scoping-lead-research.md",
+            "contact_supplement": "shared/internal-stages/collecting-contact-intelligence.md",
+            "export_delivery": "shared/internal-stages/exporting-lead-workbooks.md",
         }
         names = ("、" if language == "zh" else ", ").join(item["display_name"] for item in subtasks)
         status_lines = (
@@ -628,7 +750,7 @@ def classify(
                     if language == "zh"
                     else f"{item['display_name']}: Planning the public-information scope for this run."
                 )
-        return _with_interaction_mode({
+        payload = {
             "route": "composite_superleads_task",
             "next_skill": skill_by_route[first["route"]],
             "split_customer_development": False,
@@ -641,18 +763,23 @@ def classify(
             "language": language,
             "parent_title": composite["parent_title"],
             "response_lines": status_lines,
-        }, interaction_mode)
+        }
+        if first["route"] in stage_by_route:
+            payload["next_stage_reference"] = stage_by_route[first["route"]]
+        return _with_interaction_mode(payload, interaction_mode)
 
     if _has_feedback_correction(text):
         if current_run_id:
             return _with_interaction_mode({
                 "route": "current_run_feedback_correction",
-                "next_skill": "learning-from-feedback",
+                "next_skill": "using-superleads",
+                "next_stage_reference": "shared/internal-stages/learning-from-feedback.md",
                 "split_customer_development": False,
                 "secondary_routes": [],
                 "route_order": ["current_run_feedback_correction"],
                 "missing_fields": [],
                 "feedback_scope": "current_run",
+                "feedback_action": "current_run_correction",
                 "response_lines": ["我会只在本轮结果中记录这项范围或事实纠正，不会自动保存为长期偏好。"],
             }, interaction_mode)
         return _with_interaction_mode({
@@ -669,7 +796,8 @@ def classify(
         if current_result_valid:
             return _with_interaction_mode({
                 "route": "export_delivery",
-                "next_skill": "exporting-lead-workbooks",
+                "next_skill": "using-superleads",
+                "next_stage_reference": "shared/internal-stages/exporting-lead-workbooks.md",
                 "split_customer_development": False,
                 "secondary_routes": [],
                 "route_order": ["export_delivery"],
@@ -715,7 +843,8 @@ def classify(
     if has_table and not direct_market:
         return _with_interaction_mode({
             "route": "existing_table_enrichment",
-            "next_skill": "scoping-lead-research",
+            "next_skill": "using-superleads",
+            "next_stage_reference": "shared/internal-stages/scoping-lead-research.md",
             "split_customer_development": False,
             "secondary_routes": [],
             "route_order": ["existing_table_enrichment"],
@@ -751,14 +880,17 @@ def classify(
         # is customer development, while “分析市场然后找客户” is split-stage.
         return _with_interaction_mode({
             "route": "bulk_customer_development",
-            "next_skill": "scoping-lead-research",
+            "next_skill": "using-superleads",
+            "next_stage_reference": "shared/internal-stages/scoping-lead-research.md",
             "split_customer_development": False,
             "secondary_routes": [],
             "route_order": ["bulk_customer_development"],
-            "missing_fields": [] if has_product or has_country else ["product_or_scope"],
+            "missing_fields": [] if has_product else ["product_or_scope"],
+            **product_anchor_contract,
             **_bulk_execution_contract(interaction_mode),
             "response_lines": [
                 "我理解你要做的是：批量客户开发。",
+                *([f"产品锚点：番号/料号 {part_number}；先通过公开检索核对产品身份，这不是模型推断。"] if part_number else []),
                 "先返回发现候选池：每家保留官网或搜索结果来源、业务匹配理由和公开联系方式状态。社媒、地图、贸易记录和深度联系人本轮先标为未核验。",
                 "首批完成后，你可以选择继续扩展至 30 家或 50 家。",
             ],
@@ -784,14 +916,17 @@ def classify(
     if has_customer_development:
         return _with_interaction_mode({
             "route": "bulk_customer_development",
-            "next_skill": "scoping-lead-research",
+            "next_skill": "using-superleads",
+            "next_stage_reference": "shared/internal-stages/scoping-lead-research.md",
             "split_customer_development": False,
             "secondary_routes": [],
             "route_order": ["bulk_customer_development"],
-            "missing_fields": [] if has_product or has_country else ["product_or_scope"],
+            "missing_fields": [] if has_product else ["product_or_scope"],
+            **product_anchor_contract,
             **_bulk_execution_contract(interaction_mode),
             "response_lines": [
                 "我理解你要做的是：批量客户开发。",
+                *([f"产品锚点：番号/料号 {part_number}；先通过公开检索核对产品身份，这不是模型推断。"] if part_number else []),
                 "先返回发现候选池：每家保留官网或搜索结果来源、业务匹配理由和公开联系方式状态。社媒、地图、贸易记录和深度联系人本轮先标为未核验。",
                 "首批完成后，你可以选择继续扩展至 30 家或 50 家。",
             ],

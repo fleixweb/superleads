@@ -78,12 +78,16 @@ that the host exposes those tools. When normal Web Search plus Source Open or
 Browser Render can read a public social or map URL, record it as an ordinary
 `social` or `map` Source. Do not fabricate an independent API operation.
 
-If a recorded web__run probe returns 404 or times out, treat that capability
-as unavailable after the one probe: do not retry it and do not use shell/curl
-as a substitute for search.web. With no other recorded source capability,
-stop the fast candidate-pool path with the capability message rather than
-creating a partial formal graph. Do not install, configure, or depend on an
-external tool server.
+Start from the 宿主实际暴露的 search/source tools. Do not call `web__run`,
+`web_search`, or another named adapter unless that operation exists in the
+current host. If one provider returns 404 or times out, do not retry the
+同一失败适配器 and do not use shell/curl as a substitute for `search.web`.
+Check another native provider only when it is already exposed by the host.
+For fast discovery, degrade to the successful native provider, user-provided
+material, or a query plan; never create a partial formal graph. Only a formal
+route hard-stops after the completed host inventory confirms that no usable
+search plus source-opening path exists. Do not install, configure, or depend
+on an external tool server.
 
 The native search adapter controls only `search.web` and `source.open`; keep
 independently available rendering and document capabilities in the Run rather

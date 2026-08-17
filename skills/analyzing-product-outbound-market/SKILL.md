@@ -1,240 +1,48 @@
 ---
 name: analyzing-product-outbound-market
-description: "Use when the user asks for objective outbound market analysis for a specific product and target country/region, including Google Trends/search-interest signals, public market and price references, destination compliance, import duties/taxes, export-country requirements, logistics routes, customs pre-filing nodes, COO/proof-of-origin requirements, and recent external factors. Do not use for customer discovery, lead lists, single-company background research, or market-entry recommendations."
+description: "Use for objective analysis of a specified product entering a target country or region. Scope to the requested facts such as public prices, market signals, compliance, duties, export requirements, or logistics. Do not use for customer discovery, company background research, or market-entry recommendations."
 ---
 
 # 产品出海市场分析
 
-## Purpose
+## 静态帮助守卫
 
-Route and run the Superleads product outbound market analysis path:
+用户只输入 `@`、`@superleads`，或询问帮助、怎么用、你能干嘛等简短使用方法时，直接用用户语言返回精简引导。不运行工具：不运行 shell、不搜索、不做能力预检，也不检查版本、创建研究对象或加载市场参考。明确要求详细用法时，只静态阅读 `../../shared/references/superleads-user-guidance.md`。
 
-`产品 / 品类 / 候选 HS-HTS + 目标国家/地区 + 贸易前提 -> 产品出海市场分析 -> 客观市场与准入信息矩阵`
+## 路由优先
 
-This skill is parallel to bulk customer development and single-customer background research. It does not create Leads, customer lists, recommended customer types, market-entry advice, recommended prices, or best shipping choices.
-
-若同一次请求包含任意两个或以上明确业务目标，例如产品市场分析加客户背调或批量客户发现，创建一个父级组合任务；不得要求用户为了内部架构而拆成多次调用。产品市场分析保留为独立子任务，并与兄弟子任务隔离来源用途和事实边界。
-
-## Required references and scripts
-
-Read these only as needed:
-
-- `../../shared/references/superleads-user-guidance.md` for terminal user-delivery footer rules.
-- `../../shared/references/product-outbound-market-intake.md` for the entry response, missing-info questions, and route boundaries.
-- `../../shared/references/product-market-evidence-notes.example.json` when preparing compact evidence notes from opened sources.
-- `../../spec/10-product-outbound-market-analysis-contract.md` for product boundaries.
-- `../../spec/13-product-outbound-market-analysis-workbook-contract.md` for workbook sheets and user-visible fields.
-- `../../spec/14-product-outbound-market-analysis-evidence-boundary-rules.md` for forbidden evidence upgrades.
-- `../../spec/24-product-outbound-market-analysis-origin-proof-requirements.md` when COO / proof of origin appears.
-- `../../spec/29-product-outbound-market-analysis-certification-requirement-calibration.md` when certification, test, registration, labeling, packaging, SDS, UN38.3, or compliance-file requirements appear.
-- Run `../../scripts/preflight_capabilities.py --require-formal-research` before a formal analysis. It requires `search.web` plus `source.open`, `browser.render`, or `document.extract`; if blocked, give the prescribed switch-environment message and do not issue a market report or source plan as a substitute delivery.
-- When the Codex session exposes `web__run`, prefer its native operations instead of any third-party MCP: use `search_query` for SearchLog candidate locators, then `open` for each source whose facts may enter the report. For the same Run, record the verified `codex_cli_web_run` adapter report and use `concrete_tool: web__run` on SearchLogs and opened Observations. `click`, `find`, `screenshot`, and `image_query` are auxiliary operations only; they do not independently authorize a formal source or fact.
-- When `web__run.search_query` succeeds but `web__run.open` cannot provide the public HTML/text source, use `../../scripts/capture_public_http_source.py --url <public-url> --run-id <run-id> --format json`. It performs one credential-free `curl GET` per requested URL, verifies each DNS resolution and redirect target as public, and emits one matching open operation plus Source / Observation seeds per URL with `concrete_tool: curl`. Merge that report into the same Run beside the `codex_cli_web_run` search-only report. It never grants `search.web`, creates SearchLogs, Claims, EvidenceCards, MatrixRows, tax rates, certification results, or logistics conclusions. If native search fails, stop at the capability gate; `curl` cannot replace it.
-- Plan source collection with `../../scripts/plan_product_market_sources.py` before any real search/open step. Its output is `source_plan_only`, an internal execution artifact rather than evidence or a formal user delivery.
-- Before compiling compact notes, run `../../scripts/precheck_superleads_uat_input.py --route product_outbound_market_analysis --graph source-observations.json --notes compact-evidence-notes.json --format json`. It catches invalid compact enums, missing/opened Observation bindings, and non-verbatim source excerpts without running the formal validator.
-- After real sources have been opened and recorded as Source / Observation, use `../../scripts/compile_product_market_evidence.py` to compile concise evidence notes into the existing EvidenceCard / MatrixRow / Gap graph objects. It does not search, open URLs, decide authority, or promote a status.
-- Run the same precheck on `compiled-market-graph.json` before the formal validator. That second pass catches broken EvidenceCard source refs and user-provided ProductAttribute values that would not appear in `产品档案与触发项`; it does not replace validation or audit.
-- Validate and audit existing graphs with `../../scripts/validate_product_market_analysis.py` and `../../scripts/audit_product_market_analysis.py`.
-- Export reviewed graphs with `../../scripts/export_product_market_workbook.py`.
-
-The final market report, or the terminal capability-stop message when formal research cannot proceed, follows the shared footer rules. Progress updates and standalone clarifications do not append the footer.
-
-## Intake workflow
-
-1. Confirm the route in human terms: `我理解你要做的是：产品出海市场分析。`
-2. Model the Brief internally; do not turn these fields into a user questionnaire:
-   - product name / model / version;
-   - target country or region;
-   - export declaration country, defaulting visibly to China only when the user did not set another country;
-   - origin country, departure node, destination node, and trade term if known;
-   - product triggers: battery, powered, magnetic, liquid, powder, chemical, dangerous goods, skin contact, food contact, child use, textile, animal/plant material, agricultural/cold-chain, bulk/breakbulk/RoRo/oversized, dual-use/export-control sensitivity.
-   - optional user materials: certificates, test reports, SDS, UN38.3, labels, BOM, registration files, invoices, packing lists, or COO. These help scope matching; they are not prerequisites for analyzing destination requirements.
-3. Ask at most three short questions only when missing information changes the route or blocks useful analysis. The only first-pass blocking questions are product identity and target country/region. A product name, category, use description, URL/PDF/image clue, or HS/HTS code is enough to start category-level analysis; a missing model/version lowers precision but does not stop the run.
-4. First-pass intake must not ask the user for IOR/importer of record, Incoterms/trade term, transaction value or quantity, expected entry date, customs broker, BOM, product photos, actual departure port, original certificates, test reports, SDS, or UN38.3. Ask for these only when the user explicitly requests final duty, formal customs filing, clearance readiness, or actual shipment arrangement.
-5. If the user also asks to find customers, investigate a company, supplement a table, collect public contacts, or export a current result, do not force separate confirmation. 当同次请求包含“任意两个或以上明确业务目标”时，创建一个父级组合任务；本市场路径保留为独立子任务，只等待自身确实缺少的输入或依赖。
-6. If the user asks whether the market is worth entering, translate it into objective analysis and state that the business decision is theirs.
-7. If the user asks about certification without having certificates, do not block on the missing certificates. First analyze what the destination market may require, then list which user/supplier/professional materials are needed to verify applicability.
-8. Category-level analysis changes only the object granularity. It does not lower the evidence standard: every user-visible fact still needs current-run source support, visible gap/conflict status, or an explicit not-executed row; never use category-level analysis to output final classification, final duty, no-certification, general-cargo, clearance-ready, or transportability conclusions.
-
-### Requested analysis scope
-
-Set the existing Brief field `analysis_modules_requested` before writing the
-source plan. It is the sole scope selector for the report; do not add another
-scope field.
-
-- Only an explicit complete request such as “完整市场分析”, “整体市场分析”, “全面分析”, or their clear English equivalents uses the complete report and includes every module. A product/market request with no stated information domain is ambiguous: ask one short scope question, or provide a clearly labelled minimum research snapshot; do not silently select every module.
-- A clearly scoped request may select one or more relevant modules. Preserve
-  every explicitly requested module in `analysis_modules_requested`; do not
-  expand a valid multi-module request into the complete report:
-  - certification, tests, registration, labels, SDS, UN38.3, CE, UL, SABER -> `market_access`;
-  - tariff, duty, tax rate, HS/HTS tax question -> `import_tax`;
-  - COO / proof of origin -> `certification` (the origin-proof row is included in that table);
-  - clearance, shipping, transport, pre-filing -> `logistics`;
-  - export declaration, inspection, export controls -> `export_requirements`;
-  - trends -> `market_trends`; public-price questions -> `public_price`. Do not turn either request into a complete report.
-- For example, “只做美国准入、税费、出口文件和物流” ->
-  `market_access`, `import_tax`, `export_requirements`, `logistics`.
-- Keep existing planner vocabulary such as `destination_compliance`,
-  `origin_proof_requirement`, and `market_signal` when they are already present
-  in a Brief; planning and exporters map both the compact user-facing keys and
-  those legacy keys to the corresponding query groups and tables.
-
-The three fixed tables are always included: `市场事实总览`, `产品档案与触发项`,
-and `信息来源与待确认事项`. A scoped report is not a partial complete report:
-it renders only the selected module tables plus these fixed tables. Its opening
-must state the boundary, for example:
-
-```text
-本轮范围：只做了「目标国准入与认证要求」一项。
-本轮未执行：进口税费、出口国要求、物流与申报、市场趋势与价格、季节窗口、近期外部因素。
-```
-
-For more than one requested module, list all selected scope groups rather than
-calling the request a single item.
-
-The complete report renders all twelve tables in the order below. Empty tables
-must explain whether collection was not run, ran without a usable public source,
-was not applicable to the current product triggers, or was source-restricted;
-do not use an unexplained “本表暂无矩阵行”. A scoped report must visibly state
-which modules are `本轮未执行`; it must not imply that omitted research found no
-information.
-
-Canonical source-planning Brief field names are: `product_name`, `target_country_or_region` / `destination_country_or_region`, `candidate_hs_hts`, `export_declaration_country`, `origin_country_or_region`, `manufacturing_country_clue`, `departure_country_or_region`, `departure_node`, `destination_node`, `product_trigger_tags`, `model_or_sku`, and `manufacturer_or_brand`. Treat other common words such as `hs_code` or `hts_code` as user clues to map into the canonical field before running source planning. Do not map `made_in_country`, `production_country`, `manufacturing_country`, or `coo_country` into `origin_country_or_region`; keep them as manufacturing clues unless the user explicitly states a customs-origin premise.
-
-## Evidence workflow
-
-Use `ProductMarketAnalysisGraph`, not Candidate / Claim / Assessment. Every user-visible fact must come from current-run Source / Observation / EvidenceCard, a visible Gap, a visible Conflict, or an explicit not-executed row.
-
-Keep these statuses visible instead of filling blanks: `verified`, `derived_calculation`, `candidate`, `preliminary_reference`, `business_confirmation_required`, `technical_docs_required`, `physical_verification_required`, `professional_confirmation_required`, `source_restricted`, `not_executed`, `not_applicable`, `not_provided`, `conflict_pending_review`.
-
-Search summaries, Source Packs, previous Skill summaries, and model summaries are leads for where to look, not facts.
-
-If formal source capability is unavailable, stop before this workflow. You may
-perform a clearly labeled `资料初审` of files or text the user already supplied,
-but it is not a product outbound market analysis and must not be exported as
-one.
-
-Before collecting live sources, use the Source Pack registry to generate a Query Plan. The plan may list packs, source entries, query strings, required authority levels, and observation requirements; it must not create EvidenceCards, MatrixRows, tax rates, certification conclusions, logistics times, trends, prices, or market-entry judgments.
-
-### Compact evidence compilation
-
-Do not hand-author repeated graph IDs, source references, row links, and gap
-links for every opened page. Once a Source / Observation already exists in the
-current graph, put only the decision-bearing fields into a compact notes JSON:
-
-- `product_attributes`: user-provided, known product fields such as voltage,
-  wattage, capacity, material, or model. Keep their non-final status; do not
-  silently turn user input into verified source evidence.
-- `authority_notes`: compact, human-reviewed authority assertions for an
-  already opened Observation. Each note must give the verbatim visible quote,
-  jurisdiction role/name, institution name, claimed authority level, identity
-  basis, what the source can and cannot support, and next verification steps.
-  The compiler expands it into the existing AuthorityProfile,
-  AuthorityIdentityEvidence, AuthorityCapability, and
-  AuthorityVerificationRecord objects. It defaults to
-  `candidate_needs_check` / `not_reviewed`; it never recognizes an official
-  source from a domain or name and never upgrades a status. An evidence note
-  may use `authority_note_ids` to attach the generated verification record.
-- `matrix_row_templates`: reusable existing row payloads, each with a
-  `template_id`. An evidence note may use `target_row_ids` to reference one or
-  more templates instead of repeating `row` or `rows`. Use exactly one of
-  `row`, `rows`, or `target_row_ids` per evidence note.
-- `evidence_notes`: one item per source fact, with an existing opened
-  `observation_id`, a `source_excerpt_quote` copied verbatim from that
-  Observation, field domain/name/value, applicability, what it supports and
-  does not support, boundary rules, and one target matrix `row` or template.
-  Use `rows` when one source fact genuinely supports multiple existing tables;
-  each row can carry its own authority/freshness references. Notes targeting
-  the same row are merged into one row with multiple EvidenceCard references.
-- an optional compact Gap when the same fact identifies a missing document,
-  product attribute, or professional confirmation.
-
-Run the compiler before validation:
+在读取其他参考前，先以当前用户原文运行：
 
 ```bash
-python3 scripts/compile_product_market_evidence.py \
-  --graph source-observations.json \
-  --notes compact-evidence-notes.json \
-  --output compiled-market-graph.json \
-  --format json
+python3 ../../scripts/route_superleads_intake.py --text "<current user message>" --format json
 ```
 
-Run the UAT input precheck before this compiler command with `--notes`, then
-again after compilation without `--notes`. The precheck is not evidence review
-and cannot turn an input into a valid report; its only role is to surface the
-common quote, enum, Source/Observation, and user-attribute projection mistakes
-before the formal validator.
+如果结果不是 `product_outbound_market_analysis`，立即按返回路线交接，不创建市场 Brief 或研究计划。只向用户显示 `response_lines`，不显示 JSON、内部阶段名或路径。
 
-The compiler rejects a missing, restricted, or unopened Observation and a
-quote that is not present in the cited original excerpt. It only carries the
-caller-supplied status; `verified`, authority, tax, classification, or
-compliance conclusions still pass through the existing validator and audit.
-Known product attributes also remove only the matching part of a compound
-unknown such as `额定电压/频率`; the unresolved part remains visible.
-Search summaries remain in SearchLog only and cannot be compiler input.
-`authority_notes` are not a shortcut around authority review: use an explicit
-human assertion tied to an opened Observation, and keep uncertain identity or
-scope at the supplied candidate/restricted status.
+同一次请求包含任意两个或以上明确业务目标时，按 `../../shared/references/composite-task-routing.md` 建立组合任务；市场分析保持独立的来源用途和事实边界。
 
-Certification/compliance rows must split two objects:
+## 最小入口
 
-- destination requirement: what the target market may require and under what
-  conditions;
-- user material status: whether the user has matching certificates, test
-  reports, SDS, UN38.3, labels, BOM, registrations, or declarations.
+需要产品或品类，以及目标国家/地区。缺少其中之一时只问一个真正阻塞的问题；型号、原产国、候选 HS/HTS、贸易术语或产品资料缺失时降低精度并列为待确认，不把它们都变成首轮问卷。
 
-Do not infer either object from the other.
+用户只问关税、认证、公开价格、趋势、出口文件或物流时，只执行相应模块。只有明确要求完整、整体或全面市场分析时才覆盖完整模块。模糊请求先确认范围，或交付明确标注的最小研究快照；未执行模块写“本轮未执行”。
 
-## Output shape
+## 不可变边界
 
-Prefer tables over long prose. Complete reports group information into these
-twelve tables:
+- 使用 `ProductMarketAnalysisGraph`，不生成客户名单或客户推荐。
+- 搜索摘要、历史 Run、Source Pack 和模型记忆只是线索，不是事实。
+- 用户可见事实必须来自本轮实际打开的来源，或显式的未知、冲突、来源受限和本轮未执行状态。
+- 候选 HS/HTS 不等于最终分类或税率；平台价格不等于成交价；趋势不等于采购需求。
+- 认证要求与用户已有证书是两个对象，不能互相推出。
+- 不猜最佳路线、保证时效、最终合规或是否值得进入市场。
+- 登录墙、验证码、403、付费墙和动态空壳标记为来源受限，不绕过。
 
-1. 市场事实总览
-2. 产品档案与触发项
-3. 长期需求与搜索趋势
-4. 公开市场资料与行业信息
-5. 线上市场与价格参考
-6. 季节、节日与销售窗口
-7. 产品准入与合规要求
-8. 进口税费
-9. 出口国要求
-10. 运输方式、路线、港口与申报节点
-11. 近期外部因素
-12. 信息来源与待确认事项
+## 按需执行
 
-For a chat-readable / Codex / ChatGPT app report, prefer the unified
-Superleads Markdown delivery command after the graph has passed validation and
-audit:
+路由确认后阅读 `../../shared/references/product-outbound-market-intake.md` 和 `../../shared/references/product-market-runtime.md`。后者包含模块选择、有限来源计划、紧凑证据编译和正式门禁；入口阶段不得直接加载开发期 `spec/` 文件。
 
-```bash
-python3 scripts/export_superleads_markdown.py graph.json --route product_outbound_market_analysis --output market-report.md --format json
-```
+正式研究前运行 `../../scripts/preflight_capabilities.py --require-formal-research`。真实来源能力缺失时停止正式路线，可将用户已提供资料整理为“资料初审”，但不得伪装成公开来源研究。
 
-For product-market CSV sheets plus optional Markdown / manifest, use:
+来源已打开后，任何包含市场事实的最终用户可见事实交付，包括按单项范围生成的研究快照，都必须依次运行输入预检、证据编译、`../../scripts/validate_product_market_analysis.py` 和 `../../scripts/audit_product_market_analysis.py`。范围确认、进度说明和单独澄清不运行这些门禁，也不能冒充事实交付。只有用户明确要求正式报告、Markdown、CSV 或工作簿导出时，才在校验和审计通过后运行对应 exporter。这些脚本不能被搜索摘要或未打开页面替代。
 
-```bash
-python3 scripts/export_product_market_workbook.py graph.json --output-dir out --format csv --markdown market-report.md --manifest manifest.json
-```
-
-Both exporters only move reviewed user-visible matrix rows and safe
-source/gap/conflict fields. They must not search, create customer lists,
-recommend target customers, judge whether the product should enter the market,
-recommend quotations, or finalize classification / duties / compliance.
-
-## Hard constraints
-
-- Do not generate customer lists, prospect pools, buyer recommendations, or target customer types.
-- Do not say `建议进入`, `值得开发`, `市场潜力高`, or similar market-entry judgments.
-- Do not turn Google Trends into sales, GMV, import volume, or purchasing demand.
-- Do not turn platform/list prices into transaction prices, wholesale target prices, or recommended quotations.
-- Do not turn candidate HS/HTS into final classification, final duty rate, or payable tax.
-- Do not treat missing user certificates as proof that destination certification is not required.
-- Do not treat user-provided certificates, test reports, SDS, UN38.3, labels, BOM, or registrations as proof that the target country accepts them or that the product is fully compliant.
-- Do not treat a product-page certificate download link as a verified certification without opening and scope-checking the file.
-- Do not treat marketplace, retailer, or customer certification requirements as destination-country legal requirements unless an authoritative source supports that.
-- Do not turn Made in / Production / origin marking into COO / proof-of-origin documents.
-- Do not turn preferential proof-of-origin requirements into all-import COO requirements.
-- Do not turn user-provided COO, invoice, packing list, or bill of lading into customs final origin rulings.
-- Do not guess departure port, best route, guaranteed transit time, or commodity shipping availability.
-- Do not expose graph IDs, EvidenceCard IDs, hashes, local paths, file URIs, tokens, or internal rule IDs in user-facing output.
+最终交付或终局能力受限说明遵循 `../../shared/references/superleads-user-guidance.md`；进度和单独澄清不附支持尾注。

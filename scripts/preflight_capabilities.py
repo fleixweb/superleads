@@ -71,7 +71,7 @@ def _invalid_platform_result() -> dict[str, Any]:
     }
 
 
-def _web_run_capability_failure(reports: list[Any]) -> dict[str, Any] | None:
+def _web_run_capability_failure(reports: list[Any], platform: str | None = None) -> dict[str, Any] | None:
     """Classify one failed host probe without scheduling another probe.
 
     Adapter resolution remains the source of truth for capability mapping. This
@@ -79,11 +79,17 @@ def _web_run_capability_failure(reports: list[Any]) -> dict[str, Any] | None:
     user-actionable terminal state so callers do not retry a known-bad host
     operation for minutes.
     """
+    if platform != "codex_cli":
+        return None
     for report in reports:
         if not isinstance(report, dict):
             continue
         adapter = report.get("adapter")
-        if not isinstance(adapter, dict) or adapter.get("adapter_id") != "codex_cli_web_run":
+        if (
+            report.get("platform") != "codex_cli"
+            or not isinstance(adapter, dict)
+            or adapter.get("adapter_id") != "codex_cli_web_run"
+        ):
             continue
         web_run = (report.get("host_tools") or {}).get("web__run")
         if not isinstance(web_run, dict):
@@ -152,10 +158,11 @@ def preflight(payload: dict[str,Any]|None) -> dict[str,Any]:
             if payload.get("platform") == "codex_cli":
                 capabilities_to_map = CODEX_CLI_ADAPTER_OWNED_CAPABILITIES
             else:
-                capabilities_to_map = adapter_result["owned_capabilities"]
-            if has_platform and payload.get("platform") != "codex_cli":
-                for capability in adapter_result["owned_capabilities"]:
-                    adapter_result["mapped_capabilities"][capability] = "unknown"
+                # Non-Codex hosts report the capabilities actually exposed by
+                # their own runtime. A stray Codex adapter probe must not erase
+                # a verified ChatGPT Desktop, Claude, Hermes, or WorkBuddy
+                # native capability.
+                capabilities_to_map = ()
             for capability in capabilities_to_map:
                 if capability in adapter_result["mapped_capabilities"]:
                     provided[capability] = adapter_result["mapped_capabilities"][capability]
@@ -168,7 +175,8 @@ def preflight(payload: dict[str,Any]|None) -> dict[str,Any]:
             adapter_result = _missing_codex_adapter_result()
             for capability in adapter_result["owned_capabilities"]:
                 provided[capability] = adapter_result["mapped_capabilities"][capability]
-    capability_failure = _web_run_capability_failure(reports)
+    platform = payload.get("platform") if isinstance(payload, dict) else None
+    capability_failure = _web_run_capability_failure(reports, platform)
     if capability_failure is not None:
         # A concrete failed host operation is stronger than an otherwise
         # malformed multi-capability report. Preserve fail-closed behavior for
@@ -177,6 +185,19 @@ def preflight(payload: dict[str,Any]|None) -> dict[str,Any]:
     capabilities={cap:{"status":normalize_status(provided.get(cap)),"highest_layer":layer,"rule":rule} for cap,(layer,rule) in CAPABILITY_RULES.items()}
     source_capable=any(capabilities[c]["status"]=="available" for c in ("source.open","browser.render","document.extract"))
     search_capable=capabilities["search.web"]["status"]=="available"
+    host_inventory_complete = bool(payload.get("host_tool_inventory_complete")) if isinstance(payload, dict) else False
+    if search_capable and source_capable:
+        discovery_status = "ready"
+        discovery_message = "当前宿主已报告可用的搜索与来源读取能力，可以开始快速候选池。"
+    elif search_capable:
+        discovery_status = "degraded_search_only"
+        discovery_message = "当前宿主可搜索但尚未验证来源读取；可以保留候选 URL 和搜索线索，事实与联系方式必须标为未核验。"
+    elif capability_failure is not None and not host_inventory_complete:
+        discovery_status = "needs_host_capability_check"
+        discovery_message = "当前失败只说明该 Codex 适配器不可用。请先检查宿主实际暴露的原生搜索工具；不要重复调用同一失败适配器。"
+    else:
+        discovery_status = "blocked"
+        discovery_message = "当前宿主未报告可用搜索能力；只能整理用户资料或返回查询计划，不能生成公开来源候选池。"
     formal_issues: list[dict[str, str]] = []
     if not search_capable:
         formal_issues.append({
@@ -213,6 +234,8 @@ def preflight(payload: dict[str,Any]|None) -> dict[str,Any]:
         "formal_research_status": "ready" if formal_ready else "blocked",
         "formal_research_issues": formal_issues,
         "formal_research_message": formal_message,
+        "discovery_snapshot_status": discovery_status,
+        "discovery_snapshot_message": discovery_message,
         "downgrade_notes": notes,
     }
     if capability_failure is not None:

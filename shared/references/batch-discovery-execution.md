@@ -48,8 +48,12 @@ capabilities, output mode, and evidence depth.
 
 ## Fast Candidate Pool
 
-For an unambiguous product + market + customer-type request, use one bounded
-Web capability probe and a run-wide first batch target of 10. Per-query-group
+For an unambiguous product + market + customer-type request, inspect the
+宿主实际暴露的工具 and use one bounded search through an exposed native provider;
+do not guess a Codex, ChatGPT Desktop, Claude, Hermes, or WorkBuddy tool name.
+Do not retry the 同一失败适配器. A different provider may be tried only when it
+is already present in the host tool inventory. Use a run-wide first batch
+target of 10. Per-query-group
 limits must not add up beyond that run-wide cap. Cover only website, directory,
 document, and search-result sources. Each candidate needs a public website or
 search-result reference, a factual business-match reason, and a public-contact
@@ -74,9 +78,14 @@ automatic prospects.
 Run or emulate `scripts/preflight_capabilities.py --require-formal-research`
 only before an explicit formal batch public-source route. It requires
 `search.web` plus `source.open`, `browser.render`, or `document.extract`. A
-recorded `web__run` 404 or timeout is a one-shot capability failure: do not
-retry it, do not substitute shell/curl search, and stop with the actionable
-capability message. Record only host operations actually used.
+recorded `web__run` 404 or timeout blocks that Codex adapter only: do not retry
+the 同一失败适配器 and do not substitute shell/curl search. Before concluding
+that the host has no Web capability, check the 宿主实际暴露的 native providers.
+For a fast snapshot, an unavailable provider degrades to another exposed native
+provider, user-provided material, or a query plan; it does not create a partial
+formal graph. A formal route still stops when the completed host capability
+inventory has no usable search plus source-opening path. Record only host
+operations actually used.
 
 Before a formal validator in real-business UAT, run
 `scripts/precheck_superleads_uat_input.py --route bulk_customer_development
@@ -88,40 +97,16 @@ real-business UAT, build the runtime package, initialize
 finalize, and verify both the completed bundle and a copied bundle. A `/tmp`
 run can retain a failed diagnostic but cannot establish portable formal success.
 
-An explicit formal request follows `using-superleads` ->
-`scoping-lead-research` -> `writing-research-plans` ->
-`executing-research-plans` -> `verification-before-delivery` ->
-`exporting-lead-workbooks`. Strict review and audit apply only to formal
-verification, contact ownership verification, a contactable list, or a
-standard development list.
+An explicit formal request reads the matching files under
+`shared/internal-stages/` in dependency order. Strict review and audit apply
+only to formal verification, contact ownership verification, a contactable
+list, or a standard development list.
 
 ## Composite Tasks
 
-When a request contains two or more explicit business objectives, create one
-parent task and isolated subroutes. Extract shared company/brand/domain/address
-/email/social anchors, products, markets, customer types, material scope,
-output requirements, and genuine dependencies. Build a background-research
-subtask for a specified object, a market-analysis subtask for product plus
-destination, a batch-discovery subtask for product plus customer scope, a
-table-enrichment subtask for supplied rows, a contact-supplement subtask only
-when explicitly requested, and an export subtask only after its upstream
-delivery requirements exist.
-
-Missing product or destination information blocks only its dependent subtask.
-Do not infer it from a company business description, search summary, another
-subtask, or model memory. Independent subtasks continue. Independent query
-groups, different source pages, different candidates' public-contact
-supplementation, different material files, and lightweight structural checks
-may run in parallel only when the host really provides that capability. Entity
-merge, source-conflict treatment, Claim promotion, dependent subtasks, final
-review, formal export, and parent-report aggregation stay serial.
-
-Keep facts isolated by subtask: company sources support company facts;
-regulatory and authority sources support market-access facts. Company
-existence, trade records, job titles, and market requirements cannot prove
-purchase intent, buyer identity, customer value, or market desirability.
-Search summaries remain clues. Source restrictions, missing work, and identity
-uncertainty affect only the subtask where they occur.
+Use `composite-task-routing.md` as the single authority for parent/subtask
+creation, dependencies, parallel boundaries, evidence isolation, and partial
+delivery. Do not duplicate or override that policy here.
 
 Show nontechnical status at actual phase boundaries. State scope, completed
 query groups, candidate or opened-source counts, supported facts, pending

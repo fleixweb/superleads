@@ -1,25 +1,28 @@
 ---
 name: learning-from-feedback
-description: "Use after Superleads delivery when user feedback should improve future discovery or contact collection."
+description: "Use when feedback must correct the current Superleads run, or when the user explicitly approves saving feedback for future discovery or contact collection."
 ---
 
 # Learning From Feedback
 
 ## 内部阶段前置条件
 
-父路线触发：exporting-lead-workbooks：当前交付结果与指定反馈对象。
+父路线触发：using-superleads 或 exporting-lead-workbooks：当前 Run 与指定反馈对象。
 不要直接调用；缺少上述上下文必须停止，不得虚构报告、反馈记录或持久化结论。
 
 ## Purpose
 
-Record user feedback for future ranking, source choice, search-query optimization, and contact extraction quality.
+Handle one of two explicit actions:
+
+- `current_run_correction`: apply the correction only to the named current Run. Do not save a long-term preference.
+- `persistent_save`: save feedback for future source choice, query optimization, or contact extraction only after the user gives明确同意 and the feedback class is recorded.
 
 This is cross-cutting after delivery, not a mandatory stage in each default
 discovery round.
 
 ## Required policy
 
-Read `../../shared/policies/profile-policy.md` before storing or applying feedback.
+Read `../../shared/policies/profile-policy.md` only for `persistent_save`. A `current_run_correction` does not write long-term feedback.
 
 ## Accepted feedback labels
 

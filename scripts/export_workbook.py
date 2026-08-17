@@ -2,7 +2,7 @@
 """Export Superleads research graph to XLSX or UTF-8-SIG CSV workbook sheets."""
 from __future__ import annotations
 
-import argparse, csv, json, re
+import argparse, csv, json, re, sys
 from pathlib import Path
 from typing import Any
 from _superleads_common import (
@@ -998,12 +998,14 @@ def main()->int:
         if a.output_path and Path(a.output_path).suffix.casefold()==".xlsx" and chosen=="auto": chosen="xlsx"
         if chosen=="auto":
             try: import openpyxl; chosen="xlsx"  # noqa
-            except Exception: chosen="csv"
+            except Exception as exc:
+                chosen="csv"
+                print(f"XLSX export unavailable ({exc}); using UTF-8-SIG CSV", file=sys.stderr)
         if chosen=="xlsx":
             try: files=write_xlsx_sheets(sheets,out,Path(a.output_path).name if a.output_path else "superleads_background_report.xlsx")
             except Exception as exc:
                 if a.format=="xlsx": raise
-                print(f"XLSX export unavailable ({exc}); falling back to UTF-8-SIG CSV"); files=write_csv_sheets(sheets,out); chosen="csv"
+                print(f"XLSX export unavailable ({exc}); falling back to UTF-8-SIG CSV", file=sys.stderr); files=write_csv_sheets(sheets,out); chosen="csv"
         else: files=write_csv_sheets(sheets,out)
         print(json.dumps({"ok":True,"format":chosen,"files":files,"background_validation":{"issue_count":0},"manifest":None},ensure_ascii=False,indent=2)); return 0
     from audit_delivery import audit_graph
@@ -1027,12 +1029,14 @@ def main()->int:
     if a.output_path and Path(a.output_path).suffix.casefold()==".xlsx" and chosen=="auto": chosen="xlsx"
     if chosen=="auto":
         try: import openpyxl; chosen="xlsx"  # noqa
-        except Exception: chosen="csv"
+        except Exception as exc:
+            chosen="csv"
+            print(f"XLSX export unavailable ({exc}); using UTF-8-SIG CSV", file=sys.stderr)
     if chosen=="xlsx":
         try: files=write_xlsx_sheets(sheets,out,Path(a.output_path).name if a.output_path else "superleads_workbook.xlsx")
         except Exception as exc:
             if a.format=="xlsx": raise
-            print(f"XLSX export unavailable ({exc}); falling back to UTF-8-SIG CSV"); files=write_csv_sheets(sheets,out); chosen="csv"
+            print(f"XLSX export unavailable ({exc}); falling back to UTF-8-SIG CSV", file=sys.stderr); files=write_csv_sheets(sheets,out); chosen="csv"
     else: files=write_csv_sheets(sheets,out)
     disclosures=["发现候选与弱证据项仅用于销售人工核查，不代表事实核查完成。"] if a.mode=="initial" else (["询盘信息仅记录来信中提及的内容，不代表企业资格或采购权已核验。"] if a.mode=="inquiry" else [])
     if provenance_disclosure and a.mode in {"standard","full"}:

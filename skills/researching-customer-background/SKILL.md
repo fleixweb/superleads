@@ -5,6 +5,20 @@ description: "Use when a user provides one specific company, brand, website/doma
 
 # 客户背调研究 Playbook
 
+## 静态帮助守卫
+
+用户只输入 `@`、`@superleads`，或询问帮助、怎么用、你能干嘛等简短使用方法时，直接用用户语言返回精简引导。不运行工具：不运行 shell、不搜索、不做能力预检，也不检查版本、创建研究对象或加载本 Playbook 其余内容。明确要求详细用法时，只静态阅读 `../../shared/references/superleads-user-guidance.md`。
+
+## 路由优先
+
+在读取本 Playbook 其他内容前，先以当前用户原文运行：
+
+```bash
+python3 ../../scripts/route_superleads_intake.py --text "<current user message>" --format json
+```
+
+如果结果不是 `customer_background_research` 或 `single_object_contact`，立即按返回路线交接，不开始本路线研究。只向用户显示 `response_lines`，不显示 JSON、内部阶段名或路径。
+
 ## 最终交付
 
 Read `../../shared/references/superleads-user-guidance.md` for terminal user-delivery footer rules. The final customer background report follows those rules; progress updates and standalone clarifications do not append the footer.
@@ -21,7 +35,7 @@ Superleads 的主路径不变：
 
 客户背调不是批量找客户的前置门槛，不替代批量发现；发现的关联实体默认不成为新 Lead，也不会自动把当前对象升级为标准开发名单。
 
-若同一次请求包含任意两个或以上明确业务目标，例如客户背调加产品市场分析或客户背调加表格补全，创建一个父级组合任务；不得要求用户为了内部架构而拆成多次调用。客户背调保留为独立子任务，并与兄弟子任务隔离来源用途和事实边界。
+同一次请求包含任意两个或以上明确业务目标时，按 `../../shared/references/composite-task-routing.md` 建立组合任务；客户背调保留为独立子任务。
 
 当前已支持 `task_mode=customer_background_research`、`output_mode=客户背调报告`、`background_research_target` 和独立背景报告 XLSX/CSV 导出。报告导出使用轻验证与当前 Brief 范围投影，不生成 `DeliveryManifest`，不进入 delivery status、正式 audit profile 或跨会话 Candidate/Lead 持久化。
 

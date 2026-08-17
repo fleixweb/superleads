@@ -1,4 +1,4 @@
 interface:
   display_name: "公开业务入口：批量发现公开客户信息"
   short_description: "批量发现公开客户信息；只交付带来源状态的候选池，不推荐客户"
-  default_prompt: "A bare @ activation or help request returns compact static guidance immediately: do not initialize batch discovery, read references, or run tools. For a concrete batch request, use $using-superleads with product/keywords, target market, and customer type."
+  default_prompt: "A bare @ activation returns compact static guidance with no tools. For any concrete request, use $using-superleads and run the deterministic intake router before loading route references."

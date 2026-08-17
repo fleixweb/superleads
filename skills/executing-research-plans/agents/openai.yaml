@@ -1,4 +1,0 @@
-interface:
-  display_name: "内部阶段：执行研究计划"
-  short_description: "父路线触发：writing-research-plans：当前 Run、Brief 与 Plan"
-  default_prompt: "内部阶段。不要直接调用；缺少上述上下文必须停止，不得虚构报告。"

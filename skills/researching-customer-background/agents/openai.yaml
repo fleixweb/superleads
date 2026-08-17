@@ -1,4 +1,4 @@
 interface:
   display_name: "公开业务入口：单一客户背调"
   short_description: "围绕一个指定对象整理受公开来源约束的事实，不开发批量客户"
-  default_prompt: "Use $researching-customer-background to research one specified customer, company, brand, website, email, address, Lead, or user-provided material."
+  default_prompt: "For bare activation or help, return static guidance with no tools. Otherwise use $researching-customer-background only after the deterministic intake router confirms one specified company, brand, domain, address, email, or public contact object."

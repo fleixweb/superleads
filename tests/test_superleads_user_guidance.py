@@ -31,8 +31,8 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
         skill = PUBLIC_BATCH_SKILL.read_text(encoding="utf-8")
         agent = PUBLIC_BATCH_AGENT.read_text(encoding="utf-8")
 
-        self.assertLess(skill.index("## Bare Activation Fast Path"), skill.index("## Batch Discovery Path"))
-        self.assertIn("do not read any research reference", skill)
+        self.assertLess(skill.index("## 裸启动"), skill.index("## 执行边界"))
+        self.assertIn("不要调用 shell", skill)
         self.assertLess(len(skill.encode("utf-8")), 6_000)
         self.assertIn("bare @ activation", agent)
 
@@ -221,7 +221,8 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
         source = (ROOT / "scripts" / "superleads_user_guidance.py").read_text(encoding="utf-8")
 
         self.assertIn("唯一内容模型", reference)
-        self.assertIn("static_help_response()", reference)
+        self.assertNotIn("static_help_response()", reference)
+        self.assertIn("静态引导", reference)
         self.assertIn("append_final_footer()", reference)
         self.assertNotIn("## Superleads 支持", reference)
         self.assertNotIn("https://github.com/fleixweb/superleads/issues", reference)
@@ -237,11 +238,11 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
 
     def test_final_delivery_skills_reference_the_shared_guidance(self) -> None:
         required_terminal_rules = {
-            ROOT / "skills" / "using-superleads" / "SKILL.md": "Only a terminal user delivery follows the footer rules",
-            ROOT / "skills" / "analyzing-product-outbound-market" / "SKILL.md": "terminal capability-stop message",
+            ROOT / "skills" / "using-superleads" / "SKILL.md": "终局交付才附",
+            ROOT / "skills" / "analyzing-product-outbound-market" / "SKILL.md": "终局能力受限说明",
             ROOT / "skills" / "researching-customer-background" / "SKILL.md": "final customer background report follows those rules",
-            ROOT / "skills" / "exporting-lead-workbooks" / "SKILL.md": "Completed CSV/XLSX and chat-readable exports follow the shared footer rules",
-            ROOT / "skills" / "collecting-contact-intelligence" / "SKILL.md": "final public-contact check follows those rules",
+            ROOT / "shared" / "internal-stages" / "exporting-lead-workbooks.md": "Completed CSV/XLSX and chat-readable exports follow the shared footer rules",
+            ROOT / "shared" / "internal-stages" / "collecting-contact-intelligence.md": "final public-contact check follows those rules",
         }
         for path, required_rule in required_terminal_rules.items():
             with self.subTest(path=path):
@@ -249,7 +250,10 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
                 self.assertIn("../../shared/references/superleads-user-guidance.md", text)
                 self.assertNotIn("https://github.com/fleixweb/superleads/issues", text)
                 self.assertIn(required_rule, text)
-                self.assertIn("standalone clarifications do not append the footer", text)
+                self.assertTrue(
+                    "standalone clarifications do not append the footer" in text
+                    or ("进度" in text and "澄清" in text and "不附" in text)
+                )
 
     def test_exposed_prompt_uses_the_three_user_business_entries(self) -> None:
         agent = (ROOT / "skills" / "using-superleads" / "agents" / "openai.yaml").read_text(encoding="utf-8")

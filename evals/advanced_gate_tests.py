@@ -1173,7 +1173,7 @@ def _assert_manual_contact_is_not_exported(directory: Path) -> list[str]:
 
 def _assert_standard_docs_include_source_links() -> list[str]:
     paths = [
-        ROOT / "skills" / "exporting-lead-workbooks" / "SKILL.md",
+        ROOT / "shared" / "internal-stages" / "exporting-lead-workbooks.md",
         ROOT / "shared" / "references" / "output-schema.md",
     ]
     return [f"{path}: standard export documentation omits 官网与来源链接" for path in paths if "官网与来源链接" not in path.read_text(encoding="utf-8")]

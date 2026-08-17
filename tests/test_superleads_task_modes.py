@@ -13,7 +13,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from route_superleads_intake import classify
+from route_superleads_intake import classify, norm
 from superleads_task_modes import (
     LATEST_VERSION_UNCONFIRMED,
     check_latest_version,
@@ -25,6 +25,31 @@ from superleads_task_modes import (
 
 
 class SuperleadsTaskModesTest(unittest.TestCase):
+    PUBLIC_NEXT_SKILLS = {
+        None,
+        "using-superleads",
+        "researching-customer-background",
+        "analyzing-product-outbound-market",
+    }
+
+    def test_router_never_returns_an_unregistered_internal_skill(self) -> None:
+        cases = (
+            "帮我找德国的工业传感器进口商",
+            "我上传了客户表，请补全官网",
+            "请核查这批候选的公开联系人",
+            "把已经核验的结果导出 Excel",
+            "请保存这轮反馈",
+            "调查 ABC GmbH，并整理我上传的客户表",
+        )
+        for text in cases:
+            with self.subTest(text=text):
+                response = classify(
+                    text,
+                    current_result_valid="导出" in text,
+                    current_run_id="run-1" if "反馈" in text else None,
+                )
+                self.assertIn(response.get("next_skill"), self.PUBLIC_NEXT_SKILLS)
+
     def test_metadata_prompts_are_side_effect_free_before_business_routing(self) -> None:
         callbacks: list[str] = []
 
@@ -152,13 +177,22 @@ class SuperleadsTaskModesTest(unittest.TestCase):
         self.assertEqual("export_requires_current_result", blocked["route"])
         self.assertNotEqual("existing_table_enrichment", blocked["route"])
         self.assertEqual("export_delivery", allowed["route"])
-        self.assertEqual("exporting-lead-workbooks", allowed["next_skill"])
+        self.assertEqual("using-superleads", allowed["next_skill"])
+        self.assertEqual(
+            "shared/internal-stages/exporting-lead-workbooks.md",
+            allowed["next_stage_reference"],
+        )
 
     def test_candidate_correction_stays_in_current_run_without_persistent_save(self) -> None:
         response = classify("这个候选不符合要求", current_run_id="run-1")
 
         self.assertEqual("current_run_feedback_correction", response["route"])
         self.assertEqual("current_run", response["feedback_scope"])
+        self.assertEqual("current_run_correction", response["feedback_action"])
+        self.assertEqual(
+            "shared/internal-stages/learning-from-feedback.md",
+            response["next_stage_reference"],
+        )
 
     def test_product_market_document_requirements_are_not_material_triage(self) -> None:
         response = classify("48V锂电池到沙特要 SABER 吗，清关还要什么文件")
@@ -181,6 +215,86 @@ class SuperleadsTaskModesTest(unittest.TestCase):
         self.assertTrue(response["ask_expansion_after_first_batch"])
         self.assertIn("30", "\n".join(response["response_lines"]))
         self.assertIn("50", "\n".join(response["response_lines"]))
+
+    def test_part_number_country_and_customer_type_is_an_unambiguous_bulk_request(self) -> None:
+        response = classify("13185402+爱尔兰经销商")
+
+        self.assertEqual("bulk_customer_development", response["route"])
+        self.assertEqual("using-superleads", response["next_skill"])
+        self.assertEqual([], response["missing_fields"])
+        self.assertEqual("part_number", response["product_anchor_type"])
+        self.assertEqual("13185402", response["product_anchor"])
+        self.assertIn("公开检索核对产品身份", "\n".join(response["response_lines"]))
+
+    def test_country_and_customer_type_without_action_still_routes_to_bulk_with_product_missing(self) -> None:
+        response = classify("爱尔兰经销商")
+
+        self.assertEqual("bulk_customer_development", response["route"])
+        self.assertEqual(["product_or_scope"], response["missing_fields"])
+
+    def test_phone_date_and_secret_like_tokens_are_not_part_number_anchors(self) -> None:
+        for text in (
+            "13800138000+爱尔兰经销商",
+            "20260817+爱尔兰经销商",
+            "sk-abcdef1234567890+爱尔兰经销商",
+            "v0.2.0+爱尔兰经销商",
+            "192.168.1.10+爱尔兰经销商",
+            "550e8400-e29b-41d4-a716-446655440000+爱尔兰经销商",
+            "AKIAIOSFODNN7EXAMPLE+爱尔兰经销商",
+            "ghp_1234567890abcdef+爱尔兰经销商",
+        ):
+            with self.subTest(text=text):
+                response = classify(text)
+
+                self.assertEqual("bulk_customer_development", response["route"])
+                self.assertEqual(["product_or_scope"], response["missing_fields"])
+                self.assertNotIn("product_anchor_type", response)
+                self.assertNotIn("product_anchor", response)
+
+    def test_normalization_does_not_rewrite_plus_inside_email_or_url(self) -> None:
+        self.assertEqual("sales+eu@example.com", norm("sales+eu@example.com"))
+        self.assertEqual("https://example.com/?q=a+b", norm("https://example.com/?q=a+b"))
+
+    def test_customer_in_a_market_question_does_not_create_a_batch_subtask(self) -> None:
+        response = classify("客户问我要 SDS 和 UN38.3，美国那边到底要不要")
+
+        self.assertEqual("product_outbound_market_analysis", response["route"])
+        self.assertEqual(["product_identity"], response["missing_fields"])
+
+    def test_open_ended_product_phrases_count_as_explicit_bulk_scope(self) -> None:
+        for text in (
+            "找德国工业阀门进口商",
+            "找爱尔兰农业拖拉机经销商",
+            "找美国太阳能逆变器分销商",
+            "找法国医疗耗材批发商",
+        ):
+            with self.subTest(text=text):
+                response = classify(text)
+
+                self.assertEqual("bulk_customer_development", response["route"])
+                self.assertEqual([], response["missing_fields"])
+
+    def test_business_phrase_latest_version_does_not_become_metadata(self) -> None:
+        response = classify("找德国最新版本工业阀门经销商")
+
+        self.assertEqual("bulk_customer_development", response["route"])
+        self.assertEqual([], response["missing_fields"])
+
+    def test_additional_sensitive_or_non_product_tokens_are_not_part_number_anchors(self) -> None:
+        for text in (
+            "17/08/2026+爱尔兰经销商",
+            "2026-08-17T10:30+爱尔兰经销商",
+            "version-20260817+爱尔兰经销商",
+            "API key 1234567890abcdef+爱尔兰经销商",
+            "token 1234567890abcdef+爱尔兰经销商",
+            "871234567+爱尔兰经销商",
+        ):
+            with self.subTest(text=text):
+                response = classify(text)
+
+                self.assertEqual("bulk_customer_development", response["route"])
+                self.assertEqual(["product_or_scope"], response["missing_fields"])
+                self.assertNotIn("product_anchor", response)
 
     def test_business_routes_are_preserved_under_discovery_snapshot(self) -> None:
         cases = {
@@ -261,7 +375,11 @@ class SuperleadsTaskModesTest(unittest.TestCase):
                 response = classify(text)
 
                 self.assertEqual("bulk_customer_development", response["route"])
-                self.assertEqual("scoping-lead-research", response["next_skill"])
+                self.assertEqual("using-superleads", response["next_skill"])
+                self.assertEqual(
+                    "shared/internal-stages/scoping-lead-research.md",
+                    response["next_stage_reference"],
+                )
                 self.assertEqual([], response["secondary_routes"])
                 self.assertNotIn("subtasks", response)
 
