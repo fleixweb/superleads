@@ -98,9 +98,11 @@ SINGLE_OBJECT_REQUEST_MARKERS = (
 PRODUCT_MARKERS = (
     "产品", "型号", "电池", "锂电", "纺织", "衬衫", "面料", "化工", "农产品", "机械",
     "配件", "零件", "汽车配件", "户外家具", "柴油发电机", "发电机", "电水壶", "保温杯",
+    "音响", "巡演音响", "专业音响", "扩声系统",
     "钢材", "粮食", "矿产", "水果", "蔬菜", "茶", "工装", "灯芯绒",
     "steel", "battery", "textile", "fabric", "shirt", "product", "parts",
     "accessories", "furniture", "generator", "kettle", "kettles", "mug", "mugs",
+    "audio", "sound system", "touring sound",
 )
 MARKET_QUESTION_OR_ANALYSIS_MARKERS = (
     "分析", "查", "查询", "核实", "确认", "判断", "看一下", "了解", "研究", "评估",
@@ -483,6 +485,26 @@ def _has_feedback_correction(text: str) -> bool:
     return contains_any(text, FEEDBACK_CORRECTION_MARKERS)
 
 
+def _bulk_execution_contract(interaction_mode: str) -> dict[str, Any]:
+    """Keep formal bulk delivery metadata distinct from the fast snapshot."""
+    if interaction_mode == "formal_research":
+        return {
+            "task_mode": "formal_research",
+            "delivery_mode": "formal_report",
+        }
+    return {
+        "task_mode": "discovery_snapshot",
+        "delivery_mode": "fast_candidate_pool",
+        "first_batch_candidate_target": 10,
+        "max_candidates_per_group": 10,
+        "max_candidates_per_run": 10,
+        "include_social": False,
+        "include_maps": False,
+        "include_trade_records": False,
+        "ask_expansion_after_first_batch": True,
+    }
+
+
 def classify(
     text: str,
     *,
@@ -734,9 +756,11 @@ def classify(
             "secondary_routes": [],
             "route_order": ["bulk_customer_development"],
             "missing_fields": [] if has_product or has_country else ["product_or_scope"],
+            **_bulk_execution_contract(interaction_mode),
             "response_lines": [
                 "我理解你要做的是：批量客户开发。",
-                "我会先确认你卖什么、本次优先找什么、不纳入什么，以及用哪些公开信号判断。",
+                "先返回发现候选池：每家保留官网或搜索结果来源、业务匹配理由和公开联系方式状态。社媒、地图、贸易记录和深度联系人本轮先标为未核验。",
+                "首批完成后，你可以选择继续扩展至 30 家或 50 家。",
             ],
         }, interaction_mode)
 
@@ -765,9 +789,11 @@ def classify(
             "secondary_routes": [],
             "route_order": ["bulk_customer_development"],
             "missing_fields": [] if has_product or has_country else ["product_or_scope"],
+            **_bulk_execution_contract(interaction_mode),
             "response_lines": [
                 "我理解你要做的是：批量客户开发。",
-                "我会先确认你卖什么、本次优先找什么、不纳入什么，以及用哪些公开信号判断。",
+                "先返回发现候选池：每家保留官网或搜索结果来源、业务匹配理由和公开联系方式状态。社媒、地图、贸易记录和深度联系人本轮先标为未核验。",
+                "首批完成后，你可以选择继续扩展至 30 家或 50 家。",
             ],
         }, interaction_mode)
 

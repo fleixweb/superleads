@@ -81,6 +81,62 @@ class PreflightCapabilitiesTest(unittest.TestCase):
         self.assertEqual("unknown", result["capabilities"]["source.capture"]["status"])
         self.assertEqual("codex_native_capability_adapter_required", result["adapter_report"]["issues"][0]["code"])
 
+    def test_web_run_http_404_is_one_shot_capability_failure(self) -> None:
+        payload = {
+            "platform": "codex_cli",
+            "capability_adapter_report": {
+                "platform": "codex_cli",
+                "adapter": {"adapter_id": "codex_cli_web_run", "adapter_version": "1"},
+                "detected_at": "2026-08-17T00:00:00Z",
+                "detection": "current_session_web__run_search_query",
+                "host_tools": {
+                    "web__run": {
+                        "status": "failed",
+                        "error": "HTTP 404",
+                        "operations": {
+                            "search_query": {"status": "failed", "http_status": 404, "error": "HTTP 404"},
+                            "open": {"status": "not_verified"},
+                        },
+                    }
+                },
+                "canonical_capabilities": {"search.web": "missing", "source.open": "unknown"},
+            },
+        }
+
+        result = preflight_capabilities.preflight(payload)
+
+        self.assertEqual("missing", result["capabilities"]["search.web"]["status"])
+        self.assertEqual("http_404", result["capability_failure"]["reason"])
+        self.assertFalse(result["capability_failure"]["retry"])
+        self.assertIn("404", result["formal_research_message"])
+
+    def test_web_run_timeout_is_one_shot_capability_failure(self) -> None:
+        payload = {
+            "platform": "codex_cli",
+            "capability_adapter_report": {
+                "platform": "codex_cli",
+                "adapter": {"adapter_id": "codex_cli_web_run", "adapter_version": "1"},
+                "detected_at": "2026-08-17T00:00:00Z",
+                "detection": "current_session_web__run_search_query",
+                "host_tools": {
+                    "web__run": {
+                        "status": "failed",
+                        "error": "timeout",
+                        "operations": {
+                            "search_query": {"status": "failed", "error": "timeout"},
+                            "open": {"status": "not_verified"},
+                        },
+                    }
+                },
+                "canonical_capabilities": {"search.web": "missing", "source.open": "unknown"},
+            },
+        }
+
+        result = preflight_capabilities.preflight(payload)
+
+        self.assertEqual("timeout", result["capability_failure"]["reason"])
+        self.assertFalse(result["capability_failure"]["retry"])
+
 
 if __name__ == "__main__":
     unittest.main()

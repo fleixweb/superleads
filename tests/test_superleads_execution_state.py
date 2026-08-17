@@ -311,6 +311,40 @@ class SuperleadsExecutionStateTest(unittest.TestCase):
         self.assertEqual(1, summary["source_restricted_count"])
         self.assertEqual(0, summary["unverified_candidate_count"])
 
+    def test_discovery_snapshot_defaults_to_ten_candidates_and_exposes_expansion_prompt(self) -> None:
+        state = create_execution_state(
+            "run-fast-snapshot",
+            query_groups=[
+                {"group_id": "website", "execution_order": "independent"},
+                {"group_id": "directory", "execution_order": "independent"},
+            ],
+            budget={"query_group_limit": 2},
+            task_mode="discovery_snapshot",
+        )
+        self.assertEqual(10, state["budget"]["max_candidates_per_run"])
+        self.assertEqual(10, state["budget"]["max_candidates_per_group"])
+        for index in range(5):
+            self.assertTrue(record_candidate(state, query_group_id="website", candidate_id=f"candidate-{index}")["recorded"])
+            self.assertTrue(record_candidate(state, query_group_id="directory", candidate_id=f"candidate-{index + 5}")["recorded"])
+        self.assertEqual(
+            {"recorded": False, "reason": "budget_exhausted"},
+            record_candidate(state, query_group_id="directory", candidate_id="candidate-10"),
+        )
+
+        summary = status_summary(state)
+
+        self.assertEqual(10, summary["candidate_count"])
+        self.assertEqual("是否继续扩展至 30 家或 50 家？", summary["expansion_prompt"])
+
+    def test_formal_research_keeps_a_separate_default_candidate_budget(self) -> None:
+        state = create_execution_state(
+            "run-formal-budget",
+            query_groups=[{"group_id": "website", "execution_order": "independent"}],
+            budget={"query_group_limit": 1},
+            task_mode="formal_research",
+        )
+        self.assertEqual(5, state["budget"]["max_candidates_per_group"])
+
     def test_run_and_plan_schemas_accept_additive_execution_contracts(self) -> None:
         run_schema = json.loads((ROOT / "shared" / "schemas" / "run.schema.json").read_text(encoding="utf-8"))
         plan_schema = json.loads((ROOT / "shared" / "schemas" / "plan.schema.json").read_text(encoding="utf-8"))

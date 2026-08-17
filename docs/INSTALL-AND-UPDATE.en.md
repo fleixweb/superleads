@@ -56,6 +56,19 @@ Under the current distribution design, the ChatGPT app uses the same installed C
 
 ### Lean Runtime Package For Local Development
 
+### WSL Python Dependencies
+
+Run validators and formal Markdown exports from an isolated WSL environment,
+not from an ad-hoc desktop Python installation:
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+```
+
+`requirements.txt` fixes the supported JSON Schema runtime.
+
 When a local marketplace points at the source repository, Codex copies development
 assets and historical UAT files into its cache. Before a local release or runtime
 test, build the lean package, point the local Superleads marketplace source at the

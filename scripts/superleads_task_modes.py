@@ -135,6 +135,8 @@ def _contains(text: str, markers: tuple[str, ...]) -> bool:
 def _is_help_request(text: str) -> bool:
     normalized = text.strip()
     return (
+        normalized == "@"
+        or
         normalized.casefold() == "@superleads"
         or _CHINESE_HELP.fullmatch(normalized) is not None
         or _ENGLISH_HELP.fullmatch(normalized) is not None

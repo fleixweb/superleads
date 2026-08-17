@@ -56,6 +56,19 @@ Codex app 可通过 `/plugins` 添加同一 marketplace，再安装 `superleads@
 
 ### 本地开发的精简运行时包
 
+### WSL Python 依赖
+
+校验和正式 Markdown 导出应在 WSL 的隔离环境中运行，不依赖桌面 Python：
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+```
+
+`requirements.txt` 固定支持的 JSON Schema 运行时；不要用桌面环境临时安装的旧版
+`jsonschema` 代替它。
+
 本地 marketplace 若指向源码目录，Codex 会把开发资料和历史 UAT 一并复制到缓存。发布
 前或本地联调时，先在源码根目录构建精简运行时包，再让本地 marketplace 的 Superleads
 source 指向该工件，最后重新安装：

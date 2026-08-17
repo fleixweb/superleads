@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from time import perf_counter
 from typing import Any
 
 
@@ -100,10 +101,22 @@ def _guide_lines(language: str) -> list[str]:
     return lines
 
 
+def _compact_guide_lines(language: str) -> list[str]:
+    """Render the fast first-use contract without loading the long reference."""
+    content = _content(language)
+    lines = ["# Superleads", "", str(content["identity"]), "", str(content["start"]), ""]
+    for title, input_format, example in content["entries"]:
+        lines.extend((f"## {title}", f"{content['input_label']}：{input_format}", f"{content['example_label']}：{example}", ""))
+    lines.extend(("证据边界：只整理公开来源和可验证事实；搜索结果是线索，不是确定事实。不猜联系方式，也不替你判断客户价值或市场决策。", "", _canonical_footer(language)))
+    return lines
+
+
 def static_help_response(text: str) -> dict[str, Any] | None:
     """Return a narrow, static help response without research operations."""
+    started = perf_counter()
     normalized = text.strip()
-    if normalized.lower() == "@superleads":
+    compact = normalized.lower() in {"@", "@superleads"}
+    if compact:
         language = "zh"
     elif _CHINESE_HELP.fullmatch(normalized):
         language = "zh"
@@ -114,17 +127,19 @@ def static_help_response(text: str) -> dict[str, Any] | None:
 
     return {
         "route": "first_use_guide",
-        "next_skill": "using-superleads",
+        "next_skill": None if compact else "using-superleads",
         "split_customer_development": False,
         "secondary_routes": [],
         "route_order": [],
         "missing_fields": [],
-        "response_contract": "static_first_use_help",
+        "response_contract": "static_compact_help" if compact else "static_first_use_help",
         "language": language,
-        "guidance_reference": GUIDANCE_REFERENCE,
+        "guidance_reference": None if compact else GUIDANCE_REFERENCE,
+        "fast_path": compact,
+        "elapsed_seconds": perf_counter() - started,
         "interaction_mode": "metadata",
         "operations": [],
-        "response_lines": _guide_lines(language),
+        "response_lines": _compact_guide_lines(language) if compact else _guide_lines(language),
     }
 
 

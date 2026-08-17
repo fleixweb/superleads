@@ -26,8 +26,8 @@ Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/c
 ## Plan components
 
 1. Query groups tied to the current brief only.
-2. Default bulk-discovery source categories: `website`, `directory`, `document`, `social`, `map`, `trade_aggregator`, and `search_result`. A social or map category means a normally accessible public page, not an assumed platform API.
-3. Default contact/public-information targets: `email`, `phone`, `contact_form`, `social_company`, `social_person`, `person_name`, `job_title`, `address`, `map_phone`, and `public_trade_summary`.
+2. Fast candidate-pool default categories: `website`, `directory`, `document`, and `search_result`. Plan a run-wide first batch of 10 candidates for an unambiguous product + market + customer-type request; `max_candidates_per_run` is the stopping gate, while `max_candidates_per_group` remains only a per-group ceiling. Mark social, map, trade aggregation, and person-contact coverage as `not_searched` / 未核验 unless explicitly requested.
+3. Fast candidate-pool contact targets are only `email`, `phone`, and `contact_form`, with a visible status. `social_company`, `social_person`, `person_name`, `job_title`, `address`, `map_phone`, and `public_trade_summary` are opt-in supplements.
 4. Default business-relevance criteria for `directly_related`, `possibly_related`, `explicitly_excluded_or_unrelated`, `identity_pending`, and `insufficient_information`.
 5. Public-signal collection targets and statuses for website/contact, trade record, China relation, and product description/HS.
 6. Claim evidence requirements only for explicit deep-check tasks, including which claims need first-party or high-authority sources.
@@ -81,8 +81,10 @@ same-Entity Claim, and ClaimEvidence.
 Plan explicit candidate checks for the public signal needed to match each
 positive rule, the public signal that would support each exclusion, and the
 fallback to `需确认` when evidence is insufficient. If the Brief is
-provisional, set a sample-first limit from one to five and do not plan a
-formal expansion. Search terms come only from the current Brief; a competitor
+provisional, set a direction-sample limit from one to five. If it is
+unambiguous product + market + customer type, set a first-batch limit of 10
+and ask whether to expand to 30 or 50 only after that delivery. Search terms
+come only from the current Brief; a competitor
 or brand is reference material unless the current Brief explicitly allows it
 as a prospect.
 

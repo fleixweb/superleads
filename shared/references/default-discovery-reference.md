@@ -65,18 +65,17 @@
 
 ## 默认公开信息覆盖
 
-批量开发客户的默认 Plan 至少覆盖以下公开来源类别：
+快速候选池的默认 Plan 只覆盖以下公开来源类别：
 
-- `website`、`directory`、`document`、`social`、`map`、`trade_aggregator`、`search_result`
+- `website`、`directory`、`document`、`search_result`
 
-默认联系方式和公开信息补全目标至少包括：
+默认联系方式目标只包括：
 
-- `email`、`phone`、`contact_form`、`social_company`、`social_person`
-- `person_name`、`job_title`、`address`、`map_phone`、`public_trade_summary`
+- `email`、`phone`、`contact_form`
 
-这些是覆盖计划，不表示每个候选都已经查到结果。对进入本轮输出范围的每个 Candidate，分别记录官网/联系方式、公司公开社媒、公开职业线索、地图和第三方贸易摘要的状态；不能只补查模型主观认为更有价值的候选。
+对产品 + 市场 + 客户类型均明确的请求，快速候选池按 Run 级别首批目标为 10 家；每家保留官网或搜索结果来源、业务匹配理由和公开联系方式状态。完成后询问“是否继续扩展至 30 家或 50 家？”。每个查询组仍有独立上限，但不得让各组上限叠加突破首批 Run 级别上限。社媒、公开职业线索、地图和第三方贸易摘要在未被明确请求时统一显示“未核验”，不留空也不伪装为已完成。
 
-每个来源类别设置有限的每候选查询和打开预算；同一 Run 对相同 canonical/final URL 去重。超过预算必须写 `not_searched` 和“本轮未检索”，不能写成未发现或不存在。
+社媒、地图、第三方贸易摘要、联系人深挖、全量图谱、正式审核与 Markdown 导出只在用户明确要求“正式开发名单、完整核验、深度背调、正式报告或 Markdown 导出”时加载。每个已请求类别设置有限预算；同一 Run 对相同 canonical/final URL 去重。超过预算必须写 `not_searched` 和“本轮未检索”，不能写成未发现或不存在。
 
 ## 阶段、预算与恢复
 

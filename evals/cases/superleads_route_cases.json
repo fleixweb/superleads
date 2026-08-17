@@ -6,10 +6,10 @@
       "name": "bare Superleads invocation shows static Chinese help",
       "text": "@superleads",
       "expected_route": "first_use_guide",
-      "expected_next_skill": "using-superleads",
+      "expected_next_skill": null,
       "expected_split_customer_development": false,
       "expected_missing_fields": [],
-      "expected_response_contract": "static_first_use_help",
+      "expected_response_contract": "static_compact_help",
       "expected_language": "zh",
       "expected_interaction_mode": "metadata",
       "expected_operations": []

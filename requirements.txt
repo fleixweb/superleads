@@ -1,0 +1,5 @@
+# Runtime and validator dependencies. Install in an isolated WSL environment:
+#   python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
+jsonschema==4.25.1
+referencing==0.37.0
+openpyxl==3.1.5

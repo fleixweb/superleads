@@ -22,6 +22,7 @@ from _superleads_common import (
     text_contains,
     text_contains_exact_phrase,
 )
+from schema_validation import SchemaResolutionError, schema_validation_errors
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -135,28 +136,8 @@ def _contains_enum_error(error: Any) -> bool:
 
 def _schema_precheck(graph: dict[str, Any], schema_name: str) -> list[dict[str, str]]:
     try:
-        import jsonschema  # type: ignore
-        from jsonschema import RefResolver  # type: ignore
-    except Exception as exc:
-        return [_issue(
-            "uat_precheck_schema_profile_unavailable",
-            f"jsonschema is unavailable: {exc}",
-            "shared/schemas",
-            severity="major",
-            focus="enum_values",
-        )]
-    try:
-        schema_path = SCHEMA_DIR / schema_name
-        schema = json.loads(schema_path.read_text(encoding="utf-8"))
-        store: dict[str, Any] = {}
-        for path in SCHEMA_DIR.glob("*.schema.json"):
-            loaded = json.loads(path.read_text(encoding="utf-8"))
-            store[path.as_uri()] = loaded
-            if isinstance(loaded.get("$id"), str):
-                store[loaded["$id"]] = loaded
-        resolver = RefResolver(base_uri=SCHEMA_DIR.as_uri() + "/", referrer=schema, store=store)
-        validator = jsonschema.Draft202012Validator(schema, resolver=resolver)
-    except Exception as exc:
+        errors = schema_validation_errors(graph, SCHEMA_DIR / schema_name)
+    except SchemaResolutionError as exc:
         return [_issue(
             "uat_precheck_schema_profile_unavailable",
             f"schema profile cannot be loaded: {exc}",
@@ -165,19 +146,19 @@ def _schema_precheck(graph: dict[str, Any], schema_name: str) -> list[dict[str, 
             focus="enum_values",
         )]
     issues: list[dict[str, str]] = []
-    for error in sorted(validator.iter_errors(graph), key=lambda item: list(item.absolute_path)):
-        path = "".join(f"[{part}]" if isinstance(part, int) else f".{part}" for part in error.absolute_path).lstrip(".") or "$"
-        if _contains_enum_error(error):
+    for error in errors:
+        path = str(error["path"])
+        if error.get("validator") in {"enum", "const"}:
             issues.append(_issue(
                 "uat_precheck_enum_invalid",
-                f"invalid enum value: {error.message}",
+                f"invalid enum value: {error['message']}",
                 path,
                 focus="enum_values",
             ))
         else:
             issues.append(_issue(
                 "uat_precheck_schema_shape_invalid",
-                f"input shape does not satisfy the graph schema: {error.message}",
+                f"input shape does not satisfy the graph schema: {error['message']}",
                 path,
                 severity="major",
                 focus="schema_shape",

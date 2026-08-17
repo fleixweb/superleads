@@ -130,11 +130,21 @@ def create_execution_state(
     )
     if len(groups) > query_group_limit:
         raise ValueError("query groups exceed query_group_limit")
+    default_candidate_limit = 10 if task_mode == "discovery_snapshot" else 5
     max_candidates_per_group = _positive_budget_value(
         budget.get("max_candidates_per_group"),
         field="max_candidates_per_group",
-        default=5,
+        default=default_candidate_limit,
     )
+    max_candidates_per_run = budget.get("max_candidates_per_run")
+    if max_candidates_per_run is None and task_mode == "discovery_snapshot":
+        max_candidates_per_run = default_candidate_limit
+    elif max_candidates_per_run is not None:
+        max_candidates_per_run = _positive_budget_value(
+            max_candidates_per_run,
+            field="max_candidates_per_run",
+            default=default_candidate_limit,
+        )
     max_core_opens_per_candidate = _positive_budget_value(
         budget.get("max_core_opens_per_candidate"),
         field="max_core_opens_per_candidate",
@@ -154,6 +164,7 @@ def create_execution_state(
         "budget": {
             "query_group_limit": query_group_limit,
             "max_candidates_per_group": max_candidates_per_group,
+            "max_candidates_per_run": max_candidates_per_run,
             "max_core_opens_per_candidate": max_core_opens_per_candidate,
             "include_contacts": bool(budget.get("include_contacts", False)),
             "include_trade_records": bool(budget.get("include_trade_records", False)),
@@ -217,7 +228,8 @@ def create_execution_state_from_plan(
         query_groups=[item for item in raw_groups if isinstance(item, dict)],
         budget={
             "query_group_limit": budget_source.get("query_group_limit") or max(1, len(raw_groups)),
-            "max_candidates_per_group": budget_source.get("max_candidates_per_group") or 5,
+            "max_candidates_per_group": budget_source.get("max_candidates_per_group") or (10 if task_mode == "discovery_snapshot" else 5),
+            "max_candidates_per_run": budget_source.get("max_candidates_per_run") if "max_candidates_per_run" in budget_source else (10 if task_mode == "discovery_snapshot" else None),
             "max_core_opens_per_candidate": budget_source.get("max_core_opens_per_candidate") or 2,
             "include_contacts": bool(budget_source.get("include_contacts", False)),
             "include_trade_records": bool(budget_source.get("include_trade_records", False)),
@@ -292,16 +304,19 @@ def record_candidate(state: dict[str, Any], *, query_group_id: str, candidate_id
     if not identifier:
         raise ValueError("candidate_id must be non-empty")
     candidate_ids = group.setdefault("candidate_ids", [])
-    if identifier in candidate_ids:
+    all_candidates = state.setdefault("candidate_ids", [])
+    if identifier in candidate_ids or identifier in all_candidates:
         return {"recorded": False, "reason": "already_recorded"}
     limit = group.get("candidate_limit") or state.get("budget", {}).get("max_candidates_per_group")
     if len(candidate_ids) >= int(limit):
         _append_incomplete_work(state, "candidate limit reached")
         return {"recorded": False, "reason": "budget_exhausted"}
+    run_limit = state.get("budget", {}).get("max_candidates_per_run")
+    if run_limit is not None and len(all_candidates) >= int(run_limit):
+        _append_incomplete_work(state, "candidate pool limit reached")
+        return {"recorded": False, "reason": "budget_exhausted"}
     candidate_ids.append(identifier)
-    all_candidates = state.setdefault("candidate_ids", [])
-    if identifier not in all_candidates:
-        all_candidates.append(identifier)
+    all_candidates.append(identifier)
     return {"recorded": True, "reason": None}
 
 
@@ -458,6 +473,8 @@ def status_summary(state: dict[str, Any]) -> dict[str, Any]:
     restricted = sum(1 for group in groups if group.get("status") == "source_restricted")
     not_executed = sum(1 for group in groups if group.get("status") in {"not_executed", "budget_exhausted"})
     metrics = state.get("metrics") if isinstance(state.get("metrics"), dict) else {}
+    candidate_count = len(state.get("candidate_ids", []))
+    expansion_prompt = "是否继续扩展至 30 家或 50 家？" if state.get("task_mode") == "discovery_snapshot" and candidate_count >= 10 else None
     return {
         "task_mode": state.get("task_mode"),
         "route": state.get("route"),
@@ -468,6 +485,8 @@ def status_summary(state: dict[str, Any]) -> dict[str, Any]:
         "source_restricted_count": restricted,
         "not_executed_count": not_executed,
         "opened_source_count": int(metrics.get("opened_source_count", 0)),
+        "candidate_count": candidate_count,
+        "expansion_prompt": expansion_prompt,
         "cache_hit_count": int(metrics.get("cache_hit_count", 0)),
         "unverified_candidate_count": int(metrics.get("unconfirmed_or_conflict_count", 0)),
         "historical_reference_label": HISTORICAL_REFERENCE_LABEL,

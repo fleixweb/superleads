@@ -42,10 +42,11 @@ Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/c
 7. For every Candidate, keep discovery source, dedupe basis, business
    relevance clue, unknowns, restricted paths, and next verification tasks
    even when formal evidence is insufficient.
-8. For every Candidate in the current output scope, execute or explicitly
-   retain `not_searched` coverage for website/contact, company social page,
-   public professional-person page, public map listing, and third-party trade
-   aggregation summary. Use finite per-category query/open budgets and dedupe
+8. In the fast candidate-pool path, cover website/contact plus directory,
+   document, and search-result discovery only, with a 10-candidate first-batch
+   budget. Mark company social pages, professional-person pages, map listings,
+   and third-party trade aggregation as not_searched / 未核验 unless the user
+   explicitly requests that category. Use finite budgets and dedupe
    canonical/final URLs within the same Run.
 
 ## Codex CLI Native Search
@@ -77,9 +78,12 @@ that the host exposes those tools. When normal Web Search plus Source Open or
 Browser Render can read a public social or map URL, record it as an ordinary
 `social` or `map` Source. Do not fabricate an independent API operation.
 
-If source opening is unavailable or returns only summaries, retain the search
-records and deliver at most an initial lead list. Do not install, configure,
-or depend on an external tool server.
+If a recorded web__run probe returns 404 or times out, treat that capability
+as unavailable after the one probe: do not retry it and do not use shell/curl
+as a substitute for search.web. With no other recorded source capability,
+stop the fast candidate-pool path with the capability message rather than
+creating a partial formal graph. Do not install, configure, or depend on an
+external tool server.
 
 The native search adapter controls only `search.web` and `source.open`; keep
 independently available rendering and document capabilities in the Run rather

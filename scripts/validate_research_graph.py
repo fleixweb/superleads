@@ -69,6 +69,7 @@ from _superleads_common import (
     text_contains,
     text_contains_exact_phrase,
 )
+from schema_validation import SchemaResolutionError, schema_validation_errors
 
 STATE_ENUM = {"scoped", "planned", "collecting", "assessed", "under_review", "remediation_required", "remediation_submitted", "re_reviewed", "checked"}
 REVIEW_STATUS_ENUM = {"open", "remediation_submitted", "re_reviewed", "verified_fixed", "accepted_with_disclosure", "rejected_with_reviewer_reason"}
@@ -230,34 +231,13 @@ def _schema_validation_issues(graph: dict[str, Any]) -> list[dict[str, str]]:
     invariants.  This schema pass catches malformed object shapes such as a
     Plan missing required fields before they can pass through audit/export.
     """
-    try:
-        import jsonschema  # type: ignore
-        from jsonschema import RefResolver  # type: ignore
-    except Exception:
-        return [issue("major", "schema_profile_unavailable", "jsonschema is unavailable; schema profile cannot be verified", "shared/schemas")]
     schema_dir = Path(__file__).resolve().parents[1] / "shared" / "schemas"
     schema_path = schema_dir / "research-graph.schema.json"
     try:
-        schema = json.loads(schema_path.read_text(encoding="utf-8"))
-        store: dict[str, Any] = {}
-        for item in schema_dir.glob("*.schema.json"):
-            loaded = json.loads(item.read_text(encoding="utf-8"))
-            store[item.as_uri()] = loaded
-            store[(schema_dir / item.name).as_uri()] = loaded
-            if has_text(loaded.get("$id")):
-                store[str(loaded["$id"])] = loaded
-        resolver = RefResolver(base_uri=schema_dir.as_uri() + "/", referrer=schema, store=store)
-        validator = jsonschema.Draft202012Validator(schema, resolver=resolver)
-    except Exception as exc:
+        errors = schema_validation_errors(graph, schema_path)
+    except SchemaResolutionError as exc:
         return [issue("major", "schema_profile_unavailable", f"Research graph schema profile could not be loaded: {exc}", "shared/schemas")]
-    try:
-        issues: list[dict[str, str]] = []
-        for err in sorted(validator.iter_errors(graph), key=lambda e: list(e.absolute_path)):
-            path = "".join(f"[{p}]" if isinstance(p, int) else f".{p}" for p in err.absolute_path).lstrip(".")
-            issues.append(issue("major", "schema_validation_failed", err.message, path or "$"))
-        return issues
-    except Exception as exc:
-        return [issue("major", "schema_validation_error", f"Research graph schema validation failed to execute: {exc}", "$")]
+    return [issue("major", "schema_validation_failed", str(error["message"]), str(error["path"])) for error in errors]
 
 
 def _formal_exception_binding_issues(

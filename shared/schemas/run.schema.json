@@ -174,6 +174,7 @@
       "properties": {
         "query_group_limit": {"type": ["integer", "null"], "minimum": 1},
         "max_candidates_per_group": {"type": ["integer", "null"], "minimum": 1},
+        "max_candidates_per_run": {"type": ["integer", "null"], "minimum": 1},
         "max_core_opens_per_candidate": {"type": ["integer", "null"], "minimum": 1},
         "include_contacts": {"type": "boolean"},
         "include_trade_records": {"type": "boolean"},

@@ -42,6 +42,7 @@ class SuperleadsTaskModesTest(unittest.TestCase):
             "What is the latest Superleads version?",
             "What are the current Superleads capabilities?",
             "Where can I send Superleads feedback?",
+            "@",
             "@superleads",
             "Superleads help",
         ):
@@ -165,6 +166,22 @@ class SuperleadsTaskModesTest(unittest.TestCase):
         self.assertEqual("discovery_snapshot", response["interaction_mode"])
         self.assertEqual("product_outbound_market_analysis", response["route"])
 
+    def test_unambiguous_bulk_request_uses_ten_candidate_fast_snapshot(self) -> None:
+        response = classify("帮我找丹麦做巡演音响的进口商")
+
+        self.assertEqual("bulk_customer_development", response["route"])
+        self.assertEqual("discovery_snapshot", response["task_mode"])
+        self.assertEqual([], response["missing_fields"])
+        self.assertEqual("fast_candidate_pool", response["delivery_mode"])
+        self.assertEqual(10, response["first_batch_candidate_target"])
+        self.assertEqual(10, response["max_candidates_per_group"])
+        self.assertFalse(response["include_social"])
+        self.assertFalse(response["include_maps"])
+        self.assertFalse(response["include_trade_records"])
+        self.assertTrue(response["ask_expansion_after_first_batch"])
+        self.assertIn("30", "\n".join(response["response_lines"]))
+        self.assertIn("50", "\n".join(response["response_lines"]))
+
     def test_business_routes_are_preserved_under_discovery_snapshot(self) -> None:
         cases = {
             "帮我找德国的工业传感器进口商": "bulk_customer_development",
@@ -253,6 +270,10 @@ class SuperleadsTaskModesTest(unittest.TestCase):
 
         self.assertEqual("formal_research", response["interaction_mode"])
         self.assertEqual("bulk_customer_development", response["route"])
+        self.assertEqual("formal_research", response["task_mode"])
+        self.assertEqual("formal_report", response["delivery_mode"])
+        self.assertNotIn("first_batch_candidate_target", response)
+        self.assertNotIn("ask_expansion_after_first_batch", response)
 
     def test_english_explicit_formal_report_uses_formal_research_mode(self) -> None:
         response = classify("Give me a full report about example.com")

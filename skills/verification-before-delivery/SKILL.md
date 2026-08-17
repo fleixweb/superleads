@@ -18,6 +18,11 @@ Default discovery uses only its initial-candidate-pool validation; strict
 Claim, Assessment, Review, Audit, and Manifest checks belong to explicitly
 requested deep-check or standard-list delivery.
 
+Fast candidate-pool delivery validates its limited candidate records but does
+not build a full graph, run Audit, or invoke the Markdown exporter. Invoke
+`scripts/export_superleads_markdown.py` only after an explicit formal
+report/Markdown-export request has entered the strict delivery branch.
+
 ## Required scripts and schemas
 
 Use `../../scripts/validate_research_graph.py`, `../../scripts/audit_delivery.py`, `../../shared/schemas/research-graph.schema.json`, and `../../shared/schemas/delivery-manifest.schema.json`.

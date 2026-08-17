@@ -14,6 +14,8 @@ from urllib import request as urllib_request
 
 ROOT = Path(__file__).resolve().parents[1]
 GUIDANCE_REFERENCE = ROOT / "shared" / "references" / "superleads-user-guidance.md"
+PUBLIC_BATCH_SKILL = ROOT / "skills" / "using-superleads" / "SKILL.md"
+PUBLIC_BATCH_AGENT = ROOT / "skills" / "using-superleads" / "agents" / "openai.yaml"
 MODEL_CONTROL_START = "<!-- superleads-model-control:start -->"
 MODEL_CONTROL_END = "<!-- superleads-model-control:end -->"
 USER_VISIBLE_GUIDE_START = "<!-- superleads-user-visible-guide:start -->"
@@ -25,6 +27,15 @@ from validate_superleads_user_visible_output import validate as validate_user_vi
 
 
 class SuperleadsUserGuidanceTest(unittest.TestCase):
+    def test_public_batch_entry_declares_bare_activation_before_research_references(self) -> None:
+        skill = PUBLIC_BATCH_SKILL.read_text(encoding="utf-8")
+        agent = PUBLIC_BATCH_AGENT.read_text(encoding="utf-8")
+
+        self.assertLess(skill.index("## Bare Activation Fast Path"), skill.index("## Batch Discovery Path"))
+        self.assertIn("do not read any research reference", skill)
+        self.assertLess(len(skill.encode("utf-8")), 6_000)
+        self.assertIn("bare @ activation", agent)
+
     def test_static_help_recognizes_supported_prompts(self) -> None:
         for text, language in (
             ("@superleads", "zh"),
@@ -41,14 +52,16 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
                 response = superleads_user_guidance.static_help_response(text)
                 self.assertIsNotNone(response)
                 self.assertEqual("first_use_guide", response["route"])
-                self.assertEqual("using-superleads", response["next_skill"])
-                self.assertEqual("static_first_use_help", response["response_contract"])
+                expected_contract = "static_compact_help" if text in {"@superleads"} else "static_first_use_help"
+                if expected_contract == "static_compact_help":
+                    self.assertIsNone(response["next_skill"])
+                else:
+                    self.assertEqual("using-superleads", response["next_skill"])
+                self.assertEqual(expected_contract, response["response_contract"])
                 self.assertEqual(language, response["language"])
                 self.assertEqual("metadata", response["interaction_mode"])
-                self.assertEqual(
-                    "shared/references/superleads-user-guidance.md",
-                    response["guidance_reference"],
-                )
+                expected_reference = None if expected_contract == "static_compact_help" else "shared/references/superleads-user-guidance.md"
+                self.assertEqual(expected_reference, response["guidance_reference"])
                 self.assertEqual([], response["operations"])
                 self.assertTrue(response["response_lines"])
 
@@ -70,19 +83,31 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
             "批量开发客户",
             "单一客户背调",
             "目标市场分析",
-            "产品关键词 + 目标市场 + 客户类型",
-            "公司网址或公司名称",
-            "产品 + 目标市场 + 想了解的信息",
-            "找德国做工业传感器的进口商",
-            "查一下 example.com 这家公司做什么、有没有公开联系方式",
-            "分析中国出口保温杯到越南的市场、公开价格和准入要求",
-            "更多用法",
             "Superleads 支持",
             "https://github.com/fleixweb/superleads/issues",
         ):
             with self.subTest(expected=expected):
                 self.assertIn(expected, guide)
+        self.assertNotIn("更多用法", guide)
         self.assertTrue(guide.rstrip().endswith("请勿提交密码、API Key 或未经脱敏的客户敏感资料。"))
+
+    def test_detailed_help_is_opt_in(self) -> None:
+        response = superleads_user_guidance.static_help_response("你能干嘛？")
+        self.assertIsNotNone(response)
+        self.assertEqual("static_first_use_help", response["response_contract"])
+        self.assertEqual("using-superleads", response["next_skill"])
+        guide = "\n".join(response["response_lines"])
+        self.assertIn("更多用法", guide)
+        self.assertIn("产品关键词 + 目标市场 + 客户类型", guide)
+
+    def test_bare_at_alias_is_the_minimal_static_path(self) -> None:
+        response = superleads_user_guidance.static_help_response("@")
+        self.assertIsNotNone(response)
+        self.assertEqual("static_compact_help", response["response_contract"])
+        self.assertIsNone(response["next_skill"])
+        self.assertTrue(response["fast_path"])
+        self.assertLess(response["elapsed_seconds"], 0.25)
+        self.assertEqual([], response["operations"])
 
     def test_english_static_help_returns_english_user_visible_guide(self) -> None:
         response = superleads_user_guidance.static_help_response("What can Superleads do?")

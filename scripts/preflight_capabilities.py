@@ -71,9 +71,58 @@ def _invalid_platform_result() -> dict[str, Any]:
     }
 
 
+def _web_run_capability_failure(reports: list[Any]) -> dict[str, Any] | None:
+    """Classify one failed host probe without scheduling another probe.
+
+    Adapter resolution remains the source of truth for capability mapping. This
+    small projection only turns a concrete `web__run` failure into a stable,
+    user-actionable terminal state so callers do not retry a known-bad host
+    operation for minutes.
+    """
+    for report in reports:
+        if not isinstance(report, dict):
+            continue
+        adapter = report.get("adapter")
+        if not isinstance(adapter, dict) or adapter.get("adapter_id") != "codex_cli_web_run":
+            continue
+        web_run = (report.get("host_tools") or {}).get("web__run")
+        if not isinstance(web_run, dict):
+            continue
+        operations = web_run.get("operations")
+        if not isinstance(operations, dict):
+            continue
+        for capability, name in (("search.web", "search_query"), ("source.open", "open")):
+            operation = operations.get(name)
+            records = operation if isinstance(operation, list) else [operation]
+            for record in records:
+                if not isinstance(record, dict) or _host_failure_status(record) != "failed":
+                    continue
+                status = record.get("http_status")
+                error = " ".join(str(record.get(key) or "") for key in ("error", "message", "detail", "status_text")).casefold()
+                if status == 404 or "404" in error:
+                    reason = "http_404"
+                elif "timeout" in error or "timed out" in error:
+                    reason = "timeout"
+                else:
+                    reason = "host_operation_failed"
+                return {
+                    "capability": capability,
+                    "reason": reason,
+                    "retry": False,
+                    "attempts": 1,
+                }
+    return None
+
+
+def _host_failure_status(operation: dict[str, Any]) -> str:
+    value = operation.get("status")
+    return value.strip().casefold() if isinstance(value, str) else "unknown"
+
+
 def preflight(payload: dict[str,Any]|None) -> dict[str,Any]:
     provided: dict[str, Any] = {}
     adapter_result: dict[str, Any] | None = None
+    reports: list[Any] = []
     if isinstance(payload, dict):
         has_capability_wrapper = "capabilities" in payload
         generic = payload.get("capabilities", {})
@@ -119,6 +168,12 @@ def preflight(payload: dict[str,Any]|None) -> dict[str,Any]:
             adapter_result = _missing_codex_adapter_result()
             for capability in adapter_result["owned_capabilities"]:
                 provided[capability] = adapter_result["mapped_capabilities"][capability]
+    capability_failure = _web_run_capability_failure(reports)
+    if capability_failure is not None:
+        # A concrete failed host operation is stronger than an otherwise
+        # malformed multi-capability report. Preserve fail-closed behavior for
+        # every other capability, but never conceal the known unavailable one.
+        provided[capability_failure["capability"]] = "missing"
     capabilities={cap:{"status":normalize_status(provided.get(cap)),"highest_layer":layer,"rule":rule} for cap,(layer,rule) in CAPABILITY_RULES.items()}
     source_capable=any(capabilities[c]["status"]=="available" for c in ("source.open","browser.render","document.extract"))
     search_capable=capabilities["search.web"]["status"]=="available"
@@ -142,6 +197,15 @@ def preflight(payload: dict[str,Any]|None) -> dict[str,Any]:
         max_output = "formal_research_blocked"
         notes = [FORMAL_RESEARCH_MESSAGE]
         formal_message = FORMAL_RESEARCH_MESSAGE
+        if capability_failure is not None:
+            if capability_failure["reason"] == "http_404":
+                failure_note = "web__run 返回 HTTP 404，已将该能力标为不可用；本轮只预检一次，不会重复重试。"
+            elif capability_failure["reason"] == "timeout":
+                failure_note = "web__run 预检超时，已将该能力标为不可用；本轮只预检一次，不会重复重试。"
+            else:
+                failure_note = "web__run 预检失败，已将该能力标为不可用；本轮只预检一次，不会重复重试。"
+            notes.append(failure_note)
+            formal_message = f"{FORMAL_RESEARCH_MESSAGE} {failure_note}"
     result = {
         "checked_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "capabilities": capabilities,
@@ -151,6 +215,8 @@ def preflight(payload: dict[str,Any]|None) -> dict[str,Any]:
         "formal_research_message": formal_message,
         "downgrade_notes": notes,
     }
+    if capability_failure is not None:
+        result["capability_failure"] = capability_failure
     if adapter_result is not None:
         result["adapter_report"] = {
             "recognized": adapter_result["recognized"],

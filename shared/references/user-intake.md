@@ -45,8 +45,10 @@ Ask only one to three short questions when an answer would lead to a different
 customer direction, such as whether named brands or competitors are references
 or allowed prospects, whether a business boundary applies, or whether similar
 terms represent different applications. If the key ambiguity remains, provide
-only three to five `方向样本，等待确认后再扩展为正式开发名单`; do not issue a
-standard list. Do not add a country, product type, application, channel,
+only three to five `方向样本，等待确认后再扩展`; do not issue a standard list.
+If product, country/region, and customer type are already clear, use the fast
+candidate-pool first batch of 10 and then ask whether to expand to 30 or 50.
+Do not add a country, product type, application, channel,
 company size, or customer type that the user did not state.
 
 Treat a competitor, brand, manufacturer, or reference website as a search or

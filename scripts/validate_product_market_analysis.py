@@ -32,6 +32,7 @@ from _superleads_common import (
     issue,
     resolve_capability_adapter_reports,
 )
+from schema_validation import SchemaResolutionError, schema_validation_errors
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "shared" / "schemas"
@@ -523,31 +524,10 @@ def _contains_positive_phrase(text: Any, phrases: tuple[str, ...]) -> bool:
 
 def _schema_validation_issues(graph: dict[str, Any]) -> list[dict[str, str]]:
     try:
-        import jsonschema  # type: ignore
-        from jsonschema import RefResolver  # type: ignore
-    except Exception:
-        return [issue("major", "schema_profile_unavailable", "jsonschema is unavailable; schema profile cannot be verified", "shared/schemas")]
-    try:
-        schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
-        store: dict[str, Any] = {}
-        for item in SCHEMA_DIR.glob("*.schema.json"):
-            loaded = json.loads(item.read_text(encoding="utf-8"))
-            store[item.as_uri()] = loaded
-            store[(SCHEMA_DIR / item.name).as_uri()] = loaded
-            if has_text(loaded.get("$id")):
-                store[str(loaded["$id"])] = loaded
-        resolver = RefResolver(base_uri=SCHEMA_DIR.as_uri() + "/", referrer=schema, store=store)
-        validator = jsonschema.Draft202012Validator(schema, resolver=resolver)
-    except Exception as exc:
+        errors = schema_validation_errors(graph, SCHEMA_PATH)
+    except SchemaResolutionError as exc:
         return [issue("major", "schema_profile_unavailable", f"Product market analysis schema profile could not be loaded: {exc}", "shared/schemas")]
-    issues: list[dict[str, str]] = []
-    try:
-        for err in sorted(validator.iter_errors(graph), key=lambda e: list(e.absolute_path)):
-            path = "".join(f"[{p}]" if isinstance(p, int) else f".{p}" for p in err.absolute_path).lstrip(".")
-            issues.append(issue("major", "schema_validation_failed", err.message, path or "$"))
-    except Exception as exc:
-        issues.append(issue("major", "schema_validation_error", f"Product market analysis schema validation failed to execute: {exc}", "$"))
-    return issues
+    return [issue("major", "schema_validation_failed", str(error["message"]), str(error["path"])) for error in errors]
 
 
 def _id_maps(graph: dict[str, Any]) -> dict[str, dict[str, dict[str, Any]]]:
