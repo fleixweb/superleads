@@ -17,7 +17,11 @@ from export_superleads_markdown import build_background_markdown, build_bulk_mar
 from export_workbook import build_sheets
 from superleads_execution_state import create_execution_state, record_candidate
 from superleads_user_guidance import append_final_footer
-from validate_superleads_user_visible_output import GENERIC_INTERNAL_LANGUAGE, validate
+from validate_superleads_user_visible_output import (
+    GENERIC_INTERNAL_LANGUAGE,
+    INTERNAL_RUNTIME_PATTERNS,
+    validate,
+)
 
 
 STANDARD_FIXTURE = ROOT / "evals" / "fixtures" / "pass_geography_searchlog_standard.json"
@@ -265,14 +269,12 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
             "依赖缺失",
             "模块名",
             "preflight_capabilities.py",
-            ".py",
-            "预检",
-            "适配器",
             "PYTHONPATH",
             "工作区目录",
         }
         self.assertTrue(expected.issubset(GENERIC_INTERNAL_LANGUAGE))
-        self.assertTrue({"模块", "python", "interpreter", "依赖", "referencing"}.isdisjoint(GENERIC_INTERNAL_LANGUAGE))
+        self.assertTrue({".py", "预检", "适配器", "模块", "python", "interpreter", "依赖", "referencing"}.isdisjoint(GENERIC_INTERNAL_LANGUAGE))
+        self.assertEqual(3, len(INTERNAL_RUNTIME_PATTERNS))
 
         issues = validate(
             "当前系统 Python 缺少它依赖的 jsonschema。",
@@ -294,6 +296,26 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
                     ("user_visible_internal_language", phrase),
                     {(item["code"], item.get("value")) for item in issues},
                 )
+
+        for text in (
+            "能力预检脚本给出了受限结果。",
+            "适配器报告显示该操作不可用。",
+            "不要重试同一失败适配器。",
+            "scripts/validate_report.py 需要在内部路径运行。",
+        ):
+            with self.subTest(text=text):
+                issues = validate(text, "product_outbound_market_analysis", min_tables=0)
+                self.assertIn("user_visible_internal_language", {item["code"] for item in issues})
+
+        for text in (
+            "本轮分析中国出口电源适配器到越南的公开价格。",
+            "候选客户官网为 example.com.py 的巴拉圭进口商。",
+            "越南要求装运前预检报告。",
+            "本轮分析电源适配器的公开价格；候选官网为 example.com.py；越南的装运前预检报告仍待确认。",
+        ):
+            with self.subTest(text=text):
+                issues = validate(text, "product_outbound_market_analysis", min_tables=0)
+                self.assertNotIn("user_visible_internal_language", {item["code"] for item in issues})
 
     def test_visible_validator_allows_product_market_module_header(self) -> None:
         issues = validate(

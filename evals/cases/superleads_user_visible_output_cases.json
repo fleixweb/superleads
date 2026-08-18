@@ -253,6 +253,21 @@
       ]
     },
     {
+      "name": "product market business terms remain visible",
+      "fixture": "evals/user_visible_outputs/pass_product_market_adapter_py_psi_terms.md",
+      "route": "product_outbound_market_analysis",
+      "expected": "pass",
+      "min_tables": 6,
+      "must_contain": [
+        "电源适配器",
+        "example.com.py",
+        "装运前预检报告",
+        "准入",
+        "进口税费",
+        "运输方式"
+      ]
+    },
+    {
       "name": "fail user visible positive recommendation still blocked",
       "fixture": "evals/user_visible_outputs/fail_user_visible_positive_recommendation.md",
       "route": "product_outbound_market_analysis",

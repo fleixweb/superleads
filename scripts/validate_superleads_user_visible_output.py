@@ -139,12 +139,26 @@ GENERIC_INTERNAL_LANGUAGE = [
     "依赖缺失",
     "模块名",
     "preflight_capabilities.py",
-    ".py",
-    "预检",
-    "适配器",
     "PYTHONPATH",
     "工作区目录",
 ]
+
+# These terms also occur in normal foreign-trade delivery. Match them only
+# when their surrounding words make the runtime meaning explicit.
+INTERNAL_RUNTIME_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    (
+        "runtime script filename",
+        re.compile(r"(?<![A-Za-z0-9_.-])[A-Za-z_][A-Za-z0-9_-]*\.py(?![A-Za-z0-9])", re.IGNORECASE),
+    ),
+    (
+        "internal preflight context",
+        re.compile(r"(?:能力预检|预检(?:脚本|结果|机制|能力|(?:状态|结论)?(?:未评估|受限|失败|不可用)))"),
+    ),
+    (
+        "internal adapter context",
+        re.compile(r"(?:适配器(?:报告|判定|\s*(?:ID|id)|(?:状态|结果)?(?:失败|不可用|受限))|同一失败适配器)"),
+    ),
+)
 
 GENERIC_VALUE_JUDGMENTS = [
     "推荐客户",
@@ -658,6 +672,10 @@ def validate(text: str, route: str, *, min_tables: int = 3, extra_required: list
     for phrase in GENERIC_INTERNAL_LANGUAGE:
         if _phrase_matches(text, phrase):
             issues.append(_issue("user_visible_internal_language", f"internal language leaked: {phrase}", phrase))
+
+    for label, pattern in INTERNAL_RUNTIME_PATTERNS:
+        if pattern.search(text):
+            issues.append(_issue("user_visible_internal_language", f"internal language leaked: {label}", label))
 
     for phrase in GENERIC_VALUE_JUDGMENTS:
         if _value_judgment_matches(text, phrase):

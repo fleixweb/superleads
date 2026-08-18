@@ -10,6 +10,14 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 - **MINOR**: adds capabilities without breaking existing research graphs.
 - **PATCH**: fixes bugs or changes copy.
 
+## [0.2.2] - 2026-08-19
+
+### Fixed
+
+- Recover from adapter-local failures by checking another already-exposed native provider before concluding that the host has no Web capability.
+- Distinguish an unassessed capability preflight from a genuinely blocked environment, including the dedicated exit code `2` and no-runtime-detail user-visible boundary.
+- Keep runtime-detail leakage checks while matching `.py`, `预检`, and `适配器` only in internal runtime contexts, so product names, Paraguay domains, and shipment pre-inspection wording remain valid delivery content.
+
 ## [0.2.1] - 2026-08-18
 
 ### Added
