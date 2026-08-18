@@ -2,6 +2,10 @@
 
 Capability discovery starts from the current host's actual tool inventory, not from a preferred adapter name in this repository. A named adapter is eligible only when the host exposes that operation. One adapter's 404, timeout, or missing-tool response is adapter-local: do not retry the same failed adapter, but do check another already-exposed native provider before declaring `search.web` unavailable. In particular, a Codex `web__run` failure must not erase a verified ChatGPT Desktop, Claude Code, Hermes, or WorkBuddy capability.
 
+## Script portability
+
+任何 `scripts/*.py` 在 `SKILL.md` 中出现时，都必须同时给出无脚本的等价路径。脚本是加速器，不是交付前提；Python 或 shell 不可用不等于宿主的搜索、来源打开或文档能力不可用。无脚本路径必须内联执行相同的路由、证据和用户可见边界，并对依赖确定性校验的交付明确标注“本环境未运行确定性校验”。这项兼容约定不允许把搜索摘要升级为事实，也不放宽主体、联系人、来源或访问限制。
+
 | Capability | Highest allowed layer | Rule |
 |---|---|---|
 | `search.web` | 发现候选池 / SearchLog | Never supports Claim. |

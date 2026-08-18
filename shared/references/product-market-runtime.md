@@ -14,7 +14,7 @@
 
 ## 执行顺序
 
-先运行 `scripts/plan_product_market_sources.py` 生成有限 Query Plan，再执行搜索与来源打开。Source/Observation 稳定后，可用 `scripts/compile_product_market_evidence.py` 将紧凑笔记编译为既有图谱对象；编译器不搜索、不打开、不判断权威性。编译前后运行 `scripts/precheck_superleads_uat_input.py`。任何包含市场事实的最终用户可见事实交付，包括单项范围研究快照，最终都由 `validate_product_market_analysis.py` 与 `audit_product_market_analysis.py` 门禁；范围确认、进度和单独澄清不运行门禁，也不作为事实交付。
+脚本可用时，先运行 `scripts/plan_product_market_sources.py` 生成有限 Query Plan，再执行搜索与来源打开。Source/Observation 稳定后，可用 `scripts/compile_product_market_evidence.py` 将紧凑笔记编译为既有图谱对象；编译器不搜索、不打开、不判断权威性。编译前后运行 `scripts/precheck_superleads_uat_input.py`，包含市场事实的交付再由 `validate_product_market_analysis.py` 与 `audit_product_market_analysis.py` 门禁。脚本不可用时，按公开 Skill 中的等价清单完成范围、来源、事实、未知项和禁止结论自检，并标注“本环境未运行确定性校验”；范围确认、进度和单独澄清不运行门禁，也不作为事实交付。
 
 只有用户明确要求正式报告或 Markdown 导出，且图谱通过严格校验/审计后，才运行正式 exporter。正式阶段如涉及原产地证明、认证、测试、标签、SDS、UN38.3、关税或物流，按实际模块读取对应开发规格；这些规格不属于首次入口上下文。
 

@@ -4,6 +4,8 @@ Map platform-specific tools to Superleads capabilities before planning or execut
 
 Before probing a named tool, inspect the tools the current host actually exposes. ChatGPT Desktop, Codex CLI, Claude Code, Hermes, and WorkBuddy may use different concrete names for the same `search.web` or `source.open` capability. Never call `web__run`, `web_search`, WebSearch, or another adapter merely because it appears in this document; use it only when that exact operation is present in the current host. A failure from one adapter applies only to that adapter. Do not retry the same failed adapter, but do check another already-exposed native provider before concluding that the host has no Web capability.
 
+宿主能力按当前会话的实际操作结果记录。不按安装方式推断，不沿用历史会话结论，不因某个适配器失败就判定整类能力不可用；同一平台在不同会话可能暴露不同工具。
+
 For ChatGPT Desktop, prefer the app's actually exposed built-in browsing/search and source-opening operations. A Codex-only `web__run` 404 is not evidence that ChatGPT Desktop has no search capability. Record the successful host capability and concrete operation that were actually used; do not record the failed Codex probe in a formal Run graph.
 
 | Superleads capability | Codex examples | Claude Code examples | Hermes examples | WorkBuddy examples | Degrade when missing |

@@ -37,6 +37,9 @@ specific rows/cells being supplemented. These are analysis or original-table
 results, not a way to create a direction-matched customer list without the
 current development contract. PDF/fair directory extraction, webpage-list
 cleanup, and screenshot/search-result organization require parseable material.
+For multi-row or multi-query table enrichment, use `bulk-execution-strategy.md`
+for batching, rolling deduplication, intermediate delivery, and resume anchors;
+single-row supplementation does not load that reference.
 
 ## 本次找什么 / 不找什么 / 怎么判断
 

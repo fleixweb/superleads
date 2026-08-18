@@ -11,11 +11,13 @@ description: "Use when a user provides one specific company, brand, website/doma
 
 ## 路由优先
 
-在读取本 Playbook 其他内容前，先以当前用户原文运行：
+在读取本 Playbook 其他内容前，脚本可用时先以当前用户原文运行：
 
 ```bash
 python3 ../../scripts/route_superleads_intake.py --text "<current user message>" --format json
 ```
+
+脚本不可用时，按本节指定对象边界和当前用户原文直接判断路线；不要尝试启动 shell 或等待 Python，也不要因此阻塞任务。
 
 如果结果不是 `customer_background_research` 或 `single_object_contact`，立即按返回路线交接，不开始本路线研究。只向用户显示 `response_lines`，不显示 JSON、内部阶段名或路径。
 
@@ -81,7 +83,7 @@ Superleads 的主路径不变：
 
 ## 覆盖族
 
-以下六个覆盖族按现有证据、用户材料和可用能力选择执行。它们不是全部串行、全部强制的门禁。每个覆盖族都应标注 `observed`、`not_observed`、`not_searched`、`source_restricted`、`identity_pending` 或 `needs_user_input`，并说明范围或限制。缺少 Similarweb、海关、Wayback 或注册库访问能力，不表示客户不存在，也不表示研究失败。
+当背调涉及多个主体或多查询项时，按需读取 `../../shared/references/bulk-execution-strategy.md`；单一对象单项查询不读取。以下六个覆盖族按现有证据、用户材料和可用能力选择执行。每个覆盖族都应标注 `observed`、`not_observed`、`not_searched`、`source_restricted`、`identity_pending` 或 `needs_user_input`，并说明范围或限制。缺少 Similarweb、海关、Wayback 或注册库访问能力，不表示客户不存在，也不表示研究失败。
 
 ### A. 官网、品牌站与公开文件
 
@@ -189,6 +191,8 @@ python3 scripts/export_superleads_markdown.py graph.json --route customer_backgr
 payload 或改交付 CSV/XLSX，不要把手写研究摘要称为正式 Markdown 报告。
 
 如需 CSV / XLSX 交接，可使用 `python3 scripts/export_workbook.py graph.json --output-dir out --mode background --format csv` 导出同样的六张固定表；有 `suspected_trade_records` 时同步追加同名条件 sheet。两类导出都只展示当前背景对象、其证据支持的关联主体与线索，不会输出无关批量客户或正式名单内容。
+
+脚本不可用时，在对话中按上述六张表交付，并在存在贸易摘要时追加第七张条件表；必须标注“本环境未运行确定性校验”，且不得声称已生成 Markdown、CSV 或 XLSX 文件。无脚本交付仍须逐项遵守同一主体、已打开来源、联系方式归属、未知与冲突保留等边界。
 
 表述规则：
 

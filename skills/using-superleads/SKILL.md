@@ -15,11 +15,13 @@ description: "Use for a concrete batch discovery request with product or keyword
 
 ## 路由
 
-对非帮助请求，先以当前用户原文运行：
+对非帮助请求，脚本可用时先以当前用户原文运行：
 
 ```bash
 python3 ../../scripts/route_superleads_intake.py --text "<current user message>" --format json
 ```
+
+脚本不可用时，按本节入口边界和当前用户原文直接判断路线；不要尝试启动 shell 或等待 Python，也不要因此阻塞任务。
 
 只使用其 `response_lines`、语言和任务边界；不要展示 JSON、内部阶段名或路径。元数据、资料初审、单一对象、市场分析和组合任务须立即按返回路线交接，不得因为本 Skill 已被选择而强行开始批量发现。
 
@@ -29,6 +31,6 @@ python3 ../../scripts/route_superleads_intake.py --text "<current user message>"
 
 ## 执行边界
 
-确认是批量发现后，按需阅读 `../../shared/references/batch-discovery-execution.md`。默认交付是带公开来源状态、未知项与待确认项的候选池，不是推荐客户名单；搜索摘要只是线索，绝不写成 Claim。
+确认是批量发现后，按需阅读 `../../shared/references/batch-discovery-execution.md`。当任务涉及批量、多主体或多查询项时，再读取 `../../shared/references/bulk-execution-strategy.md`；单一对象或单项请求不读取。默认交付是带公开来源状态、未知项与待确认项的候选池，不是推荐客户名单；搜索摘要只是线索，绝不写成 Claim。
 
 仅在用户明确要求正式开发名单、完整核验、深度背调、联系人归属核验或正式 Markdown 导出时，按需阅读 `../../shared/internal-stages/` 中对应的阶段参考和 `../../shared/references/using-superleads-formal-delivery.md`。终局交付才附 `../../shared/references/superleads-user-guidance.md` 的支持与安全尾注；进度和单独澄清不附。

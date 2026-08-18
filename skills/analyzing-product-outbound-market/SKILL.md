@@ -11,11 +11,13 @@ description: "Use for objective analysis of a specified product entering a targe
 
 ## 路由优先
 
-在读取其他参考前，先以当前用户原文运行：
+在读取其他参考前，脚本可用时先以当前用户原文运行：
 
 ```bash
 python3 ../../scripts/route_superleads_intake.py --text "<current user message>" --format json
 ```
+
+脚本不可用时，按本节最小入口和不可变边界直接判断路线；不要尝试启动 shell 或等待 Python，也不要因此阻塞任务。
 
 如果结果不是 `product_outbound_market_analysis`，立即按返回路线交接，不创建市场 Brief 或研究计划。只向用户显示 `response_lines`，不显示 JSON、内部阶段名或路径。
 
@@ -39,10 +41,10 @@ python3 ../../scripts/route_superleads_intake.py --text "<current user message>"
 
 ## 按需执行
 
-路由确认后阅读 `../../shared/references/product-outbound-market-intake.md` 和 `../../shared/references/product-market-runtime.md`。后者包含模块选择、有限来源计划、紧凑证据编译和正式门禁；入口阶段不得直接加载开发期 `spec/` 文件。
+路由确认后阅读 `../../shared/references/product-outbound-market-intake.md` 和 `../../shared/references/product-market-runtime.md`。当任务涉及批量、多主体或多查询项时，再读取 `../../shared/references/bulk-execution-strategy.md`；单一对象、单一产品、单一国家和单项问题不读取。后者包含模块选择、有限来源计划、紧凑证据编译和正式门禁；入口阶段不得直接加载开发期 `spec/` 文件。
 
-正式研究前运行 `../../scripts/preflight_capabilities.py --require-formal-research`。真实来源能力缺失时停止正式路线，可将用户已提供资料整理为“资料初审”，但不得伪装成公开来源研究。
+正式研究前运行或模拟 `../../scripts/preflight_capabilities.py --require-formal-research`：脚本可用时运行；脚本不可用时直接检查宿主实际暴露的搜索和来源打开能力。真实来源能力缺失时降低交付层级，可整理用户资料或提供查询计划，但不得伪装成公开来源研究；仅缺少 Python 不得阻塞宿主原生检索和来源读取。
 
-来源已打开后，任何包含市场事实的最终用户可见事实交付，包括按单项范围生成的研究快照，都必须依次运行输入预检、证据编译、`../../scripts/validate_product_market_analysis.py` 和 `../../scripts/audit_product_market_analysis.py`。范围确认、进度说明和单独澄清不运行这些门禁，也不能冒充事实交付。只有用户明确要求正式报告、Markdown、CSV 或工作簿导出时，才在校验和审计通过后运行对应 exporter。这些脚本不能被搜索摘要或未打开页面替代。
+来源已打开后，任何包含市场事实的最终用户可见事实交付，包括按单项范围生成的研究快照，在脚本可用时依次运行输入预检、证据编译、`../../scripts/validate_product_market_analysis.py` 和 `../../scripts/audit_product_market_analysis.py`。脚本不可用时按等价清单逐项自检：产品、目的地和请求模块边界明确；每项事实绑定本轮实际打开来源的 URL、可见原文或位置与观察时间；搜索摘要仍只作为线索；未知、冲突、来源受限和本轮未执行项均保留；不输出未经来源支持的 HS/税率、认证、物流或商业判断。完成后交付并明确标注“本环境未运行确定性校验”。范围确认、进度说明和单独澄清不运行这些门禁，也不能冒充事实交付。只有用户明确要求正式报告、Markdown、CSV 或工作簿导出，且对应 exporter 可用并通过校验时，才声称生成了正式文件。这些脚本不能被搜索摘要或未打开页面替代。
 
 最终交付或终局能力受限说明遵循 `../../shared/references/superleads-user-guidance.md`；进度和单独澄清不附支持尾注。

@@ -166,6 +166,26 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
                 self.assertIn(router_command, content)
                 self.assertNotIn("static_help_response()", content)
 
+    def test_public_router_is_an_optional_accelerator_with_an_inline_fallback(self) -> None:
+        router_command = "python3 ../../scripts/route_superleads_intake.py"
+        for skill_name in PUBLIC_SKILLS:
+            with self.subTest(skill=skill_name):
+                content = (ROOT / "skills" / skill_name / "SKILL.md").read_text(encoding="utf-8")
+                router = content.index(router_command)
+                availability_window = content[max(0, router - 300) : router]
+                fallback_window = content[router : router + 700]
+
+                self.assertIn("脚本可用时", availability_window)
+                self.assertIn("脚本不可用时", fallback_window)
+                self.assertRegex(fallback_window, r"直接判断路线|内联判断路线")
+
+    def test_global_policy_makes_scripts_optional_accelerators(self) -> None:
+        policy = (ROOT / "shared" / "policies" / "tool-capability-policy.md").read_text(encoding="utf-8")
+
+        self.assertIn("任何 `scripts/*.py`", policy)
+        self.assertIn("脚本是加速器，不是交付前提", policy)
+        self.assertIn("无脚本的等价路径", policy)
+
     def test_every_public_entry_handles_help_without_tools_before_router_execution(self) -> None:
         router_command = "python3 ../../scripts/route_superleads_intake.py"
         for skill_name in PUBLIC_SKILLS:
@@ -187,6 +207,31 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
             self.assertIn("validate_product_market_analysis.py", content)
             self.assertIn("audit_product_market_analysis.py", content)
             self.assertNotIn("只有来源已打开且用户明确要求正式报告或导出时", content)
+
+    def test_market_preflight_can_be_emulated_when_python_is_unavailable(self) -> None:
+        skill = (ROOT / "skills" / "analyzing-product-outbound-market" / "SKILL.md").read_text(encoding="utf-8")
+
+        self.assertIn("运行或模拟", skill)
+        self.assertIn("宿主实际暴露", skill)
+        self.assertIn("降低交付层级", skill)
+        self.assertNotIn("真实来源能力缺失时停止正式路线", skill)
+
+    def test_market_fact_delivery_has_an_equivalent_no_script_self_check(self) -> None:
+        skill = (ROOT / "skills" / "analyzing-product-outbound-market" / "SKILL.md").read_text(encoding="utf-8")
+
+        self.assertIn("脚本可用时", skill)
+        self.assertIn("脚本不可用时", skill)
+        self.assertIn("逐项自检", skill)
+        self.assertIn("本环境未运行确定性校验", skill)
+        self.assertIn("搜索摘要仍只作为线索", skill)
+
+    def test_background_export_has_a_truthful_chat_fallback_without_scripts(self) -> None:
+        skill = (ROOT / "skills" / "researching-customer-background" / "SKILL.md").read_text(encoding="utf-8")
+
+        self.assertIn("脚本不可用时", skill)
+        self.assertIn("在对话中按上述六张表交付", skill)
+        self.assertIn("本环境未运行确定性校验", skill)
+        self.assertIn("不得声称已生成 Markdown、CSV 或 XLSX 文件", skill)
 
     def test_fast_discovery_uses_host_exposed_search_and_does_not_hard_stop_on_one_adapter_404(self) -> None:
         batch = (ROOT / "shared" / "references" / "batch-discovery-execution.md").read_text(encoding="utf-8")
@@ -214,6 +259,51 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
 
         self.assertNotIn("../../spec/", content)
         self.assertIn("../../shared/references/product-market-runtime.md", content)
+
+    def test_bulk_execution_strategy_has_single_bounded_authority(self) -> None:
+        strategy = (ROOT / "shared" / "references" / "bulk-execution-strategy.md").read_text(encoding="utf-8")
+
+        for marker in (
+            "批量来源优先",
+            "并行与分批",
+            "滚动去重",
+            "中间交付",
+            "断点续跑",
+        ):
+            self.assertIn(marker, strategy)
+        self.assertLess(len(strategy), 1000)
+        self.assertNotRegex(strategy, r"scripts/|python3")
+
+        composite = (ROOT / "shared" / "references" / "composite-task-routing.md").read_text(encoding="utf-8")
+        self.assertIn("bulk-execution-strategy.md", composite)
+        self.assertNotIn("独立查询组、来源打开、候选联系人补充和资料整理可以并行规划", composite)
+
+        discovery = (ROOT / "shared" / "references" / "default-discovery-reference.md").read_text(encoding="utf-8")
+        self.assertIn("bulk-execution-strategy.md", discovery)
+        self.assertNotIn("独立查询组只能标“可并行计划”", discovery)
+
+    def test_public_routes_conditionally_load_bulk_execution_strategy(self) -> None:
+        reference = "../../shared/references/bulk-execution-strategy.md"
+        for skill_name in PUBLIC_SKILLS:
+            with self.subTest(skill=skill_name):
+                content = (ROOT / "skills" / skill_name / "SKILL.md").read_text(encoding="utf-8")
+                self.assertIn(reference, content)
+                self.assertRegex(content, r"批量、多主体或多查询项|多个主体|多查询项")
+                self.assertRegex(content, r"仅在.*读取|单一对象.*不读取")
+
+    def test_table_enrichment_points_to_bulk_execution_strategy(self) -> None:
+        user_intake = (ROOT / "shared" / "references" / "user-intake.md").read_text(encoding="utf-8")
+        batch = (ROOT / "shared" / "references" / "batch-discovery-execution.md").read_text(encoding="utf-8")
+
+        self.assertIn("bulk-execution-strategy.md", user_intake)
+        self.assertIn("bulk-execution-strategy.md", batch)
+
+    def test_platform_capabilities_are_recorded_from_current_session_results(self) -> None:
+        adapters = (ROOT / "shared" / "policies" / "platform-adapters.md").read_text(encoding="utf-8")
+
+        self.assertIn("宿主能力按当前会话的实际操作结果记录", adapters)
+        self.assertIn("不按安装方式推断", adapters)
+        self.assertIn("不沿用历史会话结论", adapters)
 
 
 if __name__ == "__main__":

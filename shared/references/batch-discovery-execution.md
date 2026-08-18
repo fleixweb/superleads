@@ -44,7 +44,9 @@ For existing-table enrichment, retain the supplied spreadsheet and the rows or
 cells being supplemented. It does not create a direction-matched customer list
 without a current development contract. Create a Run Context only for
 `discovery_snapshot` or `formal_research` and record the entry mode, platform,
-capabilities, output mode, and evidence depth.
+capabilities, output mode, and evidence depth. For multi-row or multi-query
+enrichment, read `bulk-execution-strategy.md`; single-row supplementation does
+not load that reference.
 
 ## Fast Candidate Pool
 
