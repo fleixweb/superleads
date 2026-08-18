@@ -158,26 +158,28 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
 
                 self.assertIn("任意两个或以上明确业务目标", content)
 
-    def test_public_entries_use_the_deterministic_router_before_route_references(self) -> None:
-        router_command = "python3 ../../scripts/route_superleads_intake.py"
+    def test_public_entries_route_inline_without_a_default_router_script(self) -> None:
         for skill_name in PUBLIC_SKILLS:
             with self.subTest(skill=skill_name):
                 content = (ROOT / "skills" / skill_name / "SKILL.md").read_text(encoding="utf-8")
-                self.assertIn(router_command, content)
+                self.assertNotIn("route_superleads_intake.py", content)
+                self.assertRegex(content, r"直接判断路线|内联判断路线")
                 self.assertNotIn("static_help_response()", content)
 
-    def test_public_router_is_an_optional_accelerator_with_an_inline_fallback(self) -> None:
-        router_command = "python3 ../../scripts/route_superleads_intake.py"
-        for skill_name in PUBLIC_SKILLS:
-            with self.subTest(skill=skill_name):
-                content = (ROOT / "skills" / skill_name / "SKILL.md").read_text(encoding="utf-8")
-                router = content.index(router_command)
-                availability_window = content[max(0, router - 300) : router]
-                fallback_window = content[router : router + 700]
+    def test_active_host_runtime_instructions_do_not_require_python3(self) -> None:
+        host_runtime_files = (
+            ROOT / "skills" / "using-superleads" / "SKILL.md",
+            ROOT / "skills" / "researching-customer-background" / "SKILL.md",
+            ROOT / "skills" / "analyzing-product-outbound-market" / "SKILL.md",
+            ROOT / "shared" / "references" / "batch-discovery-execution.md",
+            ROOT / "shared" / "references" / "using-superleads-formal-delivery.md",
+        )
+        for path in host_runtime_files:
+            with self.subTest(path=path):
+                self.assertNotIn("python3", path.read_text(encoding="utf-8"))
 
-                self.assertIn("脚本可用时", availability_window)
-                self.assertIn("脚本不可用时", fallback_window)
-                self.assertRegex(fallback_window, r"直接判断路线|内联判断路线")
+        cross_platform = (ROOT / "shared" / "policies" / "cross-platform-rules.md").read_text(encoding="utf-8")
+        self.assertIn("host-provided runtime interpreter", cross_platform)
 
     def test_global_policy_makes_scripts_optional_accelerators(self) -> None:
         policy = (ROOT / "shared" / "policies" / "tool-capability-policy.md").read_text(encoding="utf-8")
@@ -186,13 +188,11 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
         self.assertIn("脚本是加速器，不是交付前提", policy)
         self.assertIn("无脚本的等价路径", policy)
 
-    def test_every_public_entry_handles_help_without_tools_before_router_execution(self) -> None:
-        router_command = "python3 ../../scripts/route_superleads_intake.py"
+    def test_every_public_entry_handles_help_without_tools_or_routing_execution(self) -> None:
         for skill_name in PUBLIC_SKILLS:
             with self.subTest(skill=skill_name):
                 content = (ROOT / "skills" / skill_name / "SKILL.md").read_text(encoding="utf-8")
-                router = content.index(router_command)
-                guard_text = content[:router]
+                guard_text = content[: content.index("## 路由")]
                 self.assertRegex(guard_text, r"用户只输入 `@`|用户只输入 `@superleads`|询问简短使用方法")
                 self.assertRegex(guard_text, r"不要调用 shell|不运行工具")
                 self.assertIn("不搜索", guard_text)
@@ -243,6 +243,15 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
             self.assertIn("同一失败适配器", content)
         self.assertNotIn("stop the fast candidate-pool path", execution)
         self.assertNotIn("停止快速候选池", batch)
+
+    def test_adapter_local_404_has_an_executable_current_session_recovery_path(self) -> None:
+        policy = (ROOT / "shared" / "policies" / "tool-capability-policy.md").read_text(encoding="utf-8")
+
+        self.assertIn("停止重试该失败适配器", policy)
+        self.assertIn("查看当前会话实际暴露的操作", policy)
+        self.assertIn("不同的已暴露原生检索或来源打开操作", policy)
+        self.assertIn("用户资料整理或有界查询计划", policy)
+        self.assertIn("不得以 shell/curl 代替公开检索", policy)
 
     def test_part_number_is_a_valid_product_anchor_but_requires_public_identity_lookup(self) -> None:
         intake = (ROOT / "shared" / "references" / "user-intake.md").read_text(encoding="utf-8")

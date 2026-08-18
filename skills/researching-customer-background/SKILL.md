@@ -11,15 +11,9 @@ description: "Use when a user provides one specific company, brand, website/doma
 
 ## 路由优先
 
-在读取本 Playbook 其他内容前，脚本可用时先以当前用户原文运行：
+在读取本 Playbook 其他内容前，按当前用户原文和指定对象边界直接判断路线；不要为了路由、版本或能力探测调用 shell、脚本或工具。只有一个具体公司、品牌、域名、地址、邮箱、电话、社媒链接或用户资料的公开背景核查进入本路线；产品、市场和客户类型的批量发现交给批量发现，产品加目的国/地区的关税、准入、价格、趋势、物流或出口要求交给市场分析，任意两个或以上明确业务目标建立组合任务。对象或调查目标不明确时，只问一个真正阻塞的问题。
 
-```bash
-python3 ../../scripts/route_superleads_intake.py --text "<current user message>" --format json
-```
-
-脚本不可用时，按本节指定对象边界和当前用户原文直接判断路线；不要尝试启动 shell 或等待 Python，也不要因此阻塞任务。
-
-如果结果不是 `customer_background_research` 或 `single_object_contact`，立即按返回路线交接，不开始本路线研究。只向用户显示 `response_lines`，不显示 JSON、内部阶段名、路径、解释器、依赖或模块细节。
+元数据、资料初审和帮助不开始本路线研究。只向用户显示业务语言，不显示 JSON、内部阶段名、路径、解释器、依赖或模块细节。
 
 ## 最终交付
 
@@ -179,18 +173,14 @@ Superleads 的主路径不变：
 
 对话表格每张最多六列。URL、原文摘录和复杂来源定位只放在最后的“信息从哪里来”；前五张表不堆砌证据细节。
 
-如果用户要在 Codex / ChatGPT app 中直接阅读 Markdown 报告，优先使用统一交付器：
-
-```bash
-python3 scripts/export_superleads_markdown.py graph.json --route customer_background_research --output report.md --format json
-```
+如果用户明确要在 Codex / ChatGPT app 中直接阅读正式 Markdown 报告，按 `../../shared/policies/cross-platform-rules.md` 选择宿主自带 runtime 解释器，调用 `scripts/export_superleads_markdown.py`，参数为 `graph.json --route customer_background_research --output report.md --format json`。
 
 客户背调 Markdown 正式交付必须有已保存的 graph JSON 和 Markdown exporter 返回的
 `ok=true`。不要声称 `export_superleads_markdown.py` 或 Markdown exporter 只支持
 批量客户开发；它支持 `customer_background_research`。如果该命令失败，返回失败
 payload 或改交付 CSV/XLSX，不要把手写研究摘要称为正式 Markdown 报告。
 
-如需 CSV / XLSX 交接，可使用 `python3 scripts/export_workbook.py graph.json --output-dir out --mode background --format csv` 导出同样的六张固定表；有 `suspected_trade_records` 时同步追加同名条件 sheet。两类导出都只展示当前背景对象、其证据支持的关联主体与线索，不会输出无关批量客户或正式名单内容。
+如需 CSV / XLSX 交接，按 `../../shared/policies/cross-platform-rules.md` 选择宿主自带 runtime 解释器，调用 `scripts/export_workbook.py`，参数为 `graph.json --output-dir out --mode background --format csv`，导出同样的六张固定表；有 `suspected_trade_records` 时同步追加同名条件 sheet。两类导出都只展示当前背景对象、其证据支持的关联主体与线索，不会输出无关批量客户或正式名单内容。
 
 脚本不可用时，在对话中按上述六张表交付，并在存在贸易摘要时追加第七张条件表；必须标注“本环境未运行确定性校验”，且不得声称已生成 Markdown、CSV 或 XLSX 文件。无脚本交付仍须逐项遵守同一主体、已打开来源、联系方式归属、未知与冲突保留等边界。
 

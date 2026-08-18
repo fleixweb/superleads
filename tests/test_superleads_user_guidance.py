@@ -34,7 +34,10 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
 
         self.assertLess(skill.index("## 裸启动"), skill.index("## 执行边界"))
         self.assertIn("不要调用 shell", skill)
-        self.assertLess(len(skill.encode("utf-8")), 6_000)
+        # The highest-frequency route is intentionally inlined to avoid a
+        # high-latency host tool round trip; keep it bounded without restoring
+        # a token-size limit that would force that call back in.
+        self.assertLess(len(skill.encode("utf-8")), 6_500)
         self.assertIn("bare @ activation", agent)
 
     def test_static_help_recognizes_supported_prompts(self) -> None:

@@ -35,7 +35,7 @@ For ChatGPT Desktop, prefer the app's actually exposed built-in browsing/search 
 | `maps.lookup` | maps MCP/browser | host-provided map lookup, if exposed | map/browser | map lookup | map workflow | Map phone/address can be contact clue with source note. |
 | `memory.recall` | local memory/MemOS | host-provided session memory, if exposed | project memory | memory | workflow memory | Use only to prioritize plans; never Claim/Assessment evidence. |
 
-快速候选池不运行正式研究 preflight。若同一失败适配器返回 404 或超时，停止重试该适配器，并检查宿主实际暴露的其他原生检索。只有宿主能力清单已确认没有可用搜索时，才降级为用户资料整理或查询计划；不得伪造候选、来源或正式图谱。
+快速候选池不运行正式研究 preflight。若同一失败适配器返回 404 或超时，停止重试该适配器，并按 `tool-capability-policy.md` 的恢复顺序查看当前会话实际暴露的操作（即宿主实际暴露的操作）：直接使用另一条已暴露的原生检索或来源打开操作完成下一次实际工作；仅在不存在该操作时降级为用户资料整理或有界查询计划。不得伪造候选、来源或正式图谱，也不得以 shell/curl 代替公开检索。
 
 ## Codex CLI Native Web Search
 

@@ -32,12 +32,10 @@ non-global DNS results and redirect targets.
 
 ## Real-business UAT gates
 
-Before the formal validator, run:
-
-```bash
-python3 scripts/precheck_superleads_uat_input.py \
-  --route <route> --graph <graph> --format json
-```
+Before the formal validator, under `../policies/cross-platform-rules.md`, select
+the host-provided runtime interpreter and invoke
+`scripts/precheck_superleads_uat_input.py` with
+`--route <route> --graph <graph> --format json`.
 
 This read-only precheck covers literal source anchors, contact association,
 enum values, and product-attribute projection. It does not replace validation,
@@ -58,12 +56,9 @@ estimate tokens when the host did not expose them.
 ## Formal Markdown delivery
 
 For a chat-readable report, always use the unified exporter after validation and
-audit:
-
-```bash
-python3 scripts/export_superleads_markdown.py \
-  graph.json --route auto --output report.md --format json
-```
+audit. Under `../policies/cross-platform-rules.md`, select the host-provided
+runtime interpreter and invoke `scripts/export_superleads_markdown.py` with
+`graph.json --route auto --output report.md --format json`.
 
 Do not hand-render Markdown from workbook/CSV sheets. Do not manually convert
 workbook/CSV rows, rename internal status columns, or fabricate a report when

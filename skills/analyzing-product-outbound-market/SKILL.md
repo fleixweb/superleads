@@ -11,15 +11,9 @@ description: "Use for objective analysis of a specified product entering a targe
 
 ## 路由优先
 
-在读取其他参考前，脚本可用时先以当前用户原文运行：
+在读取其他参考前，按当前用户原文、本节最小入口和不可变边界直接判断路线；不要为了路由、版本或能力探测调用 shell、脚本或工具。产品或品类加目的国/地区，且关注关税、准入、价格、趋势、物流、原产地或出口要求的请求进入本路线；单一公司、品牌、域名、地址、邮箱、电话、社媒链接或用户资料的公开背景核查交给客户背调；产品、市场范围和客户类型的具体找客户请求交给批量发现；任意两个或以上明确业务目标建立组合任务。缺少产品或目的国/地区时，只问一个真正阻塞的问题。
 
-```bash
-python3 ../../scripts/route_superleads_intake.py --text "<current user message>" --format json
-```
-
-脚本不可用时，按本节最小入口和不可变边界直接判断路线；不要尝试启动 shell 或等待 Python，也不要因此阻塞任务。
-
-如果结果不是 `product_outbound_market_analysis`，立即按返回路线交接，不创建市场 Brief 或研究计划。只向用户显示 `response_lines`，不显示 JSON、内部阶段名、路径、解释器、依赖或模块细节。
+元数据、资料初审和帮助不创建市场 Brief 或研究计划。只向用户显示业务语言，不显示 JSON、内部阶段名、路径、解释器、依赖或模块细节。
 
 同一次请求包含任意两个或以上明确业务目标时，按 `../../shared/references/composite-task-routing.md` 建立组合任务；市场分析保持独立的来源用途和事实边界。
 
