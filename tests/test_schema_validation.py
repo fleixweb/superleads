@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import importlib.abc
 import json
 import sys
 import tempfile
@@ -39,6 +40,35 @@ class SchemaValidationTest(unittest.TestCase):
             with self.assertRaises(SchemaResolutionError) as raised:
                 schema_validation_errors({}, schema_path)
         self.assertIn("#/$defs/DoesNotExist", str(raised.exception))
+
+    def test_missing_schema_dependencies_explain_host_runtime_recovery(self) -> None:
+        class MissingSchemaDependencies(importlib.abc.MetaPathFinder):
+            def find_spec(self, name: str, path: object = None, target: object = None) -> object:
+                if name.split(".")[0] in {"jsonschema", "referencing"}:
+                    raise ImportError(f"No module named '{name}'")
+                return None
+
+        finder = MissingSchemaDependencies()
+        cached_modules = {
+            name: module
+            for name, module in list(sys.modules.items())
+            if name.split(".")[0] in {"jsonschema", "referencing"}
+        }
+        for name in cached_modules:
+            sys.modules.pop(name)
+        sys.meta_path.insert(0, finder)
+        try:
+            with self.assertRaises(SchemaResolutionError) as raised:
+                schema_validation_errors({}, ROOT / "shared/schemas/run.schema.json")
+        finally:
+            sys.meta_path.remove(finder)
+            sys.modules.update(cached_modules)
+
+        message = str(raised.exception)
+        self.assertTrue(message.startswith("jsonschema is unavailable:"))
+        self.assertIn("host-provided runtime interpreter", message)
+        self.assertIn("do not modify the user's system environment", message)
+        self.assertIn("do not install packages globally", message)
 
     def test_dependency_declaration_covers_schema_and_xlsx_runtime_dependencies(self) -> None:
         requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")

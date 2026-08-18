@@ -19,7 +19,7 @@ python3 ../../scripts/route_superleads_intake.py --text "<current user message>"
 
 脚本不可用时，按本节指定对象边界和当前用户原文直接判断路线；不要尝试启动 shell 或等待 Python，也不要因此阻塞任务。
 
-如果结果不是 `customer_background_research` 或 `single_object_contact`，立即按返回路线交接，不开始本路线研究。只向用户显示 `response_lines`，不显示 JSON、内部阶段名或路径。
+如果结果不是 `customer_background_research` 或 `single_object_contact`，立即按返回路线交接，不开始本路线研究。只向用户显示 `response_lines`，不显示 JSON、内部阶段名、路径、解释器、依赖或模块细节。
 
 ## 最终交付
 

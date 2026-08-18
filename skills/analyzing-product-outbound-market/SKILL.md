@@ -19,7 +19,7 @@ python3 ../../scripts/route_superleads_intake.py --text "<current user message>"
 
 脚本不可用时，按本节最小入口和不可变边界直接判断路线；不要尝试启动 shell 或等待 Python，也不要因此阻塞任务。
 
-如果结果不是 `product_outbound_market_analysis`，立即按返回路线交接，不创建市场 Brief 或研究计划。只向用户显示 `response_lines`，不显示 JSON、内部阶段名或路径。
+如果结果不是 `product_outbound_market_analysis`，立即按返回路线交接，不创建市场 Brief 或研究计划。只向用户显示 `response_lines`，不显示 JSON、内部阶段名、路径、解释器、依赖或模块细节。
 
 同一次请求包含任意两个或以上明确业务目标时，按 `../../shared/references/composite-task-routing.md` 建立组合任务；市场分析保持独立的来源用途和事实边界。
 
