@@ -2,7 +2,7 @@
 
 The pure intake layer runs before business routing and emits exactly one mode: `metadata`, `material_triage`, `discovery_snapshot`, or `formal_research`. `metadata` keeps `@superleads`, help, current-capability questions, and the feedback entry static with `operations: []`; current/installed version reads use only an explicitly supplied active plugin root, never an installed cache. `material_triage` is user-visible as `资料初审` for material-only PDF, Excel/CSV, and screenshot requests, and creates no Run/Brief or public-research work. Ordinary bulk customer development is a bounded `discovery_snapshot`; `完整报告`, `正式开发名单`, `标准交付`, `深度背调`, and `联系人归属核验` select `formal_research`. These modes do not replace business route values such as `bulk_customer_development`, `customer_background_research`, or `product_outbound_market_analysis`.
 
-Default batch route: `using-superleads` → bounded `discovery`. Scope, planning, collection, verification, and export guidance live under `shared/internal-stages/` and are read only when the current route and delivery mode require them.
+Default batch route: `using-superleads` → bounded `discovery`. Scope, planning, collection, verification, and export guidance live under `shared/internal-stages/` and are read only when the current route and delivery mode require them. 内部阶段文件不得枚举、不得翻译成用户可见的功能清单，也不得用于回答帮助或能力类问题。
 
 单客户背调入口：`指定一个公司/品牌/域名/地址/邮箱/Candidate/用户材料 → researching-customer-background`。它不产生新客户批量池，不要求预先 Entity 解析，可使用独立轻验证导出背景报告；该报告不进入正式名单 audit 或 manifest。
 
@@ -16,7 +16,7 @@ SearchLogs, discovers and de-duplicates Candidates, supplements public signals
 and visible contacts, and assigns business-relevance states. Use
   the matching files under `shared/internal-stages/` as on-demand guidance;
   do not route every discovery round through them as mandatory independent
-  user-visible Skills.
+  user-visible Skills. 内部阶段文件不得枚举、不得翻译成用户可见的功能清单，也不得用于回答帮助或能力类问题。
 
 Conditional additions:
 

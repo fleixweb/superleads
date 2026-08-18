@@ -33,7 +33,7 @@ _GUIDE_CONTENT = {
         "boundary_title": "证据和决策边界",
         "boundary": "Superleads 只整理公开来源、可验证事实、来源信息和待确认项。不黑盒猜测，不胡编乱造，也不把搜索结果直接当成确定事实。不替你判断哪个客户值得开发，不替你决定是否进入某个市场。候选客户池不是已经确认的正式开发名单，弱证据不会包装成确定结论。",
         "footer_heading": "Superleads 支持",
-        "footer_support": "在使用 Superleads 过程中，如遇问题或有改进建议，欢迎通过 GitHub Issues（https://github.com/fleixweb/superleads/issues）或在小红书搜索 Fleixweb 联系 Fleix。",
+        "footer_support": "在使用 Superleads 过程中，如遇问题或有改进建议，欢迎通过 [GitHub Issues](https://github.com/fleixweb/superleads/issues) 反馈，或在小红书搜索 Fleixweb 联系 Fleix。",
         "footer_safety": "使用 AI 开发客户时，请勿提交密码、API Key 或未经脱敏的客户敏感资料。",
     },
     "en": {

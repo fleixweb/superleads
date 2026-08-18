@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import socket
 import sys
 import tempfile
@@ -91,6 +92,27 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
         self.assertNotIn("更多用法", guide)
         self.assertTrue(guide.rstrip().endswith("请勿提交密码、API Key 或未经脱敏的客户敏感资料。"))
 
+    def test_bare_skill_inlines_exact_compact_guidance_in_both_languages(self) -> None:
+        skill = PUBLIC_BATCH_SKILL.read_text(encoding="utf-8")
+
+        for language in ("zh", "en"):
+            with self.subTest(language=language):
+                start = f"<!-- superleads-user-visible-guide:{language}:start -->"
+                end = f"<!-- superleads-user-visible-guide:{language}:end -->"
+                self.assertIn(start, skill)
+                self.assertIn(end, skill)
+                inline = skill.split(start, 1)[1].split(end, 1)[0].strip()
+                rendered = "\n".join(superleads_user_guidance._compact_guide_lines(language))
+                self.assertEqual(rendered, inline)
+
+    def test_bare_skill_path_needs_no_script_or_reference_read(self) -> None:
+        skill = PUBLIC_BATCH_SKILL.read_text(encoding="utf-8")
+        bare_section = skill.split("## 裸启动", 1)[1].split("## 详细帮助", 1)[0]
+
+        self.assertIn("逐字返回下列内容", bare_section)
+        self.assertNotRegex(bare_section, r"scripts/[^\s`]+\.py")
+        self.assertNotIn("../../shared/references/", bare_section)
+
     def test_detailed_help_is_opt_in(self) -> None:
         response = superleads_user_guidance.static_help_response("你能干嘛？")
         self.assertIsNotNone(response)
@@ -135,6 +157,40 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
         self.assertIn("https://github.com/fleixweb/superleads/issues", footer_twice)
         self.assertIn("小红书搜索 Fleixweb", footer_twice)
         self.assertEqual(1, footer_twice.count(superleads_user_guidance.SUPPORT_FOOTER_MARKER))
+
+    def test_chinese_footer_uses_an_explicit_markdown_link_boundary(self) -> None:
+        footer = superleads_user_guidance._canonical_footer("zh")
+        expected = (
+            "欢迎通过 [GitHub Issues](https://github.com/fleixweb/superleads/issues) 反馈，"
+            "或在小红书搜索 Fleixweb 联系 Fleix。"
+        )
+
+        self.assertIn(expected, footer)
+        self.assertNotIn("GitHub Issues（https://", footer)
+        link = re.search(r"\[([^]]+)]\((https://[^)]+)\)", footer)
+        self.assertIsNotNone(link)
+        self.assertEqual("GitHub Issues", link.group(1))
+        self.assertEqual("https://github.com/fleixweb/superleads/issues", link.group(2))
+        self.assertTrue(footer[link.end() :].startswith(" 反馈，或在小红书搜索 Fleixweb 联系 Fleix。"))
+
+    def test_user_visible_prose_has_no_bare_url_next_to_fullwidth_punctuation(self) -> None:
+        roots = (
+            ROOT / "scripts",
+            ROOT / "skills",
+            ROOT / "shared",
+            ROOT / "evals" / "user_visible_outputs",
+            ROOT / "docs" / "superpowers" / "specs",
+        )
+        unsafe = re.compile(r"https?://[A-Za-z0-9._~:/?#\[\]@!$&'*+,;=%-]+[）。，、；：！？]")
+        failures: list[str] = []
+
+        for root in roots:
+            for path in root.rglob("*"):
+                if path.is_file() and path.suffix in {".md", ".py", ".json", ".yaml", ".yml"}:
+                    if unsafe.search(path.read_text(encoding="utf-8")):
+                        failures.append(str(path.relative_to(ROOT)))
+
+        self.assertEqual([], failures)
 
     def test_english_footer_is_localized_without_changing_its_meaning(self) -> None:
         footer = superleads_user_guidance.append_final_footer("Delivery", language="en")
@@ -216,11 +272,14 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
         self.assertIn("user_visible_support_footer_missing", missing_codes)
         self.assertIn("user_visible_support_footer_duplicated", duplicated_codes)
 
-    def test_shared_reference_points_to_the_single_content_model(self) -> None:
+    def test_shared_reference_assigns_bare_copy_to_skill_and_rendering_to_python(self) -> None:
         reference = GUIDANCE_REFERENCE.read_text(encoding="utf-8")
         source = (ROOT / "scripts" / "superleads_user_guidance.py").read_text(encoding="utf-8")
 
-        self.assertIn("唯一内容模型", reference)
+        self.assertIn("裸启动正文归", reference)
+        self.assertIn("程序化渲染", reference)
+        self.assertNotIn("唯一内容模型", reference)
+        self.assertNotIn("返回本文档定义的静态引导", reference)
         self.assertNotIn("static_help_response()", reference)
         self.assertIn("静态引导", reference)
         self.assertIn("append_final_footer()", reference)
@@ -229,6 +288,27 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
         self.assertIn("_GUIDE_CONTENT", source)
         self.assertIn("Batch customer development", source)
         self.assertIn("批量开发客户", source)
+
+    def test_internal_stage_references_cannot_be_used_as_a_capability_list(self) -> None:
+        paths = (
+            ROOT / "shared" / "references" / "route-map.md",
+            ROOT / "shared" / "references" / "batch-discovery-execution.md",
+            PUBLIC_BATCH_SKILL,
+        )
+        paragraphs = []
+        for path in paths:
+            paragraphs.extend(
+                paragraph
+                for paragraph in path.read_text(encoding="utf-8").split("\n\n")
+                if "shared/internal-stages/" in paragraph
+            )
+
+        self.assertEqual(4, len(paragraphs))
+        for paragraph in paragraphs:
+            with self.subTest(paragraph=paragraph):
+                self.assertIn("不得枚举", paragraph)
+                self.assertIn("用户可见的功能清单", paragraph)
+                self.assertRegex(paragraph, r"帮助|能力类问题")
 
     def test_python_uses_one_structured_content_model_without_file_reads(self) -> None:
         source = (ROOT / "scripts" / "superleads_user_guidance.py").read_text(encoding="utf-8")
@@ -248,7 +328,10 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
             with self.subTest(path=path):
                 text = path.read_text(encoding="utf-8")
                 self.assertIn("../../shared/references/superleads-user-guidance.md", text)
-                self.assertNotIn("https://github.com/fleixweb/superleads/issues", text)
+                if path == PUBLIC_BATCH_SKILL:
+                    self.assertEqual(2, text.count("https://github.com/fleixweb/superleads/issues"))
+                else:
+                    self.assertNotIn("https://github.com/fleixweb/superleads/issues", text)
                 self.assertIn(required_rule, text)
                 self.assertTrue(
                     "standalone clarifications do not append the footer" in text

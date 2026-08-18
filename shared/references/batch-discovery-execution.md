@@ -102,7 +102,7 @@ run can retain a failed diagnostic but cannot establish portable formal success.
 An explicit formal request reads the matching files under
 `shared/internal-stages/` in dependency order. Strict review and audit apply
 only to formal verification, contact ownership verification, a contactable
-list, or a standard development list.
+list, or a standard development list. 内部阶段文件不得枚举、不得翻译成用户可见的功能清单，也不得用于回答帮助或能力类问题。
 
 ## Composite Tasks
 

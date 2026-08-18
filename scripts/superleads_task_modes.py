@@ -453,7 +453,7 @@ def metadata_response(
         elif _CAPABILITY_REQUEST.search(normalized) is not None:
             lines = ["当前可用能力取决于本会话明确提供的工具；此元数据入口不会执行预检或能力探测。"]
         elif _FEEDBACK_REQUEST.search(normalized) is not None:
-            lines = ["反馈入口：GitHub Issues（https://github.com/fleixweb/superleads/issues）。"]
+            lines = ["反馈入口：[GitHub Issues](https://github.com/fleixweb/superleads/issues)。"]
         elif version is not None:
             lines = [f"当前激活的 Superleads 版本：{version}"]
         else:
