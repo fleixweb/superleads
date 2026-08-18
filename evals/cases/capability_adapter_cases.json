@@ -198,9 +198,9 @@
       "name": "empty_capability_report",
       "input": "evals/fixtures/preflight_empty_capability_report.json",
       "expected_capabilities": {"search.web": "unknown", "source.open": "unknown"},
-      "expected_max_output": "formal_research_blocked",
-      "expected_formal_research_status": "blocked",
-      "expected_formal_research_codes": ["formal_research_search_capability_missing", "formal_research_source_open_capability_missing"]
+      "expected_max_output": "formal_research_not_assessed",
+      "expected_formal_research_status": "not_assessed",
+      "expected_require_formal_research_returncode": 2
     }
   ]
 }

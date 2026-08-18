@@ -138,6 +138,12 @@ GENERIC_INTERNAL_LANGUAGE = [
     "解释器",
     "依赖缺失",
     "模块名",
+    "preflight_capabilities.py",
+    ".py",
+    "预检",
+    "适配器",
+    "PYTHONPATH",
+    "工作区目录",
 ]
 
 GENERIC_VALUE_JUDGMENTS = [

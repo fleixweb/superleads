@@ -112,9 +112,16 @@ automatic prospects.
 
 ## Capability and Formal Delivery Gates
 
-Run or emulate `scripts/preflight_capabilities.py --require-formal-research`
-only before an explicit formal batch public-source route. It requires
-`search.web` plus `source.open`, `browser.render`, or `document.extract`. A
+Before an explicit formal batch public-source route, first inventory the
+search and source-opening operations actually exposed in the current session.
+When that inventory is available, build a capability JSON and run or emulate
+`scripts/preflight_capabilities.py --require-formal-research --input <capability-json>`.
+When no inventory is available, do not run the script bare; use the existing
+no-script path to inspect the host's actually exposed capabilities. A
+`not_assessed` result is not a host-capability conclusion: do not lower the
+delivery tier because of it or present it to the user as an environment
+limitation. Formal research requires `search.web` plus `source.open`,
+`browser.render`, or `document.extract`. A
 recorded `web__run` 404 or timeout blocks that Codex adapter only: do not retry
 the 同一失败适配器 and do not substitute shell/curl search. Before concluding
 that the host has no Web capability, follow `../policies/tool-capability-policy.md`:

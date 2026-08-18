@@ -6,10 +6,17 @@ the entry Skill should not repeat them.
 
 ## Capability gate
 
-Run `scripts/preflight_capabilities.py --require-formal-research` before formal
-customer development, customer background research, or product-market analysis.
-The current Run must have `search.web` and at least one of `source.open`,
-`browser.render`, or `document.extract`. If blocked, stop with:
+Before formal customer development, customer background research, or
+product-market analysis, first inventory the search and source-opening
+operations actually exposed in the current session. When that inventory is
+available, build a capability JSON and run
+`scripts/preflight_capabilities.py --require-formal-research --input <capability-json>`.
+When no inventory is available, do not run the script bare; use the existing
+no-script path to inspect the host's actually exposed capabilities. A
+`not_assessed` result is not a host-capability conclusion: do not lower the
+delivery tier because of it or present it to the user as an environment
+limitation. The current Run must have `search.web` and at least one of
+`source.open`, `browser.render`, or `document.extract`. If blocked, stop with:
 
 `本轮环境无法联网检索并打开可记录来源，不能完成 Superleads 正式外贸研究。请切换到具备 Web Search 和来源打开能力的 Agent/环境后重试。若只需整理已有资料，可以继续，但那不是市场分析或客户开发报告。`
 

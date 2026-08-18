@@ -264,6 +264,12 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
             "解释器",
             "依赖缺失",
             "模块名",
+            "preflight_capabilities.py",
+            ".py",
+            "预检",
+            "适配器",
+            "PYTHONPATH",
+            "工作区目录",
         }
         self.assertTrue(expected.issubset(GENERIC_INTERNAL_LANGUAGE))
         self.assertTrue({"模块", "python", "interpreter", "依赖", "referencing"}.isdisjoint(GENERIC_INTERNAL_LANGUAGE))
@@ -277,6 +283,17 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
             ("user_visible_internal_language", "jsonschema"),
             {(item["code"], item.get("value")) for item in issues},
         )
+
+        for text, phrase in (
+            ("preflight_capabilities.py 对当前能力进行了预检。", "preflight_capabilities.py"),
+            ("我会通过 PYTHONPATH 重试当前校验。", "PYTHONPATH"),
+        ):
+            with self.subTest(text=text):
+                issues = validate(text, "product_outbound_market_analysis", min_tables=0)
+                self.assertIn(
+                    ("user_visible_internal_language", phrase),
+                    {(item["code"], item.get("value")) for item in issues},
+                )
 
     def test_visible_validator_allows_product_market_module_header(self) -> None:
         issues = validate(

@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
+import io
 import sys
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
@@ -38,6 +40,76 @@ class PreflightCapabilitiesTest(unittest.TestCase):
             "capability_adapter_reports_empty",
             [issue["code"] for issue in result["adapter_report"]["issues"]],
         )
+
+    def test_missing_capability_is_a_real_blocked_assessment(self) -> None:
+        result = preflight_capabilities.preflight({
+            "capabilities": {"search.web": "missing"},
+        })
+
+        self.assertEqual("blocked", result["formal_research_status"])
+        self.assertEqual("blocked", result["discovery_snapshot_status"])
+        self.assertIn(
+            "formal_research_search_capability_missing",
+            [issue["code"] for issue in result["formal_research_issues"]],
+        )
+
+    def test_complete_empty_inventory_is_a_real_blocked_assessment(self) -> None:
+        result = preflight_capabilities.preflight({
+            "host_tool_inventory_complete": True,
+            "capabilities": {},
+        })
+
+        self.assertEqual("blocked", result["formal_research_status"])
+        self.assertEqual("blocked", result["discovery_snapshot_status"])
+        self.assertEqual("formal_research_blocked", result["max_output_without_manual_sources"])
+
+    def test_no_capability_input_is_not_assessed(self) -> None:
+        result = preflight_capabilities.preflight(None)
+
+        self.assertEqual("not_assessed", result["formal_research_status"])
+        self.assertEqual("not_assessed", result["discovery_snapshot_status"])
+        self.assertEqual("formal_research_not_assessed", result["max_output_without_manual_sources"])
+        self.assertEqual([], result["formal_research_issues"])
+        self.assertNotIn(preflight_capabilities.FORMAL_RESEARCH_MESSAGE, result["formal_research_message"])
+
+    def test_metadata_only_payload_is_not_assessed(self) -> None:
+        result = preflight_capabilities.preflight({"platform": "chatgpt_desktop"})
+
+        self.assertEqual("not_assessed", result["formal_research_status"])
+        self.assertEqual("not_assessed", result["discovery_snapshot_status"])
+
+    def test_empty_capabilities_wrapper_is_not_assessed_without_inventory_completion(self) -> None:
+        result = preflight_capabilities.preflight({"capabilities": {}})
+
+        self.assertEqual("not_assessed", result["formal_research_status"])
+        self.assertEqual("not_assessed", result["discovery_snapshot_status"])
+
+    def test_require_formal_research_uses_three_status_exit_codes(self) -> None:
+        expected_exit_codes = {
+            "ready": 0,
+            "blocked": 1,
+            "not_assessed": 2,
+        }
+        for status, expected_exit_code in expected_exit_codes.items():
+            with self.subTest(status=status):
+                output = io.StringIO()
+                with patch.object(
+                    preflight_capabilities,
+                    "preflight",
+                    return_value={
+                        "formal_research_status": status,
+                        "max_output_without_manual_sources": f"formal_research_{status}",
+                        "downgrade_notes": [],
+                    },
+                ), patch.object(
+                    sys,
+                    "argv",
+                    ["preflight_capabilities.py", "--require-formal-research", "--format", "text"],
+                ), redirect_stdout(output):
+                    self.assertEqual(expected_exit_code, preflight_capabilities.main())
+
+                if status == "not_assessed":
+                    self.assertIn("formal_research_status: not_assessed", output.getvalue())
 
     def test_shell_only_report_does_not_authorize_self_reported_search(self) -> None:
         payload = self.load_fixture("preflight_codex_shell_http_source_open.json")

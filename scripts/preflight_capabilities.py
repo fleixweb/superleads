@@ -18,6 +18,7 @@ CAPABILITY_RULES={
 "search.web":("发现候选池 / 搜索记录","不能支撑 Claim"),"source.open":("Observation","可形成来源记录"),"browser.render":("Observation","可形成来源记录"),"document.extract":("Observation","可形成文档来源记录"),"image.inspect":("Observation / Candidate clue","OCR 与视觉线索；不能支撑正式 Claim 或 ready 联系方式"),"mail.read":("Inquiry / source-note contact","只读入站邮件摘录；不能支撑正式 Claim、Assessment 或 ready 联系方式"),"source.capture":("Observation","保存摘录、定位、哈希"),"url.canonicalize":("Source / Entity","只做归一化"),"entity.dedupe":("Provisional Entity","不等于最终身份判定"),"translate.text":("Observation transform","必须保留原文"),"company.enrich":("Candidate clue / contextual","不能单独支撑主表"),"email.verify":("contact quality","不证明来源"),"domain.check":("technical Observation","不证明公司归属"),"social.visible.read":("Observation","不自动证明采购权"),"registry.lookup":("Observation","可支撑实体类 Claim"),"trademark.lookup":("Observation","可支撑品牌/商标类 Claim"),"maps.lookup":("Observation","可支撑地图联系方式/地址类 Claim"),"memory.recall":("Plan priority","不能进 Claim / Assessment")}
 AVAILABLE={True,"true","available","yes","present","enabled"}; UNAVAILABLE={False,"false","unavailable","no","missing","disabled"}
 FORMAL_RESEARCH_MESSAGE = "本轮环境无法联网检索并打开可记录来源，不能完成 Superleads 正式外贸研究。请切换到具备 Web Search 和来源打开能力的 Agent/环境后重试。若只需整理已有资料，可以继续，但那不是市场分析或客户开发报告。"
+NOT_ASSESSED_MESSAGE = "未提供可判断的宿主能力信息，本次未评估。请先清点当前会话实际暴露的检索与来源打开操作，再以 --input 传入后重跑；或直接按无脚本路径检查宿主能力。"
 
 def normalize_status(raw: Any) -> str:
     value=raw.strip().lower() if isinstance(raw,str) else raw
@@ -30,6 +31,32 @@ def _is_adapter_payload(payload: dict[str, Any]) -> bool:
         isinstance(payload.get("capability_adapter_report"), dict)
         or isinstance(payload.get("capability_adapter_reports"), list)
         or any(key in payload for key in ("host_tools", "adapter"))
+    )
+
+
+def _has_assessable_capability_signal(payload: dict[str, Any]) -> bool:
+    """Return whether a payload contains a non-null known capability value."""
+    wrapped = payload.get("capabilities")
+    if isinstance(wrapped, dict) and any(
+        capability in wrapped and wrapped[capability] is not None
+        for capability in CAPABILITY_RULES
+    ):
+        return True
+    return any(
+        capability in payload and payload[capability] is not None
+        for capability in CAPABILITY_RULES
+    )
+
+
+def _is_not_assessed_payload(payload: dict[str, Any] | None) -> bool:
+    """Keep absent capability evidence distinct from a failed assessment."""
+    if payload is None:
+        return True
+    return (
+        isinstance(payload, dict)
+        and not _has_assessable_capability_signal(payload)
+        and not _is_adapter_payload(payload)
+        and not bool(payload.get("host_tool_inventory_complete"))
     )
 
 
@@ -129,7 +156,8 @@ def preflight(payload: dict[str,Any]|None) -> dict[str,Any]:
     provided: dict[str, Any] = {}
     adapter_result: dict[str, Any] | None = None
     reports: list[Any] = []
-    if isinstance(payload, dict):
+    not_assessed = _is_not_assessed_payload(payload)
+    if isinstance(payload, dict) and not not_assessed:
         has_capability_wrapper = "capabilities" in payload
         generic = payload.get("capabilities", {})
         if has_capability_wrapper and isinstance(generic, dict):
@@ -186,7 +214,10 @@ def preflight(payload: dict[str,Any]|None) -> dict[str,Any]:
     source_capable=any(capabilities[c]["status"]=="available" for c in ("source.open","browser.render","document.extract"))
     search_capable=capabilities["search.web"]["status"]=="available"
     host_inventory_complete = bool(payload.get("host_tool_inventory_complete")) if isinstance(payload, dict) else False
-    if search_capable and source_capable:
+    if not_assessed:
+        discovery_status = "not_assessed"
+        discovery_message = NOT_ASSESSED_MESSAGE
+    elif search_capable and source_capable:
         discovery_status = "ready"
         discovery_message = "当前宿主已报告可用的搜索与来源读取能力，可以开始快速候选池。"
     elif search_capable:
@@ -199,18 +230,22 @@ def preflight(payload: dict[str,Any]|None) -> dict[str,Any]:
         discovery_status = "blocked"
         discovery_message = "当前宿主未报告可用搜索能力；只能整理用户资料或返回查询计划，不能生成公开来源候选池。"
     formal_issues: list[dict[str, str]] = []
-    if not search_capable:
+    if not not_assessed and not search_capable:
         formal_issues.append({
             "code": "formal_research_search_capability_missing",
             "message": "Formal research requires an available search.web capability.",
         })
-    if not source_capable:
+    if not not_assessed and not source_capable:
         formal_issues.append({
             "code": "formal_research_source_open_capability_missing",
             "message": "Formal research requires source.open, browser.render, or document.extract.",
         })
-    formal_ready = not formal_issues
-    if formal_ready:
+    formal_ready = not not_assessed and not formal_issues
+    if not_assessed:
+        max_output = "formal_research_not_assessed"
+        notes = []
+        formal_message = NOT_ASSESSED_MESSAGE
+    elif formal_ready:
         max_output = "formal_research_ready"
         notes: list[str] = []
         formal_message = "已具备搜索与来源打开能力，可以进入正式外贸研究；仍须按 Source/Observation/evidence/audit 门禁交付。"
@@ -231,7 +266,7 @@ def preflight(payload: dict[str,Any]|None) -> dict[str,Any]:
         "checked_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "capabilities": capabilities,
         "max_output_without_manual_sources": max_output,
-        "formal_research_status": "ready" if formal_ready else "blocked",
+        "formal_research_status": "not_assessed" if not_assessed else ("ready" if formal_ready else "blocked"),
         "formal_research_issues": formal_issues,
         "formal_research_message": formal_message,
         "discovery_snapshot_status": discovery_status,
@@ -266,6 +301,10 @@ def main()->int:
     if a.format=="json": print(json.dumps(result,ensure_ascii=False,indent=2))
     else:
         print(f"max_output_without_manual_sources: {result['max_output_without_manual_sources']}")
+        if result["formal_research_status"] == "not_assessed":
+            print("formal_research_status: not_assessed")
         for note in result["downgrade_notes"]: print(f"downgrade: {note}")
-    return 0 if not a.require_formal_research or result["formal_research_status"] == "ready" else 1
+    if not a.require_formal_research or result["formal_research_status"] == "ready":
+        return 0
+    return 2 if result["formal_research_status"] == "not_assessed" else 1
 if __name__=="__main__": raise SystemExit(main())
