@@ -126,6 +126,18 @@ GENERIC_INTERNAL_LANGUAGE = [
     "file://",
     "/home/",
     "/tmp/",
+    "jsonschema",
+    "openpyxl",
+    "python3",
+    "python.exe",
+    "pip install",
+    "venv",
+    "Traceback",
+    "ImportError",
+    "ModuleNotFoundError",
+    "解释器",
+    "依赖缺失",
+    "模块名",
 ]
 
 GENERIC_VALUE_JUDGMENTS = [

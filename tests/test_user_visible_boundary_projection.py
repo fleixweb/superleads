@@ -16,7 +16,7 @@ from background_report import build_background_report_sheets, validate_backgroun
 from export_superleads_markdown import build_background_markdown, build_bulk_markdown
 from export_workbook import build_sheets
 from superleads_user_guidance import append_final_footer
-from validate_superleads_user_visible_output import validate
+from validate_superleads_user_visible_output import GENERIC_INTERNAL_LANGUAGE, validate
 
 
 STANDARD_FIXTURE = ROOT / "evals" / "fixtures" / "pass_geography_searchlog_standard.json"
@@ -201,3 +201,39 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
             min_tables=10,
         )
         self.assertIn("user_visible_value_judgment", {item["code"] for item in mixed_sentence_issues})
+
+    def test_visible_validator_blocks_runtime_technical_details(self) -> None:
+        expected = {
+            "jsonschema",
+            "openpyxl",
+            "python3",
+            "python.exe",
+            "pip install",
+            "venv",
+            "Traceback",
+            "ImportError",
+            "ModuleNotFoundError",
+            "解释器",
+            "依赖缺失",
+            "模块名",
+        }
+        self.assertTrue(expected.issubset(GENERIC_INTERNAL_LANGUAGE))
+        self.assertTrue({"模块", "python", "interpreter", "依赖", "referencing"}.isdisjoint(GENERIC_INTERNAL_LANGUAGE))
+
+        issues = validate(
+            "当前系统 Python 缺少它依赖的 jsonschema。",
+            "product_outbound_market_analysis",
+            min_tables=0,
+        )
+        self.assertIn(
+            ("user_visible_internal_language", "jsonschema"),
+            {(item["code"], item.get("value")) for item in issues},
+        )
+
+    def test_visible_validator_allows_product_market_module_header(self) -> None:
+        issues = validate(
+            "| 模块 | 当前结果 | 状态 |\n| --- | --- | --- |",
+            "product_outbound_market_analysis",
+            min_tables=0,
+        )
+        self.assertNotIn("user_visible_internal_language", {item["code"] for item in issues})
