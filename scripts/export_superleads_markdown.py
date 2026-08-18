@@ -35,6 +35,7 @@ from export_workbook import (
     redact_delivery_sheets,
     redact_local_paths,
 )
+from superleads_execution_state import status_summary
 from superleads_user_guidance import append_final_footer
 from validate_product_market_analysis import load_market_fixture
 from validate_superleads_user_visible_output import validate as validate_user_visible_markdown
@@ -367,6 +368,35 @@ def _rows_from_sheet(rows: list[dict[str, Any]], mapping: dict[str, str]) -> lis
     return result
 
 
+def _current_execution_state(graph: dict[str, Any]) -> dict[str, Any]:
+    for run in reversed(ensure_list(graph, "runs")):
+        if not isinstance(run, dict):
+            continue
+        execution_state = run.get("execution_state")
+        if isinstance(execution_state, dict):
+            return execution_state
+    return {}
+
+
+def _search_combination_rows(execution_state: dict[str, Any]) -> tuple[list[dict[str, Any]], list[str], list[dict[str, str]]]:
+    if not execution_state:
+        return [], [], []
+    summary = status_summary(execution_state)
+    rows = [
+        {
+            "产品词": _safe_text(item.get("product_term")),
+            "国家/市场": _safe_text(item.get("market")),
+            "客户类型": _safe_text(item.get("customer_type")),
+            "新增主体": _safe_text(item.get("new_candidate_count")),
+        }
+        for item in summary.get("search_combination_coverage", [])
+        if isinstance(item, dict)
+    ]
+    hints = [item for item in summary.get("uncovered_combination_hints", []) if isinstance(item, str) and item.strip()]
+    next_step_options = [item for item in summary.get("next_step_options", []) if isinstance(item, dict)]
+    return rows, hints, next_step_options
+
+
 def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[str, Any]]]:
     audit = audit_lead_graph(graph, requested_delivery_status="initial_lead_list")
     if not audit.get("ok"):
@@ -509,7 +539,7 @@ def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[st
         if not isinstance(row, dict):
             continue
         coverage_rows.append({
-            "本轮查了哪些方向": _first_nonempty(row.get("查询组"), row.get("搜索方向"), "未记录搜索方向"),
+            "本轮查了哪些方向": _first_nonempty(row.get("搜索方向"), "未记录搜索方向"),
             "覆盖国家/语言/来源类型": "；".join(
                 _display_items(row.get("地域"))
                 + _display_items(row.get("语言"))
@@ -532,6 +562,10 @@ def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[st
             "来源 / 来源状态": _first_nonempty(row.get("来源说明"), "公开入口待复核"),
             "链接": _safe_text(row.get("来源链接")),
         })
+
+    search_combination_rows, uncovered_combination_hints, next_step_options = _search_combination_rows(
+        _current_execution_state(graph)
+    )
 
     social_rows = [row for row in sheets.get("社媒与公开职业线索", []) if isinstance(row, dict)]
     map_rows = [row for row in sheets.get("地图与经营地址", []) if isinstance(row, dict)]
@@ -564,6 +598,12 @@ def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[st
         ["分区", "候选客户", "品牌名称", "国家/地区", "可能客户角色", "当前看到的业务信号", "业务相关性", "依据状态", "可用联系入口", "还要确认什么", "来源 / 来源状态"],
         candidate_rows,
     )
+    if search_combination_rows:
+        _append_table(lines, "本轮搜索组合", ["产品词", "国家/市场", "客户类型", "新增主体"], search_combination_rows)
+    if uncovered_combination_hints:
+        lines.extend(["## 尚未覆盖的组合（可继续）", ""])
+        lines.extend(f"· {hint}" for hint in uncovered_combination_hints)
+        lines.append("")
     _append_table(
         lines,
         "联系方式汇总",
@@ -598,6 +638,10 @@ def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[st
     _append_table(lines, "已排除 / 仅作参考", ["分区", "对象", "归入原因", "依据状态", "是否可由用户改判", "来源 / 来源状态"], excluded_rows)
     _append_table(lines, "信息从哪里来", ["对象", "来源 / 来源状态", "链接"], source_rows)
     _append_table(lines, "风险与说明", ["提示", "说明"], risk_rows)
+    if next_step_options:
+        lines.extend(["## 下一步可选", ""])
+        lines.extend(f"· {_safe_text(item.get('text'))}" for item in next_step_options)
+        lines.append("")
     return "\n".join(lines).rstrip() + "\n", []
 
 

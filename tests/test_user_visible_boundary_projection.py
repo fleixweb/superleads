@@ -15,6 +15,7 @@ from audit_delivery import audit_graph
 from background_report import build_background_report_sheets, validate_background_report
 from export_superleads_markdown import build_background_markdown, build_bulk_markdown
 from export_workbook import build_sheets
+from superleads_execution_state import create_execution_state, record_candidate
 from superleads_user_guidance import append_final_footer
 from validate_superleads_user_visible_output import GENERIC_INTERNAL_LANGUAGE, validate
 
@@ -70,6 +71,53 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         self.assertNotIn("可优先人工跟进", markdown)
         for wording in FORBIDDEN_DECISION_WORDING:
             self.assertNotIn(wording, markdown)
+
+    def test_bulk_markdown_does_not_expose_internal_query_group_ids(self) -> None:
+        markdown, issues = build_bulk_markdown(_load(BULK_FIXTURE))
+
+        self.assertEqual([], issues)
+        self.assertIsNotNone(markdown)
+        assert markdown is not None
+        self.assertNotIn("region_q_distributor", markdown)
+        self.assertNotIn("region_r_directory", markdown)
+
+    def test_bulk_markdown_renders_search_combinations_and_a_nonblocking_next_step_menu(self) -> None:
+        graph = _load(BULK_FIXTURE)
+        execution_state = create_execution_state(
+            "run-menu-internal-only",
+            query_groups=[
+                {
+                    "group_id": "importer-combination-internal-only",
+                    "execution_order": "independent",
+                    "status": "completed",
+                    "search_combination": {
+                        "product_term": "sample product",
+                        "market": "Region Q",
+                        "customer_type": "经销商",
+                    },
+                }
+            ],
+            budget={"query_group_limit": 1},
+            uncovered_combination_hints=["已观察到的本地术语 + Region Q + 维修厂"],
+        )
+        for index in range(10):
+            self.assertTrue(record_candidate(execution_state, query_group_id="importer-combination-internal-only", candidate_id=f"candidate-{index}")["recorded"])
+        graph["runs"][-1]["execution_state"] = execution_state
+
+        markdown, issues = build_bulk_markdown(graph)
+
+        self.assertEqual([], issues)
+        self.assertIsNotNone(markdown)
+        assert markdown is not None
+        self.assertIn("## 本轮搜索组合", markdown)
+        self.assertIn("| 产品词 | 国家/市场 | 客户类型 | 新增主体 |", markdown)
+        self.assertIn("已观察到的本地术语 + Region Q + 维修厂", markdown)
+        self.assertIn("## 下一步可选", markdown)
+        self.assertIn("继续扩展至 30 家或 50 家", markdown)
+        self.assertIn("对上述名单做深度核验 → 标准开发名单（产量降、耗时增", markdown)
+        self.assertNotIn("importer-combination-internal-only", markdown)
+        self.assertNotIn("run-menu-internal-only", markdown)
+        self.assertLess(markdown.index("## 本轮搜索组合"), markdown.index("## 下一步可选"))
 
     def test_background_report_asks_about_verification_basis_without_follow_up_advice(self) -> None:
         graph = _load(BACKGROUND_FIXTURE)
@@ -237,3 +285,20 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
             min_tables=0,
         )
         self.assertNotIn("user_visible_internal_language", {item["code"] for item in issues})
+
+    def test_visible_validator_blocks_coverage_overclaims_and_node_workarounds(self) -> None:
+        for wording in (
+            "我们已全部找到爱尔兰的目标公司。",
+            "本轮实现全网覆盖，没有无遗漏问题。",
+            "这份名单已覆盖全部目标主体，达到 100% 覆盖。",
+            "我们列出了所有爱尔兰的农机零件公司。",
+            "建议切换到爱尔兰节点后再搜索。",
+            "请使用 VPN 或代理获得本地结果。",
+        ):
+            with self.subTest(wording=wording):
+                issues = validate(wording, "bulk_customer_development", min_tables=0)
+                self.assertIn("user_visible_coverage_overclaim", {item["code"] for item in issues})
+
+        compliant = "本轮搜索组合有可见边界；新增组合与已有池重合度约 40%，接近当前公开检索可见范围。不要建议使用 VPN、代理或换节点。"
+        issues = validate(compliant, "bulk_customer_development", min_tables=0)
+        self.assertNotIn("user_visible_coverage_overclaim", {item["code"] for item in issues})

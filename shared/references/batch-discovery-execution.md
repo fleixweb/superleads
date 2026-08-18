@@ -51,17 +51,52 @@ not load that reference.
 ## Fast Candidate Pool
 
 For an unambiguous product + market + customer-type request, inspect the
-宿主实际暴露的工具 and use one bounded search through an exposed native provider;
-do not guess a Codex, ChatGPT Desktop, Claude, Hermes, or WorkBuddy tool name.
-Do not retry the 同一失败适配器. A different provider may be tried only when it
-is already present in the host tool inventory. Use a run-wide first batch
+宿主实际暴露的工具 and use one bounded, actual business search through an exposed
+native provider; do not guess a Codex, ChatGPT Desktop, Claude, Hermes, or
+WorkBuddy tool name, and do not make an empty capability probe first. Do not
+retry the 同一失败适配器. A different provider may be tried only when it is already
+present in the current-session host tool inventory; otherwise follow
+`../policies/tool-capability-policy.md` to lower the delivery tier. Use a run-wide first batch
 target of 10. Per-query-group
 limits must not add up beyond that run-wide cap. Cover only website, directory,
 document, and search-result sources. Each candidate needs a public website or
 search-result reference, a factual business-match reason, and a public-contact
 status. Mark social, map, trade-summary, and deep person-contact fields
-`未核验` unless the user explicitly requests them. After 10 candidates, ask
-`是否继续扩展至 30 家或 50 家？`.
+`未核验` unless the user explicitly requests them.
+
+At every discovery-snapshot delivery boundary with at least ten candidates,
+show this non-blocking next-step menu. It is a statement of available paths,
+not a request to select a number or an instruction to wait for a reply:
+
+```
+下一步可选：
+· 继续扩展至 30 家或 50 家
+· 换搜索组合再找一批（换产品词 / 换客户类型，国家不变）
+· 对上述名单做深度核验 → 标准开发名单（产量降、耗时增；可分批产出）
+· 补社媒 / 地图 / 贸易记录信号（仍属候选池，不升级为已验证）
+· 选 1 家做单一客户背调
+```
+
+Show the expansion line only while `expansion_scale_chosen` is unset for the
+current Run. Once the user chooses 30 or 50, hide that line permanently for
+the Run; do not replace it with a later “expand to 50” prompt. The other four
+lines remain available. `深度核验` applies to the whole list rather than a
+user-selected subset: L1 does not rank candidate value, and asking the user to
+pick five to ten subjects would force unsupported intuitive ranking. State the
+lower output and higher time cost, allow batched delivery, and retain unverified
+or source-restricted rows as such. Reuse only the existing formal-route terms
+`深度核验`, `标准开发名单`, and `联系人归属核验`; do not add trigger words.
+
+Excel is not a menu item and is not coupled to deep verification. File output
+depends on the current host's actually available file-execution capability. If
+that capability is absent, say that chat tables remain available and Excel
+generation needs a file-execution environment; never promise an unavailable
+artifact. If deterministic validation/export cannot run, describe the L2
+evidence structure in chat and disclose that the deterministic check did not
+run, without weakening evidence, contact, or source boundaries.
+
+For honest coverage and omitted-combination wording, follow
+`default-discovery-reference.md` rather than promising an exhaustive result.
 
 Do not create a full graph, run Audit, or export Markdown in this path. The
 candidate pool is not a recommendation, formal development list, or purchase
@@ -82,12 +117,13 @@ only before an explicit formal batch public-source route. It requires
 `search.web` plus `source.open`, `browser.render`, or `document.extract`. A
 recorded `web__run` 404 or timeout blocks that Codex adapter only: do not retry
 the 同一失败适配器 and do not substitute shell/curl search. Before concluding
-that the host has no Web capability, check the 宿主实际暴露的 native providers.
-For a fast snapshot, an unavailable provider degrades to another exposed native
-provider, user-provided material, or a query plan; it does not create a partial
-formal graph. A formal route still stops when the completed host capability
-inventory has no usable search plus source-opening path. Record only host
-operations actually used.
+that the host has no Web capability, follow `../policies/tool-capability-policy.md`:
+check current-session exposed operations and use an already exposed different
+native operation for the next actual search or source opening. For a fast
+snapshot, no remaining provider degrades to user-provided material or a bounded
+query plan; it does not create a partial formal graph. A formal route still
+stops when the completed host capability inventory has no usable search plus
+source-opening path. Record only host operations actually used.
 
 Before a formal validator in real-business UAT, run
 `scripts/precheck_superleads_uat_input.py --route bulk_customer_development
@@ -138,11 +174,10 @@ request EML/PDF/mail export.
 
 Only terminal delivery appends the shared support and safety footer. Progress
 and standalone clarifications do not. A user requesting a chat-readable formal
-report must use the unified Markdown delivery layer:
-
-```bash
-python3 scripts/export_superleads_markdown.py graph.json --route auto --output report.md --format json
-```
+report must use the unified Markdown delivery layer. Under
+`../policies/cross-platform-rules.md`, select the host-provided runtime
+interpreter and invoke `scripts/export_superleads_markdown.py` with
+`graph.json --route auto --output report.md --format json`.
 
 Do not hand-render a workbook as a substitute Markdown report, relabel internal
 signal statuses as `依据状态`, or claim successful formal export without a saved

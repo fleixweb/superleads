@@ -57,7 +57,13 @@
         "第三方贸易数据聚合站公开摘要，非官方海关记录",
         "搜索覆盖与收敛",
         "风险与说明",
-        "已有明确依据"
+        "已有明确依据",
+        "本轮搜索组合",
+        "尚未覆盖的组合（可继续）",
+        "下一步可选",
+        "换搜索组合再找一批",
+        "标准开发名单（产量降、耗时增",
+        "补社媒 / 地图 / 贸易记录信号"
       ],
       "must_not_contain": [
         "推荐客户",
@@ -297,6 +303,36 @@
         "客户一眼看懂",
         "Founder 就是采购负责人",
         "已确认有采购需求"
+      ]
+    },
+    {
+      "name": "fail bulk customer exhaustive coverage promise",
+      "fixture": "evals/user_visible_outputs/fail_bulk_customer_coverage_overclaim.md",
+      "route": "bulk_customer_development",
+      "expected": "fail",
+      "min_tables": 0,
+      "expected_error_codes": [
+        "user_visible_coverage_overclaim"
+      ],
+      "must_contain": [
+        "全部找到",
+        "全网覆盖",
+        "无遗漏"
+      ]
+    },
+    {
+      "name": "fail bulk customer VPN node recommendation",
+      "fixture": "evals/user_visible_outputs/fail_bulk_customer_vpn_node_recommendation.md",
+      "route": "bulk_customer_development",
+      "expected": "fail",
+      "min_tables": 0,
+      "expected_error_codes": [
+        "user_visible_coverage_overclaim"
+      ],
+      "must_contain": [
+        "切换到爱尔兰节点",
+        "VPN",
+        "代理"
       ]
     },
     {

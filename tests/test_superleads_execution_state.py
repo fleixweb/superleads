@@ -21,6 +21,7 @@ from superleads_execution_state import (
     record_historical_reference,
     record_candidate,
     record_checkpoint_artifacts,
+    record_expansion_scale_choice,
     record_milestone,
     restore_checkpoint,
     snapshot_checkpoint,
@@ -311,7 +312,7 @@ class SuperleadsExecutionStateTest(unittest.TestCase):
         self.assertEqual(1, summary["source_restricted_count"])
         self.assertEqual(0, summary["unverified_candidate_count"])
 
-    def test_discovery_snapshot_defaults_to_ten_candidates_and_exposes_expansion_prompt(self) -> None:
+    def test_discovery_snapshot_defaults_to_ten_candidates_and_exposes_next_step_menu(self) -> None:
         state = create_execution_state(
             "run-fast-snapshot",
             query_groups=[
@@ -334,7 +335,120 @@ class SuperleadsExecutionStateTest(unittest.TestCase):
         summary = status_summary(state)
 
         self.assertEqual(10, summary["candidate_count"])
-        self.assertEqual("是否继续扩展至 30 家或 50 家？", summary["expansion_prompt"])
+        self.assertNotIn("expansion_prompt", summary)
+        self.assertEqual(
+            [
+                "expand_candidate_pool",
+                "change_search_combination",
+                "deep_verify_full_list",
+                "supplement_public_signals",
+                "single_customer_background",
+            ],
+            [item["key"] for item in summary["next_step_options"]],
+        )
+        self.assertEqual("继续扩展至 30 家或 50 家", summary["next_step_options"][0]["text"])
+
+    def test_expansion_choice_hides_the_one_time_expansion_option_for_the_run(self) -> None:
+        state = create_execution_state(
+            "run-expanded-snapshot",
+            query_groups=[{"group_id": "website", "execution_order": "independent"}],
+            budget={"query_group_limit": 1},
+            task_mode="discovery_snapshot",
+        )
+        for index in range(10):
+            self.assertTrue(record_candidate(state, query_group_id="website", candidate_id=f"candidate-{index}")["recorded"])
+
+        self.assertEqual({"recorded": True, "reason": None}, record_expansion_scale_choice(state, 30))
+        self.assertEqual(30, state["expansion_scale_chosen"])
+        self.assertNotIn("expand_candidate_pool", [item["key"] for item in status_summary(state)["next_step_options"]])
+        self.assertEqual({"recorded": False, "reason": "already_chosen"}, record_expansion_scale_choice(state, 50))
+
+    def test_next_step_menu_is_absent_before_ten_candidates_and_for_formal_research(self) -> None:
+        snapshot = create_execution_state(
+            "run-under-ten",
+            query_groups=[{"group_id": "website", "execution_order": "independent"}],
+            budget={"query_group_limit": 1},
+            task_mode="discovery_snapshot",
+        )
+        for index in range(9):
+            self.assertTrue(record_candidate(snapshot, query_group_id="website", candidate_id=f"candidate-{index}")["recorded"])
+        self.assertEqual([], status_summary(snapshot)["next_step_options"])
+
+        formal = create_execution_state(
+            "run-formal-menu",
+            query_groups=[{"group_id": "website", "execution_order": "independent"}],
+            budget={"query_group_limit": 1, "max_candidates_per_group": 10, "max_candidates_per_run": 10},
+            task_mode="formal_research",
+        )
+        for index in range(10):
+            self.assertTrue(record_candidate(formal, query_group_id="website", candidate_id=f"candidate-{index}")["recorded"])
+        self.assertEqual([], status_summary(formal)["next_step_options"])
+
+    def test_search_combination_coverage_uses_first_query_group_ownership_and_preserves_hints(self) -> None:
+        state = create_execution_state(
+            "run-combination-coverage",
+            query_groups=[
+                {
+                    "group_id": "primary-importers",
+                    "execution_order": "independent",
+                    "status": "completed",
+                    "search_combination": {
+                        "product_term": "CLAAS 零件",
+                        "market": "爱尔兰",
+                        "customer_type": "进口商",
+                    },
+                },
+                {
+                    "group_id": "secondary-dealers",
+                    "execution_order": "independent",
+                    "status": "source_restricted",
+                    "search_combination": {
+                        "product_term": "CLAAS/Jaguar 零件",
+                        "market": "爱尔兰",
+                        "customer_type": "经销商",
+                    },
+                },
+            ],
+            budget={"query_group_limit": 2, "max_candidates_per_run": 10},
+            uncovered_combination_hints=["已观察到的 silage 术语 + 爱尔兰 + 维修厂"],
+        )
+        self.assertTrue(record_candidate(state, query_group_id="primary-importers", candidate_id="candidate-alpha")["recorded"])
+        self.assertTrue(record_candidate(state, query_group_id="primary-importers", candidate_id="candidate-beta")["recorded"])
+        self.assertTrue(record_candidate(state, query_group_id="secondary-dealers", candidate_id="candidate-gamma")["recorded"])
+        # A restored or merged state can retain the same candidate in a later
+        # group. Coverage must still count it only at first group ownership.
+        state["query_groups"][1]["candidate_ids"].append("candidate-alpha")
+
+        summary = status_summary(state)
+
+        self.assertEqual(
+            [
+                {
+                    "product_term": "CLAAS 零件",
+                    "market": "爱尔兰",
+                    "customer_type": "进口商",
+                    "new_candidate_count": 2,
+                    "status": "completed",
+                },
+                {
+                    "product_term": "CLAAS/Jaguar 零件",
+                    "market": "爱尔兰",
+                    "customer_type": "经销商",
+                    "new_candidate_count": 1,
+                    "status": "source_restricted",
+                },
+            ],
+            summary["search_combination_coverage"],
+        )
+        self.assertEqual(["已观察到的 silage 术语 + 爱尔兰 + 维修厂"], summary["uncovered_combination_hints"])
+
+        legacy = create_execution_state(
+            "run-legacy-combination",
+            query_groups=[{"group_id": "legacy", "execution_order": "independent"}],
+            budget={"query_group_limit": 1},
+        )
+        self.assertNotIn("search_combination", legacy["query_groups"][0])
+        self.assertEqual([], status_summary(legacy)["search_combination_coverage"])
 
     def test_formal_research_keeps_a_separate_default_candidate_budget(self) -> None:
         state = create_execution_state(
@@ -354,6 +468,9 @@ class SuperleadsExecutionStateTest(unittest.TestCase):
         self.assertIn("source_cache", execution_state["properties"])
         self.assertIn("checkpoint", execution_state["properties"])
         self.assertIn("metrics", execution_state["properties"])
+        self.assertIn("expansion_scale_chosen", execution_state["properties"])
+        self.assertIn("uncovered_combination_hints", execution_state["properties"])
+        self.assertIn("search_combination", run_schema["$defs"]["executionQueryGroup"]["properties"])
         self.assertIn("execution_budget", plan_schema["properties"])
         self.assertIn("execution_order", plan_schema["properties"]["query_groups"]["items"]["properties"])
 

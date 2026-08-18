@@ -80,7 +80,7 @@ def _query_group(group: dict[str, Any]) -> dict[str, Any]:
     candidate_limit = group.get("candidate_limit")
     if candidate_limit is not None:
         candidate_limit = _positive_budget_value(candidate_limit, field="candidate_limit", default=1)
-    return {
+    normalized = {
         "group_id": group_id,
         "execution_order": execution_order,
         "status": status,
@@ -88,6 +88,26 @@ def _query_group(group: dict[str, Any]) -> dict[str, Any]:
         "candidate_ids": list(group.get("candidate_ids") or []),
         "notes": list(group.get("notes") or []),
     }
+    if "search_combination" in group:
+        combination = group.get("search_combination")
+        if not isinstance(combination, dict):
+            raise ValueError("search_combination must be an object when provided")
+        normalized_combination: dict[str, str | None] = {}
+        for field in ("product_term", "market", "customer_type"):
+            value = combination.get(field)
+            if value is not None and not isinstance(value, str):
+                raise ValueError(f"search_combination.{field} must be a string or null")
+            normalized_combination[field] = value.strip() if isinstance(value, str) and value.strip() else None
+        normalized["search_combination"] = normalized_combination
+    return normalized
+
+
+def _uncovered_combination_hints(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if not isinstance(value, list) or any(not isinstance(item, str) or not item.strip() for item in value):
+        raise ValueError("uncovered_combination_hints must be a list of non-empty strings")
+    return list(value)
 
 
 def _positive_budget_value(value: Any, *, field: str, default: int) -> int:
@@ -112,6 +132,7 @@ def create_execution_state(
     task_mode: str = "discovery_snapshot",
     host_supports_parallel_execution: bool = False,
     route: str | None = None,
+    uncovered_combination_hints: list[str] | None = None,
 ) -> dict[str, Any]:
     """Create a run-local execution record with explicit finite limits."""
     normalized_run_id = str(run_id).strip()
@@ -172,6 +193,8 @@ def create_execution_state(
             "stop_conditions": list(stop_conditions),
         },
         "query_groups": groups,
+        "expansion_scale_chosen": None,
+        "uncovered_combination_hints": _uncovered_combination_hints(uncovered_combination_hints),
         "source_cache": {},
         "brief": None,
         "search_log_ids": [],
@@ -239,6 +262,7 @@ def create_execution_state_from_plan(
         task_mode=task_mode,
         host_supports_parallel_execution=host_supports_parallel_execution,
         route=route,
+        uncovered_combination_hints=plan.get("uncovered_combination_hints"),
     )
 
 
@@ -317,6 +341,18 @@ def record_candidate(state: dict[str, Any], *, query_group_id: str, candidate_id
         return {"recorded": False, "reason": "budget_exhausted"}
     candidate_ids.append(identifier)
     all_candidates.append(identifier)
+    return {"recorded": True, "reason": None}
+
+
+def record_expansion_scale_choice(state: dict[str, Any], scale: int) -> dict[str, Any]:
+    """Record the user's one-time candidate-pool expansion choice for this Run."""
+    if state.get("task_mode") != "discovery_snapshot":
+        raise ValueError("expansion choice is only available for discovery snapshots")
+    if scale not in {30, 50}:
+        raise ValueError("expansion scale must be 30 or 50")
+    if state.get("expansion_scale_chosen") is not None:
+        return {"recorded": False, "reason": "already_chosen"}
+    state["expansion_scale_chosen"] = scale
     return {"recorded": True, "reason": None}
 
 
@@ -474,7 +510,40 @@ def status_summary(state: dict[str, Any]) -> dict[str, Any]:
     not_executed = sum(1 for group in groups if group.get("status") in {"not_executed", "budget_exhausted"})
     metrics = state.get("metrics") if isinstance(state.get("metrics"), dict) else {}
     candidate_count = len(state.get("candidate_ids", []))
-    expansion_prompt = "是否继续扩展至 30 家或 50 家？" if state.get("task_mode") == "discovery_snapshot" and candidate_count >= 10 else None
+    search_combination_coverage: list[dict[str, Any]] = []
+    first_owned_candidate_ids: set[str] = set()
+    for group in groups:
+        combination = group.get("search_combination")
+        if not isinstance(combination, dict):
+            continue
+        new_candidate_count = 0
+        for candidate_id in group.get("candidate_ids", []):
+            normalized_candidate_id = str(candidate_id).strip()
+            if not normalized_candidate_id or normalized_candidate_id in first_owned_candidate_ids:
+                continue
+            first_owned_candidate_ids.add(normalized_candidate_id)
+            new_candidate_count += 1
+        search_combination_coverage.append({
+            "product_term": combination.get("product_term"),
+            "market": combination.get("market"),
+            "customer_type": combination.get("customer_type"),
+            "new_candidate_count": new_candidate_count,
+            "status": group.get("status"),
+        })
+
+    next_step_options: list[dict[str, str]] = []
+    if state.get("task_mode") == "discovery_snapshot" and candidate_count >= 10:
+        if state.get("expansion_scale_chosen") is None:
+            next_step_options.append({"key": "expand_candidate_pool", "text": "继续扩展至 30 家或 50 家"})
+        next_step_options.extend([
+            {"key": "change_search_combination", "text": "换搜索组合再找一批（换产品词 / 换客户类型，国家不变）"},
+            {"key": "deep_verify_full_list", "text": "对上述名单做深度核验 → 标准开发名单（产量降、耗时增；可分批产出）"},
+            {"key": "supplement_public_signals", "text": "补社媒 / 地图 / 贸易记录信号（仍属候选池，不升级为已验证）"},
+            {"key": "single_customer_background", "text": "选 1 家做单一客户背调"},
+        ])
+
+    hints = state.get("uncovered_combination_hints")
+    uncovered_combination_hints = list(hints) if isinstance(hints, list) else []
     return {
         "task_mode": state.get("task_mode"),
         "route": state.get("route"),
@@ -486,7 +555,9 @@ def status_summary(state: dict[str, Any]) -> dict[str, Any]:
         "not_executed_count": not_executed,
         "opened_source_count": int(metrics.get("opened_source_count", 0)),
         "candidate_count": candidate_count,
-        "expansion_prompt": expansion_prompt,
+        "next_step_options": next_step_options,
+        "search_combination_coverage": search_combination_coverage,
+        "uncovered_combination_hints": uncovered_combination_hints,
         "cache_hit_count": int(metrics.get("cache_hit_count", 0)),
         "unverified_candidate_count": int(metrics.get("unconfirmed_or_conflict_count", 0)),
         "historical_reference_label": HISTORICAL_REFERENCE_LABEL,

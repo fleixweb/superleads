@@ -145,6 +145,8 @@
         "capabilities": {"type": ["object", "null"], "additionalProperties": {"$ref": "#/$defs/capabilityStatus"}},
         "budget": {"$ref": "#/$defs/executionBudget"},
         "query_groups": {"type": "array", "items": {"$ref": "#/$defs/executionQueryGroup"}},
+        "expansion_scale_chosen": {"type": ["integer", "null"], "enum": [30, 50, null]},
+        "uncovered_combination_hints": {"type": "array", "items": {"type": "string", "minLength": 1}},
         "source_cache": {"type": "object", "additionalProperties": {"$ref": "#/$defs/sourceCacheEntry"}},
         "brief": {"type": ["object", "null"]},
         "search_log_ids": {"type": "array", "items": {"type": "string"}},
@@ -192,7 +194,16 @@
         "status": {"type": "string", "enum": ["not_executed", "in_progress", "completed", "source_restricted", "budget_exhausted"]},
         "candidate_limit": {"type": ["integer", "null"], "minimum": 1},
         "candidate_ids": {"type": "array", "items": {"type": "string"}},
-        "notes": {"type": "array", "items": {"type": "string"}}
+        "notes": {"type": "array", "items": {"type": "string"}},
+        "search_combination": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "product_term": {"type": ["string", "null"]},
+            "market": {"type": ["string", "null"]},
+            "customer_type": {"type": ["string", "null"]}
+          }
+        }
       }
     },
     "sourceCacheEntry": {

@@ -294,8 +294,6 @@ def _candidate_refs(candidate:dict[str,Any], search_logs:dict[str,dict[str,Any]]
     search_log_ids.extend(str(item) for item in ensure_list(candidate,"search_log_ids") if item)
     for search_log_id in search_log_ids:
         log=search_logs.get(search_log_id,{})
-        if isinstance(log,dict) and log.get("query_group_id"):
-            labels.append(f"搜索组:{log.get('query_group_id')}")
         for ref in ensure_list(log,"result_refs"):
             if isinstance(ref,dict) and str(ref.get("candidate_id"))==str(candidate.get("candidate_id")):
                 if ref.get("result_title"):
@@ -312,6 +310,13 @@ def _safe_website_or_domain_output(record:dict[str,Any])->str:
             if is_safe_public_website_or_domain(value):
                 return str(value)
     return ""
+
+
+def _search_direction_label(log:dict[str,Any])->str:
+    query_text = str(log.get("query_text") or "").strip()
+    if query_text:
+        return query_text
+    return "已记录的公开检索"
 
 
 def _candidate_website_or_domain(candidate:dict[str,Any], entity:dict[str,Any])->str:
@@ -807,7 +812,7 @@ def build_initial_sheets(graph:dict[str,Any], audit:dict[str,Any])->dict[str,lis
         if not isinstance(log,dict):
             continue
         coverage_rows.append({
-            "查询组": log.get("query_group_id"),
+            "搜索方向": _search_direction_label(log),
             "语言": log.get("query_language"),
             "地域": stringify(log.get("targeted_geography_literals")),
             "来源类别": stringify(log.get("source_categories")),
@@ -820,7 +825,7 @@ def build_initial_sheets(graph:dict[str,Any], audit:dict[str,Any])->dict[str,lis
             "覆盖/收敛说明": "；".join(str(item) for item in ensure_list(log,"coverage_notes") if item),
         })
     if not coverage_rows:
-        coverage_rows=[{"查询组":"未记录搜索日志","覆盖/收敛说明":"当前交付未附带 SearchLog；仅交付已整理候选与公开信号。"}]
+        coverage_rows=[{"搜索方向":"未记录公开检索","覆盖/收敛说明":"当前交付未附带搜索记录；仅交付已整理候选与公开信号。"}]
     risk_rows=[{"提示级别":i.get("severity"),"说明":i.get("message")} for i in audit.get("issues",[])] or [{"提示级别":"提示","说明":"本轮公开发现可继续扩展；当前输出不宣称已覆盖全部企业。"}]
     if "not_run" in review_modes(graph):
         risk_rows.append({"提示级别":"说明","说明":"本次为发现优先交付；严格复核、审计和正式开发名单门禁未启用。"})

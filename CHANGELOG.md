@@ -10,6 +10,17 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 - **MINOR**: adds capabilities without breaking existing research graphs.
 - **PATCH**: fixes bugs or changes copy.
 
+## [0.2.1] - 2026-08-18
+
+### Added
+
+- Add a non-blocking batch-discovery next-step menu, a Run-local one-time expansion choice, and visible product/market/customer-type search-combination coverage with user-supplied uncovered-combination hints.
+- Add explicit public-search sampling, directory-discovery, and regional-personalization boundaries so candidate pools do not promise exhaustive coverage or recommend VPN/proxy/node changes.
+
+### Changed
+
+- Remove the legacy one-line expansion prompt from execution summaries; the structured menu keeps non-expansion routes available after a 30- or 50-candidate expansion choice.
+
 ## [0.2.0] - 2026-08-16
 
 ### Added

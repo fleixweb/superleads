@@ -234,6 +234,25 @@ GENERIC_EVIDENCE_UPGRADES = [
     "年进口量",
 ]
 
+GENERIC_COVERAGE_OVERCLAIMS = [
+    "全部找到",
+    "全网覆盖",
+    "无遗漏",
+    "穷尽",
+    "100% 覆盖",
+    "已覆盖全部",
+]
+
+COVERAGE_OVERCLAIM_PATTERNS = (
+    re.compile(r"(?:找到|覆盖|列出|汇总|收集|收录)[^。！？\n]{0,32}所有[^。！？\n]{1,50}(?:公司|企业|客户)"),
+    re.compile(r"所有[^。！？\n]{1,50}(?:公司|企业|客户)[^。！？\n]{0,24}(?:均|都|已)?(?:找到|覆盖|列出|汇总|收录)"),
+)
+
+NODE_WORKAROUND_PATTERNS = (
+    re.compile(r"(?:建议|请|可以|可|应该|应当|不妨|最好|需要)[^。！？\n]{0,16}(?:使用|切换|更换|换|挂|连接|启用|通过)[^。！？\n]{0,20}(?:VPN|代理(?!商)|节点)", re.IGNORECASE),
+    re.compile(r"(?:use|switch|connect|enable|try|recommend)[^.\n]{0,40}(?:vpn|proxy|node)", re.IGNORECASE),
+)
+
 PRODUCT_USER_VISIBLE_STATUSES = [
     "已有明确依据",
     "按已知数据计算",
@@ -427,6 +446,36 @@ def _value_judgment_matches(text: str, phrase: str) -> bool:
     return False
 
 
+def _has_unnegated_pattern_match(text: str, pattern: re.Pattern[str]) -> bool:
+    """Treat explicit boundary wording as compliant while blocking a visible promise."""
+    for match in pattern.finditer(text):
+        sentence_start = max(
+            text.rfind("\n", 0, match.start()) + 1,
+            text.rfind("。", 0, match.start()) + 1,
+            text.rfind("！", 0, match.start()) + 1,
+            text.rfind("？", 0, match.start()) + 1,
+            text.rfind("，", 0, match.start()) + 1,
+            text.rfind(",", 0, match.start()) + 1,
+        )
+        prefix = text[max(sentence_start, match.start() - 16):match.start()].casefold()
+        if any(marker.casefold() in prefix for marker in NEGATION_MARKERS):
+            continue
+        return True
+    return False
+
+
+def _coverage_overclaim_issues(text: str) -> list[dict[str, str]]:
+    issues: list[dict[str, str]] = []
+    for phrase in GENERIC_COVERAGE_OVERCLAIMS:
+        if _phrase_matches(text, phrase, allow_negated=True):
+            issues.append(_issue("user_visible_coverage_overclaim", f"unsupported coverage promise present: {phrase}", phrase))
+    for pattern in COVERAGE_OVERCLAIM_PATTERNS + NODE_WORKAROUND_PATTERNS:
+        if _has_unnegated_pattern_match(text, pattern):
+            issues.append(_issue("user_visible_coverage_overclaim", "unsupported exhaustive-coverage claim or node workaround present"))
+            break
+    return issues
+
+
 def _count_markdown_tables(text: str) -> int:
     lines = text.splitlines()
     count = 0
@@ -611,6 +660,8 @@ def validate(text: str, route: str, *, min_tables: int = 3, extra_required: list
     for phrase in GENERIC_EVIDENCE_UPGRADES:
         if _phrase_matches(text, phrase, allow_negated=True):
             issues.append(_issue("user_visible_evidence_upgrade", f"evidence boundary upgrade present: {phrase}", phrase))
+
+    issues.extend(_coverage_overclaim_issues(text))
 
     if route in {"product_outbound_market_analysis", "bulk_customer_development"}:
         if not any(status in text for status in PRODUCT_USER_VISIBLE_STATUSES):
