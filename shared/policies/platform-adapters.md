@@ -6,28 +6,34 @@ Before probing a named tool, inspect the tools the current host actually exposes
 
 宿主能力按当前会话的实际操作结果记录。不按安装方式推断，不沿用历史会话结论，不因某个适配器失败就判定整类能力不可用；同一平台在不同会话可能暴露不同工具。
 
+## Runtime Host Identity
+
+- `Run.platform` records the canonical ID of the current runtime host, not its installation origin. Installation through a Codex environment does not make the current host `codex_cli`.
+- Determine the host from tools actually exposed in the current session: a host exposing `web__run` is `codex_cli`; ChatGPT Desktop or the Codex app using built-in browsing and search records `chatgpt_desktop`.
+- `chatgpt_desktop` uses the generic capability self-reporting path and does not require a dedicated adapter report. Do not create a dedicated ChatGPT adapter modeled on `codex_cli_web_run`, `codex_cli_native_web_search`, or `codex_cli_shell_http_source_open`; doing so would incorrectly copy the Codex-only failure path.
+
 For ChatGPT Desktop, prefer the app's actually exposed built-in browsing/search and source-opening operations. A Codex-only `web__run` 404 is not evidence that ChatGPT Desktop has no search capability. Record the successful host capability and concrete operation that were actually used; do not record the failed Codex probe in a formal Run graph.
 
-| Superleads capability | Codex examples | Claude Code examples | Hermes examples | WorkBuddy examples | Degrade when missing |
-|---|---|---|---|---|---|
-| `search.web` | native `web__run.search_query`, `web_search`, or another host-exposed search tool | WebSearch | Local/web search | built-in search | Use user-provided materials or write plan only. |
-| `source.open` | native `web__run.open` or another host operation that actually opens source text | WebFetch/browser | Local Browser | browser/source tool | Do not create Claims from search snippets. |
-| `browser.render` | host-exposed rendered-page operation | browser | Local Browser | browser tool | Use text fetch or document extraction; label dynamic-page gaps. |
-| `document.extract` | local Python/PDF/CSV tools | file tools | file operations | document tools | Ask for pasted text or export initial list only. |
-| `image.inspect` | local OCR/image tools | image/file tools | local vision/file operations | image/OCR workflow | Ask for a clearer image, readable brand text, or a public link; do not infer ownership. |
-| `mail.read` | host-authorized read-only mail adapter | host mail reader | host mail reader | host mail workflow | Ask for EML/PDF/mail export; never emulate mailbox access. |
-| `source.capture` | files + hash scripts | file snapshots | file snapshots | workflow artifact | Keep excerpt and locator; mark no snapshot hash. |
-| `url.canonicalize` | Python/url helpers | URL parsing helpers | URL helpers | URL normalization step | Keep original URL and avoid identity claims from URL normalization. |
-| `entity.dedupe` | local normalization script | entity comparison task | local comparison | dedupe workflow | Keep entities provisional; route to identity review. |
-| `translate.text` | model/local translation | model translation | translation tool | translation workflow | Preserve original text and avoid translated-only evidence. |
-| `company.enrich` | company/enrichment MCP | enrichment tools | enrichment tools | enrichment workflow | Use only as Candidate/contextual clue. |
-| `email.verify` | email verify tool | email tool | email tool | email workflow | Do not use as source or ownership proof. |
-| `domain.check` | DNS/domain tools | domain tools | domain tools | domain workflow | Treat as technical observation, not company ownership. |
-| `social.visible.read` | rendered visible pages | browser visible read | browser visible read | browser visible read | Do not infer purchasing authority from visible role text. |
-| `registry.lookup` | registry MCP/browser | registry fetch | registry lookup | registry workflow | Entity claims need other source or manual check. |
-| `trademark.lookup` | trademark MCP/browser | trademark fetch | trademark lookup | trademark workflow | Brand/trademark claims need manual or source note. |
-| `maps.lookup` | maps MCP/browser | map/browser | map lookup | map workflow | Map phone/address can be contact clue with source note. |
-| `memory.recall` | local memory/MemOS | project memory | memory | workflow memory | Use only to prioritize plans; never Claim/Assessment evidence. |
+| Superleads capability | Codex examples | ChatGPT Desktop examples | Claude Code examples | Hermes examples | WorkBuddy examples | Degrade when missing |
+|---|---|---|---|---|---|---|
+| `search.web` | native `web__run.search_query`, `web_search`, or another host-exposed search tool | actually exposed built-in browsing/search | WebSearch | Local/web search | built-in search | Use user-provided materials or write plan only. |
+| `source.open` | native `web__run.open` or another host operation that actually opens source text | built-in source-opening/read operation that actually opens source text | WebFetch/browser | Local Browser | browser/source tool | Do not create Claims from search snippets. |
+| `browser.render` | host-exposed rendered-page operation | built-in rendered-page operation, if exposed | browser | Local Browser | browser tool | Use text fetch or document extraction; label dynamic-page gaps. |
+| `document.extract` | local Python/PDF/CSV tools | built-in file/document reading, if exposed | file tools | file operations | document tools | Ask for pasted text or export initial list only. |
+| `image.inspect` | local OCR/image tools | built-in image inspection, if exposed | image/file tools | local vision/file operations | image/OCR workflow | Ask for a clearer image, readable brand text, or a public link; do not infer ownership. |
+| `mail.read` | host-authorized read-only mail adapter | host-provided read-only mail operation, if exposed | host mail reader | host mail reader | host mail workflow | Ask for EML/PDF/mail export; never emulate mailbox access. |
+| `source.capture` | files + hash scripts | host-provided file/snapshot operation, if exposed | file snapshots | file snapshots | workflow artifact | Keep excerpt and locator; mark no snapshot hash. |
+| `url.canonicalize` | Python/url helpers | host-provided URL normalization, if exposed | URL parsing helpers | URL helpers | URL normalization step | Keep original URL and avoid identity claims from URL normalization. |
+| `entity.dedupe` | local normalization script | host-provided entity comparison, if exposed | entity comparison task | local comparison | dedupe workflow | Keep entities provisional; route to identity review. |
+| `translate.text` | model/local translation | host-provided translation, if exposed | model translation | translation tool | translation workflow | Preserve original text and avoid translated-only evidence. |
+| `company.enrich` | company/enrichment MCP | host-provided enrichment, if exposed | enrichment tools | enrichment tools | enrichment workflow | Use only as Candidate/contextual clue. |
+| `email.verify` | email verify tool | host-provided email verification, if exposed | email tool | email tool | email workflow | Do not use as source or ownership proof. |
+| `domain.check` | DNS/domain tools | host-provided domain check, if exposed | domain tools | domain tools | domain workflow | Treat as technical observation, not company ownership. |
+| `social.visible.read` | rendered visible pages | host-provided visible-page read, if exposed | browser visible read | browser visible read | browser visible read | Do not infer purchasing authority from visible role text. |
+| `registry.lookup` | registry MCP/browser | host-provided registry lookup, if exposed | registry fetch | registry lookup | registry workflow | Entity claims need other source or manual check. |
+| `trademark.lookup` | trademark MCP/browser | host-provided trademark lookup, if exposed | trademark fetch | trademark lookup | trademark workflow | Brand/trademark claims need manual or source note. |
+| `maps.lookup` | maps MCP/browser | host-provided map lookup, if exposed | map/browser | map lookup | map workflow | Map phone/address can be contact clue with source note. |
+| `memory.recall` | local memory/MemOS | host-provided session memory, if exposed | project memory | memory | workflow memory | Use only to prioritize plans; never Claim/Assessment evidence. |
 
 快速候选池不运行正式研究 preflight。若同一失败适配器返回 404 或超时，停止重试该适配器，并检查宿主实际暴露的其他原生检索。只有宿主能力清单已确认没有可用搜索时，才降级为用户资料整理或查询计划；不得伪造候选、来源或正式图谱。
 

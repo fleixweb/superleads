@@ -53,6 +53,7 @@ codex plugin add superleads@fleix
 In the Codex app, use `/plugins` to add the same marketplace and install `superleads@fleix`. The GitHub repository's default branch is `master`. Start a new chat after installing or updating so the new Skills are loaded.
 
 Under the current distribution design, the ChatGPT app uses the same installed Codex environment and has no separate Superleads installation entry.
+The shared installation environment does not determine the runtime host; determine the Run host from the tools actually exposed in the current session.
 
 ### Lean Runtime Package For Local Development
 

@@ -100,8 +100,9 @@ to meet formal-research preflight; it never creates or promotes `search.web`.
 
 The graph gate accepts only canonical host IDs when a platform is recorded:
 lowercase ASCII letters, digits, and underscores. This preserves generic hosts
-such as `hermes`, `claude`, and `workbuddy`; it rejects tool names, whitespace,
-uppercase, and hyphen variants. The graph gate does not perform DNS lookup. It
+such as `hermes`, `claude`, `chatgpt_desktop`, and `workbuddy`; it rejects tool
+names, whitespace, uppercase, and hyphen variants. The graph gate does not
+perform DNS lookup. It
 rejects literal private or legacy numeric IP forms, but a real Shell HTTP
 executor must also enforce global-address checks for each DNS resolution and
 redirect to defend against DNS rebinding.

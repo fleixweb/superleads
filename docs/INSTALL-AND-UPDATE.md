@@ -53,6 +53,7 @@ codex plugin add superleads@fleix
 Codex app 可通过 `/plugins` 添加同一 marketplace，再安装 `superleads@fleix`。该 GitHub 仓库的默认分支为 `master`；安装或更新后，请新开一个对话以加载新的 Skills。
 
 按当前产品分发方式，ChatGPT app 使用同一已安装的 Codex 环境，不设独立的 Superleads 安装入口。
+共享安装环境不等于相同的运行时宿主；Run 的宿主身份应按当前会话实际暴露的工具判定。
 
 ### 本地开发的精简运行时包
 
