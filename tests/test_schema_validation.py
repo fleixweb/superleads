@@ -41,7 +41,7 @@ class SchemaValidationTest(unittest.TestCase):
                 schema_validation_errors({}, schema_path)
         self.assertIn("#/$defs/DoesNotExist", str(raised.exception))
 
-    def test_missing_schema_dependencies_explain_host_runtime_recovery(self) -> None:
+    def test_missing_schema_dependencies_explain_bundled_requirements_or_no_script_delivery(self) -> None:
         class MissingSchemaDependencies(importlib.abc.MetaPathFinder):
             def find_spec(self, name: str, path: object = None, target: object = None) -> object:
                 if name.split(".")[0] in {"jsonschema", "referencing"}:
@@ -66,9 +66,9 @@ class SchemaValidationTest(unittest.TestCase):
 
         message = str(raised.exception)
         self.assertTrue(message.startswith("jsonschema is unavailable:"))
-        self.assertIn("host-provided runtime interpreter", message)
-        self.assertIn("do not modify the user's system environment", message)
-        self.assertIn("do not install packages globally", message)
+        self.assertIn("bundled requirements.txt", message)
+        self.assertIn("no-script path", message)
+        self.assertIn("本环境未运行确定性校验", message)
 
     def test_dependency_declaration_covers_schema_and_xlsx_runtime_dependencies(self) -> None:
         requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")

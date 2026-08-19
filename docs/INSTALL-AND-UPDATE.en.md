@@ -70,6 +70,30 @@ pip install -r requirements.txt
 
 `requirements.txt` fixes the supported JSON Schema runtime.
 
+### Windows / Codex Desktop Runtime Dependencies
+
+The lean runtime package includes its root `requirements.txt`. When maintaining
+or testing an installed Codex Desktop runtime package on Windows, read that
+file from the package root and prepare it in an **isolated Superleads
+maintenance environment**; do not write the environment into a plugin cache
+that can be refreshed:
+
+```powershell
+$runtimeRoot = Resolve-Path .\superleads
+py -3 -m venv .\superleads-runtime-venv
+& .\superleads-runtime-venv\Scripts\python.exe -m pip install -r "$runtimeRoot\requirements.txt"
+```
+
+Replace `$runtimeRoot` with the actual runtime package root. Do not search for,
+borrow, or invoke Python / venv installations from another Agent, IDE, or
+desktop application, and do not install packages globally. If `jsonschema` or
+`referencing` is unavailable, formal deterministic validation and formal
+Markdown delivery use the no-script path and carry the marker
+`本环境未运行确定性校验`. When validation can run but `openpyxl` is unavailable,
+`export_workbook.py --format auto` writes UTF-8-SIG CSV. Use `--format xlsx`
+only when an XLSX file is explicitly required; that explicit request must not
+silently downgrade.
+
 When a local marketplace points at the source repository, Codex copies development
 assets and historical UAT files into its cache. Before a local release or runtime
 test, build the lean package, point the local Superleads marketplace source at the

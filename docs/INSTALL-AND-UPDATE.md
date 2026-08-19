@@ -70,6 +70,25 @@ pip install -r requirements.txt
 `requirements.txt` 固定支持的 JSON Schema 运行时；不要用桌面环境临时安装的旧版
 `jsonschema` 代替它。
 
+### Windows / Codex Desktop 运行时依赖
+
+精简运行时包会携带根目录 `requirements.txt`。在 Windows 上维护或测试已安装的
+Codex Desktop 运行时包时，从包含该文件的包根目录读取依赖清单，并在**专用于
+Superleads 的隔离维护环境**中准备它；不要把环境写入可能被刷新掉的插件缓存：
+
+```powershell
+$runtimeRoot = Resolve-Path .\superleads
+py -3 -m venv .\superleads-runtime-venv
+& .\superleads-runtime-venv\Scripts\python.exe -m pip install -r "$runtimeRoot\requirements.txt"
+```
+
+将 `$runtimeRoot` 替换为实际运行时包根目录。不要搜索、借用或调用其他 Agent、IDE
+或桌面应用自带的 Python / venv；也不要做全局安装。缺少 `jsonschema` 或
+`referencing` 时，正式确定性校验与 Markdown 正式导出走无脚本路径，并标注
+“本环境未运行确定性校验”。在校验可运行但缺少 `openpyxl` 时，
+`export_workbook.py --format auto` 会输出 UTF-8-SIG CSV；只有明确必须生成 XLSX
+时才使用 `--format xlsx`，该显式请求不会静默降级。
+
 本地 marketplace 若指向源码目录，Codex 会把开发资料和历史 UAT 一并复制到缓存。发布
 前或本地联调时，先在源码根目录构建精简运行时包，再让本地 marketplace 的 Superleads
 source 指向该工件，最后重新安装：

@@ -31,7 +31,7 @@ python3 scripts/preflight_capabilities.py --require-formal-research --format jso
 | 批量客户开发候选池 CSV | `python3 scripts/export_workbook.py graph.json --output-dir out --mode initial --format csv` | 输出发现候选池、联系方式、来源、待核查项等 |
 | 标准开发名单 CSV | `python3 scripts/export_workbook.py graph.json --output-dir out --mode standard --format csv` | 只用于已通过正式检查的标准开发名单 |
 | 单一客户背调 CSV | `python3 scripts/export_workbook.py graph.json --output-dir out --mode background --format csv` | 输出客户背调六张表，不进入正式客户名单 audit 链路 |
-| 自动选择 XLSX / CSV | `python3 scripts/export_workbook.py graph.json report.xlsx --mode initial --format auto` | 环境支持 XLSX 时写 Excel，否则按脚本能力回退 |
+| 自动选择 XLSX / CSV | `python3 scripts/export_workbook.py graph.json report.xlsx --mode initial --format auto` | 默认路径；环境支持 XLSX 时写 Excel，缺少工作簿组件时写 UTF-8-SIG CSV |
 | 产品出海市场分析 CSV + Markdown | `python3 scripts/export_product_market_workbook.py market-graph.json --output-dir out --format csv --markdown market-report.md --manifest manifest.json` | 输出产品市场分析 12 张 CSV、可选 Markdown 和 manifest |
 
 ## 产品出海市场分析内部来源计划与手工来源链路

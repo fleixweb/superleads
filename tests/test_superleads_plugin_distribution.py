@@ -16,6 +16,19 @@ from check_superleads_plugin_distribution import check_distribution
 
 
 class SuperleadsPluginDistributionTest(unittest.TestCase):
+    def test_built_runtime_package_includes_the_source_dependency_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "superleads"
+
+            result = build_package(output)
+
+            self.assertTrue(result["ok"])
+            self.assertIn("requirements.txt", result["included_files"])
+            self.assertEqual(
+                (ROOT / "requirements.txt").read_text(encoding="utf-8"),
+                (output / "requirements.txt").read_text(encoding="utf-8"),
+            )
+
     def test_built_runtime_package_excludes_legacy_hooks_directory(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "superleads"

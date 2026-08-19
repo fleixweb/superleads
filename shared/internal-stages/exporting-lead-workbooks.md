@@ -18,6 +18,14 @@ customer shortlist. Prefer Markdown when the user wants to read the report
 directly in Codex / ChatGPT app, prefer XLSX when available for spreadsheet
 handoff, and fall back to UTF-8-SIG CSV files.
 
+For spreadsheet export, use `--format auto` (or omit it) by default. It writes
+XLSX when the workbook component is available and UTF-8-SIG CSV when it is not.
+Use `--format xlsx` only when the user explicitly requires an XLSX file; an
+explicit XLSX request must fail rather than silently producing CSV. If the
+deterministic validator cannot run because its dependencies are unavailable,
+follow the no-script delivery path and mark `本环境未运行确定性校验`; do not borrow
+another application's interpreter or virtual environment.
+
 ## Required references and script
 
 Read `../../shared/references/output-schema.md` and

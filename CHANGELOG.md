@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Include the pinned runtime dependency manifest in lean plugin packages and document isolated Windows/Codex Desktop preparation, CSV auto fallback, and the no-script path when deterministic validation dependencies are unavailable.
+
 ## Superleads Versioning
 
 - **MAJOR**: changes schema fields, verification gates, or removes states. These can break an in-use research graph and must include migration instructions.

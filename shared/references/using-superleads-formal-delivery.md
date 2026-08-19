@@ -67,6 +67,13 @@ audit. Under `../policies/cross-platform-rules.md`, select the host-provided
 runtime interpreter and invoke `scripts/export_superleads_markdown.py` with
 `graph.json --route auto --output report.md --format json`.
 
+For workbook delivery, use `export_workbook.py --format auto` (or omit the
+format) unless the user explicitly requires XLSX. Auto produces UTF-8-SIG CSV
+when the workbook component is unavailable; an explicit `--format xlsx` request
+must fail instead of silently changing the requested file type. When validator
+dependencies are unavailable, do not search for or borrow another application's
+interpreter: use the no-script path and mark `本环境未运行确定性校验`.
+
 Do not hand-render Markdown from workbook/CSV sheets. Do not manually convert
 workbook/CSV rows, rename internal status columns, or fabricate a report when
 the exporter fails. Formal delivery requires a saved graph JSON path and a

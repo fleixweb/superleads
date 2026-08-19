@@ -23,7 +23,7 @@ DEFAULT_REQUIRED_FILES = (
     Path("shared/references/product-outbound-market-intake.md"),
 )
 RELATIVE_REFERENCE_RE = re.compile(r"\.\./\.\./(?:scripts|spec|shared)/[A-Za-z0-9._/\-]+")
-RUNTIME_TOP_LEVEL_NAMES = {".claude-plugin", ".codex-plugin", "scripts", "shared", "skills", "spec"}
+RUNTIME_TOP_LEVEL_NAMES = {".claude-plugin", ".codex-plugin", "requirements.txt", "scripts", "shared", "skills", "spec"}
 FORBIDDEN_RUNTIME_NAMES = {".agents", ".git", ".plugin-eval", "docs", "evals", "hooks", "tests", "tmp"}
 FORBIDDEN_RUNTIME_SUFFIXES = {".pyc", ".pyo", ".pyd"}
 AUTOMATIC_HOOK_EVENT_RE = re.compile(r"\b(?:sessionstart|session[-_ ]?start|resume)\b", re.IGNORECASE)
