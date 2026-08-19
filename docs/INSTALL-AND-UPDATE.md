@@ -57,18 +57,21 @@ Codex app 可通过 `/plugins` 添加同一 marketplace，再安装 `superleads@
 
 ### 本地开发的精简运行时包
 
-### WSL Python 依赖
+### Python 依赖（跨平台）
 
-校验和正式 Markdown 导出应在 WSL 的隔离环境中运行，不依赖桌面 Python：
+普通插件使用不要求用户安装 Python 依赖。维护源码、运行确定性校验或正式导出脚本时，
+应按当前平台使用专用于 Superleads 的隔离环境；不要做全局安装，也不要把环境写入可能
+被刷新的插件缓存。`requirements.txt` 固定支持的 JSON Schema 和导出运行时。
+
+macOS、Linux 或 WSL：
 
 ```bash
 python3 -m venv .venv
 . .venv/bin/activate
-pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 ```
 
-`requirements.txt` 固定支持的 JSON Schema 运行时；不要用桌面环境临时安装的旧版
-`jsonschema` 代替它。
+不要用其他应用临时提供的旧版依赖替代项目声明的版本。
 
 ### Windows / Codex Desktop 运行时依赖
 

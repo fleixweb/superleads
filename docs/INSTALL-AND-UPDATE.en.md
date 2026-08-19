@@ -57,18 +57,23 @@ The shared installation environment does not determine the runtime host; determi
 
 ### Lean Runtime Package For Local Development
 
-### WSL Python Dependencies
+### Python Dependencies (Cross-Platform)
 
-Run validators and formal Markdown exports from an isolated WSL environment,
-not from an ad-hoc desktop Python installation:
+Basic plugin use does not require the user to install Python dependencies. When
+maintaining the source, running deterministic validation, or invoking formal
+export scripts, use an isolated Superleads environment for the current platform.
+Do not install globally or write the environment into a managed plugin cache.
+`requirements.txt` pins the supported JSON Schema and export runtime.
+
+macOS, Linux, or WSL:
 
 ```bash
 python3 -m venv .venv
 . .venv/bin/activate
-pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 ```
 
-`requirements.txt` fixes the supported JSON Schema runtime.
+Do not substitute older dependencies provided temporarily by another application.
 
 ### Windows / Codex Desktop Runtime Dependencies
 
