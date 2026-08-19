@@ -152,7 +152,7 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         self.assertIn("| 产品词 | 国家/市场 | 客户类型 | 新增主体 |", markdown)
         self.assertIn("已观察到的本地术语 + Region Q + 维修厂", markdown)
         self.assertIn("## 下一步可选", markdown)
-        self.assertIn("继续扩展至 30 家或 50 家", markdown)
+        self.assertIn("继续扩展（可指定 30 / 50 / 100 家，或直接说数量）", markdown)
         self.assertIn("对上述名单做深度核验 → 标准开发名单（产量降、耗时增", markdown)
         self.assertNotIn("importer-combination-internal-only", markdown)
         self.assertNotIn("run-menu-internal-only", markdown)

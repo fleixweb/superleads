@@ -145,7 +145,7 @@
         "capabilities": {"type": ["object", "null"], "additionalProperties": {"$ref": "#/$defs/capabilityStatus"}},
         "budget": {"$ref": "#/$defs/executionBudget"},
         "query_groups": {"type": "array", "items": {"$ref": "#/$defs/executionQueryGroup"}},
-        "expansion_scale_chosen": {"type": ["integer", "null"], "enum": [30, 50, null]},
+        "expansion_scale_chosen": {"type": ["integer", "null"], "minimum": 1, "maximum": 500},
         "uncovered_combination_hints": {"type": "array", "items": {"type": "string", "minLength": 1}},
         "source_cache": {"type": "object", "additionalProperties": {"$ref": "#/$defs/sourceCacheEntry"}},
         "brief": {"type": ["object", "null"]},

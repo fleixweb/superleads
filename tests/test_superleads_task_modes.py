@@ -215,6 +215,8 @@ class SuperleadsTaskModesTest(unittest.TestCase):
         self.assertTrue(response["ask_expansion_after_first_batch"])
         self.assertIn("30", "\n".join(response["response_lines"]))
         self.assertIn("50", "\n".join(response["response_lines"]))
+        self.assertIn("100", "\n".join(response["response_lines"]))
+        self.assertIn("直接说数量", "\n".join(response["response_lines"]))
 
     def test_part_number_country_and_customer_type_is_an_unambiguous_bulk_request(self) -> None:
         response = classify("13185402+爱尔兰经销商")

@@ -24,6 +24,7 @@ MILESTONE_METRICS = {
     "first_evidence_fact_seconds",
     "formal_report_complete_seconds",
 }
+MAX_EXPANSION_SCALE = 500
 
 
 def normalize_run_url(url: str) -> str:
@@ -348,8 +349,8 @@ def record_expansion_scale_choice(state: dict[str, Any], scale: int) -> dict[str
     """Record the user's one-time candidate-pool expansion choice for this Run."""
     if state.get("task_mode") != "discovery_snapshot":
         raise ValueError("expansion choice is only available for discovery snapshots")
-    if scale not in {30, 50}:
-        raise ValueError("expansion scale must be 30 or 50")
+    if isinstance(scale, bool) or not isinstance(scale, int) or not 1 <= scale <= MAX_EXPANSION_SCALE:
+        raise ValueError(f"expansion scale must be an integer between 1 and {MAX_EXPANSION_SCALE}")
     if state.get("expansion_scale_chosen") is not None:
         return {"recorded": False, "reason": "already_chosen"}
     state["expansion_scale_chosen"] = scale
@@ -534,7 +535,7 @@ def status_summary(state: dict[str, Any]) -> dict[str, Any]:
     next_step_options: list[dict[str, str]] = []
     if state.get("task_mode") == "discovery_snapshot" and candidate_count >= 10:
         if state.get("expansion_scale_chosen") is None:
-            next_step_options.append({"key": "expand_candidate_pool", "text": "继续扩展至 30 家或 50 家"})
+            next_step_options.append({"key": "expand_candidate_pool", "text": "继续扩展（可指定 30 / 50 / 100 家，或直接说数量）"})
         next_step_options.extend([
             {"key": "change_search_combination", "text": "换搜索组合再找一批（换产品词 / 换客户类型，国家不变）"},
             {"key": "deep_verify_full_list", "text": "对上述名单做深度核验 → 标准开发名单（产量降、耗时增；可分批产出）"},

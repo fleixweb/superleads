@@ -346,7 +346,7 @@ class SuperleadsExecutionStateTest(unittest.TestCase):
             ],
             [item["key"] for item in summary["next_step_options"]],
         )
-        self.assertEqual("继续扩展至 30 家或 50 家", summary["next_step_options"][0]["text"])
+        self.assertEqual("继续扩展（可指定 30 / 50 / 100 家，或直接说数量）", summary["next_step_options"][0]["text"])
 
     def test_expansion_choice_hides_the_one_time_expansion_option_for_the_run(self) -> None:
         state = create_execution_state(
@@ -358,10 +358,24 @@ class SuperleadsExecutionStateTest(unittest.TestCase):
         for index in range(10):
             self.assertTrue(record_candidate(state, query_group_id="website", candidate_id=f"candidate-{index}")["recorded"])
 
-        self.assertEqual({"recorded": True, "reason": None}, record_expansion_scale_choice(state, 30))
-        self.assertEqual(30, state["expansion_scale_chosen"])
+        self.assertEqual({"recorded": True, "reason": None}, record_expansion_scale_choice(state, 100))
+        self.assertEqual(100, state["expansion_scale_chosen"])
         self.assertNotIn("expand_candidate_pool", [item["key"] for item in status_summary(state)["next_step_options"]])
         self.assertEqual({"recorded": False, "reason": "already_chosen"}, record_expansion_scale_choice(state, 50))
+
+    def test_expansion_choice_requires_a_bounded_positive_integer(self) -> None:
+        state = create_execution_state(
+            "run-bounded-expansion",
+            query_groups=[{"group_id": "website", "execution_order": "independent"}],
+            budget={"query_group_limit": 1},
+            task_mode="discovery_snapshot",
+        )
+
+        for invalid in (0, -1, True, 501):
+            with self.subTest(scale=invalid):
+                with self.assertRaisesRegex(ValueError, "between 1 and 500"):
+                    record_expansion_scale_choice(state, invalid)
+        self.assertIsNone(state["expansion_scale_chosen"])
 
     def test_next_step_menu_is_absent_before_ten_candidates_and_for_formal_research(self) -> None:
         snapshot = create_execution_state(
@@ -469,6 +483,11 @@ class SuperleadsExecutionStateTest(unittest.TestCase):
         self.assertIn("checkpoint", execution_state["properties"])
         self.assertIn("metrics", execution_state["properties"])
         self.assertIn("expansion_scale_chosen", execution_state["properties"])
+        expansion = execution_state["properties"]["expansion_scale_chosen"]
+        self.assertEqual(["integer", "null"], expansion["type"])
+        self.assertEqual(1, expansion["minimum"])
+        self.assertEqual(500, expansion["maximum"])
+        self.assertNotIn("enum", expansion)
         self.assertIn("uncovered_combination_hints", execution_state["properties"])
         self.assertIn("search_combination", run_schema["$defs"]["executionQueryGroup"]["properties"])
         self.assertIn("execution_budget", plan_schema["properties"])

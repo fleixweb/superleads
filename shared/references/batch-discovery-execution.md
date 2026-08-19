@@ -70,7 +70,7 @@ not a request to select a number or an instruction to wait for a reply:
 
 ```
 下一步可选：
-· 继续扩展至 30 家或 50 家
+· 继续扩展（可指定 30 / 50 / 100 家，或直接说数量）
 · 换搜索组合再找一批（换产品词 / 换客户类型，国家不变）
 · 对上述名单做深度核验 → 标准开发名单（产量降、耗时增；可分批产出）
 · 补社媒 / 地图 / 贸易记录信号（仍属候选池，不升级为已验证）
@@ -78,14 +78,20 @@ not a request to select a number or an instruction to wait for a reply:
 ```
 
 Show the expansion line only while `expansion_scale_chosen` is unset for the
-current Run. Once the user chooses 30 or 50, hide that line permanently for
-the Run; do not replace it with a later “expand to 50” prompt. The other four
+current Run. Once the user chooses a quantity, hide that line permanently for
+the Run; do not replace it with a later fixed-quantity prompt. The other four
 lines remain available. `深度核验` applies to the whole list rather than a
 user-selected subset: L1 does not rank candidate value, and asking the user to
 pick five to ten subjects would force unsupported intuitive ranking. State the
 lower output and higher time cost, allow batched delivery, and retain unverified
 or source-restricted rows as such. Reuse only the existing formal-route terms
 `深度核验`, `标准开发名单`, and `联系人归属核验`; do not add trigger words.
+
+`expansion_scale_chosen` accepts a user-specified positive integer from 1 to
+500. The ceiling bounds one Run's finite execution state; it is not a market
+coverage limit. If the target cannot be reached without relaxing current
+business-relevance rules, state the shortfall and use only observed coverage
+signals: `本组合已产出 N 家，距目标 M 家还差 M-N 家；继续检索的新增主体与已有池重合度约 X%，接近该组合当前公开检索可见范围。要补足到 M 家，建议换搜索组合（换产品词 / 换客户类型）。` Fill `N` and `X` only from this Run's recorded coverage; do not invent them. Point to the recorded `尚未覆盖的组合` hints where present. Do not pad the result by lowering relevance, and do not call the combination exhausted, complete, or globally exhaustive.
 
 Excel is not a menu item and is not coupled to deep verification. File output
 depends on the current host's actually available file-execution capability. If
