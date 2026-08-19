@@ -8,6 +8,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 
 ### Fixed
 
+- Pass the audited bulk delivery status through Markdown builders and validation, and allow only audit-approved downward overrides from a standard list to an initial candidate-pool view.
 - Include the pinned runtime dependency manifest in lean plugin packages and document isolated Windows/Codex Desktop preparation, CSV auto fallback, and the no-script path when deterministic validation dependencies are unavailable.
 - Render bulk Markdown according to its audited delivery status so standard development lists use the same non-empty primary tables as their workbook export.
 - Let a discovery-pool expansion use a bounded user-specified quantity, retain the one-time menu choice, and require observable coverage/shortfall wording instead of relevance-padding claims.

@@ -73,6 +73,8 @@ ROUTE_REQUIRED: dict[str, list[str]] = {
 }
 
 BULK_STANDARD_REQUIRED = [
+    # This phrase validates that the standard-list template exposes its
+    # delivery boundary; delivery_status itself now comes from audit output.
     "本次输出为标准开发名单",
     "标准开发名单说明",
     "客户信息总表",

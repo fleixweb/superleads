@@ -435,20 +435,44 @@ def _build_standard_bulk_markdown(graph: dict[str, Any], audit: dict[str, Any]) 
     return "\n".join(lines).rstrip() + "\n", []
 
 
-def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[str, Any]]]:
+def _delivery_status_issue(requested: str, allowed: list[Any]) -> dict[str, Any]:
+    allowed_text = ", ".join(str(item) for item in allowed if item) or "none"
+    return {
+        "severity": "critical",
+        "code": "markdown_delivery_status_not_allowed",
+        "message": f"Requested bulk delivery status {requested!r} is not allowed by the graph audit; allowed statuses: {allowed_text}",
+        "path": "delivery_status",
+    }
+
+
+def build_bulk_markdown(
+    graph: dict[str, Any],
+    requested_delivery_status: str | None = None,
+) -> tuple[str | None, list[dict[str, Any]], str | None]:
     audit = audit_lead_graph(graph)
     if not audit.get("ok"):
-        return None, list(audit.get("issues", []))
+        return None, list(audit.get("issues", [])), None
+    if requested_delivery_status is not None:
+        allowed = audit.get("allowed_delivery_statuses")
+        allowed_statuses = allowed if isinstance(allowed, list) else []
+        if requested_delivery_status not in allowed_statuses:
+            return None, [_delivery_status_issue(requested_delivery_status, allowed_statuses)], None
+        audit = audit_lead_graph(graph, requested_delivery_status=requested_delivery_status)
+        if not audit.get("ok"):
+            return None, list(audit.get("issues", [])), None
+    delivery_status = audit.get("delivery_status")
     if audit.get("delivery_status") == "standard_development_list":
-        return _build_standard_bulk_markdown(graph, audit)
+        text, issues = _build_standard_bulk_markdown(graph, audit)
+        return text, issues, delivery_status
     if audit.get("delivery_status") != "initial_lead_list":
         return None, [{
             "severity": "critical",
             "code": "markdown_delivery_status_unsupported",
             "message": f"Unsupported bulk delivery status: {audit.get('delivery_status')}",
             "path": "delivery_status",
-        }]
-    return _build_initial_bulk_markdown(graph, audit)
+        }], None
+    text, issues = _build_initial_bulk_markdown(graph, audit)
+    return text, issues, delivery_status
 
 
 def _build_initial_bulk_markdown(graph: dict[str, Any], audit: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
@@ -781,10 +805,10 @@ def _background_caution_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]
     return result
 
 
-def build_background_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[str, Any]]]:
+def build_background_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[str, Any]], str | None]:
     scope, issues = validate_background_report(graph)
     if scope is None or issues:
-        return None, list(issues)
+        return None, list(issues), None
     sheets = build_background_report_sheets(scope)
     projection = scope.get("projection") if isinstance(scope.get("projection"), dict) else graph
     hidden_contacts = hold_contact_values(graph) | background_contact_values_to_redact(projection)
@@ -828,7 +852,7 @@ def build_background_markdown(graph: dict[str, Any]) -> tuple[str | None, list[d
             sheets["疑似进出口记录（第三方聚合，待核实）"],
         )
     _append_table(lines, "信息从哪里来", ["上面哪条信息", "来源", "链接或材料", "看到的原话或位置", "时间", "状态"], sheets.get("信息从哪里来", []))
-    return "\n".join(lines).rstrip() + "\n", []
+    return "\n".join(lines).rstrip() + "\n", [], None
 
 
 def _current_market_brief(graph: dict[str, Any]) -> dict[str, Any]:
@@ -883,16 +907,16 @@ def _market_append_required_human_sections(text: str, graph: dict[str, Any]) -> 
     return text
 
 
-def build_product_market_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[str, Any]]]:
+def build_product_market_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[str, Any]], str | None]:
     audit = audit_market_graph(graph)
     if not audit.get("ok"):
-        return None, list(audit.get("issues", []))
+        return None, list(audit.get("issues", [])), None
     sheets = build_market_sheets(graph)
     text = market_markdown_report(sheets, graph)
     text = _market_append_required_human_sections(text, graph)
     if not text.startswith("# 产品出海市场分析"):
         text = f"# 产品出海市场分析\n\n产品：{_md_escape(_market_product_name(graph))}\n\n" + text
-    return text, []
+    return text, [], None
 
 
 def infer_route(payload: dict[str, Any]) -> str:
@@ -909,10 +933,14 @@ def infer_route(payload: dict[str, Any]) -> str:
     return "bulk_customer_development"
 
 
-def build_markdown(input_path: Path, route: str) -> tuple[str | None, list[dict[str, Any]], str]:
+def build_markdown(
+    input_path: Path,
+    route: str,
+    requested_delivery_status: str | None = None,
+) -> tuple[str | None, list[dict[str, Any]], str, str | None]:
     raw = load_json(input_path)
     if not isinstance(raw, dict):
-        return None, [{"severity": "critical", "code": "markdown_delivery_input_not_object", "message": "Input must be a JSON object", "path": str(input_path)}], route
+        return None, [{"severity": "critical", "code": "markdown_delivery_input_not_object", "message": "Input must be a JSON object", "path": str(input_path)}], route, None
     resolved_for_route = raw
     if route == "auto" and "extends" in raw:
         try:
@@ -923,20 +951,22 @@ def build_markdown(input_path: Path, route: str) -> tuple[str | None, list[dict[
             except Exception:
                 resolved_for_route = raw
     actual_route = infer_route(resolved_for_route) if route == "auto" else route
+    if requested_delivery_status is not None and actual_route != "bulk_customer_development":
+        return None, [_delivery_status_issue(requested_delivery_status, [])], actual_route, None
     if actual_route == "product_outbound_market_analysis":
         graph = load_market_fixture(input_path)
-        text, issues = build_product_market_markdown(graph)
+        text, issues, delivery_status = build_product_market_markdown(graph)
     elif actual_route == "customer_background_research":
         graph = resolved_for_route if resolved_for_route is not raw else raw
-        text, issues = build_background_markdown(graph)
+        text, issues, delivery_status = build_background_markdown(graph)
     elif actual_route == "bulk_customer_development":
         graph = resolved_for_route if resolved_for_route is not raw else raw
-        text, issues = build_bulk_markdown(graph)
+        text, issues, delivery_status = build_bulk_markdown(graph, requested_delivery_status=requested_delivery_status)
     else:
-        return None, [{"severity": "critical", "code": "markdown_delivery_unknown_route", "message": f"Unknown route: {route}", "path": "route"}], actual_route
+        return None, [{"severity": "critical", "code": "markdown_delivery_unknown_route", "message": f"Unknown route: {route}", "path": "route"}], actual_route, None
     if text is not None:
         text = append_final_footer(text)
-    return text, issues, actual_route
+    return text, issues, actual_route, delivery_status
 
 
 def _issue_payload(code: str, message: str, path: str = "markdown") -> dict[str, str]:
@@ -947,23 +977,37 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", type=Path, help="Research graph or ProductMarketAnalysisGraph JSON")
     parser.add_argument("--route", choices=("auto",) + ROUTES, default="auto")
+    parser.add_argument(
+        "--delivery-status",
+        choices=("initial_lead_list", "standard_development_list"),
+        help="Bulk delivery view to render; only an audit-approved downward override is accepted.",
+    )
     parser.add_argument("--output", type=Path, help="Markdown output path. If omitted with --format markdown, writes to stdout.")
     parser.add_argument("--format", choices=("json", "markdown"), default="json")
     parser.add_argument("--skip-user-visible-validation", action="store_true", help="Generate without running the Slice T user-visible validator")
     args = parser.parse_args()
 
-    text, issues, actual_route = build_markdown(args.input, args.route)
+    text, issues, actual_route, delivery_status = build_markdown(
+        args.input,
+        args.route,
+        requested_delivery_status=args.delivery_status,
+    )
     if text is None:
-        payload = {"ok": False, "route": actual_route, "stage": "build", "issue_count": len(issues), "issues": issues}
+        payload = {
+            "ok": False,
+            "route": actual_route,
+            "delivery_status": delivery_status,
+            "stage": "build",
+            "issue_count": len(issues),
+            "issues": issues,
+        }
         print(json.dumps(payload, ensure_ascii=False, indent=2))
         return 1
 
     validation_issues: list[dict[str, Any]] = []
     if not args.skip_user_visible_validation:
         min_tables = MIN_TABLES[actual_route]
-        delivery_status = None
-        if actual_route == "bulk_customer_development" and "本次输出为标准开发名单" in text:
-            delivery_status = "standard_development_list"
+        if actual_route == "bulk_customer_development" and delivery_status == "standard_development_list":
             min_tables = 6
         # A scoped market report intentionally has fewer module tables; its
         # fixed tables and requested module still need a real Markdown shape.
@@ -987,6 +1031,7 @@ def main() -> int:
     payload = {
         "ok": ok,
         "route": actual_route,
+        "delivery_status": delivery_status,
         "stage": "ready" if ok else "user_visible_validation",
         "output": str(args.output) if args.output and ok else None,
         "table_count": text.count("\n| ---") + text.count("\n|---"),

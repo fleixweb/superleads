@@ -333,8 +333,9 @@ class PublicEnrichmentTest(unittest.TestCase):
         trade_row = sheets["第三方贸易摘要"][0]
         self.assertEqual("名称与公开地址一致", trade_row["主体匹配状态"])
 
-        markdown, export_issues = build_bulk_markdown(graph)
+        markdown, export_issues, delivery_status = build_bulk_markdown(graph)
         self.assertEqual([], export_issues)
+        self.assertEqual("initial_lead_list", delivery_status)
         self.assertIsNotNone(markdown)
         for expected in (
             "社媒与公开职业线索",
@@ -710,8 +711,9 @@ class PublicEnrichmentTest(unittest.TestCase):
         }]
         issues = validate_graph(graph)
         self.assertEqual([], issues)
-        markdown, export_issues = build_bulk_markdown(graph)
+        markdown, export_issues, delivery_status = build_bulk_markdown(graph)
         self.assertEqual([], export_issues)
+        self.assertEqual("initial_lead_list", delivery_status)
         self.assertIn("疑似，主体待确认", markdown)
 
     def test_restricted_and_user_provided_enrichment_states_remain_explicit(self) -> None:
@@ -750,8 +752,9 @@ class PublicEnrichmentTest(unittest.TestCase):
 
         issues = validate_graph(graph)
         self.assertEqual([], issues)
-        markdown, export_issues = build_bulk_markdown(graph)
+        markdown, export_issues, delivery_status = build_bulk_markdown(graph)
         self.assertEqual([], export_issues)
+        self.assertEqual("initial_lead_list", delivery_status)
         for expected in (
             "来源受限：该公开页面需要登录、验证码、付费访问、人工验证或当前 AI 无法正常读取。",
             "来源受限：页面可以访问，但当前 AI 无法自动读取其中的动态内容。",

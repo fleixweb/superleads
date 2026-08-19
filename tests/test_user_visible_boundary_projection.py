@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import sys
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
@@ -14,7 +16,13 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from audit_delivery import audit_graph
 from background_report import build_background_report_sheets, validate_background_report
-from export_superleads_markdown import build_background_markdown, build_bulk_markdown, build_markdown
+import export_superleads_markdown as markdown_exporter
+from export_superleads_markdown import (
+    build_background_markdown,
+    build_bulk_markdown,
+    build_markdown,
+    build_product_market_markdown,
+)
 from export_workbook import build_sheets
 from superleads_execution_state import create_execution_state, record_candidate
 from superleads_user_guidance import append_final_footer
@@ -29,6 +37,7 @@ from validate_superleads_user_visible_output import (
 STANDARD_FIXTURE = ROOT / "evals" / "fixtures" / "pass_geography_searchlog_standard.json"
 BULK_FIXTURE = ROOT / "evals" / "fixtures" / "pass_default_discovery_candidate_pool.json"
 BACKGROUND_FIXTURE = ROOT / "evals" / "fixtures" / "pass_customer_background_chillys_markdown.json"
+MARKET_FIXTURE = ROOT / "evals" / "fixtures" / "market_pass_xingheng_minimum_boundary.json"
 
 FORBIDDEN_DECISION_WORDING = (
     "重点开发",
@@ -69,9 +78,10 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         self.assertEqual("standard_development_list", args.delivery_status)
 
     def test_standard_bulk_markdown_uses_the_standard_workbook_projection(self) -> None:
-        markdown, issues, route = build_markdown(STANDARD_FIXTURE, "bulk_customer_development")
+        markdown, issues, route, delivery_status = build_markdown(STANDARD_FIXTURE, "bulk_customer_development")
 
         self.assertEqual("bulk_customer_development", route)
+        self.assertEqual("standard_development_list", delivery_status)
         self.assertEqual([], issues)
         self.assertIsNotNone(markdown)
         assert markdown is not None
@@ -83,6 +93,132 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         self.assertIn("## 联系方式汇总", markdown)
         self.assertNotIn("本次输出是发现候选池", markdown)
         self.assertNotIn("发现候选池样表（候选池不是正式开发名单）", markdown)
+
+    def test_standard_bulk_graph_can_render_the_initial_candidate_pool_view(self) -> None:
+        markdown, issues, route, delivery_status = build_markdown(
+            STANDARD_FIXTURE,
+            "bulk_customer_development",
+            requested_delivery_status="initial_lead_list",
+        )
+
+        self.assertEqual("bulk_customer_development", route)
+        self.assertEqual("initial_lead_list", delivery_status)
+        self.assertEqual([], issues)
+        self.assertIsNotNone(markdown)
+        assert markdown is not None
+        self.assertIn("发现候选池样表（候选池不是正式开发名单）", markdown)
+        self.assertIn("## 搜索覆盖与收敛", markdown)
+        self.assertNotIn("## 客户信息总表", markdown)
+        self.assertNotIn("本次输出为标准开发名单", markdown)
+        for wording in FORBIDDEN_DECISION_WORDING:
+            self.assertNotIn(wording, markdown)
+
+    def test_initial_bulk_graph_rejects_standard_delivery_override(self) -> None:
+        markdown, issues, route, delivery_status = build_markdown(
+            BULK_FIXTURE,
+            "bulk_customer_development",
+            requested_delivery_status="standard_development_list",
+        )
+
+        self.assertEqual("bulk_customer_development", route)
+        self.assertIsNone(markdown)
+        self.assertIsNone(delivery_status)
+        self.assertIn("markdown_delivery_status_not_allowed", {item["code"] for item in issues})
+
+    def test_non_bulk_builders_return_no_bulk_delivery_status(self) -> None:
+        background_markdown, background_issues, background_status = build_background_markdown(_load(BACKGROUND_FIXTURE))
+        market_markdown, market_issues, market_status = build_product_market_markdown(_load(MARKET_FIXTURE))
+
+        self.assertIsNotNone(background_markdown)
+        self.assertEqual([], background_issues)
+        self.assertIsNone(background_status)
+        self.assertIsNotNone(market_markdown)
+        self.assertEqual([], market_issues)
+        self.assertIsNone(market_status)
+
+    def test_exporter_passes_audited_status_without_sniffing_standard_template_text(self) -> None:
+        original_builder = markdown_exporter._build_standard_bulk_markdown
+
+        def render_without_status_sentence(graph, audit):
+            text, issues = original_builder(graph, audit)
+            return text.replace("本次输出为标准开发名单", "本次交付采用已核验名单口径"), issues
+
+        stdout = StringIO()
+        with (
+            patch.object(markdown_exporter, "_build_standard_bulk_markdown", side_effect=render_without_status_sentence),
+            patch.object(markdown_exporter, "validate_user_visible_markdown", return_value=[]) as validator,
+            patch.object(
+                sys,
+                "argv",
+                [
+                    "export_superleads_markdown.py",
+                    str(STANDARD_FIXTURE),
+                    "--route",
+                    "bulk_customer_development",
+                    "--format",
+                    "json",
+                ],
+            ),
+            redirect_stdout(stdout),
+        ):
+            return_code = markdown_exporter.main()
+
+        self.assertEqual(0, return_code)
+        self.assertEqual("standard_development_list", validator.call_args.kwargs["delivery_status"])
+        self.assertEqual(6, validator.call_args.kwargs["min_tables"])
+
+    def test_exporter_cli_accepts_downward_delivery_status_override(self) -> None:
+        stdout = StringIO()
+        with (
+            patch.object(
+                sys,
+                "argv",
+                [
+                    "export_superleads_markdown.py",
+                    str(STANDARD_FIXTURE),
+                    "--route",
+                    "bulk_customer_development",
+                    "--delivery-status",
+                    "initial_lead_list",
+                    "--format",
+                    "json",
+                ],
+            ),
+            redirect_stdout(stdout),
+        ):
+            return_code = markdown_exporter.main()
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(0, return_code)
+        self.assertTrue(payload["ok"])
+        self.assertEqual("initial_lead_list", payload["delivery_status"])
+        self.assertGreaterEqual(payload["table_count"], 10)
+
+    def test_exporter_cli_rejects_upward_delivery_status_override(self) -> None:
+        stdout = StringIO()
+        with (
+            patch.object(
+                sys,
+                "argv",
+                [
+                    "export_superleads_markdown.py",
+                    str(BULK_FIXTURE),
+                    "--route",
+                    "bulk_customer_development",
+                    "--delivery-status",
+                    "standard_development_list",
+                    "--format",
+                    "json",
+                ],
+            ),
+            redirect_stdout(stdout),
+        ):
+            return_code = markdown_exporter.main()
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(1, return_code)
+        self.assertFalse(payload["ok"])
+        self.assertIn("markdown_delivery_status_not_allowed", {item["code"] for item in payload["issues"]})
 
     def test_standard_workbook_csv_projection_uses_evidence_labels_and_mechanical_filter_disclosure(self) -> None:
         graph = _load(STANDARD_FIXTURE)
@@ -101,9 +237,10 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
             self.assertNotIn(wording, rendered)
 
     def test_bulk_markdown_uses_evidence_partition_not_follow_up_priority(self) -> None:
-        markdown, issues = build_bulk_markdown(_load(BULK_FIXTURE))
+        markdown, issues, delivery_status = build_bulk_markdown(_load(BULK_FIXTURE))
 
         self.assertEqual([], issues)
+        self.assertEqual("initial_lead_list", delivery_status)
         self.assertIsNotNone(markdown)
         assert markdown is not None
         self.assertIn("公开信号已匹配当前范围", markdown)
@@ -112,9 +249,10 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
             self.assertNotIn(wording, markdown)
 
     def test_bulk_markdown_does_not_expose_internal_query_group_ids(self) -> None:
-        markdown, issues = build_bulk_markdown(_load(BULK_FIXTURE))
+        markdown, issues, delivery_status = build_bulk_markdown(_load(BULK_FIXTURE))
 
         self.assertEqual([], issues)
+        self.assertEqual("initial_lead_list", delivery_status)
         self.assertIsNotNone(markdown)
         assert markdown is not None
         self.assertNotIn("region_q_distributor", markdown)
@@ -143,9 +281,10 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
             self.assertTrue(record_candidate(execution_state, query_group_id="importer-combination-internal-only", candidate_id=f"candidate-{index}")["recorded"])
         graph["runs"][-1]["execution_state"] = execution_state
 
-        markdown, issues = build_bulk_markdown(graph)
+        markdown, issues, delivery_status = build_bulk_markdown(graph)
 
         self.assertEqual([], issues)
+        self.assertEqual("initial_lead_list", delivery_status)
         self.assertIsNotNone(markdown)
         assert markdown is not None
         self.assertIn("## 本轮搜索组合", markdown)
@@ -176,8 +315,9 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         self.assertNotIn("可准备首轮沟通", overview)
         self.assertNotIn("可以从已核实的公开入口开始", overview)
 
-        markdown, markdown_issues = build_background_markdown(graph)
+        markdown, markdown_issues, delivery_status = build_background_markdown(graph)
         self.assertEqual([], markdown_issues)
+        self.assertIsNone(delivery_status)
         self.assertIsNotNone(markdown)
         assert markdown is not None
         self.assertIn("是否具备继续核验基础", markdown)
@@ -207,8 +347,9 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         ):
             self.assertNotIn(wording, rendered)
 
-        markdown, markdown_issues = build_background_markdown(graph)
+        markdown, markdown_issues, delivery_status = build_background_markdown(graph)
         self.assertEqual([], markdown_issues)
+        self.assertIsNone(delivery_status)
         assert markdown is not None
         for wording in (
             "公开业务信号与可沟通角度",
@@ -223,8 +364,9 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
             self.assertNotIn(wording, markdown)
 
     def test_visible_validator_blocks_positive_commercial_language_but_allows_a_negated_boundary(self) -> None:
-        markdown, issues = build_bulk_markdown(_load(BULK_FIXTURE))
+        markdown, issues, delivery_status = build_bulk_markdown(_load(BULK_FIXTURE))
         self.assertEqual([], issues)
+        self.assertEqual("initial_lead_list", delivery_status)
         assert markdown is not None
 
         positive_issues = validate(
