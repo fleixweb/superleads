@@ -101,6 +101,9 @@ def _validate_generated_markdown(py: str, markdown: Path, route: str, case: dict
         "--format",
         "json",
     ]
+    delivery_status = case.get("delivery_status")
+    if isinstance(delivery_status, str):
+        cmd.extend(["--delivery-status", delivery_status])
     for phrase in case.get("must_contain", []) if isinstance(case.get("must_contain"), list) else []:
         cmd.extend(["--must-contain", str(phrase)])
     result = run(cmd, 0)

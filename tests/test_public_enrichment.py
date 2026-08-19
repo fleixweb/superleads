@@ -21,6 +21,7 @@ from validate_research_graph import validate_graph
 
 FIXTURE = ROOT / "evals" / "fixtures" / "pass_default_discovery_candidate_pool.json"
 REFERENCE_FIXTURE = ROOT / "shared" / "references" / "default-discovery-reference.example.json"
+STANDARD_FIXTURE = ROOT / "evals" / "fixtures" / "pass_geography_searchlog_standard.json"
 
 
 def _signal(status: str, collection_status: str, *, items: list[dict[str, object]] | None = None, notes: list[str] | None = None) -> dict[str, object]:
@@ -302,6 +303,15 @@ def add_opened_trade_summary(graph: dict[str, object]) -> dict[str, object]:
 
 
 class PublicEnrichmentTest(unittest.TestCase):
+    def test_formal_markdown_smoke_accepts_standard_workbook_projection(self) -> None:
+        issues, payload, markdown = check_generated_markdown(STANDARD_FIXTURE)
+
+        self.assertTrue(payload["ok"])
+        self.assertEqual([], issues)
+        self.assertIn("## 客户信息总表", markdown)
+        self.assertIn("Example Buyer", markdown)
+        self.assertNotIn("发现候选池样表（候选池不是正式开发名单）", markdown)
+
     def test_default_discovery_projects_social_map_and_trade_sections(self) -> None:
         graph = enriched_graph()
         graph["candidates"][0]["brand_name"] = "Alpha Brand"

@@ -79,9 +79,13 @@ workbook/CSV rows, rename internal status columns, or fabricate a report when
 the exporter fails. Formal delivery requires a saved graph JSON path and a
 successful exporter JSON result. With only search notes, source snippets, or a
 handwritten table, use the label `research draft` instead of formal delivery. A
-bulk report starts with `# 批量客户开发` and includes
+bulk report starts with `# 批量客户开发`; its audited delivery status selects the
+table projection. `initial_lead_list` includes
 `发现候选池样表（候选池不是正式开发名单）` plus `分区`, `业务相关性`, and
-`依据状态` columns.
+`依据状态`; `standard_development_list` includes the standard workbook's
+`客户信息总表`, `联系方式汇总`, `公开信息与待核查事项`, `官网与来源链接`,
+`待核查事项`, and `风险与说明`. Never use the initial candidate-pool mapping for
+a standard list.
 
 The claimed Markdown path must be the exact file produced by the exporter for
 the claimed graph. For verification, rerun the exporter from that graph and

@@ -87,10 +87,14 @@
       "fixture": "evals/fixtures/pass_hold_inferred_filtered_export.json",
       "route": "bulk_customer_development",
       "expected": "pass",
-      "min_tables": 10,
+      "delivery_status": "standard_development_list",
+      "min_tables": 6,
       "must_contain": [
+        "本次输出为标准开发名单",
+        "客户信息总表",
         "联系方式汇总",
-        "待确认归属"
+        "公开信息与待核查事项",
+        "待核查事项"
       ],
       "must_not_contain": [
         "sales@example.com",

@@ -72,6 +72,18 @@ ROUTE_REQUIRED: dict[str, list[str]] = {
     ],
 }
 
+BULK_STANDARD_REQUIRED = [
+    "本次输出为标准开发名单",
+    "标准开发名单说明",
+    "客户信息总表",
+    "联系方式汇总",
+    "公开信息与待核查事项",
+    "官网与来源链接",
+    "待核查事项",
+    "风险与说明",
+    "公开信号已匹配当前范围",
+]
+
 ROUTE_FORBIDDEN: dict[str, list[str]] = {
     "bulk_customer_development": [
         "产品出海市场分析",
@@ -638,11 +650,20 @@ def _basis_status_internal_leak_issues(text: str) -> list[dict[str, str]]:
     return issues
 
 
-def validate(text: str, route: str, *, min_tables: int = 3, extra_required: list[str] | None = None) -> list[dict[str, str]]:
+def validate(
+    text: str,
+    route: str,
+    *,
+    min_tables: int = 3,
+    extra_required: list[str] | None = None,
+    delivery_status: str | None = None,
+) -> list[dict[str, str]]:
     issues: list[dict[str, str]] = []
     required = ROUTE_REQUIRED.get(route)
     if required is None:
         return [_issue("user_visible_unknown_route", f"unknown route: {route}", route)]
+    if route == "bulk_customer_development" and delivery_status == "standard_development_list":
+        required = BULK_STANDARD_REQUIRED
     if route == "product_outbound_market_analysis" and "本轮范围：" in text:
         # A scoped report names both the selected scope and the modules not
         # executed this round. It still renders only fixed tables plus the
@@ -688,7 +709,10 @@ def validate(text: str, route: str, *, min_tables: int = 3, extra_required: list
     issues.extend(_coverage_overclaim_issues(text))
 
     if route in {"product_outbound_market_analysis", "bulk_customer_development"}:
-        if not any(status in text for status in PRODUCT_USER_VISIBLE_STATUSES):
+        visible_statuses = PRODUCT_USER_VISIBLE_STATUSES
+        if route == "bulk_customer_development" and delivery_status == "standard_development_list":
+            visible_statuses = PRODUCT_USER_VISIBLE_STATUSES + ["公开信号已匹配当前范围"]
+        if not any(status in text for status in visible_statuses):
             message = "output must expose at least one Slice AE user-visible status"
             issues.append(_issue("user_visible_status_missing", message))
     issues.extend(_basis_status_internal_leak_issues(text))
@@ -714,6 +738,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--route", required=True, choices=sorted(ROUTE_REQUIRED))
     parser.add_argument("--min-tables", type=int, default=3)
     parser.add_argument("--must-contain", action="append", default=[])
+    parser.add_argument(
+        "--delivery-status",
+        choices=["initial_lead_list", "standard_development_list"],
+        default=None,
+    )
     parser.add_argument("--format", choices=["json", "text"], default="json")
     return parser.parse_args()
 
@@ -721,7 +750,13 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     text = args.markdown.read_text(encoding="utf-8")
-    issues = validate(text, args.route, min_tables=args.min_tables, extra_required=list(args.must_contain))
+    issues = validate(
+        text,
+        args.route,
+        min_tables=args.min_tables,
+        extra_required=list(args.must_contain),
+        delivery_status=args.delivery_status,
+    )
     payload: dict[str, Any] = {
         "ok": not issues,
         "issue_count": len(issues),

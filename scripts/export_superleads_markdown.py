@@ -397,11 +397,61 @@ def _search_combination_rows(execution_state: dict[str, Any]) -> tuple[list[dict
     return rows, hints, next_step_options
 
 
+def _sheet_headers(rows: list[dict[str, Any]]) -> list[str]:
+    headers: list[str] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        for key in row:
+            if isinstance(key, str) and key not in headers:
+                headers.append(key)
+    return headers or ["说明"]
+
+
+def _build_standard_bulk_markdown(graph: dict[str, Any], audit: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
+    sheets = build_lead_sheets(graph, audit, "standard")
+    sheets = redact_local_paths(redact_delivery_sheets(sheets, hold_contact_values(graph)))
+    brief = _current_brief(graph)
+    product = _safe_text(brief.get("product_or_service"))
+    target_country = _safe_text(brief.get("target_country_or_region"))
+    target_customer = _safe_text(brief.get("target_customer_type"))
+    intro_rows = [
+        {"项目": "交付口径", "本轮写法": "标准开发名单"},
+        {"项目": "我理解你卖的是", "本轮写法": product},
+        {"项目": "本次优先找", "本轮写法": "；".join(item for item in (target_country, target_customer) if item != "未提供") or "目标国家/客户类型待确认"},
+        {"项目": "交付边界", "本轮写法": "按用户事先明确的条件和已核验公开信息整理，不代表客户价值、采购意愿或后续动作判断。"},
+    ]
+
+    lines = [
+        "# 批量客户开发",
+        "",
+        "本次输出为标准开发名单；仅机械投影当前范围内已核验的公开信息，不代表客户价值、采购意愿或后续动作判断。",
+        "",
+    ]
+    _append_table(lines, "标准开发名单说明", ["项目", "本轮写法"], intro_rows)
+    for title in ("客户信息总表", "联系方式汇总", "公开信息与待核查事项", "官网与来源链接", "待核查事项", "风险与说明"):
+        rows = [row for row in sheets.get(title, []) if isinstance(row, dict)]
+        _append_table(lines, title, _sheet_headers(rows), rows)
+    return "\n".join(lines).rstrip() + "\n", []
+
+
 def build_bulk_markdown(graph: dict[str, Any]) -> tuple[str | None, list[dict[str, Any]]]:
-    audit = audit_lead_graph(graph, requested_delivery_status="initial_lead_list")
+    audit = audit_lead_graph(graph)
     if not audit.get("ok"):
         return None, list(audit.get("issues", []))
+    if audit.get("delivery_status") == "standard_development_list":
+        return _build_standard_bulk_markdown(graph, audit)
+    if audit.get("delivery_status") != "initial_lead_list":
+        return None, [{
+            "severity": "critical",
+            "code": "markdown_delivery_status_unsupported",
+            "message": f"Unsupported bulk delivery status: {audit.get('delivery_status')}",
+            "path": "delivery_status",
+        }]
+    return _build_initial_bulk_markdown(graph, audit)
 
+
+def _build_initial_bulk_markdown(graph: dict[str, Any], audit: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
     sheets = build_lead_sheets(graph, audit, "initial")
     sheets = redact_local_paths(redact_delivery_sheets(sheets, hold_contact_values(graph)))
     brief = _current_brief(graph)
@@ -911,11 +961,20 @@ def main() -> int:
     validation_issues: list[dict[str, Any]] = []
     if not args.skip_user_visible_validation:
         min_tables = MIN_TABLES[actual_route]
+        delivery_status = None
+        if actual_route == "bulk_customer_development" and "本次输出为标准开发名单" in text:
+            delivery_status = "standard_development_list"
+            min_tables = 6
         # A scoped market report intentionally has fewer module tables; its
         # fixed tables and requested module still need a real Markdown shape.
         if actual_route == "product_outbound_market_analysis" and "本轮范围：" in text:
             min_tables = 4
-        validation_issues = validate_user_visible_markdown(text, actual_route, min_tables=min_tables)
+        validation_issues = validate_user_visible_markdown(
+            text,
+            actual_route,
+            min_tables=min_tables,
+            delivery_status=delivery_status,
+        )
     all_issues = list(issues) + [
         _issue_payload(str(item.get("code", "markdown_delivery_validation_failed")), str(item.get("message", item)))
         for item in validation_issues

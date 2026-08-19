@@ -21,6 +21,9 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from audit_delivery import audit_graph as audit_lead_graph
+from export_workbook import build_sheets as build_lead_sheets
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_FIXTURE = ROOT / "shared" / "references" / "default-discovery-reference.example.json"
@@ -221,55 +224,82 @@ def _candidate_pool_row_containing_all(rows: list[str], name: str, expected_part
 
 def check_generated_markdown(fixture: Path) -> tuple[list[dict[str, str]], dict[str, Any], str]:
     issues: list[dict[str, str]] = []
+    graph = json.loads(fixture.read_text(encoding="utf-8"))
+    audit = audit_lead_graph(graph) if isinstance(graph, dict) else {}
+    delivery_status = audit.get("delivery_status")
     with tempfile.TemporaryDirectory() as tmp:
         output = Path(tmp) / "formal-superleads-bulk.md"
         payload, text = _run_export(fixture, output, route="bulk_customer_development")
     if payload.get("returncode") != 0 or not payload.get("ok"):
         issues.append(_issue("formal_markdown_export_failed", "export_superleads_markdown.py did not produce a valid report"))
         return issues, payload, text
-    required_text = [
-        "# 批量客户开发",
-        "发现候选池样表（候选池不是正式开发名单）",
-        "| 分区 | 候选客户 |",
-        "业务相关性",
-        "依据状态",
-        "联系方式汇总",
-        "搜索覆盖与收敛",
-        "已排除 / 仅作参考",
-    ]
+    required_text = ["# 批量客户开发"]
+    if delivery_status == "standard_development_list":
+        required_text.extend([
+            "本次输出为标准开发名单",
+            "## 客户信息总表",
+            "| 公司名称 | 官网 | 国家/地区 | 客户类型 | 公开信息状态 |",
+            "## 联系方式汇总",
+            "## 公开信息与待核查事项",
+            "## 官网与来源链接",
+            "## 待核查事项",
+            "## 风险与说明",
+        ])
+    else:
+        required_text.extend([
+            "发现候选池样表（候选池不是正式开发名单）",
+            "| 分区 | 候选客户 |",
+            "业务相关性",
+            "依据状态",
+            "联系方式汇总",
+            "搜索覆盖与收敛",
+            "已排除 / 仅作参考",
+        ])
     for needle in required_text:
         if needle not in text:
             issues.append(_issue("formal_markdown_required_text_missing", f"generated Markdown missing: {needle}"))
-    forbidden_headers = [
-        "| 公司名称 | 国家/地区 | 官网/域名 |",
-        "# Superleads 批量客户开发 Markdown 交付",
-    ]
+    forbidden_headers = ["# Superleads 批量客户开发 Markdown 交付"]
+    if delivery_status == "standard_development_list":
+        forbidden_headers.append("发现候选池样表（候选池不是正式开发名单）")
+    else:
+        forbidden_headers.append("| 公司名称 | 国家/地区 | 官网/域名 |")
     for needle in forbidden_headers:
         if needle in text:
             issues.append(_issue("formal_markdown_raw_workbook_render_detected", f"generated Markdown looks like raw workbook sheet render: {needle}"))
 
-    row_expectations = {
-        "HydraTrade Supplies": ("发现候选池样表（候选池不是正式开发名单）", ("公开信号已匹配当前范围", "直接相关", "已有明确依据")),
-        "Northshore Drinkware Distributors": ("发现候选池样表（候选池不是正式开发名单）", ("待确认", "可能相关", "来源受限")),
-        "Peak Bottle Co": ("发现候选池样表（候选池不是正式开发名单）", ("待确认", "信息不足", "来源受限")),
-        "Summit Trading": ("发现候选池样表（候选池不是正式开发名单）", ("待确认", "主体待确认", "说法冲突待复核")),
-        "Ironforge Manufacturing": ("已排除 / 仅作参考", ("已排除 / 仅作参考", "已排除 / 仅作参考", "已有明确依据")),
-    }
-    candidate_rows = _candidate_pool_rows(text)
-    for name, (heading, expected_parts) in row_expectations.items():
-        rows = _markdown_table_rows(text, heading)
-        line = _candidate_pool_row_containing_all(rows, name, expected_parts)
-        if not line:
-            candidates = [candidate for candidate in rows if name in candidate]
-            if not candidates:
-                issues.append(_issue("formal_markdown_expected_row_missing", f"missing row for {name}"))
-            else:
-                for part in expected_parts:
-                    if not any(part in candidate for candidate in candidates):
-                        issues.append(_issue("formal_markdown_expected_row_status_missing", f"{name} row missing expected text: {part}", name))
-    northshore = next((line for line in candidate_rows if "Northshore Drinkware Distributors" in line), "")
-    if "已观察" in northshore:
-        issues.append(_issue("formal_markdown_signal_status_used_as_basis", "Northshore row must not use 已观察 as 依据状态", "Northshore Drinkware Distributors"))
+    if delivery_status == "standard_development_list":
+        standard_rows = _markdown_table_rows(text, "客户信息总表")
+        expected_rows = build_lead_sheets(graph, audit, "standard").get("客户信息总表", [])
+        for expected in expected_rows:
+            if not isinstance(expected, dict):
+                continue
+            name = str(expected.get("公司名称") or "")
+            status = str(expected.get("公开信息状态") or "")
+            if name and not any(name in row and (not status or status in row) for row in standard_rows):
+                issues.append(_issue("formal_markdown_standard_row_missing", "standard Markdown must render the verified customer-information row", name))
+    else:
+        row_expectations = {
+            "HydraTrade Supplies": ("发现候选池样表（候选池不是正式开发名单）", ("公开信号已匹配当前范围", "直接相关", "已有明确依据")),
+            "Northshore Drinkware Distributors": ("发现候选池样表（候选池不是正式开发名单）", ("待确认", "可能相关", "来源受限")),
+            "Peak Bottle Co": ("发现候选池样表（候选池不是正式开发名单）", ("待确认", "信息不足", "来源受限")),
+            "Summit Trading": ("发现候选池样表（候选池不是正式开发名单）", ("待确认", "主体待确认", "说法冲突待复核")),
+            "Ironforge Manufacturing": ("已排除 / 仅作参考", ("已排除 / 仅作参考", "已排除 / 仅作参考", "已有明确依据")),
+        }
+        candidate_rows = _candidate_pool_rows(text)
+        for name, (heading, expected_parts) in row_expectations.items():
+            rows = _markdown_table_rows(text, heading)
+            line = _candidate_pool_row_containing_all(rows, name, expected_parts)
+            if not line:
+                candidates = [candidate for candidate in rows if name in candidate]
+                if not candidates:
+                    issues.append(_issue("formal_markdown_expected_row_missing", f"missing row for {name}"))
+                else:
+                    for part in expected_parts:
+                        if not any(part in candidate for candidate in candidates):
+                            issues.append(_issue("formal_markdown_expected_row_status_missing", f"{name} row missing expected text: {part}", name))
+        northshore = next((line for line in candidate_rows if "Northshore Drinkware Distributors" in line), "")
+        if "已观察" in northshore:
+            issues.append(_issue("formal_markdown_signal_status_used_as_basis", "Northshore row must not use 已观察 as 依据状态", "Northshore Drinkware Distributors"))
     return issues, payload, text
 
 

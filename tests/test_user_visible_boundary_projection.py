@@ -6,6 +6,7 @@ import json
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,13 +14,14 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from audit_delivery import audit_graph
 from background_report import build_background_report_sheets, validate_background_report
-from export_superleads_markdown import build_background_markdown, build_bulk_markdown
+from export_superleads_markdown import build_background_markdown, build_bulk_markdown, build_markdown
 from export_workbook import build_sheets
 from superleads_execution_state import create_execution_state, record_candidate
 from superleads_user_guidance import append_final_footer
 from validate_superleads_user_visible_output import (
     GENERIC_INTERNAL_LANGUAGE,
     INTERNAL_RUNTIME_PATTERNS,
+    parse_args,
     validate,
 )
 
@@ -49,6 +51,39 @@ def _load(path: Path) -> dict[str, object]:
 
 
 class UserVisibleBoundaryProjectionTest(unittest.TestCase):
+    def test_visible_validator_cli_accepts_standard_bulk_delivery_status(self) -> None:
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "validate_superleads_user_visible_output.py",
+                "report.md",
+                "--route",
+                "bulk_customer_development",
+                "--delivery-status",
+                "standard_development_list",
+            ],
+        ):
+            args = parse_args()
+
+        self.assertEqual("standard_development_list", args.delivery_status)
+
+    def test_standard_bulk_markdown_uses_the_standard_workbook_projection(self) -> None:
+        markdown, issues, route = build_markdown(STANDARD_FIXTURE, "bulk_customer_development")
+
+        self.assertEqual("bulk_customer_development", route)
+        self.assertEqual([], issues)
+        self.assertIsNotNone(markdown)
+        assert markdown is not None
+        self.assertIn("本次输出为标准开发名单", markdown)
+        self.assertIn("## 客户信息总表", markdown)
+        self.assertIn("| 公司名称 | 官网 | 国家/地区 | 客户类型 | 公开信息状态 |", markdown)
+        self.assertIn("| Example Buyer | https://example.com | Exampleland |", markdown)
+        self.assertIn("## 公开信息与待核查事项", markdown)
+        self.assertIn("## 联系方式汇总", markdown)
+        self.assertNotIn("本次输出是发现候选池", markdown)
+        self.assertNotIn("发现候选池样表（候选池不是正式开发名单）", markdown)
+
     def test_standard_workbook_csv_projection_uses_evidence_labels_and_mechanical_filter_disclosure(self) -> None:
         graph = _load(STANDARD_FIXTURE)
         audit = audit_graph(graph, requested_delivery_status="standard_development_list")
