@@ -1,6 +1,0 @@
-{
-  "platform": "codex_cli ",
-  "capabilities": {
-    "source.open": "available"
-  }
-}
