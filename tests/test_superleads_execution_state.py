@@ -347,6 +347,14 @@ class SuperleadsExecutionStateTest(unittest.TestCase):
             [item["key"] for item in summary["next_step_options"]],
         )
         self.assertEqual("继续扩展（可指定 30 / 50 / 100 家，或直接说数量）", summary["next_step_options"][0]["text"])
+        self.assertEqual(
+            "对上述名单做深度核验 → 标准开发名单（较慢；产量降、耗时增；可分批产出）",
+            summary["next_step_options"][2]["text"],
+        )
+        self.assertEqual(
+            "补社媒 / 地图 / 贸易记录信号（较快；仍属候选池，不升级为已验证）",
+            summary["next_step_options"][3]["text"],
+        )
 
     def test_expansion_choice_hides_the_one_time_expansion_option_for_the_run(self) -> None:
         state = create_execution_state(

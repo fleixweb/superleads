@@ -72,8 +72,8 @@ not a request to select a number or an instruction to wait for a reply:
 下一步可选：
 · 继续扩展（可指定 30 / 50 / 100 家，或直接说数量）
 · 换搜索组合再找一批（换产品词 / 换客户类型，国家不变）
-· 对上述名单做深度核验 → 标准开发名单（产量降、耗时增；可分批产出）
-· 补社媒 / 地图 / 贸易记录信号（仍属候选池，不升级为已验证）
+· 对上述名单做深度核验 → 标准开发名单（较慢；产量降、耗时增；可分批产出）
+· 补社媒 / 地图 / 贸易记录信号（较快；仍属候选池，不升级为已验证）
 · 选 1 家做单一客户背调
 ```
 
@@ -86,6 +86,12 @@ pick five to ten subjects would force unsupported intuitive ranking. State the
 lower output and higher time cost, allow batched delivery, and retain unverified
 or source-restricted rows as such. Reuse only the existing formal-route terms
 `深度核验`, `标准开发名单`, and `联系人归属核验`; do not add trigger words.
+
+`补社媒 / 地图 / 贸易记录信号` is an explicit L1 supplement only: it updates
+bounded public-signal collection states and does not perform entity or contact
+association verification. `深度核验` includes those signal categories as part of
+the full-list L2 path. Follow `default-discovery-reference.md` for the L1
+collection-status, URL-deduplication, and no-upgrade constraints.
 
 `expansion_scale_chosen` accepts a user-specified positive integer from 1 to
 500. The ceiling bounds one Run's finite execution state; it is not a market

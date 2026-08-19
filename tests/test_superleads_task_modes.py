@@ -217,6 +217,8 @@ class SuperleadsTaskModesTest(unittest.TestCase):
         self.assertIn("50", "\n".join(response["response_lines"]))
         self.assertIn("100", "\n".join(response["response_lines"]))
         self.assertIn("直接说数量", "\n".join(response["response_lines"]))
+        self.assertIn("补社媒 / 地图 / 贸易记录信号（较快", "\n".join(response["response_lines"]))
+        self.assertIn("深度核验 → 标准开发名单（较慢", "\n".join(response["response_lines"]))
 
     def test_part_number_country_and_customer_type_is_an_unambiguous_bulk_request(self) -> None:
         response = classify("13185402+爱尔兰经销商")

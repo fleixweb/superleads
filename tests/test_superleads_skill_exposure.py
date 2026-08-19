@@ -244,6 +244,23 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
         self.assertNotIn("stop the fast candidate-pool path", execution)
         self.assertNotIn("停止快速候选池", batch)
 
+    def test_explicit_l1_signal_supplement_stays_below_identity_and_formal_review(self) -> None:
+        discovery = (ROOT / "shared" / "references" / "default-discovery-reference.md").read_text(encoding="utf-8")
+        batch = (ROOT / "shared" / "references" / "batch-discovery-execution.md").read_text(encoding="utf-8")
+
+        for marker in (
+            "仅在用户明确要求时触发",
+            "canonical/final URL",
+            "collection_status",
+            "不生成 Entity / Claim / ClaimEvidence / ScopeDecision / Assessment",
+            "不做联系人归属核验",
+            "不升级业务相关性状态",
+            "不得写成已观察事实",
+        ):
+            self.assertIn(marker, discovery)
+        self.assertIn("补社媒 / 地图 / 贸易记录信号（较快；仍属候选池，不升级为已验证）", batch)
+        self.assertIn("对上述名单做深度核验 → 标准开发名单（较慢；产量降、耗时增；可分批产出）", batch)
+
     def test_adapter_local_404_has_an_executable_current_session_recovery_path(self) -> None:
         policy = (ROOT / "shared" / "policies" / "tool-capability-policy.md").read_text(encoding="utf-8")
 
