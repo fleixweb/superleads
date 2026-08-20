@@ -94,6 +94,74 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         self.assertNotIn("本次输出是发现候选池", markdown)
         self.assertNotIn("发现候选池样表（候选池不是正式开发名单）", markdown)
 
+        rendered = append_final_footer(markdown)
+        self.assertIn("## 下一步可选\n\n- 当前环境可继续在对话内输出表格", rendered)
+        self.assertIn("- 补充待确认项的公开核验或补公开信号", rendered)
+        self.assertIn("- 换搜索组合再找一批（换产品词 / 换客户类型，国家不变）", rendered)
+        self.assertIn("- 选 1 家做单一客户背调", rendered)
+        self.assertLess(rendered.index("## 下一步可选"), rendered.index("## Superleads 支持"))
+
+    def test_standard_bulk_markdown_shows_file_export_only_when_the_host_recorded_it(self) -> None:
+        graph = _load(STANDARD_FIXTURE)
+        audit = audit_graph(graph, requested_delivery_status="standard_development_list")
+        self.assertTrue(audit["ok"])
+        execution_state = create_execution_state(
+            "run-standard-file-menu",
+            query_groups=[],
+            budget={},
+            task_mode="formal_research",
+            route="bulk_customer_development",
+        )
+        execution_state["capabilities"] = {"file.write": "available"}
+        graph["runs"][-1]["execution_state"] = execution_state
+
+        markdown, issues = markdown_exporter._build_standard_bulk_markdown(graph, audit)
+
+        self.assertEqual([], issues)
+        self.assertIn("- 导出表格文件（当前环境支持文件导出）", markdown)
+        self.assertNotIn("当前环境可继续在对话内输出表格", markdown)
+
+    def test_visible_validator_rejects_unavailable_part_or_import_role_as_l2_disqualification(self) -> None:
+        markdown, issues, delivery_status = build_bulk_markdown(_load(STANDARD_FIXTURE))
+
+        self.assertEqual([], issues)
+        self.assertEqual("standard_development_list", delivery_status)
+        assert markdown is not None
+        issues = validate(
+            append_final_footer(
+                markdown + "\n因官网未出现精确料号且无公开进口身份，Example Importer 不合格，不进入名单。\n"
+            ),
+            "bulk_customer_development",
+            min_tables=6,
+            delivery_status=delivery_status,
+        )
+
+        self.assertIn(
+            "bulk_l2_unavailable_requirement_as_disqualification",
+            {issue["code"] for issue in issues},
+        )
+
+    def test_visible_validator_allows_pending_part_or_import_role_explanation(self) -> None:
+        markdown, issues, delivery_status = build_bulk_markdown(_load(STANDARD_FIXTURE))
+
+        self.assertEqual([], issues)
+        self.assertEqual("standard_development_list", delivery_status)
+        assert markdown is not None
+        issues = validate(
+            append_final_footer(
+                markdown
+                + "\n官网未列精确料号、未公开进口身份属于询盘核实项，不代表候选不合格，不得因此排除或不纳入名单。\n"
+            ),
+            "bulk_customer_development",
+            min_tables=6,
+            delivery_status=delivery_status,
+        )
+
+        self.assertNotIn(
+            "bulk_l2_unavailable_requirement_as_disqualification",
+            {issue["code"] for issue in issues},
+        )
+
     def test_standard_list_claim_requires_canonical_structure_without_caller_status(self) -> None:
         text = "\n".join(
             (
@@ -339,6 +407,9 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         self.assertIn("继续扩展（可指定 30 / 50 / 100 家，或直接说数量）", markdown)
         self.assertIn("对上述名单做深度核验 → 标准开发名单（较慢；产量降、耗时增", markdown)
         self.assertIn("补社媒 / 地图 / 贸易记录信号（较快；仍属候选池，不升级为已验证）", markdown)
+        self.assertIn("\n- 已观察到的本地术语 + Region Q + 维修厂", markdown)
+        self.assertIn("\n- 继续扩展（可指定 30 / 50 / 100 家，或直接说数量）", markdown)
+        self.assertNotIn("\n· ", markdown)
         self.assertNotIn("importer-combination-internal-only", markdown)
         self.assertNotIn("run-menu-internal-only", markdown)
         self.assertLess(markdown.index("## 本轮搜索组合"), markdown.index("## 下一步可选"))

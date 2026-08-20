@@ -504,6 +504,46 @@ def restore_checkpoint(checkpoint: dict[str, Any]) -> dict[str, Any]:
     return restored
 
 
+def build_next_step_options(
+    *,
+    task_mode: Any,
+    candidate_count: int,
+    expansion_scale_chosen: Any,
+    capabilities: Any,
+) -> list[dict[str, str]]:
+    """Project the one shared non-blocking next-step menu from Run state."""
+    if task_mode == "discovery_snapshot" and candidate_count >= 10:
+        options: list[dict[str, str]] = []
+        if expansion_scale_chosen is None:
+            options.append({"key": "expand_candidate_pool", "text": "继续扩展（可指定 30 / 50 / 100 家，或直接说数量）"})
+        options.extend([
+            {"key": "change_search_combination", "text": "换搜索组合再找一批（换产品词 / 换客户类型，国家不变）"},
+            {"key": "deep_verify_full_list", "text": "对上述名单做深度核验 → 标准开发名单（较慢；产量降、耗时增；可分批产出）"},
+            {"key": "supplement_public_signals", "text": "补社媒 / 地图 / 贸易记录信号（较快；仍属候选池，不升级为已验证）"},
+            {"key": "single_customer_background", "text": "选 1 家做单一客户背调"},
+        ])
+        return options
+
+    if task_mode == "formal_research":
+        capability_report = capabilities if isinstance(capabilities, dict) else {}
+        file_option = (
+            {"key": "export_table_file", "text": "导出表格文件（当前环境支持文件导出）"}
+            if capability_report.get("file.write") == "available"
+            else {
+                "key": "chat_table_when_file_unavailable",
+                "text": "当前环境可继续在对话内输出表格；文件导出需在支持文件执行的环境运行",
+            }
+        )
+        return [
+            file_option,
+            {"key": "supplement_pending_verification", "text": "补充待确认项的公开核验或补公开信号"},
+            {"key": "change_search_combination", "text": "换搜索组合再找一批（换产品词 / 换客户类型，国家不变）"},
+            {"key": "single_customer_background", "text": "选 1 家做单一客户背调"},
+        ]
+
+    return []
+
+
 def status_summary(state: dict[str, Any]) -> dict[str, Any]:
     """Build factual stage-boundary status text inputs without commercial ranking."""
     groups = [group for group in state.get("query_groups", []) if isinstance(group, dict)]
@@ -532,16 +572,12 @@ def status_summary(state: dict[str, Any]) -> dict[str, Any]:
             "status": group.get("status"),
         })
 
-    next_step_options: list[dict[str, str]] = []
-    if state.get("task_mode") == "discovery_snapshot" and candidate_count >= 10:
-        if state.get("expansion_scale_chosen") is None:
-            next_step_options.append({"key": "expand_candidate_pool", "text": "继续扩展（可指定 30 / 50 / 100 家，或直接说数量）"})
-        next_step_options.extend([
-            {"key": "change_search_combination", "text": "换搜索组合再找一批（换产品词 / 换客户类型，国家不变）"},
-            {"key": "deep_verify_full_list", "text": "对上述名单做深度核验 → 标准开发名单（较慢；产量降、耗时增；可分批产出）"},
-            {"key": "supplement_public_signals", "text": "补社媒 / 地图 / 贸易记录信号（较快；仍属候选池，不升级为已验证）"},
-            {"key": "single_customer_background", "text": "选 1 家做单一客户背调"},
-        ])
+    next_step_options = build_next_step_options(
+        task_mode=state.get("task_mode"),
+        candidate_count=candidate_count,
+        expansion_scale_chosen=state.get("expansion_scale_chosen"),
+        capabilities=state.get("capabilities"),
+    )
 
     hints = state.get("uncovered_combination_hints")
     uncovered_combination_hints = list(hints) if isinstance(hints, list) else []

@@ -35,7 +35,7 @@ from export_workbook import (
     redact_delivery_sheets,
     redact_local_paths,
 )
-from superleads_execution_state import status_summary
+from superleads_execution_state import build_next_step_options, status_summary
 from superleads_user_guidance import append_final_footer
 from validate_product_market_analysis import load_market_fixture
 from validate_superleads_user_visible_output import validate as validate_user_visible_markdown
@@ -397,6 +397,25 @@ def _search_combination_rows(execution_state: dict[str, Any]) -> tuple[list[dict
     return rows, hints, next_step_options
 
 
+def _formal_next_step_options(graph: dict[str, Any]) -> list[dict[str, str]]:
+    execution_state = _current_execution_state(graph)
+    capabilities = execution_state.get("capabilities") if isinstance(execution_state, dict) else None
+    return build_next_step_options(
+        task_mode="formal_research",
+        candidate_count=0,
+        expansion_scale_chosen=None,
+        capabilities=capabilities,
+    )
+
+
+def _append_next_step_menu(lines: list[str], options: list[dict[str, str]]) -> None:
+    if not options:
+        return
+    lines.extend(["## 下一步可选", ""])
+    lines.extend(f"- {_safe_text(item.get('text'))}" for item in options)
+    lines.append("")
+
+
 def _sheet_headers(rows: list[dict[str, Any]]) -> list[str]:
     headers: list[str] = []
     for row in rows:
@@ -432,6 +451,7 @@ def _build_standard_bulk_markdown(graph: dict[str, Any], audit: dict[str, Any]) 
     for title in ("客户信息总表", "联系方式汇总", "公开信息与待核查事项", "官网与来源链接", "待核查事项", "风险与说明"):
         rows = [row for row in sheets.get(title, []) if isinstance(row, dict)]
         _append_table(lines, title, _sheet_headers(rows), rows)
+    _append_next_step_menu(lines, _formal_next_step_options(graph))
     return "\n".join(lines).rstrip() + "\n", []
 
 
@@ -676,7 +696,7 @@ def _build_initial_bulk_markdown(graph: dict[str, Any], audit: dict[str, Any]) -
         _append_table(lines, "本轮搜索组合", ["产品词", "国家/市场", "客户类型", "新增主体"], search_combination_rows)
     if uncovered_combination_hints:
         lines.extend(["## 尚未覆盖的组合（可继续）", ""])
-        lines.extend(f"· {hint}" for hint in uncovered_combination_hints)
+        lines.extend(f"- {hint}" for hint in uncovered_combination_hints)
         lines.append("")
     _append_table(
         lines,
@@ -712,10 +732,7 @@ def _build_initial_bulk_markdown(graph: dict[str, Any], audit: dict[str, Any]) -
     _append_table(lines, "已排除 / 仅作参考", ["分区", "对象", "归入原因", "依据状态", "是否可由用户改判", "来源 / 来源状态"], excluded_rows)
     _append_table(lines, "信息从哪里来", ["对象", "来源 / 来源状态", "链接"], source_rows)
     _append_table(lines, "风险与说明", ["提示", "说明"], risk_rows)
-    if next_step_options:
-        lines.extend(["## 下一步可选", ""])
-        lines.extend(f"· {_safe_text(item.get('text'))}" for item in next_step_options)
-        lines.append("")
+    _append_next_step_menu(lines, next_step_options)
     return "\n".join(lines).rstrip() + "\n", []
 
 

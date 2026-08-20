@@ -385,7 +385,7 @@ class SuperleadsExecutionStateTest(unittest.TestCase):
                     record_expansion_scale_choice(state, invalid)
         self.assertIsNone(state["expansion_scale_chosen"])
 
-    def test_next_step_menu_is_absent_before_ten_candidates_and_for_formal_research(self) -> None:
+    def test_next_step_menu_is_absent_before_ten_candidates_but_present_for_formal_research(self) -> None:
         snapshot = create_execution_state(
             "run-under-ten",
             query_groups=[{"group_id": "website", "execution_order": "independent"}],
@@ -402,9 +402,30 @@ class SuperleadsExecutionStateTest(unittest.TestCase):
             budget={"query_group_limit": 1, "max_candidates_per_group": 10, "max_candidates_per_run": 10},
             task_mode="formal_research",
         )
-        for index in range(10):
-            self.assertTrue(record_candidate(formal, query_group_id="website", candidate_id=f"candidate-{index}")["recorded"])
-        self.assertEqual([], status_summary(formal)["next_step_options"])
+        unavailable_file_options = status_summary(formal)["next_step_options"]
+        self.assertEqual(
+            [
+                "chat_table_when_file_unavailable",
+                "supplement_pending_verification",
+                "change_search_combination",
+                "single_customer_background",
+            ],
+            [item["key"] for item in unavailable_file_options],
+        )
+        self.assertIn("对话内输出表格", unavailable_file_options[0]["text"])
+
+        formal["capabilities"] = {"file.write": "available"}
+        available_file_options = status_summary(formal)["next_step_options"]
+        self.assertEqual(
+            [
+                "export_table_file",
+                "supplement_pending_verification",
+                "change_search_combination",
+                "single_customer_background",
+            ],
+            [item["key"] for item in available_file_options],
+        )
+        self.assertIn("导出表格文件", available_file_options[0]["text"])
 
     def test_search_combination_coverage_uses_first_query_group_ownership_and_preserves_hints(self) -> None:
         state = create_execution_state(

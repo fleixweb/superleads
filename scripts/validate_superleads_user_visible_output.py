@@ -299,6 +299,16 @@ NODE_WORKAROUND_PATTERNS = (
     re.compile(r"(?:use|switch|connect|enable|try|recommend)[^.\n]{0,40}(?:vpn|proxy|node)", re.IGNORECASE),
 )
 
+L2_UNAVAILABLE_REQUIREMENT_DISQUALIFICATION_PATTERNS = (
+    re.compile(r"(?:官网|网站|公开页面)[^。！？\n]{0,32}(?:精确料号|OEM\s*号|料号)[^。！？\n]{0,64}(?:不合格|排除|不纳入|不通过|无法进入)"),
+    re.compile(r"(?:公开(?:进口|海关)身份|进口(?:商)?身份|海关角色)[^。！？\n]{0,64}(?:不合格|排除|不纳入|不通过|无法进入)"),
+    re.compile(r"(?:不合格|排除|不纳入|不通过|无法进入)[^。！？\n]{0,64}(?:精确料号|OEM\s*号|料号|公开(?:进口|海关)身份|进口(?:商)?身份|海关角色)"),
+)
+
+L2_UNAVAILABLE_REQUIREMENT_BOUNDARY_PATTERN = re.compile(
+    r"(?:不代表|不等同于|不得|不能|不可|不应)[^。！？\n]{0,48}(?:不合格|排除|不纳入|不通过|无法进入)"
+)
+
 PRODUCT_USER_VISIBLE_STATUSES = [
     "已有明确依据",
     "按已知数据计算",
@@ -507,6 +517,16 @@ def _has_unnegated_pattern_match(text: str, pattern: re.Pattern[str]) -> bool:
         if any(marker.casefold() in prefix for marker in NEGATION_MARKERS):
             continue
         return True
+    return False
+
+
+def _has_l2_unavailable_requirement_disqualification(text: str) -> bool:
+    """Reject an unavailable public signal as a gate, not its pending disclosure."""
+    for sentence in re.split(r"[。！？\n]+", text):
+        if not any(pattern.search(sentence) for pattern in L2_UNAVAILABLE_REQUIREMENT_DISQUALIFICATION_PATTERNS):
+            continue
+        if not L2_UNAVAILABLE_REQUIREMENT_BOUNDARY_PATTERN.search(sentence):
+            return True
     return False
 
 
@@ -760,6 +780,11 @@ def validate(
     issues.extend(_basis_status_internal_leak_issues(text))
     if route == "bulk_customer_development":
         issues.extend(_bulk_basis_status_consistency_issues(text))
+        if _has_l2_unavailable_requirement_disqualification(text):
+            issues.append(_issue(
+                "bulk_l2_unavailable_requirement_as_disqualification",
+                "exact part-number visibility or public import-role visibility must not disqualify a bulk candidate",
+            ))
     if route == "product_outbound_market_analysis":
         for token in PRODUCT_INTERNAL_STATUS_TOKENS:
             if _phrase_matches(text, token):

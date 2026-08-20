@@ -11,6 +11,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 - Keep static Superleads guide delimiters outside the literal reply blocks, render terminal support footers as visible Markdown without HTML comment markers, and reject HTML comment delimiters in user-visible delivery validation.
 - Make the complete bilingual help guide, including spreadsheet export guidance, available through the static detailed-help path and keep its inline Skill projections synchronized with the programmatic content model.
 - Keep later Excel/CSV requests attached to the current formal delivery chain, prohibit substitute formal-looking files, and reject user-visible standard-list claims that lack the canonical export structure.
+- Align deep-verification admission with the L2 evidence chain, keep part-number and public import-role questions pending for inquiry, and render shared next-step menus as Markdown sections and lists.
 
 ## [0.2.3] - 2026-08-20
 

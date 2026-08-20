@@ -152,6 +152,24 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
         self.assertIn("当前合法已验证 graph", exporter)
         self.assertIn("对话内工作表", exporter)
 
+    def test_l2_admission_and_menu_templates_keep_evidence_chain_and_markdown_lists(self) -> None:
+        skill = (ROOT / "skills" / "using-superleads" / "SKILL.md").read_text(encoding="utf-8")
+        formal = (ROOT / "shared" / "references" / "using-superleads-formal-delivery.md").read_text(encoding="utf-8")
+        batch = (ROOT / "shared" / "references" / "batch-discovery-execution.md").read_text(encoding="utf-8")
+        default = (ROOT / "shared" / "references" / "default-discovery-reference.md").read_text(encoding="utf-8")
+
+        self.assertIn("主体可解析", skill)
+        self.assertIn("实际打开的来源", skill)
+        self.assertIn("不属于准入条件", skill)
+        self.assertIn("官网是否列出精确料号", skill)
+        self.assertIn("公开可证的进口或海关角色", formal)
+        self.assertIn("询盘核实", formal)
+        for template in (batch, default):
+            self.assertIn("## 下一步可选", template)
+            self.assertIn("- 继续扩展（可指定 30 / 50 / 100 家，或直接说数量）", template)
+            self.assertNotIn("下一步可选：", template)
+            self.assertNotIn("· 继续扩展", template)
+
     def test_composite_task_policy_has_one_detailed_authority(self) -> None:
         reference = ROOT / "shared" / "references" / "composite-task-routing.md"
         self.assertTrue(reference.is_file())

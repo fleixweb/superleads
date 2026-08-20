@@ -403,13 +403,45 @@
       "must_contain": [
         "对话内工作表",
         "本环境未运行确定性校验",
-        "尚未完成确定性校验与文件导出",
+        "询盘核实项",
+        "不等同于候选质量问题",
         "待确认",
-        "风险与说明"
+        "风险与说明",
+        "下一步可选",
+        "补充待确认项的公开核验或补公开信号"
       ],
       "must_not_contain": [
         "本次输出为标准开发名单",
         "客户信息总表"
+      ]
+    },
+    {
+      "name": "bulk standard delivery keeps part and import role pending",
+      "fixture": "evals/user_visible_outputs/pass_bulk_customer_l2_pending_part_and_import_role.md",
+      "route": "bulk_customer_development",
+      "expected": "pass",
+      "min_tables": 6,
+      "must_contain": [
+        "本次输出为标准开发名单",
+        "官网未列出精确料号",
+        "未公开进口身份",
+        "询盘核实项",
+        "公开信号已匹配当前范围"
+      ]
+    },
+    {
+      "name": "fail bulk customer treating unavailable signals as l2 disqualification",
+      "fixture": "evals/user_visible_outputs/fail_bulk_customer_l2_unavailable_requirement.md",
+      "route": "bulk_customer_development",
+      "expected": "fail",
+      "min_tables": 0,
+      "expected_error_codes": [
+        "bulk_l2_unavailable_requirement_as_disqualification"
+      ],
+      "must_contain": [
+        "精确料号",
+        "公开进口身份",
+        "不合格"
       ]
     }
   ]

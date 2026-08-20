@@ -69,12 +69,13 @@ show this non-blocking next-step menu. It is a statement of available paths,
 not a request to select a number or an instruction to wait for a reply:
 
 ```
-下一步可选：
-· 继续扩展（可指定 30 / 50 / 100 家，或直接说数量）
-· 换搜索组合再找一批（换产品词 / 换客户类型，国家不变）
-· 对上述名单做深度核验 → 标准开发名单（较慢；产量降、耗时增；可分批产出）
-· 补社媒 / 地图 / 贸易记录信号（较快；仍属候选池，不升级为已验证）
-· 选 1 家做单一客户背调
+## 下一步可选
+
+- 继续扩展（可指定 30 / 50 / 100 家，或直接说数量）
+- 换搜索组合再找一批（换产品词 / 换客户类型，国家不变）
+- 对上述名单做深度核验 → 标准开发名单（较慢；产量降、耗时增；可分批产出）
+- 补社媒 / 地图 / 贸易记录信号（较快；仍属候选池，不升级为已验证）
+- 选 1 家做单一客户背调
 ```
 
 Show the expansion line only while `expansion_scale_chosen` is unset for the

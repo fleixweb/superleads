@@ -37,6 +37,38 @@ actually used in the Run. Platform IDs are lowercase ASCII letters, digits, and
 underscores only; reject private or legacy numeric-IP source forms and block
 non-global DNS results and redirect targets.
 
+## L2 bulk admission
+
+For 深度核验、联系人归属核验 or `标准开发名单`, admit a bulk candidate only by
+the current, reviewable object-and-evidence chain: the entity resolves without
+an unresolved name/domain/address conflict; an actually opened source supports
+the current business signal; a public contact entry can be attributed to that
+entity; and the current graph has a reviewable ScopeDecision, Assessment,
+Review, and Audit chain. This is the L2 threshold. It means the candidate fits
+the current direction and its source chain is reviewable; it does not claim
+purchase intent, commercial value, or conversion likelihood.
+
+The following are not admission conditions: whether the website lists an exact
+part number, whether a public page provides 公开可证的进口或海关角色, whether the
+company will purchase, or any customer-value ranking. Dealers commonly keep
+OEM part numbers in internal parts systems, and public pages normally do not
+prove the legal import role. Missing either item is a `询盘核实项`: keep it as a
+pending question and do not downgrade, exclude, or call a candidate unqualified
+for that reason alone.
+
+When no candidate clears the actual evidence-chain threshold, explain which
+chain element is missing and what range was completed. Do not label ordinary
+public-information limits as disqualification. Use this user-facing shape:
+
+```text
+本次深度核验尚未形成可正式交付的名单。已完成：{已完成范围}；仍缺：{实际缺少的主体、已打开来源、联系归属或审核链条}。
+官网未出现精确料号、或未公开进口身份属于需要询盘核实的项目，不等同于候选不合格。
+可继续补充待确认项的公开核验或公开信号；也可依据已打开的业务来源发询盘，核实料号适配和实际采购角色。
+```
+
+Keep the existing downgrade disclosure and do not use the `标准开发名单` name
+when the formal chain did not complete.
+
 ## Real-business UAT gates
 
 Before the formal validator, under `../policies/cross-platform-rules.md`, select
