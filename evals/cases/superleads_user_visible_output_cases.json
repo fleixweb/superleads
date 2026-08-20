@@ -364,6 +364,53 @@
         "客户一眼看懂",
         "该客户从中国采购"
       ]
+    },
+    {
+      "name": "fail bulk customer standard list missing canonical structure",
+      "fixture": "evals/user_visible_outputs/fail_bulk_customer_standard_list_missing_structure.md",
+      "route": "bulk_customer_development",
+      "expected": "fail",
+      "min_tables": 0,
+      "expected_error_codes": [
+        "user_visible_standard_list_structure_missing"
+      ],
+      "must_contain": [
+        "本次输出为标准开发名单"
+      ]
+    },
+    {
+      "name": "fail bulk customer fabricated standard list section names",
+      "fixture": "evals/user_visible_outputs/fail_bulk_customer_fabricated_standard_list.md",
+      "route": "bulk_customer_development",
+      "expected": "fail",
+      "min_tables": 0,
+      "expected_error_codes": [
+        "user_visible_standard_list_noncanonical_structure"
+      ],
+      "must_contain": [
+        "概览",
+        "待确认名单",
+        "产品核验",
+        "来源说明"
+      ]
+    },
+    {
+      "name": "bulk customer formal delivery fallback stays a chat worktable",
+      "fixture": "evals/user_visible_outputs/pass_bulk_customer_formal_delivery_fallback.md",
+      "route": "bulk_customer_development",
+      "expected": "pass",
+      "min_tables": 3,
+      "must_contain": [
+        "对话内工作表",
+        "本环境未运行确定性校验",
+        "尚未完成确定性校验与文件导出",
+        "待确认",
+        "风险与说明"
+      ],
+      "must_not_contain": [
+        "本次输出为标准开发名单",
+        "客户信息总表"
+      ]
     }
   ]
 }

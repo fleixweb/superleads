@@ -74,6 +74,18 @@ must fail instead of silently changing the requested file type. When validator
 dependencies are unavailable, do not search for or borrow another application's
 interpreter: use the no-script path and mark `本环境未运行确定性校验`.
 
+A user who 直接要求 Excel after deep verification, or later requests a format
+change, workbook rename, or re-export, is continuing the same formal delivery
+chain rather than starting an independent table-generation task. 不得使用其他技能、工具、脚本或代码手工构造替代工作簿，也不得使用自定义工作表、列或分区名称模拟正式交付物。`标准开发名单` may be named only after the current graph, validation,
+audit, and unified exporter have all completed successfully.
+
+When that chain cannot complete, respond positively and truthfully: state which
+step is missing, what range has been completed, and how the user can continue.
+Provide a source-status, unknown, and pending-item 对话内工作表 when useful; mark
+`本环境未运行确定性校验` whenever that check did not run. Do not create a file,
+call the result `标准开发名单`, or make it look like a formal delivery in this
+fallback path.
+
 Do not hand-render Markdown from workbook/CSV sheets. Do not manually convert
 workbook/CSV rows, rename internal status columns, or fabricate a report when
 the exporter fails. Formal delivery requires a saved graph JSON path and a

@@ -86,6 +86,18 @@ BULK_STANDARD_REQUIRED = [
     "公开信号已匹配当前范围",
 ]
 
+_STANDARD_DELIVERY_CLAIM = re.compile(
+    r"(?:本次(?:输出|交付)为|已(?:输出|交付|生成)(?:一份)?|这是|以下为)\s*标准开发名单|^\s*#{1,6}\s*标准开发名单\s*[。:：.!！]?\s*$",
+    re.MULTILINE,
+)
+_STANDARD_NONCANONICAL_HEADINGS = (
+    "概览",
+    "标准开发名单",
+    "待确认名单",
+    "产品核验",
+    "来源说明",
+)
+
 ROUTE_FORBIDDEN: dict[str, list[str]] = {
     "bulk_customer_development": [
         "产品出海市场分析",
@@ -664,7 +676,8 @@ def validate(
     required = ROUTE_REQUIRED.get(route)
     if required is None:
         return [_issue("user_visible_unknown_route", f"unknown route: {route}", route)]
-    if route == "bulk_customer_development" and delivery_status == "standard_development_list":
+    claims_standard_delivery = route == "bulk_customer_development" and _STANDARD_DELIVERY_CLAIM.search(text) is not None
+    if route == "bulk_customer_development" and (delivery_status == "standard_development_list" or claims_standard_delivery):
         required = BULK_STANDARD_REQUIRED
     if route == "product_outbound_market_analysis" and "本轮范围：" in text:
         # A scoped report names both the selected scope and the modules not
@@ -687,6 +700,26 @@ def validate(
     for phrase in required + list(extra_required or []):
         if phrase not in text:
             issues.append(_issue("user_visible_missing_required_text", f"missing required phrase: {phrase}", phrase))
+
+    if claims_standard_delivery:
+        missing_standard_structure = [phrase for phrase in BULK_STANDARD_REQUIRED if phrase not in text]
+        if missing_standard_structure:
+            issues.append(_issue(
+                "user_visible_standard_list_structure_missing",
+                "standard development list claim is missing required canonical export structure",
+                ", ".join(missing_standard_structure),
+            ))
+        noncanonical_headings = [
+            heading
+            for heading in _STANDARD_NONCANONICAL_HEADINGS
+            if re.search(rf"^\s*#{{1,6}}\s+{re.escape(heading)}\s*[。:：.!！]?\s*$", text, re.MULTILINE)
+        ]
+        if noncanonical_headings:
+            issues.append(_issue(
+                "user_visible_standard_list_noncanonical_structure",
+                "standard development list claim uses non-exporter section headings",
+                ", ".join(noncanonical_headings),
+            ))
 
     for phrase in ROUTE_FORBIDDEN.get(route, []):
         if _phrase_matches(text, phrase, allow_negated=True):

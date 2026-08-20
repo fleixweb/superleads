@@ -136,6 +136,22 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
         self.assertIn("只交付带来源状态的候选池", interface["short_description"])
         self.assertIn("internal-stages", content)
 
+    def test_bulk_entry_keeps_file_requests_in_the_existing_formal_delivery_chain(self) -> None:
+        skill = (ROOT / "skills" / "using-superleads" / "SKILL.md").read_text(encoding="utf-8")
+        formal = (ROOT / "shared" / "references" / "using-superleads-formal-delivery.md").read_text(encoding="utf-8")
+        exporter = (ROOT / "shared" / "internal-stages" / "exporting-lead-workbooks.md").read_text(encoding="utf-8")
+
+        self.assertIn("文件导出、格式转换、工作表命名或重新导出", skill)
+        self.assertIn("不是独立的表格生成任务", skill)
+        self.assertIn("绝不允许产出看起来像正式交付物", skill)
+        self.assertIn("对话内工作表", skill)
+        self.assertIn("本环境未运行确定性校验", skill)
+        self.assertIn("不使用「标准开发名单」", skill)
+        self.assertIn("直接要求 Excel", formal)
+        self.assertIn("其他技能、工具、脚本或代码", formal)
+        self.assertIn("当前合法已验证 graph", exporter)
+        self.assertIn("对话内工作表", exporter)
+
     def test_composite_task_policy_has_one_detailed_authority(self) -> None:
         reference = ROOT / "shared" / "references" / "composite-task-routing.md"
         self.assertTrue(reference.is_file())

@@ -99,13 +99,18 @@ coverage limit. If the target cannot be reached without relaxing current
 business-relevance rules, state the shortfall and use only observed coverage
 signals: `本组合已产出 N 家，距目标 M 家还差 M-N 家；继续检索的新增主体与已有池重合度约 X%，接近该组合当前公开检索可见范围。要补足到 M 家，建议换搜索组合（换产品词 / 换客户类型）。` Fill `N` and `X` only from this Run's recorded coverage; do not invent them. Point to the recorded `尚未覆盖的组合` hints where present. Do not pad the result by lowering relevance, and do not call the combination exhausted, complete, or globally exhaustive.
 
-Excel is not a menu item and is not coupled to deep verification. File output
-depends on the current host's actually available file-execution capability. If
-that capability is absent, say that chat tables remain available and Excel
-generation needs a file-execution environment; never promise an unavailable
-artifact. If deterministic validation/export cannot run, describe the L2
-evidence structure in chat and disclose that the deterministic check did not
-run, without weakening evidence, contact, or source boundaries.
+Excel is not a menu item and is not coupled to deep verification. A later
+Excel/CSV request, format conversion, workbook renaming, or re-export after a
+current result is nevertheless a continuation of that result's delivery chain,
+not an independent table-generation task. File output depends on the current
+host's actually available file-execution capability. If that capability is
+absent, say that chat tables remain available and Excel generation needs a
+file-execution environment; never promise an unavailable artifact. If formal
+validation, audit, or export cannot run, describe the completed evidence range
+in a chat table, state the missing step and how to continue, and disclose
+`本环境未运行确定性校验` when it was not run. Do not use `标准开发名单` or create a
+substitute file in that path, and do not use another skill, tool, script, or
+custom sheet structure to simulate a formal deliverable.
 
 For honest coverage and omitted-combination wording, follow
 `default-discovery-reference.md` rather than promising an exhaustive result.

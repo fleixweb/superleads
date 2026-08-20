@@ -8,7 +8,7 @@ description: "Use when a Superleads discovery pool, deep check, or standard list
 ## 内部阶段前置条件
 
 父路线触发：verification-before-delivery：当前合法已验证 graph 与允许的输出模式。
-不要直接调用；缺少上述上下文必须停止，不得虚构报告、工作簿或 Markdown 交付。
+不要直接调用；缺少上述上下文必须停止，不得虚构报告、工作簿或 Markdown 交付。用户在深度核验后单独提出 Excel、格式转换、工作表命名或重新导出时，仍是原交付链的续跑，不是新的表格任务。
 
 ## Purpose
 
@@ -25,6 +25,13 @@ explicit XLSX request must fail rather than silently producing CSV. If the
 deterministic validator cannot run because its dependencies are unavailable,
 follow the no-script delivery path and mark `本环境未运行确定性校验`; do not borrow
 another application's interpreter or virtual environment.
+
+If the current legal validated graph, allowed output mode, validation, audit, or
+exporter result is absent, do not use another skill, tool, script, or code to
+make a substitute file. State the missing step, completed range, and continuation
+option, then provide only a source-status 对话内工作表 when useful. It is not a
+`标准开发名单`, and it must not use custom worksheet or column names to resemble a
+formal workbook.
 
 ## Required references and script
 

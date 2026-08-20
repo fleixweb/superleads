@@ -94,6 +94,51 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         self.assertNotIn("本次输出是发现候选池", markdown)
         self.assertNotIn("发现候选池样表（候选池不是正式开发名单）", markdown)
 
+    def test_standard_list_claim_requires_canonical_structure_without_caller_status(self) -> None:
+        text = "\n".join(
+            (
+                "# 批量客户开发",
+                "",
+                "本次输出为标准开发名单。",
+                "",
+                "## 概览",
+                "## 标准开发名单",
+                "## 待确认名单",
+                "## 产品核验",
+                "## 来源说明",
+            )
+        )
+
+        issues = validate(text, "bulk_customer_development", min_tables=0)
+        codes = {issue["code"] for issue in issues}
+        missing = {
+            issue["value"]
+            for issue in issues
+            if issue["code"] == "user_visible_missing_required_text"
+        }
+
+        self.assertIn("user_visible_standard_list_noncanonical_structure", codes)
+        self.assertTrue({"客户信息总表", "联系方式汇总", "官网与来源链接"}.issubset(missing))
+
+    def test_standard_list_claim_without_custom_headings_still_reports_missing_structure(self) -> None:
+        text = "\n".join(
+            (
+                "# 批量客户开发",
+                "",
+                "本次输出为标准开发名单。",
+                "",
+                "## 已核验主体",
+                "",
+                "| 公司名称 | 国家/地区 |",
+                "|---|---|",
+                "| Example Importer | 爱尔兰 |",
+            )
+        )
+
+        codes = {issue["code"] for issue in validate(text, "bulk_customer_development", min_tables=0)}
+
+        self.assertIn("user_visible_standard_list_structure_missing", codes)
+
     def test_standard_bulk_graph_can_render_the_initial_candidate_pool_view(self) -> None:
         markdown, issues, route, delivery_status = build_markdown(
             STANDARD_FIXTURE,
