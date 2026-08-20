@@ -13,11 +13,14 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from superleads_user_guidance import has_exactly_one_final_footer
+
 CASES = ROOT / "evals" / "cases" / "superleads_markdown_delivery_cases.json"
 DELIVERER = ROOT / "scripts" / "export_superleads_markdown.py"
 VALIDATOR = ROOT / "scripts" / "validate_superleads_user_visible_output.py"
 FORMAL_CHECKER = ROOT / "scripts" / "check_superleads_formal_markdown_delivery.py"
-SUPPORT_FOOTER_MARKER = "<!-- superleads-support-and-safety -->"
 
 
 def run(cmd: list[str], expect: int) -> dict[str, Any]:
@@ -110,13 +113,13 @@ def _validate_generated_markdown(py: str, markdown: Path, route: str, case: dict
     text = markdown.read_text(encoding="utf-8") if markdown.exists() else ""
     missing = _assert_contains(text, list(case.get("must_contain", []))) if case.get("must_contain") else []
     hits = _assert_absent(text, list(case.get("must_not_contain", []))) if case.get("must_not_contain") else []
-    footer_count = text.count(SUPPORT_FOOTER_MARKER)
-    if missing or hits or footer_count != 1:
+    footer_ok = has_exactly_one_final_footer(text)
+    if missing or hits or not footer_ok:
         result["ok"] = False
         result["returncode"] = 1
         result["output"] += (
             "\ngenerated Markdown assertions failed: "
-            f"missing={missing} forbidden_hits={hits} footer_count={footer_count}"
+            f"missing={missing} forbidden_hits={hits} footer_ok={footer_ok}"
         )
     return result
 
@@ -232,7 +235,7 @@ def _claimed_path_mismatch_case(py: str, tmp_path: Path) -> dict[str, Any]:
         "json",
     ], 0)
     if original.exists():
-        mutated.write_text(original.read_text(encoding="utf-8") + "\n<!-- manual post-processing drift -->\n", encoding="utf-8")
+        mutated.write_text(original.read_text(encoding="utf-8") + "\nManual post-processing drift.\n", encoding="utf-8")
     claimed_check = run([
         py,
         str(FORMAL_CHECKER),

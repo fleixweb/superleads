@@ -34,10 +34,10 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
 
         self.assertLess(skill.index("## 裸启动"), skill.index("## 执行边界"))
         self.assertIn("不要调用 shell", skill)
-        # The highest-frequency route is intentionally inlined to avoid a
-        # high-latency host tool round trip; keep it bounded without restoring
-        # a token-size limit that would force that call back in.
-        self.assertLess(len(skill.encode("utf-8")), 6_500)
+        # Both static guides are intentionally inlined to avoid a high-latency
+        # host tool round trip; do not reintroduce a byte budget that forces a
+        # reference read back into either path.
+        self.assertIn("## 详细帮助", skill)
         self.assertIn("bare @ activation", agent)
 
     def test_static_help_recognizes_supported_prompts(self) -> None:
@@ -104,15 +104,46 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
                 end = f"<!-- superleads-user-visible-guide:{language}:end -->"
                 self.assertIn(start, skill)
                 self.assertIn(end, skill)
-                inline = skill.split(start, 1)[1].split(end, 1)[0].strip()
+                marked_section = skill.split(start, 1)[1].split(end, 1)[0]
+                code_block = re.fullmatch(r"\s*```markdown\n(.*?)\n```\s*", marked_section, re.DOTALL)
+                self.assertIsNotNone(code_block)
+                inline = code_block.group(1)
+                self.assertNotIn("<!--", inline)
+                self.assertNotIn("-->", inline)
                 rendered = "\n".join(superleads_user_guidance._compact_guide_lines(language))
                 self.assertEqual(rendered, inline)
+
+    def test_detailed_help_skill_inlines_exact_full_guidance_in_both_languages(self) -> None:
+        skill = PUBLIC_BATCH_SKILL.read_text(encoding="utf-8")
+        detailed_help = skill.split("## 详细帮助", 1)[1].split("## 路由", 1)[0]
+
+        for language in ("zh", "en"):
+            with self.subTest(language=language):
+                rendered = "\n".join(superleads_user_guidance._guide_lines(language))
+                self.assertIn(f"```markdown\n{rendered}\n```", detailed_help)
+                self.assertNotIn("<!--", rendered)
+                self.assertNotIn("-->", rendered)
+                self.assertIn("更多用法" if language == "zh" else "More ways to use Superleads", rendered)
+
+    def test_detailed_help_projection_check_detects_content_model_drift(self) -> None:
+        skill = PUBLIC_BATCH_SKILL.read_text(encoding="utf-8")
+        detailed_help = skill.split("## 详细帮助", 1)[1].split("## 路由", 1)[0]
+        inline = "\n".join(superleads_user_guidance._guide_lines("zh"))
+        self.assertIn(f"```markdown\n{inline}\n```", detailed_help)
+
+        with patch.dict(
+            superleads_user_guidance._GUIDE_CONTENT["zh"],
+            {"more_items": ("用于证明一致性测试会拦住内容漂移。",)},
+        ):
+            drifted = "\n".join(superleads_user_guidance._guide_lines("zh"))
+        self.assertNotEqual(inline, drifted)
+        self.assertNotIn(f"```markdown\n{drifted}\n```", detailed_help)
 
     def test_bare_skill_path_needs_no_script_or_reference_read(self) -> None:
         skill = PUBLIC_BATCH_SKILL.read_text(encoding="utf-8")
         bare_section = skill.split("## 裸启动", 1)[1].split("## 详细帮助", 1)[0]
 
-        self.assertIn("逐字返回下列内容", bare_section)
+        self.assertIn("逐字返回下方对应代码块内的全部内容", bare_section)
         self.assertNotRegex(bare_section, r"scripts/[^\s`]+\.py")
         self.assertNotIn("../../shared/references/", bare_section)
 
@@ -159,7 +190,8 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
         self.assertTrue(superleads_user_guidance.has_exactly_one_final_footer(footer_twice))
         self.assertIn("https://github.com/fleixweb/superleads/issues", footer_twice)
         self.assertIn("小红书搜索 Fleixweb", footer_twice)
-        self.assertEqual(1, footer_twice.count(superleads_user_guidance.SUPPORT_FOOTER_MARKER))
+        self.assertNotIn("<!--", footer_twice)
+        self.assertNotIn("-->", footer_twice)
 
     def test_chinese_footer_uses_an_explicit_markdown_link_boundary(self) -> None:
         footer = superleads_user_guidance._canonical_footer("zh")
@@ -236,7 +268,7 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
 
         self.assertTrue(superleads_user_guidance.has_exactly_one_final_footer(completed))
 
-    def test_footer_rejects_incomplete_or_nonterminal_marker_content(self) -> None:
+    def test_footer_rejects_legacy_comments_incomplete_or_nonterminal_content(self) -> None:
         marker = superleads_user_guidance.SUPPORT_FOOTER_MARKER
         for text in (
             "交付内容\n\n" + marker,
@@ -260,9 +292,10 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
     def test_user_visible_validator_requires_one_terminal_footer(self) -> None:
         report = (ROOT / "evals" / "user_visible_outputs" / "bulk_customer_development_us_generator_aftermarket.md").read_text(encoding="utf-8")
         completed = superleads_user_guidance.append_final_footer(report)
-        marker_index = completed.index(superleads_user_guidance.SUPPORT_FOOTER_MARKER)
-        missing = completed[:marker_index].rstrip() + "\n"
-        duplicated = completed + "\n" + completed[marker_index:]
+        footer = superleads_user_guidance._canonical_footer("zh")
+        footer_index = completed.index(footer)
+        missing = completed[:footer_index].rstrip() + "\n"
+        duplicated = completed + "\n" + completed[footer_index:]
 
         missing_codes = {
             issue["code"]
@@ -275,14 +308,28 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
         self.assertIn("user_visible_support_footer_missing", missing_codes)
         self.assertIn("user_visible_support_footer_duplicated", duplicated_codes)
 
+    def test_user_visible_validator_rejects_html_comment_delimiters(self) -> None:
+        terminal_report = (ROOT / "evals" / "user_visible_outputs" / "bulk_customer_development_us_generator_aftermarket.md").read_text(encoding="utf-8")
+        bare_guide = "# Superleads\n\n<!-- internal guide delimiter\n\n开始使用"
+
+        for text, route, min_tables in (
+            (bare_guide, "product_outbound_market_analysis", 0),
+            (terminal_report + "\ninternal footer delimiter -->\n", "bulk_customer_development", 7),
+        ):
+            with self.subTest(route=route):
+                codes = {
+                    issue["code"]
+                    for issue in validate_user_visible_output(text, route, min_tables=min_tables)
+                }
+                self.assertIn("user_visible_html_comment", codes)
+
     def test_shared_reference_assigns_bare_copy_to_skill_and_rendering_to_python(self) -> None:
         reference = GUIDANCE_REFERENCE.read_text(encoding="utf-8")
         source = (ROOT / "scripts" / "superleads_user_guidance.py").read_text(encoding="utf-8")
 
-        self.assertIn("裸启动正文归", reference)
+        self.assertIn("唯一业务内容模型", reference)
         self.assertIn("程序化渲染", reference)
-        self.assertNotIn("唯一内容模型", reference)
-        self.assertNotIn("返回本文档定义的静态引导", reference)
+        self.assertNotIn("裸启动正文归", reference)
         self.assertNotIn("static_help_response()", reference)
         self.assertIn("静态引导", reference)
         self.assertIn("append_final_footer()", reference)
@@ -332,7 +379,7 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
                 text = path.read_text(encoding="utf-8")
                 self.assertIn("../../shared/references/superleads-user-guidance.md", text)
                 if path == PUBLIC_BATCH_SKILL:
-                    self.assertEqual(2, text.count("https://github.com/fleixweb/superleads/issues"))
+                    self.assertEqual(4, text.count("https://github.com/fleixweb/superleads/issues"))
                 else:
                     self.assertNotIn("https://github.com/fleixweb/superleads/issues", text)
                 self.assertIn(required_rule, text)

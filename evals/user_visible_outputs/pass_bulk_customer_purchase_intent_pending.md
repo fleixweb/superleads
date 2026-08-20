@@ -116,8 +116,6 @@
 | 弱证据边界 | 多来源方向一致只能说明线索收敛，不能升级为已验证客户 |
 | 状态边界 | 已有明确依据只是说明本列已被公开来源直接支持，不等于正式开发名单 |
 
-<!-- superleads-support-and-safety -->
-
 ## Superleads 支持
 
 在使用 Superleads 过程中，如遇问题或有改进建议，欢迎通过 [GitHub Issues](https://github.com/fleixweb/superleads/issues) 反馈，或在小红书搜索 Fleixweb 联系 Fleix。

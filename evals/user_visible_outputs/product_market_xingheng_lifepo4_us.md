@@ -75,8 +75,6 @@
 | 税费与归类 | USITC HTS 查询入口 | 可作为线索 | 最终 10 位税号、Chapter 99、报关日和税基待专业确认 |
 | 物流与起运 | 本轮未见订舱单、提单或出口报关单 | 需补充资料 | 起运港/机场不能由工厂地址推断 |
 
-<!-- superleads-support-and-safety -->
-
 ## Superleads 支持
 
 在使用 Superleads 过程中，如遇问题或有改进建议，欢迎通过 [GitHub Issues](https://github.com/fleixweb/superleads/issues) 反馈，或在小红书搜索 Fleixweb 联系 Fleix。

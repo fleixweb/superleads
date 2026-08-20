@@ -44,8 +44,6 @@
 | 来源名边界 | The Telegraph | paragraph 3 | 已有明确依据 |
 | 交付边界 | 不做推荐客户排序，也不给采购概率 | evaluation note | 已有明确依据 |
 
-<!-- superleads-support-and-safety -->
-
 ## Superleads 支持
 
 在使用 Superleads 过程中，如遇问题或有改进建议，欢迎通过 [GitHub Issues](https://github.com/fleixweb/superleads/issues) 反馈，或在小红书搜索 Fleixweb 联系 Fleix。

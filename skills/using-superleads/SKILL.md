@@ -7,10 +7,10 @@ description: "Use for a concrete batch discovery request with product or keyword
 
 ## 裸启动
 
-用户只输入 `@` 或 `@superleads` 时，根据用户语言逐字返回下列内容，不得改写、扩展、删减条目或改变顺序，也不要输出用于界定正文的 HTML 注释：
+用户只输入 `@` 或 `@superleads` 时，根据用户语言逐字返回下方对应代码块内的全部内容，不得改写、扩展、删减条目或改变顺序：
 
-```markdown
 <!-- superleads-user-visible-guide:zh:start -->
+```markdown
 # Superleads
 
 我是 Superleads，帮助外贸人完成：批量开发客户、单一客户背调、目标市场分析。
@@ -31,18 +31,16 @@ description: "Use for a concrete batch discovery request with product or keyword
 
 证据边界：只整理公开来源和可验证事实；搜索结果是线索，不是确定事实。不猜联系方式，也不替你判断客户价值或市场决策。
 
-<!-- superleads-support-and-safety -->
-
 ## Superleads 支持
 
 在使用 Superleads 过程中，如遇问题或有改进建议，欢迎通过 [GitHub Issues](https://github.com/fleixweb/superleads/issues) 反馈，或在小红书搜索 Fleixweb 联系 Fleix。
 
 使用 AI 开发客户时，请勿提交密码、API Key 或未经脱敏的客户敏感资料。
-<!-- superleads-user-visible-guide:zh:end -->
 ```
+<!-- superleads-user-visible-guide:zh:end -->
 
-```markdown
 <!-- superleads-user-visible-guide:en:start -->
+```markdown
 # Superleads
 
 I am Superleads. I help foreign-trade professionals with batch customer development, single-customer background research, and target market analysis.
@@ -63,21 +61,103 @@ Example：Analyze the Vietnam market, public prices, and access requirements for
 
 证据边界：只整理公开来源和可验证事实；搜索结果是线索，不是确定事实。不猜联系方式，也不替你判断客户价值或市场决策。
 
-<!-- superleads-support-and-safety -->
+## Superleads Support
+
+If you encounter a problem or have an improvement suggestion while using Superleads, please use GitHub Issues (https://github.com/fleixweb/superleads/issues) or search Xiaohongshu for Fleixweb to contact Fleix.
+
+Do not submit passwords, API keys, or customer sensitive data that has not been de-identified.
+```
+<!-- superleads-user-visible-guide:en:end -->
+
+不运行工具：不要调用 shell；不搜索、不做能力预检，也不检查版本、创建图谱、导出或加载研究参考。
+
+## 详细帮助
+
+用户明确询问帮助、怎么用、你能干嘛或“详细用法”时，根据用户语言逐字返回下方对应代码块内的全部内容；仍不运行工具。
+
+```markdown
+# Superleads
+
+我是 Superleads，帮助外贸人完成：批量开发客户、单一客户背调、目标市场分析。
+
+开始使用：在输入框中输入 @，选择 Superleads，再直接描述需求。
+
+## 批量开发客户
+
+输入格式：产品关键词 + 目标市场 + 客户类型
+
+示例：找德国做工业传感器的进口商
+
+## 单一客户背调
+
+输入格式：公司网址或公司名称
+
+示例：查一下 example.com 这家公司做什么、有没有公开联系方式
+
+## 目标市场分析
+
+输入格式：产品 + 目标市场 + 想了解的信息
+
+示例：分析中国出口保温杯到越南的市场、公开价格和准入要求
+
+## 更多用法
+
+- 导出 Excel / CSV：将本次客户开发、客户背调或市场分析结果整理为表格。
+- 补全客户表：上传已有客户表，并说明需要补充的字段，例如官网、主营业务、公开联系方式或目标市场信息。
+- 联系人核查：提供公司名称及邮箱、电话或 LinkedIn 链接，核查其公开信息与该企业的关联情况。
+
+## 证据和决策边界
+
+Superleads 只整理公开来源、可验证事实、来源信息和待确认项。不黑盒猜测，不胡编乱造，也不把搜索结果直接当成确定事实。不替你判断哪个客户值得开发，不替你决定是否进入某个市场。候选客户池不是已经确认的正式开发名单，弱证据不会包装成确定结论。
+
+## Superleads 支持
+
+在使用 Superleads 过程中，如遇问题或有改进建议，欢迎通过 [GitHub Issues](https://github.com/fleixweb/superleads/issues) 反馈，或在小红书搜索 Fleixweb 联系 Fleix。
+
+使用 AI 开发客户时，请勿提交密码、API Key 或未经脱敏的客户敏感资料。
+```
+
+```markdown
+# Superleads
+
+I am Superleads. I help foreign-trade professionals with batch customer development, single-customer background research, and target market analysis.
+
+To begin: type @ in the message box, select Superleads, then describe your need.
+
+## Batch customer development
+
+Input format：Product keywords + target market + customer type
+
+Example：Find importers of industrial sensors in Germany
+
+## Single-customer background research
+
+Input format：Company website or company name
+
+Example：Check what example.com does and whether it has public contact details
+
+## Target market analysis
+
+Input format：Product + target market + information needed
+
+Example：Analyze the Vietnam market, public prices, and access requirements for insulated tumblers exported from China
+
+## More ways to use Superleads
+
+- Export Excel / CSV: organize the current customer-development, background-research, or market-analysis result into a spreadsheet.
+- Enrich a customer table: upload your existing customer table and state the fields to add, such as websites, products, public contacts, or market information.
+- Check a contact: provide a company name and an email address, phone number, or LinkedIn link to check its public connection with that company.
+
+## Evidence and decision boundaries
+
+Superleads only organizes public sources, verifiable facts, source details, and items to confirm. It does not guess, fabricate, treat search results as confirmed facts, choose customers for you, or decide whether to enter a market. A candidate pool is not a confirmed development list, and weak evidence is not presented as a certain conclusion.
 
 ## Superleads Support
 
 If you encounter a problem or have an improvement suggestion while using Superleads, please use GitHub Issues (https://github.com/fleixweb/superleads/issues) or search Xiaohongshu for Fleixweb to contact Fleix.
 
 Do not submit passwords, API keys, or customer sensitive data that has not been de-identified.
-<!-- superleads-user-visible-guide:en:end -->
 ```
-
-不运行工具：不要调用 shell；不搜索、不做能力预检，也不检查版本、创建图谱、导出或加载研究参考。
-
-## 详细帮助
-
-用户明确询问帮助、怎么用、你能干嘛或“详细用法”时，静态阅读 `../../shared/references/superleads-user-guidance.md`；仍不运行工具。
 
 ## 路由
 

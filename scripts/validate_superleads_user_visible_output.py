@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from superleads_user_guidance import SUPPORT_FOOTER_MARKER, has_exactly_one_final_footer
+from superleads_user_guidance import has_exactly_one_final_footer
 
 
 ROUTE_REQUIRED: dict[str, list[str]] = {
@@ -700,6 +700,13 @@ def validate(
         if pattern.search(text):
             issues.append(_issue("user_visible_internal_language", f"internal language leaked: {label}", label))
 
+    if "<!--" in text or "-->" in text:
+        issues.append(_issue(
+            "user_visible_html_comment",
+            "user-visible output must not contain an HTML comment delimiter",
+            "<!--" if "<!--" in text else "-->",
+        ))
+
     for phrase in GENERIC_VALUE_JUDGMENTS:
         if _value_judgment_matches(text, phrase):
             issues.append(_issue("user_visible_value_judgment", f"value judgment present: {phrase}", phrase))
@@ -725,10 +732,10 @@ def validate(
             if _phrase_matches(text, token):
                 issues.append(_issue("user_visible_internal_status_token", f"internal product-market status token leaked: {token}", token))
 
-    footer_count = text.count(SUPPORT_FOOTER_MARKER)
-    if footer_count == 0:
+    footer_headings = ("## Superleads 支持", "## Superleads Support")
+    if not has_exactly_one_final_footer(text) and not any(heading in text for heading in footer_headings):
         issues.append(_issue("user_visible_support_footer_missing", "final delivery must include the Superleads support and security footer"))
-    elif footer_count != 1 or not has_exactly_one_final_footer(text):
+    elif not has_exactly_one_final_footer(text):
         issues.append(_issue("user_visible_support_footer_duplicated", "final delivery must include one complete terminal support and security footer"))
 
     return issues

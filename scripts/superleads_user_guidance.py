@@ -7,6 +7,8 @@ from time import perf_counter
 from typing import Any
 
 
+# Legacy-only sentinel. It is rejected in input and never rendered into a
+# user-visible guide or terminal delivery.
 SUPPORT_FOOTER_MARKER = "<!-- superleads-support-and-safety -->"
 GUIDANCE_REFERENCE = "shared/references/superleads-user-guidance.md"
 
@@ -78,7 +80,6 @@ def _canonical_footer(language: str = "zh") -> str:
     content = _content(language)
     return "\n\n".join(
         (
-            SUPPORT_FOOTER_MARKER,
             f"## {content['footer_heading']}",
             str(content["footer_support"]),
             str(content["footer_safety"]),
@@ -88,6 +89,14 @@ def _canonical_footer(language: str = "zh") -> str:
 
 def _is_complete_terminal_footer(text: str) -> bool:
     return any(text.rstrip().endswith(_canonical_footer(language)) for language in ("zh", "en"))
+
+
+def _canonical_footer_count(text: str) -> int:
+    return sum(text.count(_canonical_footer(language)) for language in ("zh", "en"))
+
+
+def _contains_footer_indicator(text: str) -> bool:
+    return any(f"## {_content(language)['footer_heading']}" in text for language in ("zh", "en"))
 
 
 def _guide_lines(language: str) -> list[str]:
@@ -144,19 +153,20 @@ def static_help_response(text: str) -> dict[str, Any] | None:
 
 
 def append_final_footer(text: str, language: str = "zh") -> str:
-    """Append the single terminal footer or reject malformed markers."""
+    """Append the single terminal visible footer or reject malformed content."""
     footer = _canonical_footer(language)
-    marker_count = text.count(SUPPORT_FOOTER_MARKER)
-    if marker_count:
-        if marker_count == 1 and _is_complete_terminal_footer(text):
-            return text
+    if "<!--" in text or "-->" in text:
+        raise ValueError("text contains an HTML comment delimiter")
+    if has_exactly_one_final_footer(text):
+        return text
+    if _canonical_footer_count(text) or _contains_footer_indicator(text):
         raise ValueError("text contains a malformed or non-terminal support footer")
     return text.rstrip() + "\n\n" + footer
 
 
 def has_exactly_one_final_footer(text: str) -> bool:
     """Return whether exactly one complete canonical footer is terminal."""
-    return text.count(SUPPORT_FOOTER_MARKER) == 1 and _is_complete_terminal_footer(text)
+    return "<!--" not in text and "-->" not in text and _canonical_footer_count(text) == 1 and _is_complete_terminal_footer(text)
 
 
 def guidance_side_effects() -> list[str]:

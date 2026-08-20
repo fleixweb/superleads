@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Keep static Superleads guide delimiters outside the literal reply blocks, render terminal support footers as visible Markdown without HTML comment markers, and reject HTML comment delimiters in user-visible delivery validation.
+- Make the complete bilingual help guide, including spreadsheet export guidance, available through the static detailed-help path and keep its inline Skill projections synchronized with the programmatic content model.
+
 ## [0.2.3] - 2026-08-20
 
 ### Fixed

@@ -60,8 +60,6 @@
 | Active 公司状态、SIC | Companies House overview | Company Overview | 2026-07-27 | 已打开公开来源 |
 | 董事名单 | Companies House officers | Officers list | 2026-07-27 | 已打开公开来源 |
 
-<!-- superleads-support-and-safety -->
-
 ## Superleads 支持
 
 在使用 Superleads 过程中，如遇问题或有改进建议，欢迎通过 [GitHub Issues](https://github.com/fleixweb/superleads/issues) 反馈，或在小红书搜索 Fleixweb 联系 Fleix。

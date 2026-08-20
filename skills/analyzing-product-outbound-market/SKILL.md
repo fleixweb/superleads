@@ -7,7 +7,7 @@ description: "Use for objective analysis of a specified product entering a targe
 
 ## 静态帮助守卫
 
-用户只输入 `@`、`@superleads`，或询问帮助、怎么用、你能干嘛等简短使用方法时，直接用用户语言返回精简引导。不运行工具：不运行 shell、不搜索、不做能力预检，也不检查版本、创建研究对象或加载市场参考。明确要求详细用法时，只静态阅读 `../../shared/references/superleads-user-guidance.md`。
+用户只输入 `@`、`@superleads`，或询问帮助、怎么用、你能干嘛等简短使用方法时，直接用用户语言返回 `using-superleads` 的对应内联静态引导。不运行工具：不运行 shell、不搜索、不做能力预检，也不检查版本、创建研究对象或加载市场参考。明确要求详细用法时，返回其中的详细内联引导。
 
 ## 路由优先
 

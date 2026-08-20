@@ -44,8 +44,6 @@
 | 产品名称 | 用户当前描述 | 本轮范围 | 可作为线索 |
 | 准入与装运前预检报告 | 待打开越南官方规则 | 本轮未执行 | 需权威/专业复核 |
 
-<!-- superleads-support-and-safety -->
-
 ## Superleads 支持
 
 在使用 Superleads 过程中，如遇问题或有改进建议，欢迎通过 [GitHub Issues](https://github.com/fleixweb/superleads/issues) 反馈，或在小红书搜索 Fleixweb 联系 Fleix。
