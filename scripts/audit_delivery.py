@@ -12,6 +12,7 @@ from _superleads_common import (
     CONTACT_NOTE_ALLOWED_CAPABILITIES,
     CONTACT_SOURCE_ALLOWED_CAPABILITIES,
     CONTACT_SOURCE_ALLOWED_TYPES,
+    DETERMINISTIC_VALIDATION_DISCLOSURE,
     all_id_maps,
     as_list,
     canonical_contact_user_status,
@@ -274,7 +275,12 @@ def audit_graph(graph: dict[str, Any], requested_delivery_status: str | None = N
     ids = all_id_maps(graph)
     provenance = _review_provenance(graph)
 
-    for validation_issue in validate_graph(graph):
+    validation_issues = validate_graph(graph)
+    deterministic_validation_unavailable = any(
+        validation_issue.get("code") == "schema_profile_unavailable"
+        for validation_issue in validation_issues
+    )
+    for validation_issue in validation_issues:
         if validation_issue.get("severity") in {"critical", "major"}:
             issues.append(issue(validation_issue["severity"], "validation_" + validation_issue["code"], validation_issue["message"], validation_issue.get("path")))
 
@@ -468,6 +474,9 @@ def audit_graph(graph: dict[str, Any], requested_delivery_status: str | None = N
     allowed_statuses, disclosure_required = _allowed_statuses(graph, issues, formal_ready, provenance.get("review_provenance_level"))
     if provenance.get("review_provenance_level") in {"declared_separate_session", "self_review_fallback", "not_run"}:
         disclosure_required = True
+    disclosures = [DETERMINISTIC_VALIDATION_DISCLOSURE] if deterministic_validation_unavailable else []
+    if disclosures:
+        disclosure_required = True
     if requested_delivery_status == INQUIRY_STATUS and not any(i.get("severity") in {"critical", "major"} for i in issues):
         allowed_statuses = [INQUIRY_STATUS]
     if requested_delivery_status in FORMAL_STATUSES:
@@ -503,6 +512,7 @@ def audit_graph(graph: dict[str, Any], requested_delivery_status: str | None = N
         "delivery_status": delivery_status,
         "allowed_delivery_statuses": allowed_statuses,
         "disclosure_required": disclosure_required,
+        "disclosures": disclosures,
         "ok": not blocking,
         "issue_count": len(issues),
         "issues": issues,

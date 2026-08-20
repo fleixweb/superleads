@@ -57,7 +57,14 @@ The shared installation environment does not determine the runtime host; determi
 
 ### Lean Runtime Package For Local Development
 
-### Python Dependencies (Cross-Platform)
+### Zero-Configuration Export for End Users
+
+End users do not need to prepare any Python dependencies to receive CSV and
+Markdown deliveries. When the current environment cannot run the supplemental
+deterministic validation, the deliverables explicitly carry the marker
+`本环境未运行确定性校验`.
+
+### Maintainer / CI Python Dependencies (Cross-Platform)
 
 Basic plugin use does not require the user to install Python dependencies. When
 maintaining the source, running deterministic validation, or invoking formal
@@ -75,7 +82,7 @@ python3 -m pip install -r requirements.txt
 
 Do not substitute older dependencies provided temporarily by another application.
 
-### Windows / Codex Desktop Runtime Dependencies
+### Maintainer / CI Windows / Codex Desktop Runtime Dependencies
 
 The lean runtime package includes its root `requirements.txt`. When maintaining
 or testing an installed Codex Desktop runtime package on Windows, read that

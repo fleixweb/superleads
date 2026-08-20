@@ -911,7 +911,7 @@ def build_product_market_markdown(graph: dict[str, Any]) -> tuple[str | None, li
     audit = audit_market_graph(graph)
     if not audit.get("ok"):
         return None, list(audit.get("issues", [])), None
-    sheets = build_market_sheets(graph)
+    sheets = build_market_sheets(graph, audit)
     text = market_markdown_report(sheets, graph)
     text = _market_append_required_human_sections(text, graph)
     if not text.startswith("# 产品出海市场分析"):

@@ -141,7 +141,7 @@ def _validator(schema_path: Path) -> Any:
     try:
         return _modern_validator(schema_path)
     except ModuleNotFoundError as exc:
-        if exc.name != "referencing":
+        if exc.name not in {"jsonschema", "referencing"}:
             raise
     except ImportError:
         pass

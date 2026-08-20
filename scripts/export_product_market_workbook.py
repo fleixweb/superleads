@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from _superleads_common import has_text, is_safe_public_http_url
+from _superleads_common import DETERMINISTIC_VALIDATION_DISCLOSURE, ensure_list as common_ensure_list, has_text, is_safe_public_http_url
 from audit_product_market_analysis import audit_graph
 from user_visible_status_projection import (
     humanize_enum_value,
@@ -1261,7 +1261,7 @@ def _conflict_rows(
     return rows
 
 
-def build_sheets(graph: dict[str, Any]) -> dict[str, list[dict[str, str]]]:
+def build_sheets(graph: dict[str, Any], audit: dict[str, Any] | None = None) -> dict[str, list[dict[str, str]]]:
     sheets: dict[str, list[dict[str, str]]] = {
         sheet: [] for sheet in selected_sheet_order(graph)
     }
@@ -1322,6 +1322,17 @@ def build_sheets(graph: dict[str, Any]) -> dict[str, list[dict[str, str]]]:
         )
         sheets["信息来源与待确认事项"].extend(_gap_rows(graph, sample_id, visible_sheets))
         sheets["信息来源与待确认事项"].extend(_conflict_rows(graph, sample_id, visible_sheets))
+    disclosures = [
+        str(item)
+        for item in common_ensure_list(audit, "disclosures")
+        if item == DETERMINISTIC_VALIDATION_DISCLOSURE
+    ] if isinstance(audit, dict) else []
+    for disclosure in disclosures:
+        sheets["信息来源与待确认事项"].append({
+            "条目": "确定性校验",
+            "状态": "说明",
+            "用户可见备注": disclosure,
+        })
     return sheets
 
 
@@ -1603,7 +1614,7 @@ def export_graph(
             "issues": audit.get("issues", []),
         }
 
-    sheets = build_sheets(graph)
+    sheets = build_sheets(graph, audit)
     generated = write_csv_sheets(sheets, output_dir, graph)
     written_paths = [output_dir / item["filename"] for item in generated]
 
@@ -1625,6 +1636,7 @@ def export_graph(
             "CSV/Markdown 只搬运已审核用户可见矩阵、来源、缺口和冲突字段。",
             "导出器不补税率、不猜港口、不生成趋势、价格、认证或物流结论。",
         ],
+        "disclosures": list(audit.get("disclosures", [])),
     }
 
     if manifest_path is not None:

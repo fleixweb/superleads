@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from _superleads_common import has_text, issue
+from _superleads_common import DETERMINISTIC_VALIDATION_DISCLOSURE, has_text, issue
 from validate_product_market_analysis import as_list, ensure_list, load_market_fixture, validate_graph
 
 READY_STATUS = "ready_with_limitations"
@@ -338,7 +338,12 @@ def _delivery_status_from_issues(issues: list[dict[str, str]]) -> str:
 
 def audit_graph(graph: dict[str, Any], requested_delivery_status: str | None = None) -> dict[str, Any]:
     issues: list[dict[str, str]] = []
-    for validation_issue in validate_graph(graph):
+    validation_issues = validate_graph(graph)
+    deterministic_validation_unavailable = any(
+        validation_issue.get("code") == "schema_profile_unavailable"
+        for validation_issue in validation_issues
+    )
+    for validation_issue in validation_issues:
         if validation_issue.get("severity") in {"critical", "major"}:
             issues.append(dict(validation_issue))
     issues.extend(_minimum_delivery_issues(graph, requested_delivery_status))
@@ -346,11 +351,14 @@ def audit_graph(graph: dict[str, Any], requested_delivery_status: str | None = N
     delivery_status = _delivery_status_from_issues(issues)
     ok = delivery_status == READY_STATUS
     limitations = _collect_limitations(graph) if ok else []
+    disclosures = [DETERMINISTIC_VALIDATION_DISCLOSURE] if deterministic_validation_unavailable else []
     return {
         "ok": ok,
         "audit_status": "passed" if ok else ("blocked" if delivery_status == BLOCKED_STATUS else "failed"),
         "delivery_status": delivery_status,
         "allowed_delivery_statuses": [READY_STATUS] if ok else [],
+        "disclosure_required": bool(disclosures),
+        "disclosures": disclosures,
         "issue_count": len(issues),
         "issues": issues,
         "limitation_count": len(limitations),

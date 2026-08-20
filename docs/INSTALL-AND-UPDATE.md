@@ -57,7 +57,12 @@ Codex app 可通过 `/plugins` 添加同一 marketplace，再安装 `superleads@
 
 ### 本地开发的精简运行时包
 
-### Python 依赖（跨平台）
+### 终端用户零配置导出
+
+终端用户无需准备任何 Python 依赖即可获得 CSV 与 Markdown 交付。当前环境无法运行
+补充的确定性校验时，产出物会明确标注“本环境未运行确定性校验”。
+
+### 维护者 / CI：Python 开发依赖（跨平台）
 
 普通插件使用不要求用户安装 Python 依赖。维护源码、运行确定性校验或正式导出脚本时，
 应按当前平台使用专用于 Superleads 的隔离环境；不要做全局安装，也不要把环境写入可能
@@ -73,7 +78,7 @@ python3 -m pip install -r requirements.txt
 
 不要用其他应用临时提供的旧版依赖替代项目声明的版本。
 
-### Windows / Codex Desktop 运行时依赖
+### 维护者 / CI：Windows / Codex Desktop 运行时依赖
 
 精简运行时包会携带根目录 `requirements.txt`。在 Windows 上维护或测试已安装的
 Codex Desktop 运行时包时，从包含该文件的包根目录读取依赖清单，并在**专用于

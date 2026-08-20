@@ -9,6 +9,7 @@ from _superleads_common import (
     business_relevance_user_label,
     canonical_contact_user_status,
     connected_source_display,
+    DETERMINISTIC_VALIDATION_DISCLOSURE,
     contains_local_path,
     ensure_list,
     public_signal_status_user_label,
@@ -50,6 +51,20 @@ def contact_user_status(export_status:str|None)->str:
 def review_modes(graph:dict[str,Any])->set[str]:
     run=get_current_run(graph)
     return {str(run["review_mode"])} if run.get("review_mode") else set()
+
+def audit_disclosures(audit:dict[str,Any])->list[str]:
+    return [
+        str(item)
+        for item in ensure_list(audit,"disclosures")
+        if item == DETERMINISTIC_VALIDATION_DISCLOSURE
+    ]
+
+def append_audit_disclosures(rows:list[dict[str,Any]], audit:dict[str,Any])->None:
+    existing={str(row.get("说明")) for row in rows if isinstance(row,dict)}
+    for disclosure in audit_disclosures(audit):
+        if disclosure not in existing:
+            rows.append({"提示级别":"说明","说明":disclosure})
+            existing.add(disclosure)
 
 def get_current_run(graph:dict[str,Any])->dict[str,Any]:
     runs=[r for r in ensure_list(graph,"runs") if isinstance(r,dict)]
@@ -829,6 +844,7 @@ def build_initial_sheets(graph:dict[str,Any], audit:dict[str,Any])->dict[str,lis
     risk_rows=[{"提示级别":i.get("severity"),"说明":i.get("message")} for i in audit.get("issues",[])] or [{"提示级别":"提示","说明":"本轮公开发现可继续扩展；当前输出不宣称已覆盖全部企业。"}]
     if "not_run" in review_modes(graph):
         risk_rows.append({"提示级别":"说明","说明":"本次为发现优先交付；严格复核、审计和正式开发名单门禁未启用。"})
+    append_audit_disclosures(risk_rows,audit)
     enrichment_sheets = _public_enrichment_sheets(graph)
     pending.extend(enrichment_sheets.pop("pending", []))
     return {
@@ -947,6 +963,7 @@ def build_sheets(graph:dict[str,Any], audit:dict[str,Any], mode:str)->dict[str,l
     sheets["风险与说明"]=[{"提示级别":i.get("severity"),"说明":i.get("message")} for i in audit.get("issues",[])] or [{"提示级别":"提示","说明":"交付前检查未发现影响交付的问题。"}]
     if "self_review_fallback" in review_modes(graph):
         sheets["风险与说明"].append({"提示级别":"说明","说明":"本次未运行独立复核，建议在使用前进行人工确认。"})
+    append_audit_disclosures(sheets["风险与说明"],audit)
     sheets["官网与来源链接"]=[{"来源说明":source_display(s,observations_by_source.get(s.get("source_id"))),"来源链接":safe_public_source_url(s),"来源关系":s.get("publisher_relation"),"来源类型":s.get("medium")} for s in ensure_list(graph,"sources") if isinstance(s,dict)]
     sheets["已排除客户"]=[{"公司名称":entities.get(d.get("entity_id"),{}).get("name") or d.get("candidate_id") or "待确认对象","方向状态":scope_status_user_label(d.get("overall_status")),"说明":d.get("decision_summary")} for d in ensure_list(graph,"scope_decisions") if isinstance(d,dict) and d.get("brief_id")==brief_id and d.get("run_id")==run_id and d.get("overall_status") in {"out_of_scope","reference_only"}]
     sheets["检查说明"]=[{"检查时间":audit.get("audited_at"),"交付级别":{"standard_development_list":"标准开发名单","full_review_package":"完整核查版"}.get(audit.get("delivery_status"),"发现候选池"),"检查结果":"未发现影响交付的问题" if not audit.get("issues") else "存在待处理问题"}]
@@ -1044,6 +1061,9 @@ def main()->int:
             print(f"XLSX export unavailable ({exc}); falling back to UTF-8-SIG CSV", file=sys.stderr); files=write_csv_sheets(sheets,out); chosen="csv"
     else: files=write_csv_sheets(sheets,out)
     disclosures=["发现候选与弱证据项仅用于销售人工核查，不代表事实核查完成。"] if a.mode=="initial" else (["询盘信息仅记录来信中提及的内容，不代表企业资格或采购权已核验。"] if a.mode=="inquiry" else [])
+    for disclosure in audit_disclosures(audit):
+        if disclosure not in disclosures:
+            disclosures.append(disclosure)
     if provenance_disclosure and a.mode in {"standard","full"}:
         disclosures.append(provenance_disclosure)
     if provenance.get("review_provenance_level") == "not_run" and a.mode == "initial":
