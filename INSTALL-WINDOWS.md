@@ -31,7 +31,7 @@ C:\Users\<你的用户名>\CodexMarketplaces\fleix-superleads
 在文件资源管理器中，将类似下面的安装包：
 
 ```text
-superleads-fleix-marketplace-0.2.2-8c15e20.zip
+superleads-fleix-marketplace-0.2.6-8e330ce.zip
 ```
 
 解压到一个稳定目录，例如：
@@ -56,7 +56,7 @@ requirements.txt
 例如，若这些文件位于：
 
 ```text
-C:\Users\<你的用户名>\CodexMarketplaces\fleix-superleads\superleads-fleix-marketplace-0.2.2-8c15e20
+C:\Users\<你的用户名>\CodexMarketplaces\fleix-superleads\superleads-fleix-marketplace-0.2.6-8e330ce
 ```
 
 则这个完整目录才是 `<MARKETPLACE_ROOT>`。不要使用它的上一级目录，也不要使用 ZIP 文件路径。
@@ -66,7 +66,7 @@ C:\Users\<你的用户名>\CodexMarketplaces\fleix-superleads\superleads-fleix-m
 在 PowerShell 中执行：
 
 ```powershell
-$MarketplaceRoot = "$env:USERPROFILE\CodexMarketplaces\fleix-superleads\superleads-fleix-marketplace-0.2.2-8c15e20"
+$MarketplaceRoot = "$env:USERPROFILE\CodexMarketplaces\fleix-superleads\superleads-fleix-marketplace-0.2.6-8e330ce"
 Get-Content "$MarketplaceRoot\.agents\plugins\marketplace.json"
 ```
 
@@ -153,7 +153,7 @@ superleads@personal
 活动缓存应由 Codex 自动创建在类似位置：
 
 ```text
-C:\Users\<你的用户名>\.codex\plugins\cache\fleix\superleads\0.2.2
+C:\Users\<你的用户名>\.codex\plugins\cache\fleix\superleads\0.2.6
 ```
 
 可以用下面的命令查看实际版本目录：
