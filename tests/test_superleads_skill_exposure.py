@@ -104,6 +104,65 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
         self.assertIn("persistent_save", feedback)
         self.assertIn("明确同意", feedback)
 
+    def test_formal_bulk_stage_requirements_remain_anchored_without_making_every_round_mandatory(self) -> None:
+        route_map = (ROOT / "shared" / "references" / "route-map.md").read_text(encoding="utf-8")
+        batch = (ROOT / "shared" / "references" / "batch-discovery-execution.md").read_text(encoding="utf-8")
+        formal = (ROOT / "shared" / "references" / "using-superleads-formal-delivery.md").read_text(encoding="utf-8")
+        default = (ROOT / "shared" / "references" / "default-discovery-reference.md").read_text(encoding="utf-8")
+
+        normalized = {
+            "route_map": route_map.replace("\n", " "),
+            "batch": batch.replace("\n", " "),
+            "formal": formal.replace("\n", " "),
+            "default": default.replace("\n", " "),
+        }
+        required_stage_anchors = {
+            "scoping-lead-research": (
+                (normalized["route_map"], "scoped"),
+                (normalized["batch"], "Create a Run Context"),
+            ),
+            "writing-research-plans": (
+                (normalized["route_map"], "planned"),
+                (normalized["default"], "默认 Plan"),
+            ),
+            "executing-research-plans": (
+                (normalized["route_map"], "collecting"),
+                (normalized["batch"], "one bounded, actual business search"),
+            ),
+            "assessing-research-evidence": (
+                (normalized["route_map"], "assessed"),
+                (normalized["formal"], "Assessment"),
+            ),
+            "collecting-contact-intelligence": (
+                (normalized["batch"], "mandatory L2 work"),
+                (normalized["batch"], "../internal-stages/collecting-contact-intelligence.md"),
+            ),
+            "resolving-company-identity": (
+                (normalized["route_map"], "deep-check output requires an Entity decision"),
+                (normalized["formal"], "the entity resolves without an unresolved name/domain/address conflict"),
+            ),
+            "reviewing-lead-research": (
+                (normalized["route_map"], "reviewing-lead-research` → `verification-before-delivery"),
+                (normalized["formal"], "Review, and Audit chain"),
+            ),
+            "verification-before-delivery": (
+                (normalized["route_map"], "reviewing-lead-research` → `verification-before-delivery"),
+                (normalized["formal"], "Review, and Audit chain"),
+            ),
+            "exporting-lead-workbooks": (
+                (normalized["formal"], "always use the unified exporter"),
+                (normalized["formal"], "scripts/export_superleads_markdown.py"),
+            ),
+        }
+        for stage, anchors in required_stage_anchors.items():
+            with self.subTest(stage=stage):
+                for content, marker in anchors:
+                    self.assertIn(marker, content)
+
+        self.assertIn("do not route every discovery round through them as mandatory", route_map)
+        self.assertIn("默认发现**不要求生成** Entity、Claim、ClaimEvidence", default)
+        self.assertIn("`learning-from-feedback` is cross-cutting after delivery, not a default discovery-round stage", route_map)
+
     def test_plugin_default_prompt_names_only_the_three_public_business_entries(self) -> None:
         manifest = json.loads((ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
 
