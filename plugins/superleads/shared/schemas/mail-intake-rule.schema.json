@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superleads.local/schemas/mail-intake-rule.schema.json",
+  "title": "Superleads Mail Intake Rule",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "mail_intake_rule_id", "enabled", "mode", "mailbox_ref", "folders_or_labels",
+    "received_after", "received_before", "keyword_filters", "sender_filters", "subject_filters",
+    "direction", "read_only", "actions", "user_approved_at", "created_at"
+  ],
+  "properties": {
+    "mail_intake_rule_id": {"type": "string", "minLength": 1},
+    "enabled": {"type": "boolean"},
+    "mode": {"type": "string", "enum": ["one_shot", "continuous"]},
+    "mailbox_ref": {"type": "string", "pattern": "^[A-Za-z0-9._-]{1,128}$"},
+    "folders_or_labels": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "received_after": {"type": ["string", "null"]},
+    "received_before": {"type": ["string", "null"]},
+    "keyword_filters": {"type": "array", "items": {"type": "string"}},
+    "sender_filters": {"type": ["array", "null"], "items": {"type": "string"}},
+    "subject_filters": {"type": ["array", "null"], "items": {"type": "string"}},
+    "direction": {"type": "string", "const": "inbound"},
+    "read_only": {"type": "boolean", "const": true},
+    "actions": {"type": "array", "minItems": 1, "items": {"type": "string", "enum": ["create_inquiry", "create_candidate", "create_contact_with_source_note", "create_entity_resolution_task"]}},
+    "user_approved_at": {"type": ["string", "null"]},
+    "created_at": {"type": "string", "minLength": 1}
+  },
+  "allOf": [
+    {"if": {"properties": {"mode": {"const": "one_shot"}}, "required": ["mode"]}, "then": {"properties": {"received_after": {"type": "string", "minLength": 1}, "received_before": {"type": "string", "minLength": 1}}, "required": ["received_after", "received_before"]}},
+    {"if": {"properties": {"mode": {"const": "continuous"}}, "required": ["mode"]}, "then": {"properties": {"enabled": {"const": true}, "user_approved_at": {"type": "string", "minLength": 1}}, "required": ["enabled", "user_approved_at"]}}
+  ]
+}

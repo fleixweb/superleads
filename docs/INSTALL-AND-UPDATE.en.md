@@ -14,6 +14,9 @@ Do not give the GitHub commands below to end users before this repository is pub
 1. The GitHub repository is `fleixweb/superleads` and its default branch is `master`.
 2. Claude Code and Codex can both read the marketplace from the public repository.
 3. The marketplace-installed version matches `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json`.
+4. Both `.agents/plugins/marketplace.json` and `.claude-plugin/marketplace.json`
+   point to `./plugins/superleads`, and that directory passes strict runtime
+   distribution validation.
 
 ## Claude Code
 
@@ -106,10 +109,20 @@ Markdown delivery use the no-script path and carry the marker
 only when an XLSX file is explicitly required; that explicit request must not
 silently downgrade.
 
+The official GitHub marketplace always points to the tracked lean runtime package
+at `plugins/superleads/`. Before publishing, rebuild that directory and verify
+that the working tree contains no unsynchronized runtime changes:
+
+```bash
+python3 scripts/build_superleads_plugin_package.py --output plugins/superleads --format json
+python3 scripts/check_superleads_plugin_distribution.py --plugin-root plugins/superleads --source-root . --runtime-package --format json
+git diff --exit-code -- plugins/superleads
+```
+
 When a local marketplace points at the source repository, Codex copies development
-assets and historical UAT files into its cache. Before a local release or runtime
-test, build the lean package, point the local Superleads marketplace source at the
-artifact, then reinstall:
+assets and historical UAT files into its cache. For local runtime testing, you can
+instead build a Git-ignored temporary artifact, point the local Superleads
+marketplace source at that artifact, and reinstall:
 
 ```bash
 python3 scripts/build_superleads_plugin_package.py --format json

@@ -7,8 +7,8 @@
     {
       "name": "superleads",
       "source": {
-        "source": "url",
-        "url": "./"
+        "source": "local",
+        "path": "./plugins/superleads"
       },
       "policy": {
         "installation": "AVAILABLE",

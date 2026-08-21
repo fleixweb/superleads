@@ -1,0 +1,1036 @@
+"""Build the scoped, non-delivery workbook view for customer background research."""
+from __future__ import annotations
+
+import copy
+import json
+from typing import Any
+
+from _superleads_common import (
+    CLAIM_SUPPORT_ALLOWED_CAPABILITIES,
+    as_list,
+    ensure_list,
+    has_text,
+    is_safe_public_http_url,
+    issue,
+    safe_public_source_url,
+    source_evidence_scope,
+    user_provided_source_display,
+    connected_source_display,
+)
+from validate_research_graph import BLOCKED_ACCESS, validate_graph
+
+
+BACKGROUND_SHEETS = [
+    "客户一眼看懂",
+    "客户、品牌与关联方",
+    "公开业务信号与待核验事项",
+    "公开联系入口与关联依据",
+    "待核验事项与来源限制",
+    "信息从哪里来",
+]
+
+RELATION_ENDPOINT_FIELDS = (
+    "source_entity_id", "from_entity_id", "parent_entity_id",
+    "target_entity_id", "to_entity_id", "child_entity_id",
+)
+RELATION_LABELS = {
+    "same_as": "同一主体关系",
+    "brand_of": "品牌归属关系",
+    "legal_entity_of": "法律主体关系",
+    "branch_of": "分支机构关系",
+    "dealer_of": "经销/分销关系",
+    "formerly_known_as": "历史名称关系",
+    "acquired_by": "收购关系",
+    "unrelated_same_name": "同名但不同主体",
+    "needs_manual_review": "待人工确认关系",
+    "other": "其他关联关系",
+}
+CLAIM_LABELS = {
+    "product_match": "产品/业务",
+    "company_identity": "主体识别",
+    "contact_route": "公开联系入口",
+    "location": "地址/地区",
+    "registration": "注册信息",
+    "brand_trademark": "品牌/商标",
+    "channel_role": "渠道/供应链角色",
+    "ownership": "所有权/集团关系",
+    "certification": "认证/资质",
+}
+MEDIUM_LABELS = {
+    "website": "网站",
+    "social": "公开社媒",
+    "registry": "注册库",
+    "directory": "目录",
+    "map": "地图",
+    "document": "文档",
+    "spreadsheet": "表格",
+    "image": "图片",
+    "correspondence": "通信材料",
+    "search_result": "搜索结果摘要",
+}
+ANCHOR_LABELS = {
+    "candidate_id": "Candidate",
+    "company_name": "公司名称",
+    "brand_name": "品牌名称",
+    "website_or_domain": "官网/域名",
+    "address": "地址",
+    "phone": "电话",
+    "email": "邮箱",
+    "user_material": "用户材料",
+}
+
+
+def _id_map(graph: dict[str, Any], key: str, field: str) -> dict[str, dict[str, Any]]:
+    return {
+        str(item.get(field)): item
+        for item in ensure_list(graph, key)
+        if isinstance(item, dict) and has_text(item.get(field))
+    }
+
+
+def _current_background_context(graph: dict[str, Any]) -> tuple[dict[str, Any] | None, list[dict[str, str]]]:
+    runs = [item for item in ensure_list(graph, "runs") if isinstance(item, dict)]
+    briefs = _id_map(graph, "briefs", "brief_id")
+    run = runs[-1] if runs else None
+    if not isinstance(run, dict):
+        return None, [issue("critical", "background_export_current_run_missing", "Background export requires a current Run that references the background Brief", "runs")]
+    brief = briefs.get(str(run.get("brief_id") or ""))
+    if not isinstance(brief, dict):
+        return None, [issue("critical", "background_export_current_brief_missing", "Background export requires the current Run to reference an existing Brief", "runs[-1].brief_id")]
+    if brief.get("task_mode") != "customer_background_research":
+        return None, [issue("critical", "background_export_task_mode_mismatch", "--mode background requires current Brief task_mode=customer_background_research", "briefs.current.task_mode")]
+    if brief.get("output_mode") != "客户背调报告":
+        return None, [issue("critical", "background_export_output_mode_mismatch", "--mode background requires current Brief output_mode=客户背调报告", "briefs.current.output_mode")]
+    target = brief.get("background_research_target")
+    if not isinstance(target, dict):
+        return None, [issue("critical", "background_export_target_missing", "Background export requires background_research_target on the current Brief", "briefs.current.background_research_target")]
+    return {"run": run, "brief": brief, "target": target}, []
+
+
+def _formal_observation(observation: Any, sources: dict[str, dict[str, Any]]) -> bool:
+    if not isinstance(observation, dict):
+        return False
+    source = sources.get(str(observation.get("source_id") or ""))
+    return bool(
+        isinstance(source, dict)
+        and observation.get("capability") in CLAIM_SUPPORT_ALLOWED_CAPABILITIES
+        and observation.get("access_status") not in BLOCKED_ACCESS
+        and has_text(observation.get("raw_excerpt"))
+        and source.get("medium") != "search_result"
+        and source_evidence_scope(source, observation, "formal_claim")[0]
+    )
+
+
+def _claim_has_formal_support(
+    claim_id: str,
+    claim_evidence: list[dict[str, Any]],
+    observations: dict[str, dict[str, Any]],
+    sources: dict[str, dict[str, Any]],
+) -> bool:
+    return any(
+        evidence.get("claim_id") == claim_id
+        and evidence.get("relation") == "supports"
+        and _formal_observation(observations.get(str(evidence.get("observation_id") or "")), sources)
+        for evidence in claim_evidence
+    )
+
+
+def _relationship_is_supported(
+    relationship: dict[str, Any],
+    entities: dict[str, dict[str, Any]],
+    claims: dict[str, dict[str, Any]],
+    claim_evidence: list[dict[str, Any]],
+    observations: dict[str, dict[str, Any]],
+    sources: dict[str, dict[str, Any]],
+) -> bool:
+    endpoints = {str(relationship.get(field)) for field in RELATION_ENDPOINT_FIELDS if has_text(relationship.get(field))}
+    if len(endpoints) < 2 or not endpoints.issubset(entities):
+        return False
+    claim_ids = [str(item) for item in as_list(relationship.get("evidence_claim_ids")) if has_text(item)]
+    observation_ids = [str(item) for item in as_list(relationship.get("evidence_observation_ids")) if has_text(item)]
+    if not claim_ids and not observation_ids:
+        return False
+    if any(
+        not isinstance(claims.get(claim_id), dict)
+        or claims[claim_id].get("entity_id") not in endpoints
+        or not _claim_has_formal_support(claim_id, claim_evidence, observations, sources)
+        for claim_id in claim_ids
+    ):
+        return False
+    if any(
+        not isinstance(observations.get(observation_id), dict)
+        or observations[observation_id].get("entity_id") not in endpoints
+        or not _formal_observation(observations[observation_id], sources)
+        for observation_id in observation_ids
+    ):
+        return False
+    return True
+
+
+def _project_run(run: dict[str, Any]) -> dict[str, Any]:
+    fields = ("run_id", "status", "created_at", "updated_at", "brief_id")
+    result = {field: copy.deepcopy(run[field]) for field in fields if field in run}
+    # The report projection deliberately has no delivery-review or host-adapter
+    # semantics. Source/Observation evidence remains in the projection.
+    result["platform"] = "background_report"
+    return result
+
+
+def _project_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
+    result = copy.deepcopy(candidate)
+    for field in ("run_id", "brief_id", "plan_id", "discovery_method", "search_log_id", "search_log_ids", "discovery_refs"):
+        result.pop(field, None)
+    return result
+
+
+def _project_observation(observation: dict[str, Any]) -> dict[str, Any]:
+    result = copy.deepcopy(observation)
+    result.pop("run_id", None)
+    return result
+
+
+def build_background_projection(graph: dict[str, Any]) -> tuple[dict[str, Any] | None, list[dict[str, str]]]:
+    """Select only the current background subject and its evidence-backed closure."""
+    context, issues = _current_background_context(graph)
+    if context is None:
+        return None, issues
+
+    target = context["target"]
+    entities = _id_map(graph, "entities", "entity_id")
+    candidates = _id_map(graph, "candidates", "candidate_id")
+    sources = _id_map(graph, "sources", "source_id")
+    observations = _id_map(graph, "observations", "observation_id")
+    claims = _id_map(graph, "claims", "claim_id")
+    contact_points = _id_map(graph, "contact_points", "contact_id")
+    claim_evidence = [item for item in ensure_list(graph, "claim_evidence") if isinstance(item, dict)]
+    relationships = [item for item in ensure_list(graph, "entity_relationships") if isinstance(item, dict)]
+
+    candidate_ids = {
+        str(anchor.get("candidate_id"))
+        for anchor in as_list(target.get("anchors"))
+        if isinstance(anchor, dict) and anchor.get("kind") == "candidate_id" and has_text(anchor.get("candidate_id"))
+    }
+    source_ids = {
+        str(anchor.get("source_id"))
+        for anchor in as_list(target.get("anchors"))
+        if isinstance(anchor, dict) and anchor.get("kind") == "user_material" and has_text(anchor.get("source_id"))
+    }
+    observation_ids = {str(item) for item in as_list(target.get("resolution_observation_ids")) if has_text(item)}
+    entity_ids: set[str] = set()
+    primary_entity_id = target.get("primary_subject_entity_id")
+    if has_text(primary_entity_id):
+        entity_ids.add(str(primary_entity_id))
+    for candidate_id in candidate_ids:
+        candidate = candidates.get(candidate_id)
+        if isinstance(candidate, dict) and has_text(candidate.get("entity_id")):
+            entity_ids.add(str(candidate["entity_id"]))
+
+    for observation in observations.values():
+        if observation.get("source_id") in source_ids or observation.get("candidate_id") in candidate_ids:
+            observation_ids.add(str(observation["observation_id"]))
+    for observation_id in list(observation_ids):
+        observation = observations.get(observation_id)
+        if isinstance(observation, dict):
+            if has_text(observation.get("source_id")):
+                source_ids.add(str(observation["source_id"]))
+            if has_text(observation.get("entity_id")):
+                entity_ids.add(str(observation["entity_id"]))
+
+    relationship_ids: set[str] = set()
+    relationship_entities = {str(primary_entity_id)} if has_text(primary_entity_id) else set()
+    changed = True
+    while changed and relationship_entities:
+        changed = False
+        for relationship in relationships:
+            relationship_id = relationship.get("entity_relationship_id")
+            endpoints = {str(relationship.get(field)) for field in RELATION_ENDPOINT_FIELDS if has_text(relationship.get(field))}
+            if not endpoints & relationship_entities or not _relationship_is_supported(relationship, entities, claims, claim_evidence, observations, sources):
+                continue
+            if has_text(relationship_id):
+                relationship_ids.add(str(relationship_id))
+            new_entities = endpoints - entity_ids
+            if new_entities:
+                entity_ids.update(new_entities)
+                relationship_entities.update(new_entities)
+                changed = True
+
+    for observation in observations.values():
+        if observation.get("entity_id") in entity_ids:
+            observation_ids.add(str(observation["observation_id"]))
+    for observation_id in list(observation_ids):
+        observation = observations.get(observation_id)
+        if isinstance(observation, dict) and has_text(observation.get("source_id")):
+            source_ids.add(str(observation["source_id"]))
+
+    # Preserve Candidates only when an included Observation actually cites one.
+    # This keeps the projected graph referentially valid without including an
+    # unrelated bulk candidate pool.
+    for observation_id in observation_ids:
+        observation = observations.get(observation_id)
+        if isinstance(observation, dict) and has_text(observation.get("candidate_id")):
+            candidate_ids.add(str(observation["candidate_id"]))
+    for candidate_id in candidate_ids:
+        candidate = candidates.get(candidate_id)
+        if isinstance(candidate, dict) and has_text(candidate.get("entity_id")):
+            entity_ids.add(str(candidate["entity_id"]))
+
+    claim_ids = {
+        claim_id for claim_id, claim in claims.items()
+        if claim.get("entity_id") in entity_ids
+        and _claim_has_formal_support(claim_id, claim_evidence, observations, sources)
+    }
+    claim_evidence_ids: set[str] = set()
+    for evidence in claim_evidence:
+        if evidence.get("claim_id") not in claim_ids:
+            continue
+        observation = observations.get(str(evidence.get("observation_id") or ""))
+        if not isinstance(observation, dict):
+            continue
+        source = sources.get(str(observation.get("source_id") or ""))
+        if not isinstance(source, dict):
+            continue
+        if has_text(evidence.get("claim_evidence_id")):
+            claim_evidence_ids.add(str(evidence["claim_evidence_id"]))
+        observation_ids.add(str(observation["observation_id"]))
+        source_ids.add(str(observation["source_id"]))
+
+    contact_claims = [
+        item for item in ensure_list(graph, "contact_claims")
+        if isinstance(item, dict) and item.get("entity_id") in entity_ids
+    ]
+    contact_ids = {str(item.get("contact_id")) for item in contact_claims if has_text(item.get("contact_id"))}
+    for contact_claim in contact_claims:
+        for field in ("association_observation_id",):
+            if has_text(contact_claim.get(field)):
+                observation_ids.add(str(contact_claim[field]))
+    for contact_id in list(contact_ids):
+        contact = contact_points.get(contact_id)
+        if isinstance(contact, dict) and has_text(contact.get("source_observation_id")):
+            observation_ids.add(str(contact["source_observation_id"]))
+    for observation_id in list(observation_ids):
+        observation = observations.get(observation_id)
+        if isinstance(observation, dict) and has_text(observation.get("source_id")):
+            source_ids.add(str(observation["source_id"]))
+
+    unassigned = []
+    for lead in ensure_list(graph, "unassigned_contact_leads"):
+        if not isinstance(lead, dict):
+            continue
+        contact = contact_points.get(str(lead.get("contact_id") or ""))
+        observation = observations.get(str(contact.get("source_observation_id") or "")) if isinstance(contact, dict) else None
+        if isinstance(observation, dict) and observation.get("observation_id") in observation_ids:
+            unassigned.append(lead)
+            contact_ids.add(str(contact["contact_id"]))
+
+    hypotheses = [
+        item for item in ensure_list(graph, "hypotheses")
+        if isinstance(item, dict)
+        and item.get("entity_id") in entity_ids
+        and set(str(claim_id) for claim_id in as_list(item.get("basis_claim_ids"))).issubset(claim_ids)
+    ]
+
+    selected_relationships = [
+        item for item in relationships
+        if str(item.get("entity_relationship_id") or "") in relationship_ids
+    ]
+    projection = {
+        "runs": [_project_run(context["run"])],
+        "briefs": [copy.deepcopy(context["brief"])],
+        "plans": [],
+        "candidates": [_project_candidate(candidates[candidate_id]) for candidate_id in sorted(candidate_ids) if candidate_id in candidates],
+        "sources": [copy.deepcopy(sources[source_id]) for source_id in sorted(source_ids) if source_id in sources],
+        "observations": [_project_observation(observations[observation_id]) for observation_id in sorted(observation_ids) if observation_id in observations],
+        "entities": [copy.deepcopy(entities[entity_id]) for entity_id in sorted(entity_ids) if entity_id in entities],
+        "entity_relationships": copy.deepcopy(selected_relationships),
+        "claims": [copy.deepcopy(claims[claim_id]) for claim_id in sorted(claim_ids)],
+        "claim_evidence": [
+            copy.deepcopy(item) for item in claim_evidence
+            if str(item.get("claim_evidence_id") or "") in claim_evidence_ids
+        ],
+        "contact_points": [copy.deepcopy(contact_points[contact_id]) for contact_id in sorted(contact_ids) if contact_id in contact_points],
+        "contact_claims": copy.deepcopy(contact_claims),
+        "unassigned_contact_leads": copy.deepcopy(unassigned),
+        "hypotheses": copy.deepcopy(hypotheses),
+    }
+    suspected_trade_records = [
+        copy.deepcopy(item)
+        for item in ensure_list(graph, "suspected_trade_records")
+        if isinstance(item, dict)
+    ]
+    if suspected_trade_records:
+        projection["suspected_trade_records"] = suspected_trade_records
+    return {
+        **context,
+        "projection": projection,
+        "entity_ids": entity_ids,
+        "candidate_ids": candidate_ids,
+        "source_ids": source_ids,
+        "observation_ids": observation_ids,
+        "claim_ids": claim_ids,
+        "relationship_ids": relationship_ids,
+    }, []
+
+
+def validate_background_report(graph: dict[str, Any]) -> tuple[dict[str, Any] | None, list[dict[str, str]]]:
+    """Validate only the evidence-backed background scope, never delivery history."""
+    scope, issues = build_background_projection(graph)
+    if scope is None:
+        return None, issues
+    return scope, validate_graph(scope["projection"])
+
+
+def _source_display(source: dict[str, Any], observation: dict[str, Any] | None = None) -> str:
+    user_file = user_provided_source_display(source, observation or {})
+    if user_file:
+        return user_file
+    connected = connected_source_display(source, observation or {})
+    if connected:
+        return connected
+    return "公开来源" if safe_public_source_url(source) else "来源信息不可用"
+
+
+def _source_status(source: dict[str, Any], observation: dict[str, Any] | None = None) -> str:
+    if isinstance(observation, dict) and observation.get("access_status") in BLOCKED_ACCESS:
+        return "来源受限"
+    if source.get("medium") == "search_result":
+        return "搜索摘要，只能作线索"
+    if source.get("provenance") in {"user_provided", "manual_input"}:
+        return "用户提供材料，待独立核实"
+    if isinstance(observation, dict) and _formal_observation(observation, {str(source.get("source_id")): source}):
+        return "已核实"
+    return "待核实"
+
+
+def _claim_value(claim: dict[str, Any]) -> str:
+    value = claim.get("typed_value")
+    if isinstance(value, dict) and has_text(value.get("text")):
+        return str(value["text"])
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, ensure_ascii=False, sort_keys=True)
+    return "" if value is None else str(value)
+
+
+def _claim_summary(claim: dict[str, Any]) -> str:
+    return " ".join(item for item in (str(claim.get("subject") or ""), str(claim.get("predicate") or ""), _claim_value(claim)) if item)
+
+
+def _business_claim_summary(claim: dict[str, Any]) -> str:
+    """Translate a validated graph Claim into a sentence a salesperson can read."""
+    subject = str(claim.get("subject") or "这家公司")
+    value = _claim_value(claim)
+    predicate = str(claim.get("predicate") or "").strip()
+    claim_type = str(claim.get("claim_type") or "")
+    templates = {
+        "has_address": f"{subject} 的公开地址为 {value}",
+        "is_located_in": f"公开资料显示 {subject} 位于 {value}",
+        "is_registered_in": f"公开注册信息显示 {subject} 注册地为 {value}",
+        "is_registered_as": f"公开注册信息显示 {subject} 的登记名称为 {value}",
+        "sells": f"公开页面显示 {subject} 销售 {value}",
+        "offers": f"公开页面显示 {subject} 提供 {value}",
+        "manufactures": f"公开页面显示 {subject} 生产 {value}",
+        "operates_as": f"公开页面显示 {subject} 以 {value} 身份经营",
+        "operates as": f"公开页面显示 {subject} 以 {value} 身份经营",
+        "owned_by": f"公开资料显示 {subject} 由 {value} 持有",
+    }
+    if predicate in templates:
+        return templates[predicate]
+    if predicate == "is":
+        if claim_type == "company_identity":
+            return f"公开资料显示 {subject} 对应 {value}"
+        return f"公开页面提到 {subject} 与 {value} 有关"
+    return f"公开资料显示：{subject} {value}".strip()
+
+
+def _relationship_endpoints(relationship: dict[str, Any]) -> tuple[str | None, str | None]:
+    source = next((relationship.get(field) for field in ("source_entity_id", "from_entity_id", "parent_entity_id") if has_text(relationship.get(field))), None)
+    target = next((relationship.get(field) for field in ("target_entity_id", "to_entity_id", "child_entity_id") if has_text(relationship.get(field))), None)
+    return (str(source) if source else None, str(target) if target else None)
+
+
+def _role_pair(relationship_type: Any) -> tuple[str, str]:
+    return {
+        "brand_of": ("品牌", "品牌归属主体"),
+        "legal_entity_of": ("法律主体", "关联品牌/运营主体"),
+        "branch_of": ("分支机构", "所属主体"),
+        "dealer_of": ("经销商/分销商", "品牌/供应主体"),
+        "acquired_by": ("被收购主体", "收购主体"),
+        "formerly_known_as": ("历史名称主体", "当前名称主体"),
+    }.get(relationship_type, ("关联主体", "关联主体"))
+
+
+def _claim_evidence_maps(scope: dict[str, Any]) -> tuple[dict[str, list[dict[str, Any]]], dict[str, list[dict[str, Any]]]]:
+    by_claim: dict[str, list[dict[str, Any]]] = {}
+    by_observation: dict[str, list[dict[str, Any]]] = {}
+    for evidence in ensure_list(scope["projection"], "claim_evidence"):
+        if not isinstance(evidence, dict):
+            continue
+        by_claim.setdefault(str(evidence.get("claim_id")), []).append(evidence)
+        by_observation.setdefault(str(evidence.get("observation_id")), []).append(evidence)
+    return by_claim, by_observation
+
+
+def _first_evidence_context(
+    claim_id: str,
+    evidence_by_claim: dict[str, list[dict[str, Any]]],
+    observations: dict[str, dict[str, Any]],
+    sources: dict[str, dict[str, Any]],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    for evidence in evidence_by_claim.get(claim_id, []):
+        observation = observations.get(str(evidence.get("observation_id") or ""))
+        if isinstance(observation, dict):
+            source = sources.get(str(observation.get("source_id") or ""))
+            if isinstance(source, dict):
+                return observation, source
+    return {}, {}
+
+
+def _empty_row(message: str) -> list[dict[str, Any]]:
+    return [{"说明": message}]
+
+
+def _background_placeholder_rows(rows: list[dict[str, Any]], message: str, headers: tuple[str, ...]) -> list[dict[str, Any]]:
+    """Project empty background workbook rows into the actual user-facing columns.
+
+    The generic Markdown table helper fills missing cells with ``未提供``.  For
+    a customer-background report that reads like a broken row instead of a
+    useful gap statement, so each empty sheet now keeps one plain-language row
+    in the first business column and marks the remaining columns as 待确认.
+    """
+    if not rows:
+        return [{headers[0]: message, **{header: "待确认" for header in headers[1:]}}]
+    if len(rows) == 1 and isinstance(rows[0], dict) and set(rows[0]) == {"说明"}:
+        return [{headers[0]: rows[0].get("说明") or message, **{header: "待确认" for header in headers[1:]}}]
+    return rows
+
+
+def _suspected_trade_record_status(record: dict[str, Any]) -> str:
+    """Project restricted third-party trade clues without upgrading identity."""
+    status = str(record.get("status") or "")
+    visibility = str(record.get("visibility") or "")
+    status_label = {
+        "not_searched": "本轮未检索",
+        "searched_not_found": "已检索未见",
+        "source_restricted": "详情受限",
+        "suspected_identity_pending": "疑似，主体待确认",
+    }.get(status, "疑似，主体待确认")
+    if status not in {"not_searched", "searched_not_found"}:
+        match_level = str(record.get("subject_match_level") or "unknown")
+        if status == "source_restricted":
+            status_label = "疑似，主体待确认；详情受限"
+        elif match_level != "name_exact_address_match":
+            status_label = "疑似，主体待确认"
+        if visibility == "search_snippet_only":
+            status_label += "；搜索摘要可见"
+    return "；".join(
+        item for item in (
+            "第三方贸易数据聚合站公开摘要，非官方海关记录",
+            status_label,
+            str(record.get("cannot_conclude") or "不能推出采购量、采购周期、采购意愿、从中国采购事实"),
+            str(record.get("next_step_for_user") or "请用你自己的海关数据渠道按上述字段核实"),
+        ) if item
+    )
+
+
+def _suspected_trade_record_rows(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    direction_labels = {"import": "import", "export": "export", "unknown": "unknown"}
+    rows: list[dict[str, Any]] = []
+    for record in records:
+        rows.append({
+            "方向（原文口径）": direction_labels.get(str(record.get("direction") or "unknown"), str(record.get("direction") or "unknown")),
+            "对方名称（原文）": record.get("counterparty_name_verbatim") or "未提供",
+            "日期": record.get("record_date") or "date_not_visible",
+            "品名 / HS（原文）": record.get("product_or_hs_verbatim") or "未提供",
+            "起运 / 目的地（原文）": record.get("origin_or_destination_verbatim") or "未提供",
+            "来源 / 状态 / 边界": _suspected_trade_record_status(record),
+        })
+    return rows
+
+
+def build_background_report_sheets(scope: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    """Render the background scope in business language, with evidence kept separate."""
+    projection = scope["projection"]
+    target = scope["target"]
+    entities = _id_map(projection, "entities", "entity_id")
+    sources = _id_map(projection, "sources", "source_id")
+    observations = _id_map(projection, "observations", "observation_id")
+    claims = _id_map(projection, "claims", "claim_id")
+    contacts = _id_map(projection, "contact_points", "contact_id")
+    evidence_by_claim, evidence_by_observation = _claim_evidence_maps(scope)
+    primary_entity_id = target.get("primary_subject_entity_id")
+    primary_entity = entities.get(str(primary_entity_id or ""), {})
+    resolution_status = target.get("subject_resolution_status")
+    resolution_label = {
+        "resolved": "已确认公司主体",
+        "multiple_candidates": "可能对应多个主体",
+        "unresolved": "公司主体尚未确认",
+    }.get(resolution_status, "公司主体待确认")
+
+    resolution_source_labels = []
+    for observation_id in as_list(target.get("resolution_observation_ids")):
+        observation = observations.get(str(observation_id))
+        source = sources.get(str(observation.get("source_id") or "")) if isinstance(observation, dict) else None
+        if isinstance(observation, dict) and isinstance(source, dict):
+            resolution_source_labels.append(_source_display(source, observation))
+    relationship_rows = []
+    for entity_id, entity in entities.items():
+        relationship_rows.append({
+            "名称": entity.get("legal_name") or entity.get("name"),
+            "它是什么": "本次背调的公司主体" if entity_id == primary_entity_id else "发现的关联方",
+            "和客户的关系": "客户主体" if entity_id == primary_entity_id else "关系尚待确认",
+            "目前把握": "已确认" if entity_id == primary_entity_id and resolution_status == "resolved" else "待确认",
+            "我们依据什么": "；".join(dict.fromkeys(resolution_source_labels)) if entity_id == primary_entity_id else "公开资料记录的关联方信息",
+        })
+    for relationship in ensure_list(projection, "entity_relationships"):
+        if not isinstance(relationship, dict):
+            continue
+        source_id, target_id = _relationship_endpoints(relationship)
+        source_entity = entities.get(str(source_id or ""), {})
+        target_entity = entities.get(str(target_id or ""), {})
+        source_role, target_role = _role_pair(relationship.get("relationship_type"))
+        evidence_text, evidence_url, observed_at = _relationship_evidence(relationship, claims, observations, sources, evidence_by_claim)
+        relation_status = "待确认" if relationship.get("resolution_status") in {"manual_check", "rejected"} else ("历史信息" if relationship.get("relationship_type") == "formerly_known_as" else "已确认")
+        relationship_rows.append({
+            "名称": target_entity.get("legal_name") or target_entity.get("name") or source_entity.get("legal_name") or source_entity.get("name"),
+            "它是什么": f"{source_role} / {target_role}",
+            "和客户的关系": f"{source_entity.get('legal_name') or source_entity.get('name') or ''} {RELATION_LABELS.get(relationship.get('relationship_type'), '存在关联')} {target_entity.get('legal_name') or target_entity.get('name') or ''}",
+            "目前把握": relation_status,
+            "我们依据什么": "公开来源支持该关系" + (f"（观察于 {observed_at}）" if observed_at else ""),
+        })
+
+    opportunity_rows = []
+    for claim_id, claim in claims.items():
+        observation, source = _first_evidence_context(claim_id, evidence_by_claim, observations, sources)
+        if not observation or not source:
+            continue
+        if claim.get("claim_type") not in {"product_match", "channel_role", "certification"}:
+            continue
+        scope_status = claim.get("claim_scope")
+        evidence_source = _source_display(source, observation)
+        if observation.get("observed_at"):
+            evidence_source += f"（观察于 {observation['observed_at']}）"
+        opportunity_rows.append({
+            "公开看到的信号": _business_claim_summary(claim),
+            "公开关联依据": evidence_source,
+            "待核验事项": "确认历史信息是否仍有效；公开业务信息不代表当前采购需求、采购权限或合作安排。" if scope_status in {"source_snapshot", "point_in_time"} else "公开业务信息不代表当前采购需求、采购权限或合作安排。",
+            "状态": "资料过旧需复核" if scope_status in {"source_snapshot", "point_in_time"} else "已有明确依据",
+        })
+
+    for hypothesis in ensure_list(projection, "hypotheses"):
+        if not isinstance(hypothesis, dict) or not has_text(hypothesis.get("hypothesis_text")):
+            continue
+        unknowns = [str(item) for item in as_list(hypothesis.get("unknowns")) if has_text(item)]
+        opportunity_rows.append({
+            "公开看到的信号": "待核验研究说明",
+            "公开关联依据": "未形成可打开来源支持的研究说明，不作为公司事实。",
+            "待核验事项": "；".join(unknowns) or "主体、公开业务范围及公开联系入口仍待核验。",
+            "状态": "待确认",
+        })
+
+    raw_contact_rows = _background_contact_rows(projection, entities, contacts, observations, sources)
+    contact_rows = []
+    for row in raw_contact_rows:
+        person = str(row.get("联系人/公开职业线索") or "").strip()
+        entry = str(row.get("公开联系入口") or "").strip()
+        association = "；".join(
+            item for item in (
+                str(row.get("归属状态") or "").strip(),
+                str(row.get("说明") or "").strip(),
+                str(row.get("来源") or "").strip(),
+            ) if item
+        )
+        pending = "公开联系入口不代表采购负责人、采购权限或当前采购需求。"
+        if row.get("联系方式状态") == "待确认归属":
+            pending = "公开联系入口与当前主体的关联仍待核验；不代表采购负责人、采购权限或当前采购需求。"
+        contact_rows.append({
+            "公开联系入口或职业线索": "；".join(item for item in (person, entry) if item) or "待确认联系入口",
+            "与主体的公开关联依据": association or "公开关联依据待补充",
+            "待核验事项": pending,
+            "状态": row.get("联系方式状态") or "待确认",
+        })
+
+    caution_rows = []
+    for row in _background_question_rows(scope, claims, observations, sources):
+        caution_rows.append({
+            "待核验事项": row.get("待确认问题"),
+            "公开依据或来源限制": row.get("依据/状态"),
+            "状态": "待确认",
+            "处理边界": "待确认前不作为公司事实或业务结论。",
+        })
+    for row in _background_unresolved_rows(scope, claims, observations, sources):
+        caution_rows.append({
+            "待核验事项": "：".join(item for item in (str(row.get("类型") or ""), str(row.get("线索/来源") or "")) if item),
+            "公开依据或来源限制": row.get("受限或冲突原因"),
+            "状态": row.get("状态") or "待确认",
+            "处理边界": "来源受限、冲突或用户材料线索不作为公司事实或业务结论。",
+        })
+
+    raw_evidence_rows = _background_evidence_rows(projection, claims, observations, sources, evidence_by_observation)
+    evidence_rows = [{
+        "上面哪条信息": row.get("关联字段/结论"),
+        "来源": row.get("来源标题/类型"),
+        "链接或材料": row.get("URL"),
+        "看到的原话或位置": row.get("原文摘录或材料定位"),
+        "时间": row.get("观察时间") or row.get("抓取/材料定位"),
+        "状态": row.get("状态"),
+    } for row in raw_evidence_rows]
+
+    trade_records = [
+        item for item in ensure_list(projection, "suspected_trade_records")
+        if isinstance(item, dict)
+    ]
+    trade_record_rows = _suspected_trade_record_rows(trade_records)
+    for record in trade_records:
+        evidence_rows.append({
+            "上面哪条信息": f"疑似进出口记录：{record.get('record_id') or '未提供'}",
+            "来源": f"{record.get('aggregator_source_name') or '第三方贸易数据聚合站'}；第三方贸易数据聚合站公开摘要，非官方海关记录",
+            "链接或材料": record.get("aggregator_source_url") or "",
+            "看到的原话或位置": "摘要可见字段按原文保留；详情页不可访问时不补写详情。",
+            "时间": record.get("record_date") or "date_not_visible",
+            "状态": _suspected_trade_record_status(record),
+        })
+
+    business_signals = [str(row.get("公开看到的信号")) for row in opportunity_rows if row.get("状态") != "待确认"]
+    usable_contacts = [row for row in raw_contact_rows if row.get("联系方式状态") == "可直接使用"]
+    if resolution_status != "resolved":
+        next_step = "确认这家公司对应的主体，以及公开联系入口与该主体的关联。"
+        contact_stage = "主体或公开联系入口仍待核实"
+    elif usable_contacts:
+        next_step = "核对公开联系入口的负责范围，以及是否对应当前需要确认的事项。"
+        contact_stage = f"已观察到 {len(usable_contacts)} 个可直接使用的公开联系入口"
+    elif business_signals:
+        next_step = "补充公开联系入口及其与主体、部门或角色的关联依据。"
+        contact_stage = "尚未找到可直接使用的公开入口"
+    else:
+        next_step = "先补充可检查的官网、公开目录或用户材料。"
+        contact_stage = "当前没有可用的公开联系入口"
+
+    if resolution_status == "resolved" and business_signals and usable_contacts:
+        verification_basis = "主体、公开业务和公开联系入口均有明确依据"
+    elif resolution_status == "resolved" and business_signals:
+        verification_basis = "主体和公开业务有依据，公开联系入口仍待补充"
+    else:
+        verification_basis = "公开信息不足，需补充资料"
+
+    overview_rows = [
+        {"你最关心的事": "这是谁", "目前了解到的情况": primary_entity.get("legal_name") or primary_entity.get("name") or target.get("user_statement"), "结论": resolution_label},
+        {"你最关心的事": "它公开在做什么", "目前了解到的情况": "；".join(business_signals) or "暂未找到可核实的公开业务信息", "结论": "已有公开业务信息" if business_signals else "还需补充信息"},
+        {"你最关心的事": "是否具备继续核验基础", "目前了解到的情况": "只汇总当前可核实的主体、业务和公开联系信息；不判断客户价值、采购意愿或是否应跟进。", "结论": verification_basis},
+        {"你最关心的事": "公开联系入口与待确认事项", "目前了解到的情况": f"已核实可直接使用的公开入口：{len(usable_contacts)} 个。", "结论": contact_stage},
+        {"你最关心的事": "下一步待确认什么", "目前了解到的情况": next_step, "结论": "保留为待确认事项，不代表是否应跟进的结论"},
+    ]
+    if any(observation.get("access_status") in BLOCKED_ACCESS for observation in observations.values()):
+        overview_rows.append({"你最关心的事": "信息有没有缺口", "目前了解到的情况": "部分来源无法访问，未把受限内容当作公司事实。", "结论": "见“待核验事项与来源限制”"})
+
+    result = {
+        "客户一眼看懂": overview_rows,
+        "客户、品牌与关联方": _background_placeholder_rows(
+            relationship_rows,
+            "主体尚未解析；暂无可展示的关联信息。",
+            ("名称", "它是什么", "和客户的关系", "目前把握", "我们依据什么"),
+        ),
+        "公开业务信号与待核验事项": _background_placeholder_rows(
+            opportunity_rows,
+            "暂无可核实的公开业务信息；不能据此判断采购需求。",
+            ("公开看到的信号", "公开关联依据", "待核验事项", "状态"),
+        ),
+        "公开联系入口与关联依据": _background_placeholder_rows(
+            contact_rows,
+            "暂无可展示的公开联系入口；不展示未确认或不可导出的联系方式值。",
+            ("公开联系入口或职业线索", "与主体的公开关联依据", "待核验事项", "状态"),
+        ),
+        "待核验事项与来源限制": _background_placeholder_rows(
+            caution_rows,
+            "暂无额外待确认事项。",
+            ("待核验事项", "公开依据或来源限制", "状态", "处理边界"),
+        ),
+        "信息从哪里来": _background_placeholder_rows(
+            evidence_rows,
+            "暂无可展示的来源记录。",
+            ("上面哪条信息", "来源", "链接或材料", "看到的原话或位置", "时间", "状态"),
+        ),
+    }
+    if trade_record_rows:
+        result["疑似进出口记录（第三方聚合，待核实）"] = trade_record_rows
+    return result
+
+
+def _safe_entity_url(entity: dict[str, Any]) -> str:
+    for field in ("website", "domain"):
+        value = entity.get(field)
+        if is_safe_public_http_url(value):
+            return value
+    return ""
+
+
+def _relationship_evidence(
+    relationship: dict[str, Any],
+    claims: dict[str, dict[str, Any]],
+    observations: dict[str, dict[str, Any]],
+    sources: dict[str, dict[str, Any]],
+    evidence_by_claim: dict[str, list[dict[str, Any]]],
+) -> tuple[str, str, str]:
+    details: list[str] = []
+    url = ""
+    observed_at = ""
+    for claim_id in as_list(relationship.get("evidence_claim_ids")):
+        claim = claims.get(str(claim_id))
+        if not isinstance(claim, dict):
+            continue
+        details.append(_claim_summary(claim))
+        observation, source = _first_evidence_context(str(claim_id), evidence_by_claim, observations, sources)
+        if observation and source:
+            url = url or safe_public_source_url(source)
+            observed_at = observed_at or str(observation.get("observed_at") or "")
+    for observation_id in as_list(relationship.get("evidence_observation_ids")):
+        observation = observations.get(str(observation_id))
+        source = sources.get(str(observation.get("source_id") or "")) if isinstance(observation, dict) else None
+        if isinstance(observation, dict) and isinstance(source, dict):
+            details.append(str(observation.get("raw_excerpt") or ""))
+            url = url or safe_public_source_url(source)
+            observed_at = observed_at or str(observation.get("observed_at") or "")
+    return "；".join(item for item in details if item), url, observed_at
+
+
+def _background_contact_rows(
+    projection: dict[str, Any],
+    entities: dict[str, dict[str, Any]],
+    contacts: dict[str, dict[str, Any]],
+    observations: dict[str, dict[str, Any]],
+    sources: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for claim in ensure_list(projection, "contact_claims"):
+        if not isinstance(claim, dict):
+            continue
+        status = claim.get("export_status")
+        if status in {"hold_no_source", "hold_inferred"}:
+            continue
+        contact = contacts.get(str(claim.get("contact_id") or ""), {})
+        source_observation = observations.get(str(contact.get("source_observation_id") or "")) if isinstance(contact, dict) else None
+        association_observation = observations.get(str(claim.get("association_observation_id") or ""))
+        source = sources.get(str(source_observation.get("source_id") or "")) if isinstance(source_observation, dict) else None
+        association_source = sources.get(str(association_observation.get("source_id") or "")) if isinstance(association_observation, dict) else None
+        exposable = status in {"ready", "export_with_source_note"} and source_evidence_scope(source, source_observation, "contact_ready" if status == "ready" else "contact_with_source_note")[0] and source_evidence_scope(association_source, association_observation, "contact_ready" if status == "ready" else "contact_with_source_note")[0]
+        person_or_title = " ".join(str(item) for item in (claim.get("person_name"), claim.get("job_title"), claim.get("department")) if item)
+        bridge_note = "桥接候选，不默认等于采购负责人" if any(token in person_or_title.casefold() for token in ("founder", "owner", "创始人", "所有者")) else ""
+        display_observation = association_observation if isinstance(association_observation, dict) else source_observation
+        display_source = association_source if isinstance(association_source, dict) else source
+        rows.append({
+            "主体": entities.get(str(claim.get("entity_id") or ""), {}).get("legal_name") or entities.get(str(claim.get("entity_id") or ""), {}).get("name") or "待确认归属线索",
+            "联系方式类型": contact.get("contact_type") if isinstance(contact, dict) else "",
+            "公开联系入口": contact.get("normalized_value") if exposable and isinstance(contact, dict) else "待确认归属线索",
+            "联系人/公开职业线索": person_or_title,
+            "联系方式状态": {"ready": "可直接使用", "export_with_source_note": "建议核查后使用"}.get(status, "待确认归属"),
+            "归属状态": "已记录公开归属" if exposable else "待确认归属",
+            "说明": "；".join(item for item in (bridge_note, claim.get("manual_check_note"), claim.get("source_context")) if item),
+            "来源": _source_display(display_source, display_observation) if isinstance(display_source, dict) else "来源信息不可用",
+            "来源 URL": safe_public_source_url(display_source) if isinstance(display_source, dict) else "",
+        })
+    for lead in ensure_list(projection, "unassigned_contact_leads"):
+        if not isinstance(lead, dict):
+            continue
+        contact = contacts.get(str(lead.get("contact_id") or ""), {})
+        observation = observations.get(str(contact.get("source_observation_id") or "")) if isinstance(contact, dict) else None
+        source = sources.get(str(observation.get("source_id") or "")) if isinstance(observation, dict) else None
+        rows.append({
+            "主体": "待确认归属线索",
+            "联系方式类型": contact.get("contact_type") if isinstance(contact, dict) else "",
+            "公开联系入口": "待确认归属线索",
+            "联系人/公开职业线索": "",
+            "联系方式状态": "待确认归属",
+            "归属状态": "未分配线索",
+            "说明": "；".join(item for item in (lead.get("reason"), lead.get("suggested_manual_check")) if item),
+            "来源": _source_display(source, observation) if isinstance(source, dict) else "来源信息不可用",
+            "来源 URL": safe_public_source_url(source) if isinstance(source, dict) else "",
+        })
+    return rows
+
+
+def _background_hypothesis_rows(
+    projection: dict[str, Any],
+    claims: dict[str, dict[str, Any]],
+    observations: dict[str, dict[str, Any]],
+    sources: dict[str, dict[str, Any]],
+    evidence_by_claim: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    rows = []
+    contact_claims = _id_map(projection, "contact_claims", "contact_claim_id")
+    for hypothesis in ensure_list(projection, "hypotheses"):
+        if not isinstance(hypothesis, dict):
+            continue
+        evidence = []
+        urls = []
+        for claim_id in as_list(hypothesis.get("basis_claim_ids")):
+            claim = claims.get(str(claim_id))
+            if not isinstance(claim, dict):
+                continue
+            evidence.append(_claim_summary(claim))
+            observation, source = _first_evidence_context(str(claim_id), evidence_by_claim, observations, sources)
+            if observation and source and safe_public_source_url(source):
+                urls.append(safe_public_source_url(source))
+        for contact_claim_id in as_list(hypothesis.get("basis_contact_claim_ids")):
+            contact_claim = contact_claims.get(str(contact_claim_id))
+            if not isinstance(contact_claim, dict):
+                continue
+            observation = observations.get(str(contact_claim.get("association_observation_id") or ""))
+            source = sources.get(str(observation.get("source_id") or "")) if isinstance(observation, dict) else None
+            status = contact_claim.get("export_status")
+            if status in {"ready", "export_with_source_note"}:
+                summary = contact_claim.get("association_evidence_text") or contact_claim.get("source_context")
+            else:
+                summary = "待确认联系方式归属线索：" + str(contact_claim.get("source_context") or "需人工核查")
+            if has_text(summary):
+                evidence.append(str(summary))
+            if isinstance(source, dict) and safe_public_source_url(source):
+                urls.append(safe_public_source_url(source))
+        if evidence:
+            rows.append({
+                "候选切入点": hypothesis.get("hypothesis_text"),
+                "证据概述": "；".join(evidence),
+                "来源": "；".join(dict.fromkeys(urls)),
+                "说明": "仅为基于证据的候选角度，需人工确认；不构成报价或谈判策略。",
+            })
+    return rows
+
+
+def _background_question_rows(
+    scope: dict[str, Any],
+    claims: dict[str, dict[str, Any]],
+    observations: dict[str, dict[str, Any]],
+    sources: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    target = scope["target"]
+    if target.get("subject_resolution_status") != "resolved":
+        rows.append({"待确认问题": "当前研究锚点对应的法律主体是哪一个？", "依据/状态": "主体尚未解析或存在多个候选主体", "说明": "待验证问题，不是主体结论或谈判策略。"})
+    for hypothesis in ensure_list(scope["projection"], "hypotheses"):
+        if not isinstance(hypothesis, dict):
+            continue
+        for unknown in as_list(hypothesis.get("unknowns")):
+            rows.append({"待确认问题": unknown, "依据/状态": "研究假设保留的未知项", "说明": "待验证问题，不是结论或谈判策略。"})
+        if has_text(hypothesis.get("next_verification_action")):
+            rows.append({"待确认问题": hypothesis.get("next_verification_action"), "依据/状态": "建议的下一步核验", "说明": "待验证问题，不是结论或谈判策略。"})
+    for claim in claims.values():
+        if claim.get("claim_scope") in {"source_snapshot", "point_in_time"}:
+            rows.append({"待确认问题": f"确认历史信息是否仍有效：{_business_claim_summary(claim)}", "依据/状态": "历史来源信息", "说明": "待验证问题，不以历史信息替代当前事实。"})
+    for relationship in ensure_list(scope["projection"], "entity_relationships"):
+        if isinstance(relationship, dict) and relationship.get("resolution_status") in {"manual_check", "rejected"}:
+            rows.append({"待确认问题": relationship.get("rationale") or "确认关联主体关系", "依据/状态": "关系尚未确认", "说明": "待验证问题，不是关系结论。"})
+    return rows
+
+
+def _background_unresolved_rows(
+    scope: dict[str, Any],
+    claims: dict[str, dict[str, Any]],
+    observations: dict[str, dict[str, Any]],
+    sources: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    target = scope["target"]
+    if target.get("subject_resolution_status") != "resolved":
+        rows.append({"类型": "客户主体", "线索/来源": target.get("user_statement"), "状态": "待确认", "受限或冲突原因": "尚未确认唯一对应的公司主体", "建议": "补充可检查公开来源或用户材料。"})
+    for observation in observations.values():
+        source = sources.get(str(observation.get("source_id") or ""))
+        if not isinstance(source, dict):
+            continue
+        if observation.get("access_status") in BLOCKED_ACCESS or source.get("medium") == "search_result" or source.get("provenance") in {"user_provided", "manual_input"}:
+            reason = "；".join(item for item in (
+                str(observation.get("access_status") or "") if observation.get("access_status") in BLOCKED_ACCESS else "",
+                "搜索摘要不能作为事实证据" if source.get("medium") == "search_result" else "",
+                "用户提供第三方材料信号，需独立核验" if source.get("provenance") in {"user_provided", "manual_input"} else "",
+            ) if item)
+            rows.append({"类型": "来源受限/材料线索", "线索/来源": _source_display(source, observation), "状态": _source_status(source, observation), "受限或冲突原因": reason, "建议": "保留线索并补充可检查来源；不据此形成公司事实。"})
+    for claim in claims.values():
+        if claim.get("contradiction_status") not in {None, "", "none"}:
+            rows.append({"类型": "来源冲突", "线索/来源": _business_claim_summary(claim), "状态": "待确认", "受限或冲突原因": claim.get("contradiction_status"), "建议": "保留冲突并核验当前来源。"})
+    return rows
+
+
+def _background_evidence_rows(
+    projection: dict[str, Any],
+    claims: dict[str, dict[str, Any]],
+    observations: dict[str, dict[str, Any]],
+    sources: dict[str, dict[str, Any]],
+    evidence_by_observation: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    rows = []
+    observed_source_ids: set[str] = set()
+    for observation_id, observation in observations.items():
+        source = sources.get(str(observation.get("source_id") or ""))
+        if not isinstance(source, dict):
+            continue
+        observed_source_ids.add(str(source.get("source_id")))
+        conclusions = []
+        for evidence in evidence_by_observation.get(observation_id, []):
+            claim = claims.get(str(evidence.get("claim_id") or ""))
+            if isinstance(claim, dict):
+                conclusions.append(_business_claim_summary(claim))
+        rows.append({
+            "来源标题/类型": observation.get("title") or _source_display(source, observation),
+            "来源类型": MEDIUM_LABELS.get(source.get("medium"), "其他来源"),
+            "URL": safe_public_source_url(source),
+            "原文摘录或材料定位": observation.get("raw_excerpt") or observation.get("page_or_dom_locator") or "未获得可展示摘录",
+            "观察时间": observation.get("observed_at"),
+            "抓取/材料定位": observation.get("page_or_dom_locator") or "",
+            "关联字段/结论": "；".join(conclusions) or "来源记录/待确认线索",
+            "状态": _source_status(source, observation),
+        })
+    for source_id, source in sources.items():
+        if source_id in observed_source_ids:
+            continue
+        rows.append({
+            "来源标题/类型": _source_display(source),
+            "来源类型": MEDIUM_LABELS.get(source.get("medium"), "其他来源"),
+            "URL": safe_public_source_url(source),
+            "原文摘录或材料定位": "尚未形成可展示摘录",
+            "观察时间": "",
+            "抓取/材料定位": "",
+            "关联字段/结论": "研究锚点材料/待确认线索",
+            "状态": _source_status(source),
+        })
+    return rows
+
+
+def background_contact_values_to_redact(graph: dict[str, Any]) -> set[str]:
+    """Hide non-exportable and unassigned contact values everywhere in a background report."""
+    contacts = _id_map(graph, "contact_points", "contact_id")
+    values: set[str] = set()
+
+    def add_value(value: Any) -> None:
+        if not isinstance(value, str) or not value.strip():
+            return
+        token = value.strip()
+        values.add(token)
+        if "," in token:
+            before, after = [part.strip() for part in token.split(",", 1)]
+            if before and after:
+                values.add(f"{after} {before}")
+
+    hidden_contact_ids = {
+        str(claim.get("contact_id"))
+        for claim in ensure_list(graph, "contact_claims")
+        if isinstance(claim, dict) and claim.get("export_status") not in {"ready", "export_with_source_note"}
+    }
+    for claim in ensure_list(graph, "contact_claims"):
+        if not isinstance(claim, dict) or claim.get("export_status") in {"ready", "export_with_source_note"}:
+            continue
+        person_fragments = [
+            str(claim.get(field)).strip()
+            for field in ("person_name", "job_title", "department")
+            if isinstance(claim.get(field), str) and str(claim.get(field)).strip()
+        ]
+        if person_fragments:
+            add_value(" ".join(person_fragments))
+            add_value(person_fragments[0])
+    hidden_contact_ids.update(
+        str(lead.get("contact_id"))
+        for lead in ensure_list(graph, "unassigned_contact_leads")
+        if isinstance(lead, dict) and has_text(lead.get("contact_id"))
+    )
+    for contact_id in hidden_contact_ids:
+        contact = contacts.get(contact_id)
+        if not isinstance(contact, dict):
+            continue
+        for field in ("normalized_value", "source_literal"):
+            add_value(contact.get(field))
+    return values

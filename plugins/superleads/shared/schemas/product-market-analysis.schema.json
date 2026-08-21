@@ -1,0 +1,939 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superleads.local/schemas/product-market-analysis.schema.json",
+  "title": "Superleads Product Market Analysis Graph",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "graph_type",
+    "runs",
+    "briefs",
+    "products",
+    "trade_premises",
+    "attributes",
+    "sources",
+    "observations",
+    "evidence_cards",
+    "matrix_rows",
+    "gaps",
+    "conflicts",
+    "handoffs",
+    "state_transitions"
+  ],
+  "$defs": {
+    "Status": {
+      "type": "string",
+      "enum": [
+        "verified",
+        "derived_calculation",
+        "candidate",
+        "preliminary_reference",
+        "business_confirmation_required",
+        "technical_docs_required",
+        "physical_verification_required",
+        "professional_confirmation_required",
+        "source_restricted",
+        "not_executed",
+        "not_applicable",
+        "not_provided",
+        "conflict_pending_review"
+      ]
+    },
+    "ReviewStatus": {
+      "type": "string",
+      "enum": ["not_reviewed", "passed", "returned", "blocked", "downgraded"]
+    },
+    "OriginEvidenceLevel": {
+      "type": "string",
+      "enum": ["L0", "L1", "L2", "L3", "L4", "unknown"]
+    },
+    "StringList": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "VisibleCells": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "number", "integer", "boolean", "null"]
+      }
+    },
+    "IdRefs": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "SourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {"type": ["string", "null"]},
+        "observation_id": {"type": ["string", "null"]},
+        "search_log_id": {"type": ["string", "null"]},
+        "query_plan_id": {"type": ["string", "null"]},
+        "relation": {
+          "type": "string",
+          "enum": ["supports", "contradicts", "contextual", "candidate_lead", "does_not_support"]
+        },
+        "note": {"type": ["string", "null"]}
+      }
+    },
+    "MarketAnalysisRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_id",
+        "route",
+        "created_at",
+        "updated_at",
+        "brief_id",
+        "brief_version_id",
+        "default_export_declaration_country",
+        "execution_mode",
+        "delivery_status",
+        "not_executed_modules"
+      ],
+      "properties": {
+        "run_id": {"type": "string", "minLength": 1},
+        "route": {"type": "string", "const": "product_outbound_market_analysis"},
+        "created_at": {"type": "string", "minLength": 1},
+        "updated_at": {"type": "string", "minLength": 1},
+        "brief_id": {"type": "string", "minLength": 1},
+        "brief_version_id": {"type": "string", "minLength": 1},
+        "default_export_declaration_country": {"type": "string", "minLength": 1},
+        "platform": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-z][a-z0-9_]{0,127}$",
+          "not": {
+            "enum": ["curl", "wget", "python_requests", "shell_curl", "native_fetch"]
+          }
+        },
+        "capabilities": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "search.web": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "source.open": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "browser.render": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "document.extract": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "image.inspect": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "mail.read": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "source.capture": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "url.canonicalize": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "entity.dedupe": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "translate.text": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "company.enrich": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "email.verify": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "domain.check": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "social.visible.read": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "registry.lookup": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "trademark.lookup": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "maps.lookup": {"$ref": "run.schema.json#/$defs/capabilityStatus"},
+            "memory.recall": {"$ref": "run.schema.json#/$defs/capabilityStatus"}
+          }
+        },
+        "capability_adapter_report": {"$ref": "run.schema.json#/$defs/capabilityAdapterReport"},
+        "capability_adapter_reports": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "run.schema.json#/$defs/capabilityAdapterReport"}
+        },
+        "execution_mode": {
+          "type": "string",
+          "enum": ["planning_only", "sample_static", "source_opened", "full_research"]
+        },
+        "delivery_status": {
+          "type": "string",
+          "enum": ["planning_only", "draft_matrix", "ready_with_limitations", "blocked_needs_input", "needs_correction"]
+        },
+        "not_executed_modules": {"$ref": "#/$defs/StringList"}
+      }
+    },
+    "MarketAnalysisBrief": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "brief_id",
+        "brief_version_id",
+        "product_subject_id",
+        "target_country_or_region",
+        "export_declaration_country",
+        "origin_country_status",
+        "analysis_modules_requested",
+        "business_decision_policy"
+      ],
+      "properties": {
+        "brief_id": {"type": "string", "minLength": 1},
+        "brief_version_id": {"type": "string", "minLength": 1},
+        "product_subject_id": {"type": "string", "minLength": 1},
+        "target_country_or_region": {"type": "string", "minLength": 1},
+        "seller_country_or_region": {"type": ["string", "null"]},
+        "export_declaration_country": {"type": "string", "minLength": 1},
+        "origin_country_status": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "evidence_level"],
+          "properties": {
+            "country_or_region": {"type": ["string", "null"]},
+            "status": {"$ref": "#/$defs/Status"},
+            "evidence_level": {"$ref": "#/$defs/OriginEvidenceLevel"},
+            "note": {"type": ["string", "null"]}
+          }
+        },
+        "departure_country_or_region": {"type": ["string", "null"]},
+        "departure_node": {"type": ["string", "null"]},
+        "destination_node": {"type": ["string", "null"]},
+        "trade_term": {"type": ["string", "null"]},
+        "analysis_modules_requested": {"$ref": "#/$defs/StringList"},
+        "business_decision_policy": {"type": "string", "minLength": 1}
+      }
+    },
+    "ProductSubject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "product_subject_id",
+        "display_name",
+        "version_identifiers",
+        "components",
+        "profile_status",
+        "unknown_key_attributes"
+      ],
+      "properties": {
+        "product_subject_id": {"type": "string", "minLength": 1},
+        "display_name": {"type": "string", "minLength": 1},
+        "version_identifiers": {"$ref": "#/$defs/StringList"},
+        "manufacturer_or_brand": {"type": ["string", "null"]},
+        "product_family": {"type": ["string", "null"]},
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["component_id", "name"],
+            "properties": {
+              "component_id": {"type": "string", "minLength": 1},
+              "name": {"type": "string", "minLength": 1},
+              "role": {"type": ["string", "null"]}
+            }
+          }
+        },
+        "profile_status": {
+          "type": "string",
+          "enum": ["sufficient_for_planning", "needs_user_clarification", "needs_technical_docs"]
+        },
+        "unknown_key_attributes": {"$ref": "#/$defs/StringList"}
+      }
+    },
+    "TradePremise": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trade_premise_id",
+        "export_declaration_country",
+        "origin_evidence_level",
+        "destination_country_or_region",
+        "status",
+        "separation_check"
+      ],
+      "properties": {
+        "trade_premise_id": {"type": "string", "minLength": 1},
+        "seller_country_or_region": {"type": ["string", "null"]},
+        "export_declaration_country": {"type": "string", "minLength": 1},
+        "origin_country_or_region": {"type": ["string", "null"]},
+        "origin_evidence_level": {"$ref": "#/$defs/OriginEvidenceLevel"},
+        "departure_country_or_region": {"type": ["string", "null"]},
+        "departure_node": {"type": ["string", "null"]},
+        "departure_node_status": {"$ref": "#/$defs/Status"},
+        "departure_node_basis": {"type": ["string", "null"]},
+        "destination_country_or_region": {"type": "string", "minLength": 1},
+        "destination_node": {"type": ["string", "null"]},
+        "status": {"$ref": "#/$defs/Status"},
+        "separation_check": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["roles_separated"],
+          "properties": {
+            "roles_separated": {"type": "boolean"},
+            "note": {"type": ["string", "null"]}
+          }
+        },
+        "evidence_card_ids": {"$ref": "#/$defs/IdRefs"},
+        "gap_ids": {"$ref": "#/$defs/IdRefs"}
+      }
+    },
+    "MarketSearchLogRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "search_log_id",
+        "run_id",
+        "brief_id",
+        "brief_version_id",
+        "source_plan_route",
+        "query_plan_id",
+        "query_group_id",
+        "pack_id",
+        "template_id",
+        "queried_at",
+        "capability",
+        "concrete_tool",
+        "query_text",
+        "targeted_geography_literals",
+        "source_entry_ids",
+        "result_refs",
+        "result_use",
+        "must_open_source",
+        "reject_if_only_snippet",
+        "not_evidence",
+        "allowed_output"
+      ],
+      "properties": {
+        "search_log_id": {"type": "string", "minLength": 1},
+        "run_id": {"type": "string", "minLength": 1},
+        "brief_id": {"type": "string", "minLength": 1},
+        "brief_version_id": {"type": "string", "minLength": 1},
+        "source_plan_route": {"type": "string", "const": "product_outbound_market_analysis_source_plan"},
+        "source_plan_id": {"type": ["string", "null"]},
+        "query_plan_id": {"type": "string", "minLength": 1},
+        "query_group_id": {"type": "string", "minLength": 1},
+        "pack_id": {"type": ["string", "null"]},
+        "template_id": {"type": ["string", "null"]},
+        "queried_at": {"type": "string", "minLength": 1},
+        "capability": {"type": "string", "const": "search.web"},
+        "concrete_tool": {"type": "string", "minLength": 1},
+        "query_text": {"type": "string", "minLength": 1},
+        "query_language": {"type": ["string", "null"]},
+        "targeted_geography_literals": {"$ref": "#/$defs/StringList"},
+        "product_trigger_tags": {"$ref": "#/$defs/StringList"},
+        "source_entry_ids": {"$ref": "#/$defs/IdRefs"},
+        "required_source_priority": {"$ref": "#/$defs/StringList"},
+        "expected_observation_fields": {"$ref": "#/$defs/StringList"},
+        "result_refs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["result_url", "result_locator", "result_use"],
+            "properties": {
+              "result_url": {"type": "string", "minLength": 1, "pattern": "^https?://"},
+              "result_rank": {"type": ["integer", "null"], "minimum": 1},
+              "result_title": {"type": ["string", "null"], "minLength": 1},
+              "result_locator": {"type": "string", "minLength": 1},
+              "candidate_source_id": {"type": ["string", "null"]},
+              "opened_source_id": {"type": ["string", "null"]},
+              "result_use": {"type": "string", "enum": ["source_candidate_only", "opened_source_locator", "failed_or_restricted_locator"]},
+              "snippet_or_summary": {"type": ["string", "null"]}
+            }
+          }
+        },
+        "accessed_source_ids": {"$ref": "#/$defs/IdRefs"},
+        "failed_source_refs": {"$ref": "#/$defs/StringList"},
+        "restricted_source_refs": {"$ref": "#/$defs/StringList"},
+        "coverage_notes": {"$ref": "#/$defs/StringList"},
+        "result_use": {"type": "string", "const": "source_candidate_only"},
+        "must_open_source": {"type": "boolean", "const": true},
+        "reject_if_only_snippet": {"type": "boolean", "const": true},
+        "not_evidence": {"type": "boolean", "const": true},
+        "allowed_output": {"type": "string", "const": "search_log_or_source_locator_only"}
+      }
+    },
+    "ProductAttributeRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attribute_id",
+        "product_subject_id",
+        "component_scope",
+        "attribute_family",
+        "attribute_name",
+        "value",
+        "status",
+        "trigger_paths",
+        "evidence_card_ids"
+      ],
+      "properties": {
+        "attribute_id": {"type": "string", "minLength": 1},
+        "product_subject_id": {"type": "string", "minLength": 1},
+        "component_scope": {"type": "string", "minLength": 1},
+        "attribute_family": {"type": "string", "minLength": 1},
+        "attribute_name": {"type": "string", "minLength": 1},
+        "value": {"type": ["string", "number", "integer", "boolean", "null"]},
+        "unit": {"type": ["string", "null"]},
+        "status": {"$ref": "#/$defs/Status"},
+        "trigger_paths": {"$ref": "#/$defs/StringList"},
+        "evidence_card_ids": {"$ref": "#/$defs/IdRefs"},
+        "gap_ids": {"$ref": "#/$defs/IdRefs"}
+      }
+    },
+    "EvidenceCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_card_id",
+        "run_id",
+        "brief_version_id",
+        "producer_skill",
+        "field_domain",
+        "field_name",
+        "current_value",
+        "status",
+        "source_refs",
+        "source_type",
+        "source_locator",
+        "source_date",
+        "observed_at",
+        "applicability_scope",
+        "supports",
+        "does_not_support",
+        "boundary_rule_ids",
+        "review_status"
+      ],
+      "properties": {
+        "evidence_card_id": {"type": "string", "minLength": 1},
+        "run_id": {"type": "string", "minLength": 1},
+        "brief_version_id": {"type": "string", "minLength": 1},
+        "producer_skill": {"type": "string", "minLength": 1},
+        "reviewer_skill": {"type": ["string", "null"]},
+        "field_domain": {"type": "string", "minLength": 1},
+        "field_name": {"type": "string", "minLength": 1},
+        "current_value": {"type": ["string", "number", "integer", "boolean", "null"]},
+        "status": {"$ref": "#/$defs/Status"},
+        "source_refs": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/SourceRef"}
+        },
+        "source_type": {"type": "string", "minLength": 1},
+        "source_locator": {"type": "string", "minLength": 1},
+        "source_date": {"type": "string", "minLength": 1},
+        "observed_at": {"type": "string", "minLength": 1},
+        "applicability_scope": {"type": "string", "minLength": 1},
+        "supports": {"$ref": "#/$defs/StringList"},
+        "does_not_support": {"$ref": "#/$defs/StringList"},
+        "derived_from_card_ids": {"$ref": "#/$defs/IdRefs"},
+        "formula_text": {"type": ["string", "null"]},
+        "gap_ids": {"$ref": "#/$defs/IdRefs"},
+        "boundary_rule_ids": {"$ref": "#/$defs/IdRefs"},
+        "freshness_record_ids": {"$ref": "#/$defs/IdRefs"},
+        "authority_verification_record_ids": {"$ref": "#/$defs/IdRefs"},
+        "review_status": {"$ref": "#/$defs/ReviewStatus"}
+      }
+    },
+    "MatrixRowRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "matrix_row_id",
+        "sheet_name",
+        "row_topic",
+        "user_visible_cells",
+        "status",
+        "boundary_rule_ids",
+        "internal_refs_hidden"
+      ],
+      "properties": {
+        "matrix_row_id": {"type": "string", "minLength": 1},
+        "sheet_name": {
+          "type": "string",
+          "enum": [
+            "市场事实总览",
+            "产品档案与触发项",
+            "长期需求与搜索趋势",
+            "公开市场资料与行业信息",
+            "线上市场与价格参考",
+            "季节、节日与销售窗口",
+            "产品准入与合规要求",
+            "进口税费",
+            "出口国要求",
+            "运输方式、路线、港口与申报节点",
+            "近期外部因素",
+            "信息来源与待确认事项"
+          ]
+        },
+        "row_topic": {"type": "string", "minLength": 1},
+        "user_visible_cells": {"$ref": "#/$defs/VisibleCells"},
+        "status": {"$ref": "#/$defs/Status"},
+        "evidence_card_ids": {"$ref": "#/$defs/IdRefs"},
+        "gap_ids": {"$ref": "#/$defs/IdRefs"},
+        "conflict_ids": {"$ref": "#/$defs/IdRefs"},
+        "corroboration_record_ids": {"$ref": "#/$defs/IdRefs"},
+        "freshness_record_ids": {"$ref": "#/$defs/IdRefs"},
+        "authority_verification_record_ids": {"$ref": "#/$defs/IdRefs"},
+        "module_key": {"type": ["string", "null"]},
+        "boundary_rule_ids": {"$ref": "#/$defs/IdRefs"},
+        "internal_refs_hidden": {"type": "boolean"},
+        "row_type": {"$ref": "#/$defs/MatrixRowType"},
+        "origin_proof_requirement": {"$ref": "#/$defs/OriginProofRequirementRecord"},
+        "certification_requirement": {"$ref": "#/$defs/CertificationRequirementRecord"}
+      }
+    },
+    "GapRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gap_id", "run_id", "field_domain", "field_name", "status", "missing_item", "user_visible_note"],
+      "properties": {
+        "gap_id": {"type": "string", "minLength": 1},
+        "run_id": {"type": "string", "minLength": 1},
+        "field_domain": {"type": "string", "minLength": 1},
+        "field_name": {"type": "string", "minLength": 1},
+        "status": {"$ref": "#/$defs/Status"},
+        "missing_item": {"type": "string", "minLength": 1},
+        "requested_from": {"type": ["string", "null"]},
+        "user_visible_note": {"type": "string", "minLength": 1},
+        "evidence_card_ids": {"$ref": "#/$defs/IdRefs"}
+      }
+    },
+    "ConflictRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["conflict_id", "run_id", "field_domain", "field_name", "status", "evidence_card_ids", "summary"],
+      "properties": {
+        "conflict_id": {"type": "string", "minLength": 1},
+        "run_id": {"type": "string", "minLength": 1},
+        "field_domain": {"type": "string", "minLength": 1},
+        "field_name": {"type": "string", "minLength": 1},
+        "status": {"$ref": "#/$defs/Status"},
+        "evidence_card_ids": {"$ref": "#/$defs/IdRefs"},
+        "summary": {"type": "string", "minLength": 1}
+      }
+    },
+    "CorroborationStatus": {
+      "type": "string",
+      "enum": [
+        "multi_source_consistent",
+        "single_source_only",
+        "not_enough_independent_sources",
+        "conflict_present",
+        "source_restricted",
+        "not_executed"
+      ]
+    },
+    "CorroborationRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "corroboration_id",
+        "run_id",
+        "field_domain",
+        "field_name",
+        "current_signal",
+        "corroboration_status",
+        "source_refs",
+        "supporting_evidence_card_ids",
+        "conflicting_evidence_card_ids",
+        "independent_source_count",
+        "independence_basis",
+        "user_visible_summary",
+        "cannot_conclude",
+        "review_status"
+      ],
+      "properties": {
+        "corroboration_id": {"type": "string", "minLength": 1},
+        "run_id": {"type": "string", "minLength": 1},
+        "brief_version_id": {"type": ["string", "null"]},
+        "field_domain": {"type": "string", "minLength": 1},
+        "field_name": {"type": "string", "minLength": 1},
+        "current_signal": {"type": "string", "minLength": 1},
+        "corroboration_status": {"$ref": "#/$defs/CorroborationStatus"},
+        "source_refs": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/SourceRef"}
+        },
+        "supporting_evidence_card_ids": {"$ref": "#/$defs/IdRefs"},
+        "conflicting_evidence_card_ids": {"$ref": "#/$defs/IdRefs"},
+        "independent_source_count": {"type": "integer", "minimum": 0},
+        "independence_basis": {"$ref": "#/$defs/StringList"},
+        "user_visible_summary": {"type": "string", "minLength": 1},
+        "cannot_conclude": {"$ref": "#/$defs/StringList"},
+        "next_verification_steps": {"$ref": "#/$defs/StringList"},
+        "reviewer_skill": {"type": ["string", "null"]},
+        "reviewed_at": {"type": ["string", "null"]},
+        "review_status": {"$ref": "#/$defs/ReviewStatus"}
+      }
+    },
+    "FreshnessStatus": {
+      "type": "string",
+      "enum": [
+        "current_enough_for_scope",
+        "date_unknown_recently_observed",
+        "stale_needs_recheck",
+        "date_unknown_needs_recheck",
+        "not_time_sensitive",
+        "not_executed"
+      ]
+    },
+    "FreshnessSubjectType": {
+      "type": "string",
+      "enum": [
+        "source",
+        "observation",
+        "evidence_card",
+        "matrix_row",
+        "corroboration_record",
+        "module"
+      ]
+    },
+    "FreshnessRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "freshness_id",
+        "run_id",
+        "field_domain",
+        "field_name",
+        "subject_type",
+        "subject_ref_ids",
+        "freshness_status",
+        "freshness_checked_at",
+        "review_window_days",
+        "date_basis",
+        "user_visible_summary",
+        "cannot_conclude",
+        "review_status"
+      ],
+      "properties": {
+        "freshness_id": {"type": "string", "minLength": 1},
+        "run_id": {"type": "string", "minLength": 1},
+        "brief_version_id": {"type": ["string", "null"]},
+        "field_domain": {"type": "string", "minLength": 1},
+        "field_name": {"type": "string", "minLength": 1},
+        "subject_type": {"$ref": "#/$defs/FreshnessSubjectType"},
+        "subject_ref_ids": {"$ref": "#/$defs/IdRefs"},
+        "freshness_status": {"$ref": "#/$defs/FreshnessStatus"},
+        "freshness_checked_at": {"type": "string", "minLength": 1},
+        "review_window_days": {"type": ["integer", "null"], "minimum": 0},
+        "source_date_values": {"$ref": "#/$defs/StringList"},
+        "observed_at_values": {"$ref": "#/$defs/StringList"},
+        "effective_date_values": {"$ref": "#/$defs/StringList"},
+        "expires_at": {"type": ["string", "null"]},
+        "date_basis": {"type": "string", "minLength": 1},
+        "next_review_due_at": {"type": ["string", "null"]},
+        "user_visible_summary": {"type": "string", "minLength": 1},
+        "cannot_conclude": {"$ref": "#/$defs/StringList"},
+        "next_verification_steps": {"$ref": "#/$defs/StringList"},
+        "reviewer_skill": {"type": ["string", "null"]},
+        "reviewed_at": {"type": ["string", "null"]},
+        "review_status": {"$ref": "#/$defs/ReviewStatus"}
+      }
+    },
+    "SkillHandoffRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "handoff_id",
+        "from_skill",
+        "to_skill",
+        "input_brief_version_id",
+        "input_card_ids",
+        "output_card_ids",
+        "staleness_status",
+        "handoff_status"
+      ],
+      "properties": {
+        "handoff_id": {"type": "string", "minLength": 1},
+        "from_skill": {"type": "string", "minLength": 1},
+        "to_skill": {"type": "string", "minLength": 1},
+        "input_brief_version_id": {"type": "string", "minLength": 1},
+        "input_card_ids": {"$ref": "#/$defs/IdRefs"},
+        "output_card_ids": {"$ref": "#/$defs/IdRefs"},
+        "returned_to_skill": {"type": ["string", "null"]},
+        "return_reason": {"type": ["string", "null"]},
+        "staleness_status": {"type": "string", "enum": ["current", "stale_due_to_brief_change", "requires_rerun"]},
+        "handoff_status": {"type": "string", "enum": ["passed", "returned", "blocked", "downgraded", "not_executed"]}
+      }
+    },
+    "StateTransitionRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transition_id",
+        "evidence_card_id",
+        "from_status",
+        "to_status",
+        "transition_reason",
+        "gate",
+        "allowed",
+        "reviewed_by_skill",
+        "reviewed_at"
+      ],
+      "properties": {
+        "transition_id": {"type": "string", "minLength": 1},
+        "evidence_card_id": {"type": "string", "minLength": 1},
+        "from_status": {"type": "string", "minLength": 1},
+        "to_status": {"type": "string", "minLength": 1},
+        "transition_reason": {"type": "string", "minLength": 1},
+        "gate": {"type": "string", "minLength": 1},
+        "allowed": {"type": "boolean"},
+        "blocking_rule_id": {"type": ["string", "null"]},
+        "reviewed_by_skill": {"type": "string", "minLength": 1},
+        "reviewed_at": {"type": "string", "minLength": 1}
+      }
+    },
+    "OriginProofRequirementStatus": {
+      "type": "string",
+      "enum": [
+        "required",
+        "conditionally_required",
+        "normally_not_required",
+        "not_applicable",
+        "unable_to_verify"
+      ]
+    },
+    "OriginProofUserMaterialStatus": {
+      "type": "string",
+      "enum": [
+        "user_provided_valid_for_scope",
+        "user_provided_needs_review",
+        "user_not_provided_but_required",
+        "user_not_provided_and_not_required_for_current_scenario",
+        "user_material_status_unknown"
+      ]
+    },
+    "MatrixRowType": {
+      "type": "string",
+      "enum": [
+        "overview",
+        "product_attribute",
+        "trend_signal",
+        "market_info",
+        "price_reference",
+        "seasonality",
+        "compliance_requirement",
+        "origin_proof_requirement",
+        "certification_requirement",
+        "destination_requirement",
+        "import_tax",
+        "export_requirement",
+        "logistics_node",
+        "external_factor",
+        "source_or_gap",
+        "other"
+      ]
+    },
+    "OriginProofRequirementRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sample_id",
+        "target_country_or_region",
+        "origin_or_export_country",
+        "candidate_hs_hts",
+        "requirement_status",
+        "trigger_conditions",
+        "acceptable_documents",
+        "user_material_status",
+        "authority_source_refs",
+        "limitation_note"
+      ],
+      "properties": {
+        "sample_id": {"type": "string", "minLength": 1},
+        "target_country_or_region": {"type": "string", "minLength": 1},
+        "origin_or_export_country": {"type": "string", "minLength": 1},
+        "candidate_hs_hts": {"type": "string", "minLength": 1},
+        "requirement_status": {"$ref": "#/$defs/OriginProofRequirementStatus"},
+        "trigger_conditions": {"$ref": "#/$defs/StringList"},
+        "acceptable_documents": {"$ref": "#/$defs/StringList"},
+        "user_material_status": {"$ref": "#/$defs/OriginProofUserMaterialStatus"},
+        "authority_source_refs": {"$ref": "#/$defs/IdRefs"},
+        "user_material_refs": {"$ref": "#/$defs/IdRefs"},
+        "limitation_note": {"type": "string", "minLength": 1}
+      }
+    },
+    "DestinationRequirementStatus": {
+      "type": "string",
+      "enum": [
+        "required",
+        "conditionally_required",
+        "normally_not_required",
+        "not_applicable",
+        "unable_to_verify",
+        "not_executed"
+      ]
+    },
+    "CertificationUserMaterialStatus": {
+      "type": "string",
+      "enum": [
+        "user_material_not_requested_yet",
+        "user_material_status_unknown",
+        "user_not_provided_but_required",
+        "user_not_provided_and_not_required_for_current_scenario",
+        "user_provided_needs_review",
+        "user_provided_valid_for_scope",
+        "user_provided_not_valid_for_scope"
+      ]
+    },
+    "RequirementFamily": {
+      "type": "string",
+      "enum": [
+        "certification",
+        "test_report",
+        "registration",
+        "labeling",
+        "packaging",
+        "import_permit",
+        "transport_document",
+        "channel_requirement",
+        "other"
+      ]
+    },
+    "SourceAuthorityLevel": {
+      "type": "string",
+      "enum": [
+        "primary_official",
+        "secondary_official",
+        "standards_body",
+        "certification_body_reference",
+        "professional_reference",
+        "channel_official",
+        "source_restricted",
+        "unknown"
+      ]
+    },
+    "AuthorityLevel": {"type": "string", "enum": ["primary_official_authority", "official_service_or_portal", "official_gazette_or_legal_database", "delegated_or_recognized_body", "intergovernmental_reference", "industry_or_professional_reference", "commercial_market_reference", "media_or_general_web_reference", "unknown_authority"]},
+    "AuthorityVerificationStatus": {"type": "string", "enum": ["verified_for_fact_domain", "candidate_needs_check", "secondary_reference_only", "unable_to_verify", "conflicting_identity", "not_executed"]},
+    "AuthorityJurisdictionRole": {"type": "string", "enum": ["destination_market", "import_customs", "export_declaration", "origin_country", "departure_logistics", "transit", "market_signal", "common_rule", "product_source", "global_or_international", "unknown"]},
+    "AuthorityJurisdictionType": {"type": "string", "enum": ["country", "customs_union", "region", "subnational", "port_or_airport", "carrier_network", "global_or_international", "product_specific", "unknown"]},
+    "AuthorityIdentityEvidenceType": {"type": "string", "enum": ["official_portal_link", "page_footer_or_about", "official_gazette_or_legal_database", "delegation_or_accreditation_list", "pdf_from_official_locator", "institution_contact_or_address", "third_party_description", "other"]},
+    "AuthorityProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority_profile_id", "jurisdiction_type", "jurisdiction_role", "jurisdiction_name", "institution_name", "institution_type", "authority_level", "authority_basis_summary", "identity_evidence_ids", "capability_ids", "known_limitations", "verification_status", "review_status"],
+      "properties": {
+        "authority_profile_id": {"type": "string", "minLength": 1},
+        "source_id": {"type": ["string", "null"]},
+        "source_entry_id": {"type": ["string", "null"]},
+        "jurisdiction_type": {"$ref": "#/$defs/AuthorityJurisdictionType"},
+        "jurisdiction_role": {"$ref": "#/$defs/AuthorityJurisdictionRole"},
+        "jurisdiction_code": {"type": ["string", "null"]},
+        "jurisdiction_name": {"type": "string", "minLength": 1},
+        "institution_name": {"type": "string", "minLength": 1},
+        "institution_name_local": {"type": ["string", "null"]},
+        "institution_type": {"type": "string", "minLength": 1},
+        "authority_level": {"$ref": "#/$defs/AuthorityLevel"},
+        "authority_basis_summary": {"type": "string", "minLength": 1},
+        "identity_evidence_ids": {"$ref": "#/$defs/IdRefs"},
+        "capability_ids": {"$ref": "#/$defs/IdRefs"},
+        "known_limitations": {"$ref": "#/$defs/StringList"},
+        "verification_status": {"$ref": "#/$defs/AuthorityVerificationStatus"},
+        "review_status": {"$ref": "#/$defs/ReviewStatus"}
+      }
+    },
+    "AuthorityIdentityEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority_identity_evidence_id", "authority_profile_id", "evidence_type", "visible_evidence_summary", "locator", "supports_identity_as", "does_not_support", "review_status"],
+      "properties": {
+        "authority_identity_evidence_id": {"type": "string", "minLength": 1},
+        "authority_profile_id": {"type": "string", "minLength": 1},
+        "source_id": {"type": ["string", "null"]},
+        "observation_ids": {"$ref": "#/$defs/IdRefs"},
+        "evidence_type": {"$ref": "#/$defs/AuthorityIdentityEvidenceType"},
+        "visible_evidence_summary": {"type": "string", "minLength": 1},
+        "locator": {"type": "string", "minLength": 1},
+        "supports_identity_as": {"type": "string", "minLength": 1},
+        "does_not_support": {"$ref": "#/$defs/StringList"},
+        "review_status": {"$ref": "#/$defs/ReviewStatus"}
+      }
+    },
+    "AuthorityCapability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority_capability_id", "authority_profile_id", "fact_domains_supported", "fact_domains_not_supported", "supported_claim_types", "unsupported_claim_types", "minimum_authority_level", "requires_freshness_record", "requires_professional_confirmation", "capability_basis", "review_status"],
+      "properties": {
+        "authority_capability_id": {"type": "string", "minLength": 1},
+        "authority_profile_id": {"type": "string", "minLength": 1},
+        "fact_domains_supported": {"$ref": "#/$defs/StringList"},
+        "fact_domains_not_supported": {"$ref": "#/$defs/StringList"},
+        "supported_claim_types": {"$ref": "#/$defs/StringList"},
+        "unsupported_claim_types": {"$ref": "#/$defs/StringList"},
+        "minimum_authority_level": {"$ref": "#/$defs/AuthorityLevel"},
+        "requires_freshness_record": {"type": "boolean"},
+        "requires_professional_confirmation": {"type": "boolean"},
+        "capability_basis": {"type": "string", "minLength": 1},
+        "review_status": {"$ref": "#/$defs/ReviewStatus"}
+      }
+    },
+    "AuthorityVerificationRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority_verification_id", "run_id", "source_id", "observation_ids", "authority_profile_id", "fact_domain", "jurisdiction_role", "verification_status", "verification_basis", "can_support", "cannot_support", "next_verification_steps", "review_status"],
+      "properties": {
+        "authority_verification_id": {"type": "string", "minLength": 1},
+        "run_id": {"type": "string", "minLength": 1},
+        "brief_version_id": {"type": ["string", "null"]},
+        "source_id": {"type": "string", "minLength": 1},
+        "observation_ids": {"$ref": "#/$defs/IdRefs"},
+        "authority_profile_id": {"type": "string", "minLength": 1},
+        "fact_domain": {"type": "string", "minLength": 1},
+        "jurisdiction_role": {"$ref": "#/$defs/AuthorityJurisdictionRole"},
+        "verification_status": {"$ref": "#/$defs/AuthorityVerificationStatus"},
+        "verification_basis": {"type": "string", "minLength": 1},
+        "can_support": {"$ref": "#/$defs/StringList"},
+        "cannot_support": {"$ref": "#/$defs/StringList"},
+        "next_verification_steps": {"$ref": "#/$defs/StringList"},
+        "reviewer_skill": {"type": ["string", "null"]},
+        "reviewed_at": {"type": ["string", "null"]},
+        "review_status": {"$ref": "#/$defs/ReviewStatus"}
+      }
+    },
+    "CertificationRequirementRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sample_id",
+        "requirement_name",
+        "requirement_family",
+        "destination_country_or_region",
+        "applicability_status",
+        "trigger_conditions",
+        "accepted_evidence_or_documents",
+        "user_material_status",
+        "user_material_review_scope",
+        "authority_source_refs",
+        "source_authority_level",
+        "limitation_note",
+        "cannot_conclude"
+      ],
+      "properties": {
+        "sample_id": {"type": "string", "minLength": 1},
+        "requirement_name": {"type": "string", "minLength": 1},
+        "requirement_family": {"$ref": "#/$defs/RequirementFamily"},
+        "destination_country_or_region": {"type": "string", "minLength": 1},
+        "candidate_hs_hts": {"type": ["string", "null"]},
+        "applicability_status": {"$ref": "#/$defs/DestinationRequirementStatus"},
+        "trigger_conditions": {"$ref": "#/$defs/StringList"},
+        "accepted_evidence_or_documents": {"$ref": "#/$defs/StringList"},
+        "user_material_status": {"$ref": "#/$defs/CertificationUserMaterialStatus"},
+        "user_material_review_scope": {"$ref": "#/$defs/StringList"},
+        "authority_source_refs": {"$ref": "#/$defs/IdRefs"},
+        "source_authority_level": {"$ref": "#/$defs/SourceAuthorityLevel"},
+        "user_material_refs": {"$ref": "#/$defs/IdRefs"},
+        "limitation_note": {"type": "string", "minLength": 1},
+        "cannot_conclude": {"$ref": "#/$defs/StringList"}
+      }
+    }
+  },
+  "properties": {
+    "graph_type": {"type": "string", "const": "ProductMarketAnalysisGraph"},
+    "runs": {"type": "array", "items": {"$ref": "#/$defs/MarketAnalysisRun"}},
+    "briefs": {"type": "array", "items": {"$ref": "#/$defs/MarketAnalysisBrief"}},
+    "products": {"type": "array", "items": {"$ref": "#/$defs/ProductSubject"}},
+    "trade_premises": {"type": "array", "items": {"$ref": "#/$defs/TradePremise"}},
+    "attributes": {"type": "array", "items": {"$ref": "#/$defs/ProductAttributeRecord"}},
+    "search_logs": {"type": "array", "items": {"$ref": "#/$defs/MarketSearchLogRecord"}},
+    "sources": {"type": "array", "items": {"$ref": "source-observation.schema.json#/$defs/Source"}},
+    "observations": {"type": "array", "items": {"$ref": "source-observation.schema.json#/$defs/Observation"}},
+    "evidence_cards": {"type": "array", "items": {"$ref": "#/$defs/EvidenceCard"}},
+    "corroboration_records": {"type": "array", "items": {"$ref": "#/$defs/CorroborationRecord"}},
+    "freshness_records": {"type": "array", "items": {"$ref": "#/$defs/FreshnessRecord"}},
+    "matrix_rows": {"type": "array", "items": {"$ref": "#/$defs/MatrixRowRecord"}},
+    "gaps": {"type": "array", "items": {"$ref": "#/$defs/GapRecord"}},
+    "conflicts": {"type": "array", "items": {"$ref": "#/$defs/ConflictRecord"}},
+    "handoffs": {"type": "array", "items": {"$ref": "#/$defs/SkillHandoffRecord"}},
+    "state_transitions": {"type": "array", "items": {"$ref": "#/$defs/StateTransitionRecord"}},
+    "authority_profiles": {"type": "array", "items": {"$ref": "#/$defs/AuthorityProfile"}},
+    "authority_identity_evidence": {"type": "array", "items": {"$ref": "#/$defs/AuthorityIdentityEvidence"}},
+    "authority_capabilities": {"type": "array", "items": {"$ref": "#/$defs/AuthorityCapability"}},
+    "authority_verification_records": {"type": "array", "items": {"$ref": "#/$defs/AuthorityVerificationRecord"}}
+  }
+}

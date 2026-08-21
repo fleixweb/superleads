@@ -100,6 +100,13 @@ def run_suite() -> dict[str, Any]:
         repo_positive["name"] = "source tree plugin distribution passes"
         results.append(repo_positive)
 
+        published_runtime = _assert_result(
+            _checker(py, ROOT / "plugins" / "superleads", 0, runtime_package=True),
+            require_ok_payload=True,
+        )
+        published_runtime["name"] = "tracked marketplace runtime package passes"
+        results.append(published_runtime)
+
         dist = tmp_path / "dist"
         build_result = _build_distribution(dist)
         nested_eval = dist / "skills" / "using-superleads" / ".plugin-eval"

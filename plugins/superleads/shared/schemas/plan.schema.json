@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superleads.local/schemas/plan.schema.json",
+  "title": "Superleads Research Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "plan_id",
+    "brief_id",
+    "query_groups",
+    "source_categories",
+    "contact_collection_targets",
+    "lead_tiering_criteria",
+    "claim_evidence_requirements",
+    "stop_conditions",
+    "downgrade_strategy"
+  ],
+  "properties": {
+    "plan_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "brief_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "query_groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "targeting_rule_ids": {"type": "array", "items": {"type": "string"}},
+          "query_purpose": {"type": "string"},
+          "execution_order": {"type": "string", "enum": ["independent", "serial"]},
+          "candidate_limit": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "source_categories": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "website",
+          "social",
+          "registry",
+          "directory",
+          "map",
+          "trade_aggregator",
+          "document",
+          "spreadsheet",
+          "search_result"
+        ]
+      }
+    },
+    "contact_collection_targets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "lead_tiering_criteria": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "claim_evidence_requirements": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "stop_conditions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "downgrade_strategy": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "selection_contract_brief_id": {"type": ["string", "null"]},
+    "selection_requirement_ids": {"type": "array", "items": {"type": "string"}},
+    "exclusion_rule_ids": {"type": "array", "items": {"type": "string"}},
+    "positive_query_groups": {"type": "array", "items": {"type": "string"}},
+    "exclusion_check_query_groups": {"type": "array", "items": {"type": "string"}},
+    "candidate_check_steps": {"type": "array", "items": {"type": "string"}},
+    "sample_first_limit": {"type": ["integer", "null"], "minimum": 1, "maximum": 5},
+    "geography_query_group_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "candidate_enrichment_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["apply_to", "max_queries_per_category_per_candidate", "max_opens_per_category_per_candidate", "same_run_url_dedupe", "over_budget_status"],
+      "properties": {
+        "apply_to": {"const": "all_output_scope_candidates"},
+        "max_queries_per_category_per_candidate": {"type": "integer", "minimum": 1},
+        "max_opens_per_category_per_candidate": {"type": "integer", "minimum": 1},
+        "same_run_url_dedupe": {"const": "canonical_or_final_url"},
+        "over_budget_status": {"const": "not_searched"}
+      }
+    },
+    "execution_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "query_group_limit": {"type": "integer", "minimum": 1},
+        "max_candidates_per_group": {"type": "integer", "minimum": 1},
+        "max_candidates_per_run": {"type": "integer", "minimum": 1},
+        "max_core_opens_per_candidate": {"type": "integer", "minimum": 1},
+        "include_contacts": {"type": "boolean"},
+        "include_trade_records": {"type": "boolean"},
+        "include_historical_references": {"type": "boolean"},
+        "coverage_completion_condition": {"type": "string", "minLength": 1},
+        "low_increment_stop_condition": {"type": "string", "minLength": 1}
+      }
+    }
+    }
+  }

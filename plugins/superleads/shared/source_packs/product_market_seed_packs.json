@@ -1,0 +1,3356 @@
+{
+  "registry_type": "product_market_source_pack_registry",
+  "registry_name": "Product outbound market analysis seed Source Packs",
+  "version": "seed-2026-07-27",
+  "updated_at": "2026-07-27",
+  "execution_boundary": {
+    "execution_level": "source_plan_only",
+    "not_evidence": true,
+    "does_not_open_sources": true,
+    "does_not_search_web": true,
+    "allowed_output": "source_or_query_plan_only",
+    "boundary_note": "Source Pack 只是来源入口目录；Query Plan 只是下一步怎么查。未打开来源前不生成事实、税费、认证、物流、趋势、价格或市场判断。"
+  },
+  "source_packs": [
+    {
+      "source_pack_id": "seed_us_market_access_general",
+      "display_name": "美国目的国准入来源入口包",
+      "pack_type": "destination_market_access_pack",
+      "trade_role": "destination_market",
+      "jurisdiction_type": "country",
+      "jurisdiction_code": "US",
+      "jurisdiction_name": "United States",
+      "language_codes": [
+        "en"
+      ],
+      "fact_domains_supported": [
+        "destination_compliance",
+        "labeling",
+        "packaging",
+        "consumer_safety",
+        "hazmat_import_context"
+      ],
+      "fact_domains_not_supported": [
+        "final_compliance_status",
+        "final_import_permission",
+        "final_duty_rate",
+        "transaction_price"
+      ],
+      "product_trigger_tags": [
+        "general_goods",
+        "lithium_battery",
+        "apparel",
+        "textile",
+        "food_contact",
+        "skin_contact",
+        "child_product",
+        "dangerous_goods",
+        "fresh_produce",
+        "chemical",
+        "medical_or_health"
+      ],
+      "required_brief_fields": [
+        "target_country_or_region",
+        "product_name",
+        "product_trigger_tags"
+      ],
+      "entry_ids": [
+        "entry_us_regulator_product_safety",
+        "entry_us_textile_labeling",
+        "entry_us_hazardous_material_transport"
+      ],
+      "query_template_ids": [
+        "qt_us_market_access_by_trigger"
+      ],
+      "observation_requirement_ids": [
+        "obs_official_regulation",
+        "obs_hazardous_transport_rule"
+      ],
+      "route_rule_ids": [
+        "route_target_us",
+        "route_lithium_battery",
+        "route_textile_apparel",
+        "route_agri_food_fresh"
+      ],
+      "status": "active",
+      "version": "seed-2026-07-27",
+      "created_at": "2026-07-27",
+      "updated_at": "2026-07-27",
+      "last_reviewed_at": "2026-07-27",
+      "next_review_due": "per-run before delivery",
+      "review_cycle_policy": "per_run",
+      "owner_scope": "built_in_seed",
+      "pack_boundary_note": "仅为美国准入来源入口目录；是否适用任何要求必须在本轮打开主管来源并核对产品条件后再写。",
+      "blocked_outputs": [
+        "fact_statement_from_pack",
+        "compliance_conclusion",
+        "importability_conclusion",
+        "exportability_conclusion",
+        "transportability_conclusion",
+        "final_classification",
+        "final_duty_rate",
+        "payable_tax_amount",
+        "guaranteed_transit_time",
+        "fixed_departure_port",
+        "market_entry_recommendation",
+        "recommended_customer_type",
+        "recommended_price"
+      ]
+    },
+    {
+      "source_pack_id": "seed_us_import_tax_general",
+      "display_name": "美国进口税费来源入口包",
+      "pack_type": "destination_duty_tax_pack",
+      "trade_role": "import_customs",
+      "jurisdiction_type": "country",
+      "jurisdiction_code": "US",
+      "jurisdiction_name": "United States",
+      "language_codes": [
+        "en"
+      ],
+      "fact_domains_supported": [
+        "candidate_hts_lookup",
+        "official_tariff_locator",
+        "customs_ruling_locator",
+        "trade_remedy_locator",
+        "duty_tax_basis_locator"
+      ],
+      "fact_domains_not_supported": [
+        "final_classification",
+        "final_duty_rate",
+        "payable_tax_amount",
+        "market_price"
+      ],
+      "product_trigger_tags": [
+        "general_goods",
+        "lithium_battery",
+        "textile",
+        "apparel",
+        "steel",
+        "food",
+        "chemical",
+        "dual_use",
+        "mineral",
+        "grain",
+        "energy"
+      ],
+      "required_brief_fields": [
+        "target_country_or_region",
+        "origin_country_or_region",
+        "product_name"
+      ],
+      "entry_ids": [
+        "entry_us_hts_tariff",
+        "entry_us_customs_rulings",
+        "entry_us_trade_remedy_locator"
+      ],
+      "query_template_ids": [
+        "qt_us_duty_by_candidate_hs"
+      ],
+      "observation_requirement_ids": [
+        "obs_tariff_lookup",
+        "obs_customs_ruling"
+      ],
+      "route_rule_ids": [
+        "route_target_us",
+        "route_candidate_hs_present"
+      ],
+      "status": "active",
+      "version": "seed-2026-07-27",
+      "created_at": "2026-07-27",
+      "updated_at": "2026-07-27",
+      "last_reviewed_at": "2026-07-27",
+      "next_review_due": "per-run before delivery",
+      "review_cycle_policy": "per_run",
+      "owner_scope": "built_in_seed",
+      "pack_boundary_note": "仅为美国税费来源入口目录；候选税号、税则入口和裁定入口不能替代最终归类、最终税额或报关专业确认。",
+      "blocked_outputs": [
+        "fact_statement_from_pack",
+        "compliance_conclusion",
+        "importability_conclusion",
+        "exportability_conclusion",
+        "transportability_conclusion",
+        "final_classification",
+        "final_duty_rate",
+        "payable_tax_amount",
+        "guaranteed_transit_time",
+        "fixed_departure_port",
+        "market_entry_recommendation",
+        "recommended_customer_type",
+        "recommended_price"
+      ]
+    },
+    {
+      "source_pack_id": "seed_us_origin_proof_general",
+      "display_name": "美国原产地证明 / COO 来源入口包",
+      "pack_type": "destination_origin_proof_pack",
+      "trade_role": "import_customs",
+      "jurisdiction_type": "country",
+      "jurisdiction_code": "US",
+      "jurisdiction_name": "United States",
+      "language_codes": [
+        "en"
+      ],
+      "fact_domains_supported": [
+        "origin_proof_requirement",
+        "rules_of_origin_locator",
+        "origin_marking_locator",
+        "preferential_origin_locator",
+        "trade_remedy_origin_locator"
+      ],
+      "fact_domains_not_supported": [
+        "user_document_validity_ruling",
+        "customs_final_origin_determination",
+        "all_imports_origin_certificate_rule"
+      ],
+      "product_trigger_tags": [
+        "general_goods",
+        "lithium_battery",
+        "textile",
+        "apparel",
+        "steel",
+        "food",
+        "fresh_produce",
+        "chemical",
+        "dual_use"
+      ],
+      "required_brief_fields": [
+        "target_country_or_region",
+        "origin_country_or_region",
+        "product_name"
+      ],
+      "entry_ids": [
+        "entry_us_cbp_origin_rules",
+        "entry_us_trade_agreement_origin",
+        "entry_us_origin_marking_guidance"
+      ],
+      "query_template_ids": [
+        "qt_us_origin_proof_requirement"
+      ],
+      "observation_requirement_ids": [
+        "obs_origin_proof_rule"
+      ],
+      "route_rule_ids": [
+        "route_target_us",
+        "route_origin_proof_question",
+        "route_candidate_hs_present"
+      ],
+      "status": "active",
+      "version": "seed-2026-07-27",
+      "created_at": "2026-07-27",
+      "updated_at": "2026-07-27",
+      "last_reviewed_at": "2026-07-27",
+      "next_review_due": "per-run before delivery",
+      "review_cycle_policy": "per_run",
+      "owner_scope": "built_in_seed",
+      "pack_boundary_note": "仅为美国 COO / proof of origin 相关来源入口目录；目标国规则、优惠原产地、原产地标识和用户文件状态必须分开核验。",
+      "blocked_outputs": [
+        "fact_statement_from_pack",
+        "compliance_conclusion",
+        "importability_conclusion",
+        "exportability_conclusion",
+        "transportability_conclusion",
+        "final_classification",
+        "final_duty_rate",
+        "payable_tax_amount",
+        "guaranteed_transit_time",
+        "fixed_departure_port",
+        "market_entry_recommendation",
+        "recommended_customer_type",
+        "recommended_price",
+        "origin_proof_requirement_conclusion_from_pack"
+      ]
+    },
+    {
+      "source_pack_id": "seed_cn_export_general",
+      "display_name": "中国出口国监管来源入口包",
+      "pack_type": "export_country_pack",
+      "trade_role": "export_declaration",
+      "jurisdiction_type": "country",
+      "jurisdiction_code": "CN",
+      "jurisdiction_name": "China",
+      "language_codes": [
+        "en",
+        "zh"
+      ],
+      "fact_domains_supported": [
+        "export_declaration",
+        "export_control",
+        "inspection_quarantine",
+        "commodity_inspection",
+        "export_license_locator"
+      ],
+      "fact_domains_not_supported": [
+        "destination_market_access",
+        "final_export_permission",
+        "departure_port"
+      ],
+      "product_trigger_tags": [
+        "general_goods",
+        "textile",
+        "lithium_battery",
+        "dangerous_goods",
+        "chemical",
+        "fresh_produce",
+        "dual_use",
+        "wood_packaging",
+        "bulk_cargo",
+        "breakbulk",
+        "roro",
+        "heavy_lift"
+      ],
+      "required_brief_fields": [
+        "export_declaration_country",
+        "target_country_or_region",
+        "product_name",
+        "product_trigger_tags"
+      ],
+      "entry_ids": [
+        "entry_cn_customs_export",
+        "entry_cn_export_control",
+        "entry_cn_inspection_quarantine"
+      ],
+      "query_template_ids": [
+        "qt_cn_export_country_requirements"
+      ],
+      "observation_requirement_ids": [
+        "obs_export_country_rule"
+      ],
+      "route_rule_ids": [
+        "route_export_cn"
+      ],
+      "status": "active",
+      "version": "seed-2026-07-27",
+      "created_at": "2026-07-27",
+      "updated_at": "2026-07-27",
+      "last_reviewed_at": "2026-07-27",
+      "next_review_due": "per-run before delivery",
+      "review_cycle_policy": "per_run",
+      "owner_scope": "built_in_seed",
+      "pack_boundary_note": "仅在出口申报国确认为中国时用于采集；默认中国必须对用户可见可改，不能由品牌语言、制造线索或卖方所在地自动套用。 本 Pack 仅为来源入口目录，不含事实结论。",
+      "blocked_outputs": [
+        "fact_statement_from_pack",
+        "compliance_conclusion",
+        "importability_conclusion",
+        "exportability_conclusion",
+        "transportability_conclusion",
+        "final_classification",
+        "final_duty_rate",
+        "payable_tax_amount",
+        "guaranteed_transit_time",
+        "fixed_departure_port",
+        "market_entry_recommendation",
+        "recommended_customer_type",
+        "recommended_price"
+      ]
+    },
+    {
+      "source_pack_id": "seed_vn_export_general",
+      "display_name": "越南出口国监管来源入口包",
+      "pack_type": "export_country_pack",
+      "trade_role": "export_declaration",
+      "jurisdiction_type": "country",
+      "jurisdiction_code": "VN",
+      "jurisdiction_name": "Vietnam",
+      "language_codes": [
+        "en",
+        "vi"
+      ],
+      "fact_domains_supported": [
+        "export_declaration",
+        "export_control",
+        "quality_inspection",
+        "dangerous_goods_export_locator",
+        "agri_food_export_locator"
+      ],
+      "fact_domains_not_supported": [
+        "destination_market_access",
+        "final_export_permission",
+        "departure_port"
+      ],
+      "product_trigger_tags": [
+        "general_goods",
+        "lithium_battery",
+        "dangerous_goods",
+        "food",
+        "fresh_produce",
+        "chemical",
+        "bulk_cargo",
+        "breakbulk",
+        "roro",
+        "heavy_lift"
+      ],
+      "required_brief_fields": [
+        "export_declaration_country",
+        "target_country_or_region",
+        "product_name",
+        "product_trigger_tags"
+      ],
+      "entry_ids": [
+        "entry_vn_customs_export",
+        "entry_vn_trade_ministry_export",
+        "entry_vn_standards_quality"
+      ],
+      "query_template_ids": [
+        "qt_vn_export_country_requirements"
+      ],
+      "observation_requirement_ids": [
+        "obs_export_country_rule"
+      ],
+      "route_rule_ids": [
+        "route_export_vn"
+      ],
+      "status": "active",
+      "version": "seed-2026-07-27",
+      "created_at": "2026-07-27",
+      "updated_at": "2026-07-27",
+      "last_reviewed_at": "2026-07-27",
+      "next_review_due": "per-run before delivery",
+      "review_cycle_policy": "per_run",
+      "owner_scope": "built_in_seed",
+      "pack_boundary_note": "仅在出口申报国确认为越南时用于采集；越南制造、工厂地址或证书线索不能自动变成越南出口申报国或具体起运港。 本 Pack 仅为来源入口目录，不含事实结论。",
+      "blocked_outputs": [
+        "fact_statement_from_pack",
+        "compliance_conclusion",
+        "importability_conclusion",
+        "exportability_conclusion",
+        "transportability_conclusion",
+        "final_classification",
+        "final_duty_rate",
+        "payable_tax_amount",
+        "guaranteed_transit_time",
+        "fixed_departure_port",
+        "market_entry_recommendation",
+        "recommended_customer_type",
+        "recommended_price"
+      ]
+    },
+    {
+      "source_pack_id": "seed_transpacific_logistics_general",
+      "display_name": "中国/越南至美国物流与预申报来源入口包",
+      "pack_type": "logistics_pack",
+      "trade_role": "departure_logistics",
+      "jurisdiction_type": "region",
+      "jurisdiction_code": "CN-VN-US",
+      "jurisdiction_name": "China/Vietnam to United States trade lanes",
+      "language_codes": [
+        "en"
+      ],
+      "fact_domains_supported": [
+        "fcl_lcl_air_express_locator",
+        "breakbulk_roro_locator",
+        "port_airport_locator",
+        "carrier_rule_locator",
+        "pre_filing_locator",
+        "dangerous_goods_booking_locator"
+      ],
+      "fact_domains_not_supported": [
+        "best_route",
+        "guaranteed_transit_time",
+        "freight_quote",
+        "departure_port_fact"
+      ],
+      "product_trigger_tags": [
+        "general_goods",
+        "lithium_battery",
+        "dangerous_goods",
+        "cold_chain",
+        "breakbulk",
+        "roro",
+        "oversize",
+        "heavy_lift",
+        "magnetic",
+        "fresh_produce",
+        "bulk_cargo",
+        "project_goods"
+      ],
+      "required_brief_fields": [
+        "target_country_or_region",
+        "product_name",
+        "product_trigger_tags"
+      ],
+      "entry_ids": [
+        "entry_port_carrier_schedule_guidance",
+        "entry_pre_filing_customs",
+        "entry_dg_carrier_acceptance_locator"
+      ],
+      "query_template_ids": [
+        "qt_logistics_route_nodes"
+      ],
+      "observation_requirement_ids": [
+        "obs_logistics_node",
+        "obs_pre_filing_rule"
+      ],
+      "route_rule_ids": [
+        "route_target_us",
+        "route_lithium_battery",
+        "route_bulk_or_roro",
+        "route_agri_food_fresh"
+      ],
+      "status": "active",
+      "version": "seed-2026-07-27",
+      "created_at": "2026-07-27",
+      "updated_at": "2026-07-27",
+      "last_reviewed_at": "2026-07-27",
+      "next_review_due": "per-run before delivery",
+      "review_cycle_policy": "per_run",
+      "owner_scope": "built_in_seed",
+      "pack_boundary_note": "只提供物流、港口、承运和预申报入口；运输时间必须按本轮打开来源和货物条件写成常见口径，不能承诺交期或猜起运港。 本 Pack 仅为来源入口目录，不含事实结论。",
+      "blocked_outputs": [
+        "fact_statement_from_pack",
+        "compliance_conclusion",
+        "importability_conclusion",
+        "exportability_conclusion",
+        "transportability_conclusion",
+        "final_classification",
+        "final_duty_rate",
+        "payable_tax_amount",
+        "guaranteed_transit_time",
+        "fixed_departure_port",
+        "market_entry_recommendation",
+        "recommended_customer_type",
+        "recommended_price"
+      ]
+    },
+    {
+      "source_pack_id": "seed_market_signal_global_to_us",
+      "display_name": "美国市场信号来源入口包",
+      "pack_type": "market_signal_pack",
+      "trade_role": "market_signal",
+      "jurisdiction_type": "country",
+      "jurisdiction_code": "US",
+      "jurisdiction_name": "United States",
+      "language_codes": [
+        "en"
+      ],
+      "fact_domains_supported": [
+        "google_trends_locator",
+        "public_statistics_locator",
+        "industry_report_locator",
+        "platform_price_locator",
+        "exchange_index_locator",
+        "season_holiday_locator",
+        "external_factor_locator"
+      ],
+      "fact_domains_not_supported": [
+        "sales_volume",
+        "gmv",
+        "purchase_demand",
+        "transaction_price",
+        "target_price",
+        "market_entry_advice"
+      ],
+      "product_trigger_tags": [
+        "general_goods",
+        "apparel",
+        "textile",
+        "lithium_battery",
+        "commodity_index_reference",
+        "steel",
+        "grain",
+        "mineral",
+        "energy",
+        "giftable",
+        "fresh_produce",
+        "flower",
+        "tea",
+        "bulk_cargo"
+      ],
+      "required_brief_fields": [
+        "target_country_or_region",
+        "product_name"
+      ],
+      "entry_ids": [
+        "entry_google_trends",
+        "entry_market_platform_price",
+        "entry_public_market_report_locator",
+        "entry_exchange_index",
+        "entry_holiday_calendar_locator",
+        "entry_external_factor_news_locator"
+      ],
+      "query_template_ids": [
+        "qt_market_signal_terms",
+        "qt_season_holiday_signals",
+        "qt_external_factor_watch"
+      ],
+      "observation_requirement_ids": [
+        "obs_google_trends",
+        "obs_platform_price",
+        "obs_market_report",
+        "obs_exchange_index",
+        "obs_news_external_factor"
+      ],
+      "route_rule_ids": [
+        "route_target_us",
+        "route_bulk_or_roro",
+        "route_agri_food_fresh"
+      ],
+      "status": "active",
+      "version": "seed-2026-07-27",
+      "created_at": "2026-07-27",
+      "updated_at": "2026-07-27",
+      "last_reviewed_at": "2026-07-27",
+      "next_review_due": "per-run before delivery",
+      "review_cycle_policy": "per_run",
+      "owner_scope": "built_in_seed",
+      "pack_boundary_note": "市场信号只作客观参考入口；Google Trends 是相对搜索兴趣，平台价是挂牌参考，公开报告需记录口径和日期。 本 Pack 仅为来源入口目录，不含事实结论。",
+      "blocked_outputs": [
+        "fact_statement_from_pack",
+        "compliance_conclusion",
+        "importability_conclusion",
+        "exportability_conclusion",
+        "transportability_conclusion",
+        "final_classification",
+        "final_duty_rate",
+        "payable_tax_amount",
+        "guaranteed_transit_time",
+        "fixed_departure_port",
+        "market_entry_recommendation",
+        "recommended_customer_type",
+        "recommended_price"
+      ]
+    },
+    {
+      "source_pack_id": "seed_lithium_battery_common_rules",
+      "display_name": "锂电产品通用规则来源入口包",
+      "pack_type": "common_rule_pack",
+      "trade_role": "common_rule",
+      "jurisdiction_type": "global_or_international",
+      "jurisdiction_code": "GLOBAL-LIB",
+      "jurisdiction_name": "Lithium battery cross-border transport rule locators",
+      "language_codes": [
+        "en"
+      ],
+      "fact_domains_supported": [
+        "un_number_scenario_locator",
+        "sds_locator",
+        "un38_3_locator",
+        "packing_instruction_locator",
+        "dangerous_goods_classification_locator",
+        "carrier_restriction_locator"
+      ],
+      "fact_domains_not_supported": [
+        "transportability_conclusion",
+        "general_cargo_status",
+        "document_available_status",
+        "carrier_acceptance_fact"
+      ],
+      "product_trigger_tags": [
+        "lithium_battery",
+        "battery_standalone",
+        "battery_installed",
+        "dangerous_goods",
+        "electrical"
+      ],
+      "required_brief_fields": [
+        "product_name",
+        "product_trigger_tags"
+      ],
+      "entry_ids": [
+        "entry_lithium_battery_transport_rule",
+        "entry_air_transport_lithium_rule"
+      ],
+      "query_template_ids": [
+        "qt_lithium_battery_transport_docs"
+      ],
+      "observation_requirement_ids": [
+        "obs_hazardous_transport_rule",
+        "obs_product_doc"
+      ],
+      "route_rule_ids": [
+        "route_lithium_battery"
+      ],
+      "status": "active",
+      "version": "seed-2026-07-27",
+      "created_at": "2026-07-27",
+      "updated_at": "2026-07-27",
+      "last_reviewed_at": "2026-07-27",
+      "next_review_due": "per-run before delivery",
+      "review_cycle_policy": "per_run",
+      "owner_scope": "built_in_seed",
+      "pack_boundary_note": "锂电通用入口不能替代目的国、出口国、承运人和具体文件核验；缺 SDS / UN38.3 / 包装资料时只能列待确认。 本 Pack 仅为来源入口目录，不含事实结论。",
+      "blocked_outputs": [
+        "fact_statement_from_pack",
+        "compliance_conclusion",
+        "importability_conclusion",
+        "exportability_conclusion",
+        "transportability_conclusion",
+        "final_classification",
+        "final_duty_rate",
+        "payable_tax_amount",
+        "guaranteed_transit_time",
+        "fixed_departure_port",
+        "market_entry_recommendation",
+        "recommended_customer_type",
+        "recommended_price"
+      ]
+    },
+    {
+      "source_pack_id": "seed_textile_apparel_common_rules",
+      "display_name": "纺织服装通用规则来源入口包",
+      "pack_type": "common_rule_pack",
+      "trade_role": "common_rule",
+      "jurisdiction_type": "global_or_international",
+      "jurisdiction_code": "GLOBAL-TEXTILE",
+      "jurisdiction_name": "Textile/apparel classification and labeling locators",
+      "language_codes": [
+        "en"
+      ],
+      "fact_domains_supported": [
+        "fiber_content_locator",
+        "care_label_locator",
+        "origin_marking_locator",
+        "apparel_classification_locator",
+        "bom_label_photo_locator"
+      ],
+      "fact_domains_not_supported": [
+        "physical_label_compliance",
+        "full_bom_completeness",
+        "final_classification"
+      ],
+      "product_trigger_tags": [
+        "textile",
+        "apparel",
+        "skin_contact",
+        "cotton",
+        "woven",
+        "knit",
+        "workwear"
+      ],
+      "required_brief_fields": [
+        "product_name",
+        "product_trigger_tags"
+      ],
+      "entry_ids": [
+        "entry_textile_classification_reference"
+      ],
+      "query_template_ids": [
+        "qt_textile_label_and_classification_docs"
+      ],
+      "observation_requirement_ids": [
+        "obs_official_regulation",
+        "obs_product_doc"
+      ],
+      "route_rule_ids": [
+        "route_textile_apparel"
+      ],
+      "status": "active",
+      "version": "seed-2026-07-27",
+      "created_at": "2026-07-27",
+      "updated_at": "2026-07-27",
+      "last_reviewed_at": "2026-07-27",
+      "next_review_due": "per-run before delivery",
+      "review_cycle_policy": "per_run",
+      "owner_scope": "built_in_seed",
+      "pack_boundary_note": "网页成分、款式和洗护只能作为产品资料线索；实物标签、BOM 和最终归类必须另行核验。 本 Pack 仅为来源入口目录，不含事实结论。",
+      "blocked_outputs": [
+        "fact_statement_from_pack",
+        "compliance_conclusion",
+        "importability_conclusion",
+        "exportability_conclusion",
+        "transportability_conclusion",
+        "final_classification",
+        "final_duty_rate",
+        "payable_tax_amount",
+        "guaranteed_transit_time",
+        "fixed_departure_port",
+        "market_entry_recommendation",
+        "recommended_customer_type",
+        "recommended_price"
+      ]
+    },
+    {
+      "source_pack_id": "seed_product_original_sources",
+      "display_name": "产品原始资料来源入口包",
+      "pack_type": "product_original_source_pack",
+      "trade_role": "product_source",
+      "jurisdiction_type": "product_specific",
+      "jurisdiction_code": "PRODUCT",
+      "jurisdiction_name": "User-provided product URLs, PDFs, TDS, SDS, BOM, labels and manufacturer pages",
+      "language_codes": [
+        "en"
+      ],
+      "fact_domains_supported": [
+        "product_identity",
+        "model_version",
+        "technical_specification",
+        "material_composition",
+        "certificate_file_status",
+        "sds_file_status",
+        "bom_label_photo_status"
+      ],
+      "fact_domains_not_supported": [
+        "customs_origin_ruling",
+        "final_classification",
+        "destination_compliance_status",
+        "transportability_conclusion"
+      ],
+      "product_trigger_tags": [
+        "general_goods",
+        "lithium_battery",
+        "battery_standalone",
+        "battery_installed",
+        "electrical",
+        "textile",
+        "apparel",
+        "cotton",
+        "woven",
+        "skin_contact",
+        "chemical",
+        "dangerous_goods",
+        "food",
+        "fresh_produce",
+        "bulk_cargo",
+        "breakbulk",
+        "roro",
+        "heavy_lift",
+        "project_goods",
+        "commodity_index_reference"
+      ],
+      "required_brief_fields": [
+        "product_name"
+      ],
+      "entry_ids": [
+        "entry_product_manual_tds"
+      ],
+      "query_template_ids": [
+        "qt_product_original_docs"
+      ],
+      "observation_requirement_ids": [
+        "obs_product_doc"
+      ],
+      "route_rule_ids": [
+        "route_product_source_docs",
+        "route_lithium_battery",
+        "route_textile_apparel",
+        "route_bulk_or_roro"
+      ],
+      "status": "active",
+      "version": "seed-2026-07-27",
+      "created_at": "2026-07-27",
+      "updated_at": "2026-07-27",
+      "last_reviewed_at": "2026-07-27",
+      "next_review_due": "per-run before delivery",
+      "review_cycle_policy": "per_run",
+      "owner_scope": "built_in_seed",
+      "pack_boundary_note": "产品原始资料可支持产品字段和资料缺口清单；不能自动证明海关原产地、最终 HS、目的国合规或运输可行性。 本 Pack 仅为来源入口目录，不含事实结论。",
+      "blocked_outputs": [
+        "fact_statement_from_pack",
+        "compliance_conclusion",
+        "importability_conclusion",
+        "exportability_conclusion",
+        "transportability_conclusion",
+        "final_classification",
+        "final_duty_rate",
+        "payable_tax_amount",
+        "guaranteed_transit_time",
+        "fixed_departure_port",
+        "market_entry_recommendation",
+        "recommended_customer_type",
+        "recommended_price"
+      ]
+    }
+  ],
+  "source_entries": [
+    {
+      "source_entry_id": "entry_us_regulator_product_safety",
+      "source_pack_id": "seed_us_market_access_general",
+      "source_name": "US regulator product safety and business guidance locator",
+      "source_name_local": null,
+      "source_owner_type": "government",
+      "source_authority_level": "primary_official",
+      "source_type": "web_portal",
+      "landing_url_or_locator_template": "https://www.cpsc.gov/Business--Manufacturing/Business-Education",
+      "access_boundary": "public",
+      "query_slots_supported": [
+        "product_name",
+        "product_trigger_tags"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "product safety guidance",
+        "recall/safety regulation entry points"
+      ],
+      "supports_fact_domains": [
+        "destination_compliance",
+        "consumer_safety"
+      ],
+      "does_not_support_fact_domains": [
+        "final_compliance_status"
+      ],
+      "required_observation_fields": [
+        "source_name",
+        "url",
+        "page_title",
+        "publication_or_observation_date",
+        "applicable_product_category",
+        "visible_content",
+        "limitations"
+      ],
+      "priority": "P0",
+      "fallback_entry_ids": [],
+      "known_limitations": "入口覆盖范围按产品类别变化；打开后仍需核对适用范围。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_us_textile_labeling",
+      "source_pack_id": "seed_us_market_access_general",
+      "source_name": "US textile labeling guidance locator",
+      "source_name_local": null,
+      "source_owner_type": "government",
+      "source_authority_level": "primary_official",
+      "source_type": "web_or_guidance",
+      "landing_url_or_locator_template": "https://www.ftc.gov/business-guidance/resources/threading-your-way-through-labeling-requirements-under-textile-wool-acts",
+      "access_boundary": "public",
+      "query_slots_supported": [
+        "product_name",
+        "fiber_content",
+        "apparel_type"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "fiber labeling guidance",
+        "care/origin marking entry points"
+      ],
+      "supports_fact_domains": [
+        "destination_compliance",
+        "labeling",
+        "textile_labeling"
+      ],
+      "does_not_support_fact_domains": [
+        "physical_label_compliance",
+        "full_bom_completeness"
+      ],
+      "required_observation_fields": [
+        "source_name",
+        "url",
+        "chapter_or_section",
+        "publication_or_observation_date",
+        "applicable_product_category",
+        "visible_content",
+        "limitations"
+      ],
+      "priority": "P0",
+      "fallback_entry_ids": [],
+      "known_limitations": "网页产品信息不能替代实物标签照片或 BOM。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_us_hazardous_material_transport",
+      "source_pack_id": "seed_us_market_access_general",
+      "source_name": "US hazardous materials transport regulation locator",
+      "source_name_local": null,
+      "source_owner_type": "government",
+      "source_authority_level": "primary_official",
+      "source_type": "regulation_database",
+      "landing_url_or_locator_template": "https://www.ecfr.gov/current/title-49/subtitle-B/chapter-I/subchapter-C/part-173",
+      "access_boundary": "public",
+      "query_slots_supported": [
+        "product_trigger_tags",
+        "battery_scenario",
+        "transport_mode"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "hazardous materials rules",
+        "lithium battery transport entries"
+      ],
+      "supports_fact_domains": [
+        "hazmat_import_context",
+        "dangerous_goods_transport"
+      ],
+      "does_not_support_fact_domains": [
+        "carrier_acceptance_fact",
+        "transportability_conclusion"
+      ],
+      "required_observation_fields": [
+        "source_name",
+        "url",
+        "section",
+        "current_as_of_or_observation_date",
+        "transport_mode",
+        "product_scenario",
+        "visible_content",
+        "limitations"
+      ],
+      "priority": "P0",
+      "fallback_entry_ids": [],
+      "known_limitations": "规则入口不是承运人接收确认；需按单独/随设备/装入设备和包装状态核验。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_us_hts_tariff",
+      "source_pack_id": "seed_us_import_tax_general",
+      "source_name": "USITC HTS official tariff locator",
+      "source_name_local": null,
+      "source_owner_type": "government",
+      "source_authority_level": "primary_official",
+      "source_type": "tariff_lookup",
+      "landing_url_or_locator_template": "https://hts.usitc.gov/",
+      "access_boundary": "public",
+      "query_slots_supported": [
+        "candidate_hs_hts",
+        "product_name",
+        "origin_country_or_region"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "official HTS hierarchy",
+        "tariff columns",
+        "notes and chapter 99 pointers"
+      ],
+      "supports_fact_domains": [
+        "candidate_hts_lookup",
+        "official_tariff_locator",
+        "duty_tax_basis_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "final_classification",
+        "payable_tax_amount"
+      ],
+      "required_observation_fields": [
+        "query_parameters",
+        "hs_hts_level",
+        "description",
+        "rate_columns",
+        "notes",
+        "observation_date",
+        "origin_condition",
+        "limitations"
+      ],
+      "priority": "P0",
+      "fallback_entry_ids": [],
+      "known_limitations": "官方税则入口仍需确认 10 位统计后缀、实物条件、原产国和附加税适用性。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_us_customs_rulings",
+      "source_pack_id": "seed_us_import_tax_general",
+      "source_name": "CBP CROSS customs rulings locator",
+      "source_name_local": null,
+      "source_owner_type": "customs",
+      "source_authority_level": "primary_official",
+      "source_type": "ruling_database",
+      "landing_url_or_locator_template": "https://rulings.cbp.gov/",
+      "access_boundary": "public",
+      "query_slots_supported": [
+        "candidate_hs_hts",
+        "product_name",
+        "material",
+        "use"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "classification rulings",
+        "origin/rule examples"
+      ],
+      "supports_fact_domains": [
+        "customs_ruling_locator",
+        "candidate_classification_context"
+      ],
+      "does_not_support_fact_domains": [
+        "direct_reuse_for_different_product",
+        "final_classification"
+      ],
+      "required_observation_fields": [
+        "ruling_number",
+        "date",
+        "product_description",
+        "classification_context",
+        "applicability_limits"
+      ],
+      "priority": "P0",
+      "fallback_entry_ids": [],
+      "known_limitations": "裁定只适用特定描述；不同产品不能直接套用。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_us_trade_remedy_locator",
+      "source_pack_id": "seed_us_import_tax_general",
+      "source_name": "US trade remedy and additional duty locator",
+      "source_name_local": null,
+      "source_owner_type": "government",
+      "source_authority_level": "primary_official",
+      "source_type": "web_portal",
+      "landing_url_or_locator_template": "https://www.trade.gov/",
+      "access_boundary": "public",
+      "query_slots_supported": [
+        "candidate_hs_hts",
+        "origin_country_or_region",
+        "product_name"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "trade remedy public entry points",
+        "additional duty context"
+      ],
+      "supports_fact_domains": [
+        "trade_remedy_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "final_additional_duty_status"
+      ],
+      "required_observation_fields": [
+        "source_name",
+        "url",
+        "date",
+        "product_scope",
+        "origin_scope",
+        "visible_content",
+        "limitations"
+      ],
+      "priority": "P1",
+      "fallback_entry_ids": [],
+      "known_limitations": "需按具体清单、日期、原产地和产品范围核对。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_us_cbp_origin_rules",
+      "source_pack_id": "seed_us_origin_proof_general",
+      "source_name": "CBP origin and rulings locator",
+      "source_name_local": null,
+      "source_owner_type": "customs",
+      "source_authority_level": "primary_official",
+      "source_type": "web_portal",
+      "landing_url_or_locator_template": "https://www.cbp.gov/trade/rulings",
+      "access_boundary": "public",
+      "query_slots_supported": [
+        "origin_country_or_region",
+        "candidate_hs_hts",
+        "product_name"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "origin rules/ruling entry points",
+        "non-preferential origin context"
+      ],
+      "supports_fact_domains": [
+        "origin_proof_requirement",
+        "rules_of_origin_locator",
+        "origin_marking_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "customs_final_origin_determination",
+        "user_document_validity_ruling"
+      ],
+      "required_observation_fields": [
+        "source_name",
+        "url",
+        "section",
+        "date",
+        "origin_scenario",
+        "applicable_product_scope",
+        "visible_content",
+        "limitations"
+      ],
+      "priority": "P0",
+      "fallback_entry_ids": [],
+      "known_limitations": "入口不能替代本次产品/订单的海关裁定。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_us_trade_agreement_origin",
+      "source_pack_id": "seed_us_origin_proof_general",
+      "source_name": "US trade agreement rules of origin locator",
+      "source_name_local": null,
+      "source_owner_type": "government",
+      "source_authority_level": "primary_official",
+      "source_type": "web_portal",
+      "landing_url_or_locator_template": "https://ustr.gov/trade-agreements/free-trade-agreements",
+      "access_boundary": "public",
+      "query_slots_supported": [
+        "origin_country_or_region",
+        "candidate_hs_hts",
+        "agreement_name"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "trade agreement origin rules",
+        "proof of origin entry points"
+      ],
+      "supports_fact_domains": [
+        "preferential_origin_locator",
+        "rules_of_origin_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "all_imports_origin_certificate_rule"
+      ],
+      "required_observation_fields": [
+        "agreement",
+        "rule_locator",
+        "date",
+        "covered_goods",
+        "accepted_document_type",
+        "limitations"
+      ],
+      "priority": "P0",
+      "fallback_entry_ids": [],
+      "known_limitations": "优惠原产地规则不能泛化为普通进口文件要求。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_us_origin_marking_guidance",
+      "source_pack_id": "seed_us_origin_proof_general",
+      "source_name": "US country-of-origin marking locator",
+      "source_name_local": null,
+      "source_owner_type": "customs",
+      "source_authority_level": "primary_official",
+      "source_type": "web_or_guidance",
+      "landing_url_or_locator_template": "https://www.cbp.gov/trade/nafta/guide-customs-procedures/provisions-origin-marking-rules",
+      "access_boundary": "public",
+      "query_slots_supported": [
+        "product_name",
+        "origin_country_or_region"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "origin marking guidance",
+        "country marking context"
+      ],
+      "supports_fact_domains": [
+        "origin_marking_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "certificate_of_origin_document_requirement"
+      ],
+      "required_observation_fields": [
+        "source_name",
+        "url",
+        "section",
+        "date",
+        "marking_scope",
+        "visible_content",
+        "limitations"
+      ],
+      "priority": "P0",
+      "fallback_entry_ids": [],
+      "known_limitations": "原产地标识与 COO / proof of origin 文件要求必须分列。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_cn_customs_export",
+      "source_pack_id": "seed_cn_export_general",
+      "source_name": "China customs export declaration locator",
+      "source_name_local": null,
+      "source_owner_type": "customs",
+      "source_authority_level": "primary_official",
+      "source_type": "web_portal",
+      "landing_url_or_locator_template": "https://www.customs.gov.cn/",
+      "access_boundary": "public",
+      "query_slots_supported": [
+        "export_declaration_country",
+        "candidate_hs_hts",
+        "product_name"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "export declaration entry points",
+        "customs supervision conditions"
+      ],
+      "supports_fact_domains": [
+        "export_declaration",
+        "commodity_inspection"
+      ],
+      "does_not_support_fact_domains": [
+        "final_export_permission",
+        "departure_port"
+      ],
+      "required_observation_fields": [
+        "source_name",
+        "url",
+        "date",
+        "hs_or_product_scope",
+        "visible_content",
+        "limitations"
+      ],
+      "priority": "P0",
+      "fallback_entry_ids": [],
+      "known_limitations": "出口申报规则必须按出口申报国和现行监管条件核验。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_cn_export_control",
+      "source_pack_id": "seed_cn_export_general",
+      "source_name": "China export control and commerce authority locator",
+      "source_name_local": null,
+      "source_owner_type": "government",
+      "source_authority_level": "primary_official",
+      "source_type": "web_portal",
+      "landing_url_or_locator_template": "https://www.mofcom.gov.cn/",
+      "access_boundary": "public",
+      "query_slots_supported": [
+        "product_trigger_tags",
+        "candidate_hs_hts",
+        "product_name"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "export control lists",
+        "license/public notice entry points"
+      ],
+      "supports_fact_domains": [
+        "export_control",
+        "export_license_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "not_controlled_conclusion"
+      ],
+      "required_observation_fields": [
+        "source_name",
+        "url",
+        "date",
+        "list_or_notice",
+        "product_scope",
+        "visible_content",
+        "limitations"
+      ],
+      "priority": "P0",
+      "fallback_entry_ids": [],
+      "known_limitations": "未命中搜索不等于不受管制；需按清单和最终用途核验。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_cn_inspection_quarantine",
+      "source_pack_id": "seed_cn_export_general",
+      "source_name": "China inspection and quarantine / commodity inspection locator",
+      "source_name_local": null,
+      "source_owner_type": "government",
+      "source_authority_level": "primary_official",
+      "source_type": "web_portal",
+      "landing_url_or_locator_template": "https://www.customs.gov.cn/",
+      "access_boundary": "public",
+      "query_slots_supported": [
+        "candidate_hs_hts",
+        "product_trigger_tags",
+        "destination_country_or_region"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "inspection/quarantine entry points",
+        "export supervision entries"
+      ],
+      "supports_fact_domains": [
+        "inspection_quarantine",
+        "commodity_inspection"
+      ],
+      "does_not_support_fact_domains": [
+        "no_inspection_required_conclusion"
+      ],
+      "required_observation_fields": [
+        "source_name",
+        "url",
+        "date",
+        "product_scope",
+        "destination_scope",
+        "visible_content",
+        "limitations"
+      ],
+      "priority": "P0",
+      "fallback_entry_ids": [],
+      "known_limitations": "商检/检验检疫按 HS、产品、目的国和批次文件核验。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_vn_customs_export",
+      "source_pack_id": "seed_vn_export_general",
+      "source_name": "Vietnam customs export declaration locator",
+      "source_name_local": null,
+      "source_owner_type": "customs",
+      "source_authority_level": "primary_official",
+      "source_type": "web_portal",
+      "landing_url_or_locator_template": "https://www.customs.gov.vn/",
+      "access_boundary": "public",
+      "query_slots_supported": [
+        "export_declaration_country",
+        "candidate_hs_hts",
+        "product_name"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "export declaration entry points",
+        "customs guidance"
+      ],
+      "supports_fact_domains": [
+        "export_declaration"
+      ],
+      "does_not_support_fact_domains": [
+        "final_export_permission",
+        "departure_port"
+      ],
+      "required_observation_fields": [
+        "source_name",
+        "url",
+        "date",
+        "product_scope",
+        "visible_content",
+        "limitations"
+      ],
+      "priority": "P0",
+      "fallback_entry_ids": [],
+      "known_limitations": "只有出口申报国确认为越南后才用于执行。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_vn_trade_ministry_export",
+      "source_pack_id": "seed_vn_export_general",
+      "source_name": "Vietnam trade ministry export regulation locator",
+      "source_name_local": null,
+      "source_owner_type": "government",
+      "source_authority_level": "primary_official",
+      "source_type": "web_portal",
+      "landing_url_or_locator_template": "https://moit.gov.vn/",
+      "access_boundary": "public",
+      "query_slots_supported": [
+        "product_trigger_tags",
+        "candidate_hs_hts",
+        "destination_country_or_region"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "export control/licensing entry points",
+        "trade notices"
+      ],
+      "supports_fact_domains": [
+        "export_control",
+        "export_license_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "not_controlled_conclusion"
+      ],
+      "required_observation_fields": [
+        "source_name",
+        "url",
+        "date",
+        "product_scope",
+        "visible_content",
+        "limitations"
+      ],
+      "priority": "P0",
+      "fallback_entry_ids": [],
+      "known_limitations": "需按越南官方来源和产品范围核验。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_vn_standards_quality",
+      "source_pack_id": "seed_vn_export_general",
+      "source_name": "Vietnam standards and quality locator",
+      "source_name_local": null,
+      "source_owner_type": "standards_body",
+      "source_authority_level": "secondary_official",
+      "source_type": "web_portal",
+      "landing_url_or_locator_template": "https://tcvn.gov.vn/",
+      "access_boundary": "public",
+      "query_slots_supported": [
+        "product_trigger_tags",
+        "product_name"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "standards and quality entry points"
+      ],
+      "supports_fact_domains": [
+        "quality_inspection"
+      ],
+      "does_not_support_fact_domains": [
+        "un38_3_or_sds_status"
+      ],
+      "required_observation_fields": [
+        "source_name",
+        "url",
+        "date",
+        "standard_scope",
+        "visible_content",
+        "limitations"
+      ],
+      "priority": "P1",
+      "fallback_entry_ids": [],
+      "known_limitations": "本入口不能把本地标准或登记文件升级为国际运输文件状态。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_port_carrier_schedule_guidance",
+      "source_pack_id": "seed_transpacific_logistics_general",
+      "source_name": "Public port, carrier, freight forwarder schedule guidance locator",
+      "source_name_local": null,
+      "source_owner_type": "carrier",
+      "source_authority_level": "commercial_reference",
+      "source_type": "locator_template",
+      "landing_url_or_locator_template": "official port / carrier / airline / express public locator by route and cargo condition",
+      "access_boundary": "unknown",
+      "query_slots_supported": [
+        "departure_country_or_region",
+        "departure_node",
+        "destination_node",
+        "transport_mode",
+        "cargo_attributes"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "public schedules",
+        "service routes",
+        "routing notes"
+      ],
+      "supports_fact_domains": [
+        "fcl_lcl_air_express_locator",
+        "breakbulk_roro_locator",
+        "port_airport_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "best_route",
+        "guaranteed_transit_time",
+        "freight_quote"
+      ],
+      "required_observation_fields": [
+        "route_nodes",
+        "transport_mode",
+        "cargo_condition",
+        "date",
+        "time_basis",
+        "limitations"
+      ],
+      "priority": "P2",
+      "fallback_entry_ids": [],
+      "known_limitations": "公开服务说明只能作为常见入口；真实订舱、截关和费用需业务确认。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_pre_filing_customs",
+      "source_pack_id": "seed_transpacific_logistics_general",
+      "source_name": "Destination customs and carrier pre-filing locator",
+      "source_name_local": null,
+      "source_owner_type": "customs",
+      "source_authority_level": "primary_official",
+      "source_type": "web_portal",
+      "landing_url_or_locator_template": "https://www.cbp.gov/trade/basic-import-export/importer-security-filing-102",
+      "access_boundary": "public",
+      "query_slots_supported": [
+        "destination_country_or_region",
+        "transport_mode",
+        "cargo_role"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "pre-filing timing entry points",
+        "responsible party notes"
+      ],
+      "supports_fact_domains": [
+        "pre_filing_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "carrier_cutoff_fact"
+      ],
+      "required_observation_fields": [
+        "source_name",
+        "url",
+        "date",
+        "transport_mode",
+        "filing_timing",
+        "responsible_party",
+        "limitations"
+      ],
+      "priority": "P0",
+      "fallback_entry_ids": [],
+      "known_limitations": "海关预申报节点不能替代船司截单或货代操作要求。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_dg_carrier_acceptance_locator",
+      "source_pack_id": "seed_transpacific_logistics_general",
+      "source_name": "Dangerous goods carrier acceptance locator",
+      "source_name_local": null,
+      "source_owner_type": "carrier",
+      "source_authority_level": "commercial_reference",
+      "source_type": "locator_template",
+      "landing_url_or_locator_template": "carrier dangerous-goods acceptance / booking guidance locator by UN scenario",
+      "access_boundary": "unknown",
+      "query_slots_supported": [
+        "un_number_scenario",
+        "battery_wh",
+        "packing_status",
+        "transport_mode"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "carrier dangerous-goods guidance",
+        "booking restrictions"
+      ],
+      "supports_fact_domains": [
+        "dangerous_goods_booking_locator",
+        "carrier_rule_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "carrier_acceptance_fact",
+        "transportability_conclusion"
+      ],
+      "required_observation_fields": [
+        "carrier",
+        "transport_mode",
+        "cargo_condition",
+        "date",
+        "visible_content",
+        "limitations"
+      ],
+      "priority": "P2",
+      "fallback_entry_ids": [],
+      "known_limitations": "承运条件随船司、航司、快递和货物文件变化；不能由入口判断可运输。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_google_trends",
+      "source_pack_id": "seed_market_signal_global_to_us",
+      "source_name": "Google Trends locator",
+      "source_name_local": null,
+      "source_owner_type": "platform",
+      "source_authority_level": "commercial_reference",
+      "source_type": "trend_tool",
+      "landing_url_or_locator_template": "https://trends.google.com/trends/",
+      "access_boundary": "public",
+      "query_slots_supported": [
+        "product_keywords",
+        "target_country_or_region",
+        "time_range"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "relative search interest"
+      ],
+      "supports_fact_domains": [
+        "google_trends_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "sales_volume",
+        "gmv",
+        "purchase_demand"
+      ],
+      "required_observation_fields": [
+        "keyword",
+        "region",
+        "time_range",
+        "category_or_search_type",
+        "export_or_screenshot_date",
+        "metric_definition",
+        "limitations"
+      ],
+      "priority": "P2",
+      "fallback_entry_ids": [],
+      "known_limitations": "只能作为相对搜索兴趣入口，不能代表销量。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_market_platform_price",
+      "source_pack_id": "seed_market_signal_global_to_us",
+      "source_name": "Public B2B/B2C platform price locator",
+      "source_name_local": null,
+      "source_owner_type": "platform",
+      "source_authority_level": "commercial_reference",
+      "source_type": "locator_template",
+      "landing_url_or_locator_template": "public platform search locator by product specification and region",
+      "access_boundary": "unknown",
+      "query_slots_supported": [
+        "product_name",
+        "specification",
+        "target_country_or_region",
+        "currency"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "list prices",
+        "retail prices",
+        "platform offers"
+      ],
+      "supports_fact_domains": [
+        "platform_price_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "transaction_price",
+        "target_price",
+        "recommended_price"
+      ],
+      "required_observation_fields": [
+        "platform",
+        "seller_or_region",
+        "specification",
+        "currency",
+        "tax_shipping_promo_terms",
+        "observation_date",
+        "limitations"
+      ],
+      "priority": "P3",
+      "fallback_entry_ids": [],
+      "known_limitations": "挂牌价需按规格和税运费条件对齐，不能写成成交价。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_public_market_report_locator",
+      "source_pack_id": "seed_market_signal_global_to_us",
+      "source_name": "Public market statistics, association, and report locator",
+      "source_name_local": null,
+      "source_owner_type": "industry_association",
+      "source_authority_level": "industry_reference",
+      "source_type": "locator_template",
+      "landing_url_or_locator_template": "public statistics / association / report locator by product and country",
+      "access_boundary": "unknown",
+      "query_slots_supported": [
+        "product_name",
+        "industry_name",
+        "target_country_or_region",
+        "date_range"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "public statistics",
+        "report summaries",
+        "association data"
+      ],
+      "supports_fact_domains": [
+        "public_statistics_locator",
+        "industry_report_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "market_entry_advice",
+        "real_sales_fact_without_data"
+      ],
+      "required_observation_fields": [
+        "publisher",
+        "date",
+        "region",
+        "metric_definition",
+        "visible_content",
+        "limitations"
+      ],
+      "priority": "P2",
+      "fallback_entry_ids": [],
+      "known_limitations": "公开摘要必须记录口径和日期，不能替代付费报告正文。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_exchange_index",
+      "source_pack_id": "seed_market_signal_global_to_us",
+      "source_name": "Commodity exchange and index locator",
+      "source_name_local": null,
+      "source_owner_type": "exchange",
+      "source_authority_level": "industry_reference",
+      "source_type": "locator_template",
+      "landing_url_or_locator_template": "public exchange / commodity index locator by commodity, contract, unit and delivery region",
+      "access_boundary": "unknown",
+      "query_slots_supported": [
+        "product_trigger_tags",
+        "commodity_name",
+        "unit",
+        "date_range"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "futures or index quotes",
+        "public commodity references"
+      ],
+      "supports_fact_domains": [
+        "exchange_index_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "spot_export_price",
+        "investment_advice"
+      ],
+      "required_observation_fields": [
+        "exchange",
+        "contract_or_index",
+        "unit",
+        "delivery_region",
+        "date",
+        "currency",
+        "limitations"
+      ],
+      "priority": "P2",
+      "fallback_entry_ids": [],
+      "known_limitations": "期货/指数只能作价格背景，不能替代现货出口成交价。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_holiday_calendar_locator",
+      "source_pack_id": "seed_market_signal_global_to_us",
+      "source_name": "Public holiday and seasonal calendar locator",
+      "source_name_local": null,
+      "source_owner_type": "government",
+      "source_authority_level": "secondary_official",
+      "source_type": "locator_template",
+      "landing_url_or_locator_template": "official holiday calendar / retail season locator by country and product occasion",
+      "access_boundary": "unknown",
+      "query_slots_supported": [
+        "target_country_or_region",
+        "giftable",
+        "seasonal_use"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "public holidays",
+        "seasonal demand windows"
+      ],
+      "supports_fact_domains": [
+        "season_holiday_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "sales_peak_fact_without_source"
+      ],
+      "required_observation_fields": [
+        "country",
+        "holiday_name",
+        "date_or_period",
+        "source_date",
+        "applicability",
+        "limitations"
+      ],
+      "priority": "P2",
+      "fallback_entry_ids": [],
+      "known_limitations": "节假日只是销售窗口参考，不等于采购需求。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_external_factor_news_locator",
+      "source_pack_id": "seed_market_signal_global_to_us",
+      "source_name": "Recent external factor locator",
+      "source_name_local": null,
+      "source_owner_type": "news",
+      "source_authority_level": "news_reference",
+      "source_type": "locator_template",
+      "landing_url_or_locator_template": "official notices / reputable news locator for ports, war, disasters, strikes, sanctions, macro events",
+      "access_boundary": "unknown",
+      "query_slots_supported": [
+        "target_country_or_region",
+        "export_declaration_country",
+        "product_trigger_tags",
+        "date_range"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "dated events",
+        "official notices",
+        "logistics disruptions"
+      ],
+      "supports_fact_domains": [
+        "external_factor_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "political_or_investment_judgment"
+      ],
+      "required_observation_fields": [
+        "publisher",
+        "event_date",
+        "region",
+        "affected_chain",
+        "time_window",
+        "limitations"
+      ],
+      "priority": "P2",
+      "fallback_entry_ids": [],
+      "known_limitations": "只记录有日期的外部因素，不做政治或投资判断。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_lithium_battery_transport_rule",
+      "source_pack_id": "seed_lithium_battery_common_rules",
+      "source_name": "Lithium battery transport rule locator",
+      "source_name_local": null,
+      "source_owner_type": "government",
+      "source_authority_level": "primary_official",
+      "source_type": "regulation_database",
+      "landing_url_or_locator_template": "https://www.ecfr.gov/current/title-49/section-173.185",
+      "access_boundary": "public",
+      "query_slots_supported": [
+        "battery_type",
+        "watt_hours",
+        "shipping_scenario",
+        "transport_mode"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "lithium battery transport conditions",
+        "document and packaging entry points"
+      ],
+      "supports_fact_domains": [
+        "un_number_scenario_locator",
+        "un38_3_locator",
+        "sds_locator",
+        "packing_instruction_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "transportability_conclusion",
+        "general_cargo_status"
+      ],
+      "required_observation_fields": [
+        "section",
+        "date",
+        "battery_scenario",
+        "wh_threshold",
+        "documents",
+        "packaging",
+        "limitations"
+      ],
+      "priority": "P0",
+      "fallback_entry_ids": [],
+      "known_limitations": "需配合具体 SDS、UN38.3、包装和承运规则核验。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_air_transport_lithium_rule",
+      "source_pack_id": "seed_lithium_battery_common_rules",
+      "source_name": "Air transport lithium battery rule locator",
+      "source_name_local": null,
+      "source_owner_type": "carrier",
+      "source_authority_level": "commercial_reference",
+      "source_type": "locator_template",
+      "landing_url_or_locator_template": "IATA / airline / express lithium battery guidance locator by UN scenario",
+      "access_boundary": "unknown",
+      "query_slots_supported": [
+        "un_number_scenario",
+        "watt_hours",
+        "transport_mode",
+        "packing_status"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "air/express lithium battery guidance"
+      ],
+      "supports_fact_domains": [
+        "carrier_restriction_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "carrier_acceptance_fact"
+      ],
+      "required_observation_fields": [
+        "publisher",
+        "date",
+        "transport_mode",
+        "un_scenario",
+        "conditions",
+        "limitations"
+      ],
+      "priority": "P2",
+      "fallback_entry_ids": [],
+      "known_limitations": "航空/快递规则高度依赖承运人和货物文件。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_textile_classification_reference",
+      "source_pack_id": "seed_textile_apparel_common_rules",
+      "source_name": "Textile and apparel classification reference locator",
+      "source_name_local": null,
+      "source_owner_type": "industry_reference",
+      "source_authority_level": "industry_reference",
+      "source_type": "locator_template",
+      "landing_url_or_locator_template": "official tariff notes / customs ruling / textile classification locator by garment type and fiber",
+      "access_boundary": "unknown",
+      "query_slots_supported": [
+        "candidate_hs_hts",
+        "fiber_content",
+        "woven_or_knit",
+        "gender_or_use"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "classification notes",
+        "rulings context"
+      ],
+      "supports_fact_domains": [
+        "apparel_classification_locator",
+        "fiber_content_locator"
+      ],
+      "does_not_support_fact_domains": [
+        "final_classification",
+        "physical_label_compliance"
+      ],
+      "required_observation_fields": [
+        "source_name",
+        "date",
+        "product_scope",
+        "fiber_scope",
+        "visible_content",
+        "limitations"
+      ],
+      "priority": "P2",
+      "fallback_entry_ids": [],
+      "known_limitations": "只能辅助归类沟通；最终归类需官方税则/裁定和实物条件。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    },
+    {
+      "source_entry_id": "entry_product_manual_tds",
+      "source_pack_id": "seed_product_original_sources",
+      "source_name": "Manufacturer or user-provided product document locator",
+      "source_name_local": null,
+      "source_owner_type": "brand_or_manufacturer",
+      "source_authority_level": "original_product_source",
+      "source_type": "user_or_public_document_locator",
+      "landing_url_or_locator_template": "user-provided URL/PDF or manufacturer product page locator",
+      "access_boundary": "unknown",
+      "query_slots_supported": [
+        "product_name",
+        "manufacturer_or_brand",
+        "model_or_sku",
+        "document_type"
+      ],
+      "search_hint_terms": [],
+      "expected_content_types": [
+        "product page",
+        "manual",
+        "TDS",
+        "SDS",
+        "test report",
+        "BOM",
+        "label photo"
+      ],
+      "supports_fact_domains": [
+        "product_identity",
+        "technical_specification",
+        "material_composition",
+        "certificate_file_status",
+        "sds_file_status",
+        "bom_label_photo_status"
+      ],
+      "does_not_support_fact_domains": [
+        "customs_origin_ruling",
+        "final_classification",
+        "destination_compliance_status",
+        "transportability_conclusion"
+      ],
+      "required_observation_fields": [
+        "product_model",
+        "document_title",
+        "version_or_date",
+        "page_or_section",
+        "field_value",
+        "applicability",
+        "limitations"
+      ],
+      "priority": "P0",
+      "fallback_entry_ids": [],
+      "known_limitations": "资料必须匹配型号/版本；外部模型总结和文件名不能替代可见内容。",
+      "safety_redactions": [
+        "tokens",
+        "cookies",
+        "local_paths",
+        "internal_ids"
+      ],
+      "entry_status": "active",
+      "last_entry_reviewed_at": "2026-07-27"
+    }
+  ],
+  "query_templates": [
+    {
+      "query_template_id": "qt_us_market_access_by_trigger",
+      "source_pack_id": "seed_us_market_access_general",
+      "query_group_id": "destination_compliance",
+      "purpose": "按产品触发项组织美国准入、标签、包装、消费者安全或危险品入口查询。",
+      "required_brief_fields": [
+        "target_country_or_region",
+        "product_name",
+        "product_trigger_tags"
+      ],
+      "required_product_trigger_tags": [],
+      "language_strategy": "English plus product original language",
+      "term_slots": [
+        "product_name",
+        "product_trigger_tags",
+        "material",
+        "use",
+        "component_scope"
+      ],
+      "source_entry_scope": [
+        "entry_us_regulator_product_safety",
+        "entry_us_textile_labeling",
+        "entry_us_hazardous_material_transport"
+      ],
+      "must_open_source_authority_levels": [
+        "primary_official",
+        "secondary_official"
+      ],
+      "reject_if_only_snippet": true,
+      "expected_observation_fields": [
+        "source_name",
+        "url",
+        "date",
+        "applicable_product_category",
+        "visible_content",
+        "limitations"
+      ],
+      "expected_matrix_sheet": "产品准入与合规要求",
+      "fallback_status": "not_executed_or_source_limited",
+      "handoff_target_skill": "destination_market_access_skill",
+      "query_blueprints": [
+        "{target_country_or_region} official product safety labeling requirements {product_name} {product_trigger_tags}",
+        "{target_country_or_region} official compliance guidance {product_name} material use"
+      ]
+    },
+    {
+      "query_template_id": "qt_us_duty_by_candidate_hs",
+      "source_pack_id": "seed_us_import_tax_general",
+      "query_group_id": "import_tax",
+      "purpose": "用候选 HS/HTS 组织美国官方税则、裁定和贸易救济入口查询；只形成查证路径。",
+      "required_brief_fields": [
+        "target_country_or_region",
+        "origin_country_or_region",
+        "product_name"
+      ],
+      "required_product_trigger_tags": [],
+      "language_strategy": "English",
+      "term_slots": [
+        "candidate_hs_hts",
+        "product_name",
+        "origin_country_or_region",
+        "material",
+        "use"
+      ],
+      "source_entry_scope": [
+        "entry_us_hts_tariff",
+        "entry_us_customs_rulings",
+        "entry_us_trade_remedy_locator"
+      ],
+      "must_open_source_authority_levels": [
+        "primary_official"
+      ],
+      "reject_if_only_snippet": true,
+      "expected_observation_fields": [
+        "query_parameters",
+        "hs_hts_level",
+        "description",
+        "rate_columns",
+        "notes",
+        "origin_condition",
+        "date",
+        "limitations"
+      ],
+      "expected_matrix_sheet": "进口税费",
+      "fallback_status": "candidate_only_or_classification_gap",
+      "handoff_target_skill": "destination_duty_tax_skill",
+      "query_blueprints": [
+        "USITC HTS {candidate_hs_hts} {product_name} {origin_country_or_region}",
+        "CBP CROSS ruling {candidate_hs_hts} {product_name} material use"
+      ]
+    },
+    {
+      "query_template_id": "qt_us_origin_proof_requirement",
+      "source_pack_id": "seed_us_origin_proof_general",
+      "query_group_id": "origin_proof_requirement",
+      "purpose": "查询目标国 COO / proof of origin / rules of origin / origin marking 的入口，并把目标国规则与用户材料状态分开。",
+      "required_brief_fields": [
+        "target_country_or_region",
+        "origin_country_or_region",
+        "product_name"
+      ],
+      "required_product_trigger_tags": [],
+      "language_strategy": "English",
+      "term_slots": [
+        "origin_country_or_region",
+        "candidate_hs_hts",
+        "product_name",
+        "agreement_or_preference_intent"
+      ],
+      "source_entry_scope": [
+        "entry_us_cbp_origin_rules",
+        "entry_us_trade_agreement_origin",
+        "entry_us_origin_marking_guidance"
+      ],
+      "must_open_source_authority_levels": [
+        "primary_official"
+      ],
+      "reject_if_only_snippet": true,
+      "expected_observation_fields": [
+        "source_name",
+        "url",
+        "date",
+        "scenario",
+        "accepted_document_type",
+        "applicability",
+        "limitations"
+      ],
+      "expected_matrix_sheet": "产品准入与合规要求",
+      "fallback_status": "unable_to_verify_or_source_limited",
+      "handoff_target_skill": "destination_origin_proof_skill",
+      "query_blueprints": [
+        "CBP proof of origin rules {origin_country_or_region} {candidate_hs_hts} {product_name}",
+        "US rules of origin origin marking {product_name} {origin_country_or_region}"
+      ]
+    },
+    {
+      "query_template_id": "qt_cn_export_country_requirements",
+      "source_pack_id": "seed_cn_export_general",
+      "query_group_id": "export_requirements",
+      "purpose": "按中国作为出口申报国组织海关、商务、检验检疫、出口管制入口查询。",
+      "required_brief_fields": [
+        "export_declaration_country",
+        "target_country_or_region",
+        "product_name",
+        "product_trigger_tags"
+      ],
+      "required_product_trigger_tags": [],
+      "language_strategy": "Export-country language plus English/Chinese where useful",
+      "term_slots": [
+        "export_declaration_country",
+        "candidate_hs_hts",
+        "product_name",
+        "product_trigger_tags",
+        "destination_country_or_region"
+      ],
+      "source_entry_scope": [
+        "entry_cn_customs_export",
+        "entry_cn_export_control",
+        "entry_cn_inspection_quarantine"
+      ],
+      "must_open_source_authority_levels": [
+        "primary_official"
+      ],
+      "reject_if_only_snippet": true,
+      "expected_observation_fields": [
+        "source_name",
+        "url",
+        "date",
+        "product_or_hs_scope",
+        "requirement_type",
+        "visible_content",
+        "limitations"
+      ],
+      "expected_matrix_sheet": "出口国要求",
+      "fallback_status": "export_country_unconfirmed_or_source_limited",
+      "handoff_target_skill": "export_country_requirements_skill",
+      "query_blueprints": [
+        "{export_declaration_country} customs export requirements {candidate_hs_hts} {product_name} {target_country_or_region}",
+        "{export_declaration_country} export control inspection quarantine {product_name} {product_trigger_tags}"
+      ]
+    },
+    {
+      "query_template_id": "qt_vn_export_country_requirements",
+      "source_pack_id": "seed_vn_export_general",
+      "query_group_id": "export_requirements",
+      "purpose": "按越南作为出口申报国组织海关、贸易主管、质量/检验和出口监管入口查询。",
+      "required_brief_fields": [
+        "export_declaration_country",
+        "target_country_or_region",
+        "product_name",
+        "product_trigger_tags"
+      ],
+      "required_product_trigger_tags": [],
+      "language_strategy": "Export-country language plus English/Chinese where useful",
+      "term_slots": [
+        "export_declaration_country",
+        "candidate_hs_hts",
+        "product_name",
+        "product_trigger_tags",
+        "destination_country_or_region"
+      ],
+      "source_entry_scope": [
+        "entry_vn_customs_export",
+        "entry_vn_trade_ministry_export",
+        "entry_vn_standards_quality"
+      ],
+      "must_open_source_authority_levels": [
+        "primary_official"
+      ],
+      "reject_if_only_snippet": true,
+      "expected_observation_fields": [
+        "source_name",
+        "url",
+        "date",
+        "product_or_hs_scope",
+        "requirement_type",
+        "visible_content",
+        "limitations"
+      ],
+      "expected_matrix_sheet": "出口国要求",
+      "fallback_status": "export_country_unconfirmed_or_source_limited",
+      "handoff_target_skill": "export_country_requirements_skill",
+      "query_blueprints": [
+        "{export_declaration_country} customs export requirements {candidate_hs_hts} {product_name} {target_country_or_region}",
+        "{export_declaration_country} export control inspection quarantine {product_name} {product_trigger_tags}"
+      ]
+    },
+    {
+      "query_template_id": "qt_logistics_route_nodes",
+      "source_pack_id": "seed_transpacific_logistics_general",
+      "query_group_id": "logistics",
+      "purpose": "组织常见运输方式、港口/机场/口岸、危险品/散杂/RoRo、预申报节点的来源查询。",
+      "required_brief_fields": [
+        "target_country_or_region",
+        "product_name",
+        "product_trigger_tags"
+      ],
+      "required_product_trigger_tags": [],
+      "language_strategy": "English plus origin/departure-country language",
+      "term_slots": [
+        "export_declaration_country",
+        "departure_country_or_region",
+        "departure_node",
+        "destination_node",
+        "transport_modes",
+        "cargo_attributes"
+      ],
+      "source_entry_scope": [
+        "entry_port_carrier_schedule_guidance",
+        "entry_pre_filing_customs",
+        "entry_dg_carrier_acceptance_locator"
+      ],
+      "must_open_source_authority_levels": [
+        "primary_official",
+        "commercial_reference"
+      ],
+      "reject_if_only_snippet": true,
+      "expected_observation_fields": [
+        "origin_or_departure_node",
+        "destination_node",
+        "transport_mode",
+        "cargo_condition",
+        "date",
+        "time_basis",
+        "pre_filing_timing",
+        "limitations"
+      ],
+      "expected_matrix_sheet": "运输方式、路线、港口与申报节点",
+      "fallback_status": "route_candidate_only_or_source_limited",
+      "handoff_target_skill": "logistics_skill",
+      "query_blueprints": [
+        "{departure_country_or_region} to {target_country_or_region} port carrier route guidance {product_name} {transport_modes}",
+        "{target_country_or_region} customs pre filing ocean air cargo {product_trigger_tags}"
+      ]
+    },
+    {
+      "query_template_id": "qt_market_signal_terms",
+      "source_pack_id": "seed_market_signal_global_to_us",
+      "query_group_id": "market_signal",
+      "purpose": "组织 Google Trends、公开统计/报告、平台价格和指数入口查询；只输出可打开来源计划。",
+      "required_brief_fields": [
+        "target_country_or_region",
+        "product_name"
+      ],
+      "required_product_trigger_tags": [],
+      "language_strategy": "English plus local market keywords",
+      "term_slots": [
+        "product_name",
+        "search_keywords",
+        "industry_name",
+        "target_country_or_region",
+        "specification",
+        "date_range"
+      ],
+      "source_entry_scope": [
+        "entry_google_trends",
+        "entry_market_platform_price",
+        "entry_public_market_report_locator",
+        "entry_exchange_index"
+      ],
+      "must_open_source_authority_levels": [
+        "commercial_reference",
+        "industry_reference"
+      ],
+      "reject_if_only_snippet": true,
+      "expected_observation_fields": [
+        "keyword",
+        "region",
+        "time_range",
+        "metric_definition",
+        "price_terms",
+        "date",
+        "limitations"
+      ],
+      "expected_matrix_sheet": "长期需求与搜索趋势 / 公开市场资料与行业信息 / 线上市场与价格参考",
+      "fallback_status": "not_executed_or_data_insufficient",
+      "handoff_target_skill": "market_signal_skill",
+      "query_blueprints": [
+        "Google Trends {product_name} {target_country_or_region} 2004 present",
+        "public market report {product_name} {target_country_or_region} price trend specification"
+      ]
+    },
+    {
+      "query_template_id": "qt_season_holiday_signals",
+      "source_pack_id": "seed_market_signal_global_to_us",
+      "query_group_id": "season_holiday",
+      "purpose": "组织目标国公开节假日、季节窗口和礼品属性相关来源查询。",
+      "required_brief_fields": [
+        "target_country_or_region",
+        "product_name"
+      ],
+      "required_product_trigger_tags": [],
+      "language_strategy": "English plus local market keywords",
+      "term_slots": [
+        "target_country_or_region",
+        "giftable",
+        "seasonal_use",
+        "product_name"
+      ],
+      "source_entry_scope": [
+        "entry_holiday_calendar_locator"
+      ],
+      "must_open_source_authority_levels": [
+        "secondary_official",
+        "industry_reference"
+      ],
+      "reject_if_only_snippet": true,
+      "expected_observation_fields": [
+        "holiday_or_season",
+        "date_or_period",
+        "country",
+        "applicability",
+        "source_date",
+        "limitations"
+      ],
+      "expected_matrix_sheet": "季节、节日与销售窗口",
+      "fallback_status": "not_executed_or_not_applicable",
+      "handoff_target_skill": "market_signal_skill",
+      "query_blueprints": [
+        "{target_country_or_region} official public holidays calendar {product_name} gift season",
+        "{target_country_or_region} retail season {product_name} giftable"
+      ]
+    },
+    {
+      "query_template_id": "qt_external_factor_watch",
+      "source_pack_id": "seed_market_signal_global_to_us",
+      "query_group_id": "external_factors",
+      "purpose": "组织近期香港、战争、灾害、制裁、金融或供应链事件入口；只记录有日期来源。",
+      "required_brief_fields": [
+        "target_country_or_region",
+        "product_name"
+      ],
+      "required_product_trigger_tags": [],
+      "language_strategy": "English plus affected-region language",
+      "term_slots": [
+        "target_country_or_region",
+        "export_declaration_country",
+        "departure_country_or_region",
+        "product_trigger_tags",
+        "date_range"
+      ],
+      "source_entry_scope": [
+        "entry_external_factor_news_locator"
+      ],
+      "must_open_source_authority_levels": [
+        "primary_official",
+        "news_reference"
+      ],
+      "reject_if_only_snippet": true,
+      "expected_observation_fields": [
+        "event_date",
+        "publisher",
+        "region",
+        "affected_chain",
+        "time_window",
+        "limitations"
+      ],
+      "expected_matrix_sheet": "近期外部因素",
+      "fallback_status": "not_executed_or_no_dated_source",
+      "handoff_target_skill": "external_factor_skill",
+      "query_blueprints": [
+        "{target_country_or_region} recent port customs disruption official notice {product_trigger_tags}",
+        "{export_declaration_country} {target_country_or_region} recent trade logistics disruption {product_name}"
+      ]
+    },
+    {
+      "query_template_id": "qt_lithium_battery_transport_docs",
+      "source_pack_id": "seed_lithium_battery_common_rules",
+      "query_group_id": "lithium_battery_common_rules",
+      "purpose": "组织锂电 UN 情形、SDS、UN38.3、包装和承运限制入口查询。",
+      "required_brief_fields": [
+        "product_name",
+        "product_trigger_tags"
+      ],
+      "required_product_trigger_tags": [
+        "lithium_battery"
+      ],
+      "language_strategy": "English plus carrier rule language",
+      "term_slots": [
+        "battery_type",
+        "watt_hours",
+        "shipping_scenario",
+        "un38_3_status",
+        "sds_status",
+        "packing_status",
+        "transport_modes"
+      ],
+      "source_entry_scope": [
+        "entry_lithium_battery_transport_rule",
+        "entry_air_transport_lithium_rule",
+        "entry_product_manual_tds"
+      ],
+      "must_open_source_authority_levels": [
+        "primary_official",
+        "original_product_source",
+        "commercial_reference"
+      ],
+      "reject_if_only_snippet": true,
+      "expected_observation_fields": [
+        "battery_scenario",
+        "wh",
+        "documents",
+        "packing",
+        "transport_mode",
+        "date",
+        "limitations"
+      ],
+      "expected_matrix_sheet": "产品档案与触发项 / 运输方式、路线、港口与申报节点",
+      "fallback_status": "technical_docs_required_or_source_limited",
+      "handoff_target_skill": "common_rule_skill",
+      "query_blueprints": [
+        "lithium battery transport documents SDS UN38.3 {product_name} {watt_hours}",
+        "{product_name} battery pack UN scenario packing instruction transport rule"
+      ]
+    },
+    {
+      "query_template_id": "qt_textile_label_and_classification_docs",
+      "source_pack_id": "seed_textile_apparel_common_rules",
+      "query_group_id": "textile_apparel_common_rules",
+      "purpose": "组织纺织成分、实物标签、BOM、洗护、成衣/面料区分和归类参考入口查询。",
+      "required_brief_fields": [
+        "product_name",
+        "product_trigger_tags"
+      ],
+      "required_product_trigger_tags": [
+        "textile",
+        "apparel"
+      ],
+      "language_strategy": "English plus product original language",
+      "term_slots": [
+        "fiber_content",
+        "woven_or_knit",
+        "garment_type",
+        "candidate_hs_hts",
+        "model_or_sku"
+      ],
+      "source_entry_scope": [
+        "entry_us_textile_labeling",
+        "entry_textile_classification_reference",
+        "entry_product_manual_tds"
+      ],
+      "must_open_source_authority_levels": [
+        "primary_official",
+        "original_product_source",
+        "industry_reference"
+      ],
+      "reject_if_only_snippet": true,
+      "expected_observation_fields": [
+        "product_scope",
+        "fiber_content",
+        "label_elements",
+        "bom_status",
+        "date",
+        "limitations"
+      ],
+      "expected_matrix_sheet": "产品档案与触发项 / 产品准入与合规要求",
+      "fallback_status": "physical_verification_required_or_classification_gap",
+      "handoff_target_skill": "common_rule_skill",
+      "query_blueprints": [
+        "textile labeling fiber content care origin marking {product_name} {fiber_content}",
+        "apparel classification reference {candidate_hs_hts} {product_name} woven cotton"
+      ]
+    },
+    {
+      "query_template_id": "qt_product_original_docs",
+      "source_pack_id": "seed_product_original_sources",
+      "query_group_id": "product_original_sources",
+      "purpose": "组织产品官网、手册、TDS、SDS、UN38.3、BOM、标签照片或用户文件入口查询。",
+      "required_brief_fields": [
+        "product_name"
+      ],
+      "required_product_trigger_tags": [],
+      "language_strategy": "Original source language plus English",
+      "term_slots": [
+        "product_name",
+        "manufacturer_or_brand",
+        "model_or_sku",
+        "product_source_urls",
+        "document_types_needed"
+      ],
+      "source_entry_scope": [
+        "entry_product_manual_tds"
+      ],
+      "must_open_source_authority_levels": [
+        "original_product_source",
+        "user_provided"
+      ],
+      "reject_if_only_snippet": true,
+      "expected_observation_fields": [
+        "product_model",
+        "document_title",
+        "version_or_date",
+        "page_or_section",
+        "field_value",
+        "applicability",
+        "limitations"
+      ],
+      "expected_matrix_sheet": "信息来源与待确认事项",
+      "fallback_status": "technical_docs_required",
+      "handoff_target_skill": "product_source_skill",
+      "query_blueprints": [
+        "{manufacturer_or_brand} {model_or_sku} {product_name} manual TDS SDS test report",
+        "{product_name} {model_or_sku} product page datasheet certificate label"
+      ]
+    }
+  ],
+  "observation_requirements": [
+    {
+      "observation_requirement_id": "obs_official_regulation",
+      "applies_to_source_entry_id": "entry_us_regulator_product_safety",
+      "required_locator": "URL + title + section/chapter",
+      "required_visible_content": "visible official page text for product category",
+      "required_source_date_fields": [
+        "publication_date",
+        "effective_date",
+        "observation_date"
+      ],
+      "required_applicability_fields": [
+        "target_country_or_region",
+        "product_category",
+        "product_trigger_tags"
+      ],
+      "required_limitations": [
+        "applicability limits",
+        "not a product-specific compliance finding"
+      ],
+      "minimum_quote_or_excerpt_policy": "short_locator_summary_only",
+      "creates_evidence_card_when": "source opened, visible section recorded, date/applicability/limits captured",
+      "blocks_evidence_card_when": "only search snippet; source blocked; product scope mismatch"
+    },
+    {
+      "observation_requirement_id": "obs_hazardous_transport_rule",
+      "applies_to_source_entry_id": "entry_us_hazardous_material_transport",
+      "required_locator": "URL + CFR/section or carrier page locator",
+      "required_visible_content": "visible transport rule text for scenario",
+      "required_source_date_fields": [
+        "current_as_of_date",
+        "observation_date"
+      ],
+      "required_applicability_fields": [
+        "battery_scenario",
+        "transport_mode",
+        "watt_hours",
+        "packing_status"
+      ],
+      "required_limitations": [
+        "does not prove carrier acceptance",
+        "does not prove documents exist"
+      ],
+      "minimum_quote_or_excerpt_policy": "short_locator_summary_only",
+      "creates_evidence_card_when": "source opened and scenario-specific limits captured",
+      "blocks_evidence_card_when": "only snippet; missing SDS/UN38.3/package status; scenario unclear"
+    },
+    {
+      "observation_requirement_id": "obs_tariff_lookup",
+      "applies_to_source_entry_id": "entry_us_hts_tariff",
+      "required_locator": "official tariff query URL or reproducible query parameters",
+      "required_visible_content": "visible tariff hierarchy, notes and rate columns",
+      "required_source_date_fields": [
+        "observation_date",
+        "tariff_revision_date_if_visible"
+      ],
+      "required_applicability_fields": [
+        "candidate_hs_hts",
+        "origin_country_or_region",
+        "product_description"
+      ],
+      "required_limitations": [
+        "candidate classification only until product and broker/customs confirmation"
+      ],
+      "minimum_quote_or_excerpt_policy": "short_locator_summary_only",
+      "creates_evidence_card_when": "official tariff entry opened with query parameters and limitations",
+      "blocks_evidence_card_when": "candidate code too broad; no origin; source not opened"
+    },
+    {
+      "observation_requirement_id": "obs_customs_ruling",
+      "applies_to_source_entry_id": "entry_us_customs_rulings",
+      "required_locator": "ruling number or query URL",
+      "required_visible_content": "visible ruling text with product description",
+      "required_source_date_fields": [
+        "ruling_date",
+        "observation_date"
+      ],
+      "required_applicability_fields": [
+        "product_description",
+        "material",
+        "use",
+        "classification_context"
+      ],
+      "required_limitations": [
+        "does not transfer automatically to different SKU"
+      ],
+      "minimum_quote_or_excerpt_policy": "short_locator_summary_only",
+      "creates_evidence_card_when": "ruling opened and product comparability limits captured",
+      "blocks_evidence_card_when": "summary only; product mismatch; ruling inaccessible"
+    },
+    {
+      "observation_requirement_id": "obs_origin_proof_rule",
+      "applies_to_source_entry_id": "entry_us_cbp_origin_rules",
+      "required_locator": "official origin/rules locator URL + section",
+      "required_visible_content": "visible rule, accepted document type or scenario",
+      "required_source_date_fields": [
+        "publication_date",
+        "effective_date",
+        "observation_date"
+      ],
+      "required_applicability_fields": [
+        "target_country_or_region",
+        "origin_country_or_region",
+        "candidate_hs_hts",
+        "preference_or_marking_scenario"
+      ],
+      "required_limitations": [
+        "target rule separate from user material status",
+        "marking separate from proof document"
+      ],
+      "minimum_quote_or_excerpt_policy": "short_locator_summary_only",
+      "creates_evidence_card_when": "official/authority source opened and scenario + limitations captured",
+      "blocks_evidence_card_when": "only search summary; preferential rule generalized; marking/document conflated"
+    },
+    {
+      "observation_requirement_id": "obs_export_country_rule",
+      "applies_to_source_entry_id": "entry_cn_customs_export",
+      "required_locator": "export-country official URL + section/query parameters",
+      "required_visible_content": "visible export declaration/control/inspection content",
+      "required_source_date_fields": [
+        "publication_date",
+        "effective_date",
+        "observation_date"
+      ],
+      "required_applicability_fields": [
+        "export_declaration_country",
+        "candidate_hs_hts",
+        "product_trigger_tags",
+        "destination_country_or_region"
+      ],
+      "required_limitations": [
+        "export country does not decide destination compliance",
+        "no automatic departure port"
+      ],
+      "minimum_quote_or_excerpt_policy": "short_locator_summary_only",
+      "creates_evidence_card_when": "official source opened with product/HS scope and limitations",
+      "blocks_evidence_card_when": "export country unconfirmed; only snippet; product scope mismatch"
+    },
+    {
+      "observation_requirement_id": "obs_logistics_node",
+      "applies_to_source_entry_id": "entry_port_carrier_schedule_guidance",
+      "required_locator": "route/node locator + source name",
+      "required_visible_content": "visible route, node, cargo condition and time-basis content",
+      "required_source_date_fields": [
+        "observation_date",
+        "schedule_date_if_visible"
+      ],
+      "required_applicability_fields": [
+        "departure_country_or_region",
+        "departure_node",
+        "destination_node",
+        "transport_mode",
+        "cargo_condition"
+      ],
+      "required_limitations": [
+        "time is common/source-specific, not commitment",
+        "not a quote"
+      ],
+      "minimum_quote_or_excerpt_policy": "short_locator_summary_only",
+      "creates_evidence_card_when": "source opened, cargo condition and date captured",
+      "blocks_evidence_card_when": "only snippet; missing cargo condition; promised transit phrasing"
+    },
+    {
+      "observation_requirement_id": "obs_pre_filing_rule",
+      "applies_to_source_entry_id": "entry_pre_filing_customs",
+      "required_locator": "customs/carrier pre-filing page URL + section",
+      "required_visible_content": "visible pre-filing timing and responsible party content",
+      "required_source_date_fields": [
+        "publication_date",
+        "effective_date",
+        "observation_date"
+      ],
+      "required_applicability_fields": [
+        "destination_country_or_region",
+        "transport_mode",
+        "filing_timing",
+        "responsible_party"
+      ],
+      "required_limitations": [
+        "customs filing separate from carrier cut-off"
+      ],
+      "minimum_quote_or_excerpt_policy": "short_locator_summary_only",
+      "creates_evidence_card_when": "official or carrier source opened with timing and limits",
+      "blocks_evidence_card_when": "source not opened; mode mismatch"
+    },
+    {
+      "observation_requirement_id": "obs_google_trends",
+      "applies_to_source_entry_id": "entry_google_trends",
+      "required_locator": "Google Trends URL, screenshot or export locator",
+      "required_visible_content": "visible relative search interest chart/export",
+      "required_source_date_fields": [
+        "observation_date",
+        "time_range"
+      ],
+      "required_applicability_fields": [
+        "keyword",
+        "region",
+        "category_or_search_type"
+      ],
+      "required_limitations": [
+        "relative search interest is not sales, GMV or import volume"
+      ],
+      "minimum_quote_or_excerpt_policy": "short_locator_summary_only",
+      "creates_evidence_card_when": "Trends page/export visible with keyword/region/time range",
+      "blocks_evidence_card_when": "only search summary; metric converted to sales"
+    },
+    {
+      "observation_requirement_id": "obs_platform_price",
+      "applies_to_source_entry_id": "entry_market_platform_price",
+      "required_locator": "public listing URL or reproducible platform search locator",
+      "required_visible_content": "visible price/spec/currency/tax-shipping context",
+      "required_source_date_fields": [
+        "observation_date"
+      ],
+      "required_applicability_fields": [
+        "platform",
+        "specification",
+        "currency",
+        "seller_region",
+        "tax_shipping_promo_terms"
+      ],
+      "required_limitations": [
+        "listing price is not transaction/wholesale target"
+      ],
+      "minimum_quote_or_excerpt_policy": "short_locator_summary_only",
+      "creates_evidence_card_when": "listing opened with comparable spec and limitations",
+      "blocks_evidence_card_when": "no spec/currency/date; price upgraded to target or transaction"
+    },
+    {
+      "observation_requirement_id": "obs_market_report",
+      "applies_to_source_entry_id": "entry_public_market_report_locator",
+      "required_locator": "public report/statistics URL + title",
+      "required_visible_content": "visible public metric or abstract with methodology",
+      "required_source_date_fields": [
+        "publication_date",
+        "observation_date",
+        "metric_period"
+      ],
+      "required_applicability_fields": [
+        "publisher",
+        "region",
+        "metric_definition",
+        "product_scope"
+      ],
+      "required_limitations": [
+        "public abstract may be incomplete",
+        "methodology limits"
+      ],
+      "minimum_quote_or_excerpt_policy": "short_locator_summary_only",
+      "creates_evidence_card_when": "source opened with metric definition/date/limits",
+      "blocks_evidence_card_when": "paywalled text assumed; summary only"
+    },
+    {
+      "observation_requirement_id": "obs_exchange_index",
+      "applies_to_source_entry_id": "entry_exchange_index",
+      "required_locator": "exchange/index URL + contract/index locator",
+      "required_visible_content": "visible public quote/index description",
+      "required_source_date_fields": [
+        "observation_date",
+        "contract_month_or_period"
+      ],
+      "required_applicability_fields": [
+        "commodity",
+        "unit",
+        "delivery_region",
+        "currency"
+      ],
+      "required_limitations": [
+        "index/futures is background, not spot export transaction"
+      ],
+      "minimum_quote_or_excerpt_policy": "short_locator_summary_only",
+      "creates_evidence_card_when": "source opened with unit/currency/date/limits",
+      "blocks_evidence_card_when": "only snippet; no unit/date"
+    },
+    {
+      "observation_requirement_id": "obs_news_external_factor",
+      "applies_to_source_entry_id": "entry_external_factor_news_locator",
+      "required_locator": "official notice or reputable news URL + event date",
+      "required_visible_content": "visible dated event and affected chain",
+      "required_source_date_fields": [
+        "event_date",
+        "publication_date",
+        "observation_date"
+      ],
+      "required_applicability_fields": [
+        "region",
+        "affected_chain",
+        "time_window",
+        "source_type"
+      ],
+      "required_limitations": [
+        "does not produce political/investment judgment"
+      ],
+      "minimum_quote_or_excerpt_policy": "short_locator_summary_only",
+      "creates_evidence_card_when": "source opened and event date + affected chain captured",
+      "blocks_evidence_card_when": "no date; no source; judgment language"
+    },
+    {
+      "observation_requirement_id": "obs_product_doc",
+      "applies_to_source_entry_id": "entry_product_manual_tds",
+      "required_locator": "product page/PDF/user file locator + page/section",
+      "required_visible_content": "visible product/model-specific content",
+      "required_source_date_fields": [
+        "document_date",
+        "revision_date",
+        "observation_date"
+      ],
+      "required_applicability_fields": [
+        "product_model",
+        "version",
+        "document_type",
+        "page_or_section",
+        "field_value"
+      ],
+      "required_limitations": [
+        "does not prove customs origin or final compliance by itself"
+      ],
+      "minimum_quote_or_excerpt_policy": "short_locator_summary_only",
+      "creates_evidence_card_when": "document opened/readable, model matched, page/section/limits captured",
+      "blocks_evidence_card_when": "file name only; model mismatch; external model summary only"
+    }
+  ],
+  "route_rules": [
+    {
+      "route_rule_id": "route_target_us",
+      "rule_name": "目标销售国家/地区为 United States",
+      "trigger_brief_fields": [
+        "target_country_or_region"
+      ],
+      "trigger_product_tags": [
+        "general_goods"
+      ],
+      "excluded_when": [],
+      "source_pack_ids_to_activate": [
+        "seed_us_market_access_general",
+        "seed_us_import_tax_general",
+        "seed_us_origin_proof_general",
+        "seed_market_signal_global_to_us"
+      ],
+      "source_entry_filters": [],
+      "requires_user_confirmation": false,
+      "fallback_when_missing_pack": "manual_query_plan_for_destination",
+      "handoff_to_skill": "analyzing-product-outbound-market",
+      "boundary_note": "目标国美国只触发来源目录，不确认税费、合规或销售表现。"
+    },
+    {
+      "route_rule_id": "route_export_cn",
+      "rule_name": "出口申报国确认为 China",
+      "trigger_brief_fields": [
+        "export_declaration_country"
+      ],
+      "trigger_product_tags": [
+        "general_goods"
+      ],
+      "excluded_when": [],
+      "source_pack_ids_to_activate": [
+        "seed_cn_export_general"
+      ],
+      "source_entry_filters": [],
+      "requires_user_confirmation": false,
+      "fallback_when_missing_pack": "export_country_unconfirmed",
+      "handoff_to_skill": "analyzing-product-outbound-market",
+      "boundary_note": "默认或用户指定中国必须可见可改；不能由原产国自动推导。"
+    },
+    {
+      "route_rule_id": "route_export_vn",
+      "rule_name": "出口申报国确认为 Vietnam",
+      "trigger_brief_fields": [
+        "export_declaration_country"
+      ],
+      "trigger_product_tags": [
+        "general_goods"
+      ],
+      "excluded_when": [],
+      "source_pack_ids_to_activate": [
+        "seed_vn_export_general"
+      ],
+      "source_entry_filters": [],
+      "requires_user_confirmation": false,
+      "fallback_when_missing_pack": "export_country_unconfirmed",
+      "handoff_to_skill": "analyzing-product-outbound-market",
+      "boundary_note": "只有出口申报国确认为越南时才进入越南出口来源计划。"
+    },
+    {
+      "route_rule_id": "route_origin_cn_without_export",
+      "rule_name": "只有中国原产/Production 线索，出口申报国未知",
+      "trigger_brief_fields": [
+        "origin_country_or_region"
+      ],
+      "trigger_product_tags": [
+        "general_goods"
+      ],
+      "excluded_when": [],
+      "source_pack_ids_to_activate": [
+        "seed_product_original_sources"
+      ],
+      "source_entry_filters": [],
+      "requires_user_confirmation": true,
+      "fallback_when_missing_pack": "defer_export_pack_until_confirmed",
+      "handoff_to_skill": "analyzing-product-outbound-market",
+      "boundary_note": "Production / Made in 只能触发原始资料核验，不自动触发出口结论。"
+    },
+    {
+      "route_rule_id": "route_origin_vn_without_export",
+      "rule_name": "只有越南制造/装配线索，出口申报国未知",
+      "trigger_brief_fields": [
+        "origin_country_or_region"
+      ],
+      "trigger_product_tags": [
+        "general_goods"
+      ],
+      "excluded_when": [],
+      "source_pack_ids_to_activate": [
+        "seed_product_original_sources"
+      ],
+      "source_entry_filters": [],
+      "requires_user_confirmation": true,
+      "fallback_when_missing_pack": "defer_export_pack_until_confirmed",
+      "handoff_to_skill": "analyzing-product-outbound-market",
+      "boundary_note": "越南制造线索不等于越南出口申报国或具体起运港。"
+    },
+    {
+      "route_rule_id": "route_lithium_battery",
+      "rule_name": "产品触发标签包含 lithium_battery",
+      "trigger_brief_fields": [
+        "product_trigger_tags"
+      ],
+      "trigger_product_tags": [
+        "lithium_battery",
+        "battery_standalone",
+        "battery_installed",
+        "dangerous_goods",
+        "electrical"
+      ],
+      "excluded_when": [],
+      "source_pack_ids_to_activate": [
+        "seed_lithium_battery_common_rules",
+        "seed_transpacific_logistics_general",
+        "seed_us_market_access_general"
+      ],
+      "source_entry_filters": [],
+      "requires_user_confirmation": false,
+      "fallback_when_missing_pack": "technical_docs_required",
+      "handoff_to_skill": "analyzing-product-outbound-market",
+      "boundary_note": "锂电标签只决定要查 SDS、UN38.3、包装和承运入口，不判断运输可行。"
+    },
+    {
+      "route_rule_id": "route_textile_apparel",
+      "rule_name": "产品触发标签包含 textile 或 apparel",
+      "trigger_brief_fields": [
+        "product_trigger_tags"
+      ],
+      "trigger_product_tags": [
+        "textile",
+        "apparel"
+      ],
+      "excluded_when": [],
+      "source_pack_ids_to_activate": [
+        "seed_textile_apparel_common_rules",
+        "seed_us_market_access_general",
+        "seed_us_import_tax_general",
+        "seed_product_original_sources"
+      ],
+      "source_entry_filters": [],
+      "requires_user_confirmation": false,
+      "fallback_when_missing_pack": "physical_verification_required",
+      "handoff_to_skill": "analyzing-product-outbound-market",
+      "boundary_note": "纺织标签只决定要查实物标签、BOM、成分和归类入口。"
+    },
+    {
+      "route_rule_id": "route_bulk_or_roro",
+      "rule_name": "产品触发标签包含 bulk_cargo、breakbulk、roro、heavy_lift 或 oversize",
+      "trigger_brief_fields": [
+        "product_trigger_tags"
+      ],
+      "trigger_product_tags": [
+        "bulk_cargo",
+        "breakbulk",
+        "roro",
+        "heavy_lift",
+        "oversize",
+        "project_goods"
+      ],
+      "excluded_when": [],
+      "source_pack_ids_to_activate": [
+        "seed_transpacific_logistics_general",
+        "seed_market_signal_global_to_us",
+        "seed_product_original_sources"
+      ],
+      "source_entry_filters": [],
+      "requires_user_confirmation": true,
+      "fallback_when_missing_pack": "cargo_details_required",
+      "handoff_to_skill": "analyzing-product-outbound-market",
+      "boundary_note": "散杂/RoRo/超限只触发物流和市场来源入口；不承诺船型、舱位、港口可操作。"
+    },
+    {
+      "route_rule_id": "route_agri_food_fresh",
+      "rule_name": "产品触发标签包含 food、fresh_produce、flower、tea 或 plant_material",
+      "trigger_brief_fields": [
+        "product_trigger_tags"
+      ],
+      "trigger_product_tags": [
+        "food",
+        "fresh_produce",
+        "flower",
+        "tea",
+        "plant_material",
+        "cold_chain"
+      ],
+      "excluded_when": [],
+      "source_pack_ids_to_activate": [
+        "seed_us_market_access_general",
+        "seed_transpacific_logistics_general",
+        "seed_market_signal_global_to_us",
+        "seed_product_original_sources"
+      ],
+      "source_entry_filters": [],
+      "requires_user_confirmation": true,
+      "fallback_when_missing_pack": "phytosanitary_or_cold_chain_docs_required",
+      "handoff_to_skill": "analyzing-product-outbound-market",
+      "boundary_note": "农食/鲜品只触发检疫、冷链和准入入口，不写可进口。"
+    },
+    {
+      "route_rule_id": "route_product_source_docs",
+      "rule_name": "有产品名称、型号、用户 URL 或文件",
+      "trigger_brief_fields": [
+        "product_name",
+        "model_or_sku",
+        "product_source_urls"
+      ],
+      "trigger_product_tags": [
+        "general_goods"
+      ],
+      "excluded_when": [],
+      "source_pack_ids_to_activate": [
+        "seed_product_original_sources"
+      ],
+      "source_entry_filters": [],
+      "requires_user_confirmation": false,
+      "fallback_when_missing_pack": "technical_docs_required",
+      "handoff_to_skill": "analyzing-product-outbound-market",
+      "boundary_note": "产品原始资料入口只能形成资料核验计划。"
+    },
+    {
+      "route_rule_id": "route_candidate_hs_present",
+      "rule_name": "Brief 含候选 HS/HTS",
+      "trigger_brief_fields": [
+        "candidate_hs_hts"
+      ],
+      "trigger_product_tags": [
+        "general_goods"
+      ],
+      "excluded_when": [],
+      "source_pack_ids_to_activate": [
+        "seed_us_import_tax_general",
+        "seed_us_origin_proof_general"
+      ],
+      "source_entry_filters": [],
+      "requires_user_confirmation": false,
+      "fallback_when_missing_pack": "classification_gap",
+      "handoff_to_skill": "analyzing-product-outbound-market",
+      "boundary_note": "候选税号只决定查官方税则/原产地规则，不决定归类或税额。"
+    },
+    {
+      "route_rule_id": "route_origin_proof_question",
+      "rule_name": "用户询问 COO / proof of origin 或目标国+原产国+HS 条件足够",
+      "trigger_brief_fields": [
+        "origin_country_or_region",
+        "candidate_hs_hts"
+      ],
+      "trigger_product_tags": [
+        "general_goods"
+      ],
+      "excluded_when": [],
+      "source_pack_ids_to_activate": [
+        "seed_us_origin_proof_general"
+      ],
+      "source_entry_filters": [],
+      "requires_user_confirmation": false,
+      "fallback_when_missing_pack": "unable_to_verify",
+      "handoff_to_skill": "analyzing-product-outbound-market",
+      "boundary_note": "COO 查询组只查目标国规则；用户材料状态另列。"
+    }
+  ]
+}

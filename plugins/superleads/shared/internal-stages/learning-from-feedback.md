@@ -1,0 +1,41 @@
+---
+name: learning-from-feedback
+description: "Use when feedback must correct the current Superleads run, or when the user explicitly approves saving feedback for future discovery or contact collection."
+---
+
+# Learning From Feedback
+
+## 内部阶段前置条件
+
+父路线触发：using-superleads 或 exporting-lead-workbooks：当前 Run 与指定反馈对象。
+不要直接调用；缺少上述上下文必须停止，不得虚构报告、反馈记录或持久化结论。
+
+## Purpose
+
+Handle one of two explicit actions:
+
+- `current_run_correction`: apply the correction only to the named current Run. Do not save a long-term preference.
+- `persistent_save`: save feedback for future source choice, query optimization, or contact extraction only after the user gives明确同意 and the feedback class is recorded.
+
+This is cross-cutting after delivery, not a mandatory stage in each default
+discovery round.
+
+## Required policy
+
+Read `../../shared/policies/profile-policy.md` only for `persistent_save`. A `current_run_correction` does not write long-term feedback.
+
+## Accepted feedback labels
+
+公司不相关, 联系方式无效, 邮箱退信, 联系人不相关, 客户类型判断错误, 重复公司, 官网归属错误, 来源打不开, 产品匹配错误, 来源质量高, 来源质量差, 搜索词有效, 搜索词无效.
+
+## Excluded metrics
+
+Do not treat 成交率, 询盘率, 回复率, 报价请求率, 客户真实需求, 销售开发信效果, or 销售跟进结果 as Superleads evidence metrics.
+
+## Use feedback only for
+
+Re-ranking, experience notes, source quality judgment, search-string optimization, and contact extraction optimization.
+
+## Hard constraints
+
+Feedback is not Claim evidence, not automatic Assessment proof, not a cross-industry hard rule, and not proof of purchasing intent.

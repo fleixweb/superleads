@@ -14,6 +14,8 @@
 1. GitHub 仓库地址为 `fleixweb/superleads`，默认分支为 `master`。
 2. Claude Code 和 Codex 的 marketplace 均能从公开仓库读取。
 3. marketplace 安装后的版本与 `.codex-plugin/plugin.json` 及 `.claude-plugin/plugin.json` 一致。
+4. `.agents/plugins/marketplace.json` 与 `.claude-plugin/marketplace.json` 均指向
+   `./plugins/superleads`，且该目录通过严格运行时分发检查。
 
 ## Claude Code
 
@@ -97,9 +99,17 @@ py -3 -m venv .\superleads-runtime-venv
 `export_workbook.py --format auto` 会输出 UTF-8-SIG CSV；只有明确必须生成 XLSX
 时才使用 `--format xlsx`，该显式请求不会静默降级。
 
-本地 marketplace 若指向源码目录，Codex 会把开发资料和历史 UAT 一并复制到缓存。发布
-前或本地联调时，先在源码根目录构建精简运行时包，再让本地 marketplace 的 Superleads
-source 指向该工件，最后重新安装：
+官方 GitHub marketplace 固定指向仓库内已跟踪的 `plugins/superleads/` 精简运行时包。
+发布前必须重建该目录并确认工作区没有未同步的运行时差异：
+
+```bash
+python3 scripts/build_superleads_plugin_package.py --output plugins/superleads --format json
+python3 scripts/check_superleads_plugin_distribution.py --plugin-root plugins/superleads --source-root . --runtime-package --format json
+git diff --exit-code -- plugins/superleads
+```
+
+本地 marketplace 若指向源码目录，Codex 会把开发资料和历史 UAT 一并复制到缓存。本地联调
+也可以先构建被 Git 忽略的临时工件，再让本机 marketplace source 指向它并重新安装：
 
 ```bash
 python3 scripts/build_superleads_plugin_package.py --format json

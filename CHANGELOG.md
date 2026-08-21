@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.7] - 2026-08-21
+
+### Fixed
+
+- Install the tracked lean runtime package from the GitHub marketplace instead of copying the complete source repository, and verify that the published package remains byte-for-byte aligned with a fresh build.
+
 ## [0.2.6] - 2026-08-21
 
 ### Fixed

@@ -2,6 +2,7 @@
 """Focused regression coverage for the hook-free runtime package."""
 from __future__ import annotations
 
+import json
 import sys
 import tempfile
 import unittest
@@ -16,6 +17,43 @@ from check_superleads_plugin_distribution import check_distribution
 
 
 class SuperleadsPluginDistributionTest(unittest.TestCase):
+    def test_repo_marketplaces_point_to_tracked_runtime_package(self) -> None:
+        codex_marketplace = json.loads(
+            (ROOT / ".agents" / "plugins" / "marketplace.json").read_text(encoding="utf-8")
+        )
+        claude_marketplace = json.loads(
+            (ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8")
+        )
+
+        self.assertEqual(
+            {"source": "local", "path": "./plugins/superleads"},
+            codex_marketplace["plugins"][0]["source"],
+        )
+        self.assertEqual("./plugins/superleads", claude_marketplace["plugins"][0]["source"])
+
+        package = ROOT / "plugins" / "superleads"
+        result = check_distribution(package, ROOT, runtime_package=True)
+        self.assertTrue(result["ok"], result["issues"])
+
+    def test_tracked_runtime_package_matches_a_fresh_build(self) -> None:
+        tracked_package = ROOT / "plugins" / "superleads"
+        with tempfile.TemporaryDirectory() as directory:
+            rebuilt_package = Path(directory) / "superleads"
+            build_package(rebuilt_package)
+
+            tracked_files = {
+                path.relative_to(tracked_package): path.read_bytes()
+                for path in tracked_package.rglob("*")
+                if path.is_file()
+            }
+            rebuilt_files = {
+                path.relative_to(rebuilt_package): path.read_bytes()
+                for path in rebuilt_package.rglob("*")
+                if path.is_file()
+            }
+
+        self.assertEqual(rebuilt_files, tracked_files)
+
     def test_built_runtime_package_includes_the_source_dependency_manifest(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "superleads"

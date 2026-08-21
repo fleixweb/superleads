@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superleads.local/schemas/inquiry.schema.json",
+  "title": "Superleads Inquiry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "inquiry_id", "run_id", "source_id", "observation_id", "entity_id", "contact_id",
+    "received_at", "direction", "inquiry_status", "priority", "requested_action",
+    "request_excerpt", "mentioned_product_or_need", "missing_information",
+    "entity_resolution_status", "external_verification_status", "created_at"
+  ],
+  "properties": {
+    "inquiry_id": {"type": "string", "minLength": 1},
+    "run_id": {"type": "string", "minLength": 1},
+    "source_id": {"type": "string", "minLength": 1},
+    "observation_id": {"type": "string", "minLength": 1},
+    "entity_id": {"type": ["string", "null"]},
+    "contact_id": {"type": ["string", "null"]},
+    "received_at": {"type": "string", "minLength": 1},
+    "direction": {"type": "string", "const": "inbound"},
+    "inquiry_status": {"type": "string", "enum": ["new", "triaged", "needs_entity_resolution", "ready_for_follow_up", "closed"]},
+    "priority": {"type": "string", "minLength": 1},
+    "requested_action": {"type": "string", "minLength": 1},
+    "request_excerpt": {"type": "string", "minLength": 1, "maxLength": 1000},
+    "mentioned_product_or_need": {"type": ["string", "null"], "maxLength": 1000},
+    "missing_information": {"type": "array", "items": {"type": "string"}},
+    "entity_resolution_status": {"type": "string", "minLength": 1},
+    "external_verification_status": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "minLength": 1}
+  }
+}

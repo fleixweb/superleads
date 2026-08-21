@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superleads.local/schemas/delivery-manifest.schema.json",
+  "title": "Superleads DeliveryManifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "delivery_manifest_id",
+    "run_id",
+    "brief_id",
+    "plan_id",
+    "audit_id",
+    "audit_graph_hash",
+    "research_graph_hash",
+    "review_cycle_id",
+    "review_attestation_id",
+    "reviewed_subject_hash",
+    "review_provenance_level",
+    "generated_at",
+    "delivery_status",
+    "output_mode",
+    "exported_entity_ids",
+    "exported_contact_ids",
+    "exported_contact_claim_ids",
+    "exported_assessment_ids",
+    "output_files",
+    "warnings",
+    "disclosures"
+  ],
+  "properties": {
+    "delivery_manifest_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "brief_id": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "plan_id": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "audit_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "audit_graph_hash": {
+      "type": "string",
+      "minLength": 1
+    },
+    "research_graph_hash": {
+      "type": "string",
+      "minLength": 1
+    },
+    "review_cycle_id": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "review_attestation_id": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "reviewed_subject_hash": {
+      "type": ["string", "null"],
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "review_provenance_level": {
+      "type": ["string", "null"],
+      "enum": [
+        "declared_separate_session",
+        "self_review_fallback",
+        "not_run",
+        "not_applicable",
+        null
+      ]
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "delivery_status": {
+      "type": "string",
+      "enum": [
+        "needs_correction",
+        "initial_lead_list",
+        "standard_development_list",
+        "full_review_package",
+        "inquiry_followup_queue"
+      ]
+    },
+    "output_mode": {
+      "type": "string"
+    },
+    "exported_entity_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "exported_contact_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "exported_contact_claim_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "exported_assessment_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "output_files": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^[^/\\\\:\u0000-\u001F]+$"
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "disclosures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "search_log_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "search_log_count": {"type": "integer", "minimum": 0},
+    "format": {
+      "type": "string",
+      "enum": [
+        "xlsx",
+        "csv"
+      ]
+    },
+    "audit_snapshot": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "audit_id",
+        "audit_status",
+        "delivery_status",
+        "research_graph_hash",
+        "audit_graph_hash",
+        "review_cycle_id",
+        "review_attestation_id",
+        "reviewed_subject_hash",
+        "review_provenance_level",
+        "issues"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"delivery_status": {"enum": ["standard_development_list", "full_review_package"]}},
+        "required": ["delivery_status"]
+      },
+      "then": {
+        "properties": {
+          "brief_id": {"type": "string", "minLength": 1},
+          "plan_id": {"type": "string", "minLength": 1},
+          "review_cycle_id": {"type": "string", "minLength": 1},
+          "reviewed_subject_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "review_provenance_level": {"type": "string", "enum": ["declared_separate_session", "self_review_fallback"]}
+        }
+      }
+    }
+  ]
+}

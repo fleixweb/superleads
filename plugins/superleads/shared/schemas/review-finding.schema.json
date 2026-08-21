@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superleads.local/schemas/review-finding.schema.json",
+  "title": "Superleads ReviewFinding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "finding_id",
+    "severity",
+    "target_artifact",
+    "issue",
+    "required_fix",
+    "status",
+    "reviewer",
+    "review_mode",
+    "reviewed_at"
+  ],
+  "properties": {
+    "finding_id": {
+      "type": "string"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "critical",
+        "major",
+        "minor"
+      ]
+    },
+    "target_artifact": {
+      "type": "string"
+    },
+    "issue": {
+      "type": "string"
+    },
+    "required_fix": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "remediation_submitted",
+        "re_reviewed",
+        "verified_fixed",
+        "accepted_with_disclosure",
+        "rejected_with_reviewer_reason"
+      ]
+    },
+    "reviewer": {
+      "type": "string"
+    },
+    "review_mode": {
+      "type": "string",
+      "enum": [
+        "independent",
+        "self_review_fallback",
+        "not_run"
+      ]
+    },
+    "reviewed_at": {
+      "type": "string"
+    },
+    "review_cycle_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}
