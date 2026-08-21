@@ -131,6 +131,14 @@ must fail instead of silently changing the requested file type. When validator
 dependencies are unavailable, do not search for or borrow another application's
 interpreter: use the no-script path and mark `本环境未运行确定性校验`.
 
+In every route's user-visible delivery and progress narration, identify a
+generated artifact only by its filename and file type. Do not write a drive
+letter, absolute path, directory hierarchy, or `file://` URL, and do not
+manually construct a host file-reference or attachment directive; leave path
+and attachment presentation to the host's file mechanism. When multiple
+artifacts were generated, list every filename and type separately rather than
+mentioning only one.
+
 A user who 直接要求 Excel after deep verification, or later requests a format
 change, workbook rename, or re-export, is continuing the same formal delivery
 chain rather than starting an independent table-generation task. 不得使用其他技能、工具、脚本或代码手工构造替代工作簿，也不得使用自定义工作表、列或分区名称模拟正式交付物。`标准开发名单` may be named only after the current graph, validation,

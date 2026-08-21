@@ -182,6 +182,8 @@ payload 或改交付 CSV/XLSX，不要把手写研究摘要称为正式 Markdown
 
 如需 CSV / XLSX 交接，按 `../../shared/policies/cross-platform-rules.md` 选择宿主自带 runtime 解释器，调用 `scripts/export_workbook.py`，参数为 `graph.json --output-dir out --mode background --format csv`，导出同样的六张固定表；有 `suspected_trade_records` 时同步追加同名条件 sheet。两类导出都只展示当前背景对象、其证据支持的关联主体与线索，不会输出无关批量客户或正式名单内容。
 
+向用户说明已生成产物时，只写每个产物的文件名与文件类型；生成多个产物时必须逐个列出，不得只提其中一个。用户可见正文和阶段性进度旁白都不得写盘符、绝对路径、目录层级或 `file://` URL，也不得手工构造宿主文件引用或附件指令；具体路径与附件呈现交由宿主文件机制处理。
+
 脚本不可用时，在对话中按上述六张表交付，并在存在贸易摘要时追加第七张条件表；必须标注“本环境未运行确定性校验”，且不得声称已生成 Markdown、CSV 或 XLSX 文件。无脚本交付仍须逐项遵守同一主体、已打开来源、联系方式归属、未知与冲突保留等边界。
 
 表述规则：

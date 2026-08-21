@@ -611,6 +611,45 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
                 issues = validate(text, "product_outbound_market_analysis", min_tables=0)
                 self.assertNotIn("user_visible_internal_language", {item["code"] for item in issues})
 
+    def test_visible_validator_reuses_common_local_path_detection_without_echoing_path(self) -> None:
+        self.assertTrue({"file://", "/home/", "/tmp/"}.isdisjoint(GENERIC_INTERNAL_LANGUAGE))
+        samples = (
+            r"[Markdown 背调报告](C:\Users\Lenovo\Documents\bernard_background.md)",
+            r"[Markdown 背调报告](C:\\Users\\Lenovo\\Documents\\bernard_background.md)",
+            "/home/fleix/outputs/bernard_background.md",
+            "/tmp/bernard_background.md",
+            "file:///tmp/bernard_background.md",
+        )
+        for sample in samples:
+            with self.subTest(sample=sample):
+                issues = validate(sample, "product_outbound_market_analysis", min_tables=0)
+                internal = [item for item in issues if item["code"] == "user_visible_internal_language"]
+                self.assertTrue(internal)
+                self.assertTrue(all(item.get("value") == "local path" for item in internal))
+                self.assertTrue(all(sample not in item.get("message", "") for item in internal))
+
+    def test_visible_validator_blocks_host_directive_constructs_by_shape(self) -> None:
+        for text in (
+            ':codex-file-citation{path="C:__codex_directive_quoted_backslash__Users__codex_directive_quoted_backslash__Lenovo__codex_directive_quoted_backslash__Documents__codex_directive_quoted_backslash__bernard_background.xlsx" purpose="output"}',
+            "报告已生成：__codex_directive_quoted_backslash__",
+        ):
+            with self.subTest(text=text):
+                issues = validate(text, "product_outbound_market_analysis", min_tables=0)
+                self.assertIn("user_visible_internal_language", {item["code"] for item in issues})
+
+    def test_visible_validator_does_not_misclassify_normal_colons_links_or_values(self) -> None:
+        for text in (
+            "注意：本轮未取得新的公开来源。",
+            "[Markdown 背调报告](bernard_background.md)",
+            "![公司标志](bernard_logo.png)",
+            "更新时间 11:37，比例 4.6/5。",
+            "公开邮箱 sales.irl@apairltd.com 可作为联系入口。",
+            "Status: pending public verification.",
+        ):
+            with self.subTest(text=text):
+                issues = validate(text, "product_outbound_market_analysis", min_tables=0)
+                self.assertNotIn("user_visible_internal_language", {item["code"] for item in issues})
+
     def test_visible_validator_allows_product_market_module_header(self) -> None:
         issues = validate(
             "| 模块 | 当前结果 | 状态 |\n| --- | --- | --- |",

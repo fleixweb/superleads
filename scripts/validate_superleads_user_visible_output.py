@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from _superleads_common import contains_local_path
 from superleads_user_guidance import has_exactly_one_final_footer
 
 
@@ -149,9 +150,6 @@ GENERIC_INTERNAL_LANGUAGE = [
     "card-",
     "gap-",
     "conflict-",
-    "file://",
-    "/home/",
-    "/tmp/",
     "jsonschema",
     "openpyxl",
     "python3",
@@ -183,6 +181,21 @@ INTERNAL_RUNTIME_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "internal adapter context",
         re.compile(r"(?:适配器(?:报告|判定|\s*(?:ID|id)|(?:状态|结果)?(?:失败|不可用|受限))|同一失败适配器)"),
+    ),
+)
+
+# Host file cards and other runtime directives use an inline ``:<name>{...}``
+# form.  The validator checks that shape rather than one host's directive name,
+# while the second pattern catches failed escaping that leaves an internal
+# placeholder in the user-visible text.
+HOST_CONSTRUCT_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    (
+        "host directive construct",
+        re.compile(r"(?<![A-Za-z0-9_-]):[A-Za-z][A-Za-z0-9_-]*\{[^{}\n]*\}"),
+    ),
+    (
+        "host escape placeholder",
+        re.compile(r"__[A-Za-z0-9]+(?:_[A-Za-z0-9]+)*_quoted_backslash__"),
     ),
 )
 
@@ -560,6 +573,17 @@ def _issue(code: str, message: str, value: str | None = None) -> dict[str, str]:
     return payload
 
 
+def _contains_visible_local_path(text: str) -> bool:
+    """Reuse the common path detector across plain text and Markdown links."""
+    if contains_local_path(text):
+        return True
+    # ``contains_local_path`` deliberately requires a whitespace/quote
+    # boundary.  A Markdown destination puts the same path after ``(``; turn
+    # only common opening delimiters into that boundary before reusing it.
+    normalized = text.translate(str.maketrans("([{<", "    "))
+    return contains_local_path(normalized)
+
+
 def _split_markdown_row(line: str) -> list[str]:
     stripped = line.strip()
     if not stripped.startswith("|") or not stripped.endswith("|"):
@@ -749,9 +773,20 @@ def validate(
         if _phrase_matches(text, phrase):
             issues.append(_issue("user_visible_internal_language", f"internal language leaked: {phrase}", phrase))
 
+    if _contains_visible_local_path(text):
+        issues.append(_issue(
+            "user_visible_internal_language",
+            "internal local path leaked; user-visible output may contain only the artifact filename",
+            "local path",
+        ))
+
     for label, pattern in INTERNAL_RUNTIME_PATTERNS:
         if pattern.search(text):
             issues.append(_issue("user_visible_internal_language", f"internal language leaked: {label}", label))
+
+    for label, pattern in HOST_CONSTRUCT_PATTERNS:
+        if pattern.search(text):
+            issues.append(_issue("user_visible_internal_language", f"host runtime construct leaked: {label}", label))
 
     if "<!--" in text or "-->" in text:
         issues.append(_issue(

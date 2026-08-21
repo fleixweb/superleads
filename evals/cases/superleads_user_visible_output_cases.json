@@ -95,6 +95,23 @@
       ]
     },
     {
+      "name": "customer background multiple artifacts names only",
+      "fixture": "evals/user_visible_outputs/pass_customer_background_multiple_artifacts.md",
+      "route": "customer_background_research",
+      "expected": "pass",
+      "min_tables": 6,
+      "must_contain": [
+        "已生成 Markdown 报告：bernard_background.md",
+        "已生成 CSV 工作簿：bernard_background.csv"
+      ],
+      "must_not_contain": [
+        "C:\\Users\\",
+        "/home/",
+        "/tmp/",
+        "file://"
+      ]
+    },
+    {
       "name": "product outbound market Xing Heng sample",
       "fixture": "evals/user_visible_outputs/product_market_xingheng_lifepo4_us.md",
       "route": "product_outbound_market_analysis",
