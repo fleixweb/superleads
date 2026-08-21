@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Make full-list social, map, trade-summary, and contact-attribution collection explicit deep-verification work; preserve contact safety boundaries and clarify that the L1 signal-only option is a subset rather than an alternative.
+- Use seller-side first-contact terminology for part-number and import-role questions, and distinguish an unrecorded empty worksheet from searched, restricted, or not-found public-signal states.
+
 ## [0.2.4] - 2026-08-20
 
 ### Fixed

@@ -348,11 +348,11 @@ class SuperleadsExecutionStateTest(unittest.TestCase):
         )
         self.assertEqual("继续扩展（可指定 30 / 50 / 100 家，或直接说数量）", summary["next_step_options"][0]["text"])
         self.assertEqual(
-            "对上述名单做深度核验 → 标准开发名单（较慢；产量降、耗时增；可分批产出）",
+            "对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；较慢；产量降、耗时增；可分批产出）",
             summary["next_step_options"][2]["text"],
         )
         self.assertEqual(
-            "补社媒 / 地图 / 贸易记录信号（较快；仍属候选池，不升级为已验证）",
+            "只补社媒 / 地图 / 贸易记录信号（不做主体与联系人核验；较快，仍属候选池，不升级为已验证）",
             summary["next_step_options"][3]["text"],
         )
 

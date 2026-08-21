@@ -73,8 +73,8 @@ not a request to select a number or an instruction to wait for a reply:
 
 - 继续扩展（可指定 30 / 50 / 100 家，或直接说数量）
 - 换搜索组合再找一批（换产品词 / 换客户类型，国家不变）
-- 对上述名单做深度核验 → 标准开发名单（较慢；产量降、耗时增；可分批产出）
-- 补社媒 / 地图 / 贸易记录信号（较快；仍属候选池，不升级为已验证）
+- 对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；较慢；产量降、耗时增；可分批产出）
+- 只补社媒 / 地图 / 贸易记录信号（不做主体与联系人核验；较快，仍属候选池，不升级为已验证）
 - 选 1 家做单一客户背调
 ```
 
@@ -90,9 +90,29 @@ or source-restricted rows as such. Reuse only the existing formal-route terms
 
 `补社媒 / 地图 / 贸易记录信号` is an explicit L1 supplement only: it updates
 bounded public-signal collection states and does not perform entity or contact
-association verification. `深度核验` includes those signal categories as part of
-the full-list L2 path. Follow `default-discovery-reference.md` for the L1
-collection-status, URL-deduplication, and no-upgrade constraints.
+association verification. The L1 supplement keeps only the status rules in
+`default-discovery-reference.md`; it is not a substitute for deep verification.
+
+## Deep-Verification Completeness
+
+For `深度核验` / `标准开发名单`, collecting social, map, and third-party trade
+summaries for the entire list is mandatory L2 work, alongside entity and
+contact association review. Give every category a finite budget, deduplicate
+the same canonical/final URL within the Run, and record the existing five
+`collection_status` states truthfully. A search summary's person, title,
+phone, address, or business context is still not an observed fact. When the
+budget is exhausted or a source is restricted, mark that outcome truthfully;
+do not leave a category blank or present it as completed.
+
+The full-list contact-intelligence collection and attribution review is also
+mandatory L2 work. Read `../internal-stages/collecting-contact-intelligence.md`
+and `../policies/contact-intelligence-policy.md`: extract only from opened
+Observations, never guess email formats, keep ContactPoint literals separate
+from ContactClaim attribution, and retain useful ambiguous values as
+UnassignedContactLead. Preserve the existing ready / source-note / manual-
+association export states. Cross-entity mismatches and source-less contacts
+are never exportable. These requirements raise recall through sourced work;
+they do not lower contact safety thresholds.
 
 `expansion_scale_chosen` accepts a user-specified positive integer from 1 to
 500. The ceiling bounds one Run's finite execution state; it is not a market

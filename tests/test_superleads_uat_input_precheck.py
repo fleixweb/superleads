@@ -63,6 +63,22 @@ class SuperleadsUatInputPrecheckTest(unittest.TestCase):
         self.assertIn("uat_precheck_contact_association_not_in_observation", codes)
         self.assertIn("uat_precheck_contact_association_entity_name_missing", codes)
 
+    def test_research_contact_guesses_source_less_values_and_entity_mismatches_remain_blocked(self) -> None:
+        graph = json.loads((FIXTURES / "pass_default_discovery_candidate_pool.json").read_text(encoding="utf-8"))
+        graph["contact_points"][0]["source_literal"] = "guessed@alpha.example"
+        graph["contact_points"][0]["normalized_value"] = "guessed@alpha.example"
+        graph["contact_points"][1]["source_observation_id"] = "obs_missing_source"
+        graph["contact_claims"][0]["entity_id"] = "ent_beta_001"
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write(Path(tmp), "unsafe-contacts.json", graph)
+            payload = self._run("--route", "bulk_customer_development", "--graph", str(path), expected=1)
+
+        codes = {item["code"] for item in payload["issues"]}
+        self.assertIn("uat_precheck_contact_literal_not_in_observation", codes)
+        self.assertIn("uat_precheck_contact_observation_missing", codes)
+        self.assertIn("uat_precheck_contact_entity_mismatch", codes)
+
     def test_market_notes_and_attribute_projection_fail_before_compile_or_validator(self) -> None:
         graph = json.loads((FIXTURES / "market_pass_xingheng_minimum_boundary.json").read_text(encoding="utf-8"))
         graph["attributes"][0]["attribute_name"] = "未投影属性"

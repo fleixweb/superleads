@@ -52,9 +52,34 @@ The following are not admission conditions: whether the website lists an exact
 part number, whether a public page provides 公开可证的进口或海关角色, whether the
 company will purchase, or any customer-value ranking. Dealers commonly keep
 OEM part numbers in internal parts systems, and public pages normally do not
-prove the legal import role. Missing either item is a `询盘核实项`: keep it as a
+prove the legal import role. Missing either item is a `接洽核实项`: keep it as a
 pending question and do not downgrade, exclude, or call a candidate unqualified
 for that reason alone.
+
+## L2 completeness requirements
+
+For every candidate in the deep-verification list, social, map, and third-
+party trade-summary collection is mandatory, as is public contact-intelligence
+collection and attribution review. Read
+`../internal-stages/collecting-contact-intelligence.md` and
+`../policies/contact-intelligence-policy.md` before that work. Use a finite
+budget, deduplicate the same canonical/final URL within the Run, and retain the
+existing five `collection_status` values. A search summary may point to a
+candidate page but does not make its visible person, title, phone, address, or
+business scene an observed fact. When budget is exhausted or a source is
+restricted, record that outcome; do not leave the category blank or portray it
+as completed.
+
+Extract contact intelligence only from opened-source Observations and never
+guess email formats. ContactPoint records the literal and its source
+Observation; ContactClaim requires context that attributes the value to an
+entity, person, department, role, or source section. Keep useful but unclear
+ownership in UnassignedContactLead. Preserve the existing three user-visible
+states: `ready`, `export_with_source_note`, and
+`needs_manual_association_review`; ready attribution evidence must name the
+resolved entity. Cross-entity mismatches and source-less contacts are never
+exportable. This is recall-oriented collection under the existing safety
+contract, not a relaxation of it.
 
 When no candidate clears the actual evidence-chain threshold, explain which
 chain element is missing and what range was completed. Do not label ordinary
@@ -62,8 +87,8 @@ public-information limits as disqualification. Use this user-facing shape:
 
 ```text
 本次深度核验尚未形成可正式交付的名单。已完成：{已完成范围}；仍缺：{实际缺少的主体、已打开来源、联系归属或审核链条}。
-官网未出现精确料号、或未公开进口身份属于需要询盘核实的项目，不等同于候选不合格。
-可继续补充待确认项的公开核验或公开信号；也可依据已打开的业务来源发询盘，核实料号适配和实际采购角色。
+官网未出现精确料号、或未公开进口身份属于首次接洽时核实的项目，不等同于候选不合格。
+可继续补充待确认项的公开核验或公开信号；也可依据已打开的业务来源在首次接洽时向对方确认料号适配和实际采购角色。
 ```
 
 Keep the existing downgrade disclosure and do not use the `标准开发名单` name

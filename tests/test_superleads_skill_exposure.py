@@ -163,12 +163,57 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
         self.assertIn("不属于准入条件", skill)
         self.assertIn("官网是否列出精确料号", skill)
         self.assertIn("公开可证的进口或海关角色", formal)
-        self.assertIn("询盘核实", formal)
+        self.assertIn("首次接洽时核实", formal)
+        self.assertNotIn("询盘核实", skill)
+        self.assertNotIn("询盘核实", formal)
+        for content in (batch, formal):
+            normalized = content.replace("-\n", "-").replace("\n", " ")
+            self.assertIn("social, map, and third-party trade", normalized)
+            self.assertIn("collection_status", normalized)
+            self.assertIn("canonical/final URL", normalized)
+            self.assertIn("budget", normalized)
+            self.assertIn("source is restricted", normalized)
+            self.assertIn("do not leave", normalized)
+        for reference in (
+            "../internal-stages/collecting-contact-intelligence.md",
+            "../policies/contact-intelligence-policy.md",
+        ):
+            self.assertIn(reference, formal)
+        normalized_formal = formal.replace("-\n", "-").replace("\n", " ")
+        for boundary in (
+            "only from opened-source Observations",
+            "never guess email formats",
+            "UnassignedContactLead",
+            "needs_manual_association_review",
+            "Cross-entity mismatches and source-less contacts are never",
+        ):
+            self.assertIn(boundary, normalized_formal)
         for template in (batch, default):
             self.assertIn("## 下一步可选", template)
             self.assertIn("- 继续扩展（可指定 30 / 50 / 100 家，或直接说数量）", template)
+            self.assertIn("对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验", template)
+            self.assertIn("只补社媒 / 地图 / 贸易记录信号（不做主体与联系人核验", template)
             self.assertNotIn("下一步可选：", template)
             self.assertNotIn("· 继续扩展", template)
+
+    def test_l2_user_visible_copy_uses_outbound_contact_terms_without_changing_inbound_inquiries(self) -> None:
+        outbound_paths = (
+            ROOT / "skills" / "using-superleads" / "SKILL.md",
+            ROOT / "shared" / "references" / "using-superleads-formal-delivery.md",
+            ROOT / "evals" / "user_visible_outputs" / "pass_bulk_customer_formal_delivery_fallback.md",
+            ROOT / "evals" / "user_visible_outputs" / "pass_bulk_customer_l2_pending_part_and_import_role.md",
+        )
+        outbound_copy = "\n".join(path.read_text(encoding="utf-8") for path in outbound_paths)
+
+        self.assertIn("首次接洽时核实", outbound_copy)
+        self.assertIn("接洽核实项", outbound_copy)
+        self.assertNotIn("询盘核实", outbound_copy)
+        self.assertNotIn("发询盘", outbound_copy)
+
+        workbook = (ROOT / "scripts" / "export_workbook.py").read_text(encoding="utf-8")
+        self.assertIn("INQUIRY_SHEETS", workbook)
+        self.assertIn("build_inquiry_sheets", workbook)
+        self.assertIn("询盘信息仅记录来信中提及的内容", workbook)
 
     def test_composite_task_policy_has_one_detailed_authority(self) -> None:
         reference = ROOT / "shared" / "references" / "composite-task-routing.md"
@@ -292,8 +337,8 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
             "不得写成已观察事实",
         ):
             self.assertIn(marker, discovery)
-        self.assertIn("补社媒 / 地图 / 贸易记录信号（较快；仍属候选池，不升级为已验证）", batch)
-        self.assertIn("对上述名单做深度核验 → 标准开发名单（较慢；产量降、耗时增；可分批产出）", batch)
+        self.assertIn("只补社媒 / 地图 / 贸易记录信号（不做主体与联系人核验；较快，仍属候选池，不升级为已验证）", batch)
+        self.assertIn("对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；较慢；产量降、耗时增；可分批产出）", batch)
 
     def test_adapter_local_404_has_an_executable_current_session_recovery_path(self) -> None:
         policy = (ROOT / "shared" / "policies" / "tool-capability-policy.md").read_text(encoding="utf-8")

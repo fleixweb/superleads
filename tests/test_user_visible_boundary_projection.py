@@ -150,7 +150,7 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         issues = validate(
             append_final_footer(
                 markdown
-                + "\n官网未列精确料号、未公开进口身份属于询盘核实项，不代表候选不合格，不得因此排除或不纳入名单。\n"
+                + "\n官网未列精确料号、未公开进口身份属于首次接洽时核实项，不代表候选不合格，不得因此排除或不纳入名单。\n"
             ),
             "bulk_customer_development",
             min_tables=6,
@@ -405,8 +405,8 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         self.assertIn("已观察到的本地术语 + Region Q + 维修厂", markdown)
         self.assertIn("## 下一步可选", markdown)
         self.assertIn("继续扩展（可指定 30 / 50 / 100 家，或直接说数量）", markdown)
-        self.assertIn("对上述名单做深度核验 → 标准开发名单（较慢；产量降、耗时增", markdown)
-        self.assertIn("补社媒 / 地图 / 贸易记录信号（较快；仍属候选池，不升级为已验证）", markdown)
+        self.assertIn("对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；较慢；产量降、耗时增", markdown)
+        self.assertIn("只补社媒 / 地图 / 贸易记录信号（不做主体与联系人核验；较快，仍属候选池，不升级为已验证）", markdown)
         self.assertIn("\n- 已观察到的本地术语 + Region Q + 维修厂", markdown)
         self.assertIn("\n- 继续扩展（可指定 30 / 50 / 100 家，或直接说数量）", markdown)
         self.assertNotIn("\n· ", markdown)

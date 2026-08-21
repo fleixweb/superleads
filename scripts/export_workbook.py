@@ -972,29 +972,69 @@ def build_sheets(graph:dict[str,Any], audit:dict[str,Any], mode:str)->dict[str,l
 
 def safe_filename(name:str)->str: return re.sub(r"[\\/:*?\"<>|]+","_",name)
 
-def write_csv_sheets(sheets:dict[str,list[dict[str,Any]]], out:Path)->list[str]:
+EMPTY_PUBLIC_ENRICHMENT_SHEET_SIGNALS = {
+    "社媒与公开职业线索": ("social_company", "social_person"),
+    "地图与经营地址": ("map_listing",),
+    "第三方贸易摘要": ("trade_record",),
+}
+
+
+def public_enrichment_empty_sheet_statuses(graph:dict[str,Any])->dict[str,str]:
+    """Project only recorded candidate collection states for otherwise empty sheets."""
+    statuses:dict[str,str] = {}
+    for sheet, signal_keys in EMPTY_PUBLIC_ENRICHMENT_SHEET_SIGNALS.items():
+        collection_states=[]
+        for candidate in ensure_list(graph,"candidates"):
+            if not isinstance(candidate,dict):
+                continue
+            summary=candidate.get("signal_summary")
+            if not isinstance(summary,dict):
+                continue
+            for signal_key in signal_keys:
+                signal=summary.get(signal_key)
+                if not isinstance(signal,dict):
+                    continue
+                state=str(signal.get("collection_status") or "")
+                if state in PUBLIC_ENRICHMENT_COLLECTION_LABELS:
+                    collection_states.append(state)
+        if not collection_states:
+            statuses[sheet]="状态未记录"
+        elif "details_restricted" in collection_states:
+            statuses[sheet]="来源受限"
+        elif all(state=="not_searched" for state in collection_states):
+            statuses[sheet]="本轮未检索"
+        elif all(state=="searched_not_found" for state in collection_states):
+            statuses[sheet]="已检索未见"
+        else:
+            statuses[sheet]="状态未记录"
+    return statuses
+
+
+def sheet_rows_for_write(rows:list[dict[str,Any]], empty_sheet_status:str|None=None)->tuple[list[str],list[dict[str,Any]]]:
+    fields=[]
+    for row in rows:
+        for key in row.keys():
+            if key not in fields:
+                fields.append(key)
+    if not fields:
+        return ["说明"], [{"说明":empty_sheet_status or "状态未记录"}]
+    return fields, rows
+
+def write_csv_sheets(sheets:dict[str,list[dict[str,Any]]], out:Path, *, empty_sheet_statuses:dict[str,str]|None=None)->list[str]:
     out.mkdir(parents=True,exist_ok=True); written=[]
     for sheet,rows in sheets.items():
-        path=out/f"{safe_filename(sheet)}.csv"; fields=[]
-        for row in rows:
-            for k in row.keys():
-                if k not in fields: fields.append(k)
-        if not fields: fields=["说明"]; rows=[{"说明":"无记录"}]
+        path=out/f"{safe_filename(sheet)}.csv"; fields, rows = sheet_rows_for_write(rows, (empty_sheet_statuses or {}).get(sheet))
         with path.open("w",encoding="utf-8-sig",newline="") as h:
             w=csv.DictWriter(h,fieldnames=fields); w.writeheader()
             for row in rows: w.writerow({k:stringify(row.get(k)) for k in fields})
         written.append(path.name)
     return written
 
-def write_xlsx_sheets(sheets:dict[str,list[dict[str,Any]]], out:Path, filename:str="superleads_workbook.xlsx")->list[str]:
+def write_xlsx_sheets(sheets:dict[str,list[dict[str,Any]]], out:Path, filename:str="superleads_workbook.xlsx", *, empty_sheet_statuses:dict[str,str]|None=None)->list[str]:
     from openpyxl import Workbook  # type: ignore
     out.mkdir(parents=True,exist_ok=True); wb=Workbook(); wb.remove(wb.active)
     for sheet,rows in sheets.items():
-        ws=wb.create_sheet(title=sheet[:31]); fields=[]
-        for row in rows:
-            for k in row.keys():
-                if k not in fields: fields.append(k)
-        if not fields: fields=["说明"]; rows=[{"说明":"无记录"}]
+        ws=wb.create_sheet(title=sheet[:31]); fields, rows = sheet_rows_for_write(rows, (empty_sheet_statuses or {}).get(sheet))
         ws.append(fields)
         for row in rows: ws.append([stringify(row.get(k)) for k in fields])
     path=out/safe_filename(filename); wb.save(path); return [path.name]
@@ -1045,6 +1085,7 @@ def main()->int:
     provenance=review_provenance_snapshot(graph,current_run)
     provenance_disclosure=review_provenance_disclosure(provenance.get("review_provenance_level"))
     sheets=build_sheets(graph,audit,a.mode)
+    empty_sheet_statuses=public_enrichment_empty_sheet_statuses(graph)
     if provenance_disclosure and provenance.get("review_provenance_level") in {"declared_separate_session", "not_run"} and "风险与说明" in sheets:
         sheets["风险与说明"].append({"提示级别":"说明","说明":provenance_disclosure})
     sheets=redact_local_paths(redact_delivery_sheets(sheets,hold_contact_values(graph))); out=Path(a.output_dir) if a.output_dir else Path(a.output_path).parent; chosen=a.format
@@ -1055,11 +1096,11 @@ def main()->int:
             chosen="csv"
             print(f"XLSX export unavailable ({exc}); using UTF-8-SIG CSV", file=sys.stderr)
     if chosen=="xlsx":
-        try: files=write_xlsx_sheets(sheets,out,Path(a.output_path).name if a.output_path else "superleads_workbook.xlsx")
+        try: files=write_xlsx_sheets(sheets,out,Path(a.output_path).name if a.output_path else "superleads_workbook.xlsx",empty_sheet_statuses=empty_sheet_statuses)
         except Exception as exc:
             if a.format=="xlsx": raise
-            print(f"XLSX export unavailable ({exc}); falling back to UTF-8-SIG CSV", file=sys.stderr); files=write_csv_sheets(sheets,out); chosen="csv"
-    else: files=write_csv_sheets(sheets,out)
+            print(f"XLSX export unavailable ({exc}); falling back to UTF-8-SIG CSV", file=sys.stderr); files=write_csv_sheets(sheets,out,empty_sheet_statuses=empty_sheet_statuses); chosen="csv"
+    else: files=write_csv_sheets(sheets,out,empty_sheet_statuses=empty_sheet_statuses)
     disclosures=["发现候选与弱证据项仅用于销售人工核查，不代表事实核查完成。"] if a.mode=="initial" else (["询盘信息仅记录来信中提及的内容，不代表企业资格或采购权已核验。"] if a.mode=="inquiry" else [])
     for disclosure in audit_disclosures(audit):
         if disclosure not in disclosures:
