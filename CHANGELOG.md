@@ -8,6 +8,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 
 ### Fixed
 
+- Distinguish empty collection-status sheets from empty graph-record sheets so only public-signal collection can fall back to an unrecorded status.
 - Make full-list social, map, trade-summary, and contact-attribution collection explicit deep-verification work; preserve contact safety boundaries and clarify that the L1 signal-only option is a subset rather than an alternative.
 - Use seller-side first-contact terminology for part-number and import-role questions, and distinguish an unrecorded empty worksheet from searched, restricted, or not-found public-signal states.
 

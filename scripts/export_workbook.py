@@ -1010,20 +1010,25 @@ def public_enrichment_empty_sheet_statuses(graph:dict[str,Any])->dict[str,str]:
     return statuses
 
 
-def sheet_rows_for_write(rows:list[dict[str,Any]], empty_sheet_status:str|None=None)->tuple[list[str],list[dict[str,Any]]]:
+def sheet_rows_for_write(sheet:str, rows:list[dict[str,Any]], empty_sheet_status:str|None=None)->tuple[list[str],list[dict[str,Any]]]:
     fields=[]
     for row in rows:
         for key in row.keys():
             if key not in fields:
                 fields.append(key)
     if not fields:
-        return ["说明"], [{"说明":empty_sheet_status or "状态未记录"}]
+        empty_message = (
+            empty_sheet_status or "状态未记录"
+            if sheet in EMPTY_PUBLIC_ENRICHMENT_SHEET_SIGNALS
+            else "本轮无此类记录"
+        )
+        return ["说明"], [{"说明":empty_message}]
     return fields, rows
 
 def write_csv_sheets(sheets:dict[str,list[dict[str,Any]]], out:Path, *, empty_sheet_statuses:dict[str,str]|None=None)->list[str]:
     out.mkdir(parents=True,exist_ok=True); written=[]
     for sheet,rows in sheets.items():
-        path=out/f"{safe_filename(sheet)}.csv"; fields, rows = sheet_rows_for_write(rows, (empty_sheet_statuses or {}).get(sheet))
+        path=out/f"{safe_filename(sheet)}.csv"; fields, rows = sheet_rows_for_write(sheet, rows, (empty_sheet_statuses or {}).get(sheet))
         with path.open("w",encoding="utf-8-sig",newline="") as h:
             w=csv.DictWriter(h,fieldnames=fields); w.writeheader()
             for row in rows: w.writerow({k:stringify(row.get(k)) for k in fields})
@@ -1034,7 +1039,7 @@ def write_xlsx_sheets(sheets:dict[str,list[dict[str,Any]]], out:Path, filename:s
     from openpyxl import Workbook  # type: ignore
     out.mkdir(parents=True,exist_ok=True); wb=Workbook(); wb.remove(wb.active)
     for sheet,rows in sheets.items():
-        ws=wb.create_sheet(title=sheet[:31]); fields, rows = sheet_rows_for_write(rows, (empty_sheet_statuses or {}).get(sheet))
+        ws=wb.create_sheet(title=sheet[:31]); fields, rows = sheet_rows_for_write(sheet, rows, (empty_sheet_statuses or {}).get(sheet))
         ws.append(fields)
         for row in rows: ws.append([stringify(row.get(k)) for k in fields])
     path=out/safe_filename(filename); wb.save(path); return [path.name]

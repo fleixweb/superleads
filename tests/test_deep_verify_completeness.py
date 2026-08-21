@@ -27,7 +27,7 @@ FIXTURE = ROOT / "evals" / "fixtures" / "pass_default_discovery_candidate_pool.j
 
 
 class DeepVerifyCompletenessTest(unittest.TestCase):
-    def test_empty_sheet_reports_status_not_recorded_in_csv_and_xlsx(self) -> None:
+    def test_empty_signal_sheet_reports_status_not_recorded_in_csv_and_xlsx(self) -> None:
         sheets = {"社媒与公开职业线索": []}
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -42,6 +42,86 @@ class DeepVerifyCompletenessTest(unittest.TestCase):
 
         self.assertEqual([{"说明": "状态未记录"}], csv_rows)
         self.assertIn("状态未记录", xlsx_sheet)
+
+    def test_empty_graph_fact_sheets_report_no_records_across_all_modes(self) -> None:
+        fact_sheets_by_mode = {
+            "initial": (
+                "发现候选池",
+                "联系方式汇总",
+                "官网与来源链接",
+                "搜索覆盖与收敛",
+                "待核查事项",
+                "已排除客户",
+                "风险与说明",
+            ),
+            "standard": (
+                "客户信息总表",
+                "联系方式汇总",
+                "公开信息与待核查事项",
+                "官网与来源链接",
+                "待核查事项",
+                "风险与说明",
+            ),
+            "full": (
+                "开发需求",
+                "关键词与搜索思路",
+                "发现候选池",
+                "客户信息总表",
+                "联系方式汇总",
+                "公开信息与待核查事项",
+                "官网与来源链接",
+                "待核查事项",
+                "已排除客户",
+                "检查说明",
+            ),
+            "inquiry": (
+                "询盘待办",
+                "来信联系人",
+                "询盘信息摘要",
+                "待补充信息",
+                "来源说明",
+            ),
+            "background": (
+                "客户一眼看懂",
+                "客户、品牌与关联方",
+                "公开业务信号与待核验事项",
+                "公开联系入口与关联依据",
+                "待核验事项与来源限制",
+                "信息从哪里来",
+                "疑似进出口记录（第三方聚合，待核实）",
+            ),
+        }
+        sheets = {
+            sheet: []
+            for mode_sheets in fact_sheets_by_mode.values()
+            for sheet in mode_sheets
+        }
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir)
+            write_csv_sheets(sheets, output)
+            for mode, mode_sheets in fact_sheets_by_mode.items():
+                for sheet in mode_sheets:
+                    with self.subTest(format="csv", mode=mode, sheet=sheet):
+                        with (output / f"{sheet}.csv").open(encoding="utf-8-sig", newline="") as handle:
+                            rows = list(csv.DictReader(handle))
+                        self.assertEqual([{"说明": "本轮无此类记录"}], rows)
+                        self.assertNotIn("状态未记录", rows[0]["说明"])
+
+            representative_sheets = {
+                mode_sheets[0]: []
+                for mode_sheets in fact_sheets_by_mode.values()
+            }
+            write_xlsx_sheets(representative_sheets, output, "fact-sheets.xlsx")
+            with ZipFile(output / "fact-sheets.xlsx") as workbook:
+                xlsx_text = "\n".join(
+                    unescape(workbook.read(name).decode("utf-8"))
+                    for name in workbook.namelist()
+                    if name.startswith("xl/worksheets/sheet")
+                )
+
+        self.assertIn("本轮无此类记录", xlsx_text)
+        self.assertNotIn("状态未记录", xlsx_text)
 
     def test_recorded_signal_states_remain_distinct_in_csv_and_xlsx(self) -> None:
         graph = json.loads(FIXTURE.read_text(encoding="utf-8"))
