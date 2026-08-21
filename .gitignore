@@ -6,3 +6,7 @@ __pycache__/
 dist/
 out/
 tmp/
+
+# Local development and validation documents
+/docs/superpowers/
+/docs/validation/

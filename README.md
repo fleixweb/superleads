@@ -42,6 +42,11 @@ Superleads 要求 Agent 区分已核实信息与待确认线索，并保留公�
 - **Claude Code**：作为 Claude Code 插件使用。
 - **ChatGPT / Codex app、Codex CLI**：共用同一次 Codex 环境安装，无需重复安装。
 - **Hermes**：作为完整的本地 Skill 包使用。
+- **TraeWork**：使用 Superleads marketplace 安装。
+
+## 兼容性说明
+
+因技术适配问题，暂不支持在 Workbuddy 和 QwenWork CN 中使用 Superleads；实测效果明显下降，暂不建议使用。
 
 ## 开始使用
 
@@ -65,6 +70,12 @@ ChatGPT / Codex app 与 Codex CLI 共用同一次 Codex 环境安装，无需重
 
 ```text
 请把官方仓库 https://github.com/fleixweb/superleads 作为完整的 Superleads Skill 包安装到当前 Hermes profile 的 Skills 目录。不要把它当作 Hermes Python plugin 安装，也不要只复制其中一个 SKILL.md。安装后确认 using-superleads 等 Superleads Skills 可以被识别；若需要权限，请先说明。
+```
+
+### TraeWork
+
+```text
+请为我完成 Superleads 的官方安装。使用官方仓库 https://github.com/fleixweb/superleads 添加 Superleads marketplace，然后安装superleads@fleix。完成后确认 Superleads 已启用。若安装需要系统权限，请先告诉我要确认什么；不要修改我的项目文件。
 ```
 
 ## 第一次提需求
