@@ -235,8 +235,8 @@ def _schema_validation_issues(graph: dict[str, Any]) -> list[dict[str, str]]:
     schema_path = schema_dir / "research-graph.schema.json"
     try:
         errors = schema_validation_errors(graph, schema_path)
-    except SchemaResolutionError as exc:
-        return [issue("minor", "schema_profile_unavailable", f"Research graph schema profile could not be loaded: {exc}", "shared/schemas")]
+    except SchemaResolutionError:
+        return [issue("minor", "schema_profile_unavailable", "补充形状校验档案不可用", "shared/schemas")]
     return [issue("major", "schema_validation_failed", str(error["message"]), str(error["path"])) for error in errors]
 
 

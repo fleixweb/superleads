@@ -30,6 +30,7 @@ from validate_superleads_user_visible_output import validate as validate_user_vi
 
 
 DISCLOSURE = "本环境未运行确定性校验"
+SCHEMA_DISCLOSURE = "本次已完成核心业务规则校验；补充结构检查未运行。"
 STANDARD_FIXTURE = ROOT / "evals" / "fixtures" / "pass_geography_searchlog_standard.json"
 BULK_FIXTURE = ROOT / "evals" / "fixtures" / "pass_default_discovery_candidate_pool.json"
 MARKET_FIXTURE = ROOT / "evals" / "fixtures" / "market_pass_xingheng_minimum_boundary.json"
@@ -82,7 +83,7 @@ class ZeroConfigExportTest(unittest.TestCase):
         self.assertEqual(0, return_code, stdout.getvalue())
         return json.loads(stdout.getvalue())
 
-    def test_candidate_pool_csv_and_manifest_disclose_unavailable_validation(self) -> None:
+    def test_candidate_pool_csv_and_manifest_disclose_schema_profile_limitation(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             output = root / "candidate-csv"
@@ -98,11 +99,12 @@ class ZeroConfigExportTest(unittest.TestCase):
             risk_text = (output / "风险与说明.csv").read_text(encoding="utf-8-sig")
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             self.assertEqual("csv", payload["format"])
-            self.assertIn(DISCLOSURE, risk_text)
-            self.assertIn(DISCLOSURE, manifest["disclosures"])
+            self.assertIn(SCHEMA_DISCLOSURE, risk_text)
+            self.assertIn(SCHEMA_DISCLOSURE, manifest["disclosures"])
+            self.assertNotIn(DISCLOSURE, risk_text)
             self.assertTrue(payload["audit"]["disclosure_required"])
 
-    def test_standard_csv_xlsx_markdown_and_manifest_disclose_unavailable_validation(self) -> None:
+    def test_standard_csv_xlsx_markdown_and_manifest_disclose_schema_profile_limitation(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             csv_output = root / "standard-csv"
@@ -116,11 +118,11 @@ class ZeroConfigExportTest(unittest.TestCase):
             )
             self.assertEqual("standard_development_list", csv_payload["audit"]["delivery_status"])
             self.assertIn(
-                DISCLOSURE,
+                SCHEMA_DISCLOSURE,
                 (csv_output / "风险与说明.csv").read_text(encoding="utf-8-sig"),
             )
             self.assertIn(
-                DISCLOSURE,
+                SCHEMA_DISCLOSURE,
                 json.loads(csv_manifest.read_text(encoding="utf-8"))["disclosures"],
             )
 
@@ -138,7 +140,7 @@ class ZeroConfigExportTest(unittest.TestCase):
                 workbook_xml = b"\n".join(
                     archive.read(name) for name in archive.namelist() if name.endswith(".xml")
                 )
-            self.assertIn(DISCLOSURE, html.unescape(workbook_xml.decode("utf-8")))
+            self.assertIn(SCHEMA_DISCLOSURE, html.unescape(workbook_xml.decode("utf-8")))
 
             graph = _load(STANDARD_FIXTURE)
             with patch(
@@ -150,7 +152,8 @@ class ZeroConfigExportTest(unittest.TestCase):
             self.assertEqual("standard_development_list", delivery_status)
             self.assertIsNotNone(markdown)
             assert markdown is not None
-            self.assertIn(DISCLOSURE, markdown)
+            self.assertIn(SCHEMA_DISCLOSURE, markdown)
+            self.assertNotIn(DISCLOSURE, markdown)
             visible_issues = validate_user_visible(
                 append_final_footer(markdown),
                 "bulk_customer_development",
@@ -176,7 +179,7 @@ class ZeroConfigExportTest(unittest.TestCase):
             self.assertEqual(1, len(matching))
             self.assertEqual("minor", matching[0]["severity"])
 
-    def test_product_market_exports_disclose_unavailable_validation(self) -> None:
+    def test_product_market_exports_disclose_schema_profile_limitation(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             graph = _load(MARKET_FIXTURE)
@@ -198,19 +201,20 @@ class ZeroConfigExportTest(unittest.TestCase):
 
             self.assertTrue(result["ok"])
             self.assertTrue(audit["disclosure_required"])
-            self.assertIn(DISCLOSURE, audit["disclosures"])
+            self.assertIn(SCHEMA_DISCLOSURE, audit["disclosures"])
             source_csv = next(output.glob("*-信息来源与待确认事项.csv"))
-            self.assertIn(DISCLOSURE, source_csv.read_text(encoding="utf-8-sig"))
-            self.assertIn(DISCLOSURE, markdown_path.read_text(encoding="utf-8"))
+            self.assertIn(SCHEMA_DISCLOSURE, source_csv.read_text(encoding="utf-8-sig"))
+            self.assertIn(SCHEMA_DISCLOSURE, markdown_path.read_text(encoding="utf-8"))
             self.assertIn(
-                DISCLOSURE,
+                SCHEMA_DISCLOSURE,
                 json.loads(manifest_path.read_text(encoding="utf-8"))["disclosures"],
             )
             self.assertEqual([], issues)
             self.assertIsNone(delivery_status)
             self.assertIsNotNone(markdown)
             assert markdown is not None
-            self.assertIn(DISCLOSURE, markdown)
+            self.assertIn(SCHEMA_DISCLOSURE, markdown)
+            self.assertNotIn(DISCLOSURE, markdown)
             self.assertEqual(
                 [],
                 validate_user_visible(
@@ -242,7 +246,7 @@ raise SystemExit(1)
             check=False,
         )
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertIn("jsonschema is unavailable", result.stdout)
+        self.assertEqual("补充形状校验档案不可用", result.stdout.strip())
 
     def test_review_gate_still_rejects_standard_delivery_when_validation_is_unavailable(self) -> None:
         graph = _load(STANDARD_FIXTURE)

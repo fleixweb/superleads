@@ -13,6 +13,7 @@ from _superleads_common import (
     CONTACT_SOURCE_ALLOWED_CAPABILITIES,
     CONTACT_SOURCE_ALLOWED_TYPES,
     DETERMINISTIC_VALIDATION_DISCLOSURE,
+    SCHEMA_PROFILE_UNAVAILABLE_DISCLOSURE,
     all_id_maps,
     as_list,
     canonical_contact_user_status,
@@ -276,7 +277,7 @@ def audit_graph(graph: dict[str, Any], requested_delivery_status: str | None = N
     provenance = _review_provenance(graph)
 
     validation_issues = validate_graph(graph)
-    deterministic_validation_unavailable = any(
+    schema_profile_unavailable = any(
         validation_issue.get("code") == "schema_profile_unavailable"
         for validation_issue in validation_issues
     )
@@ -474,7 +475,7 @@ def audit_graph(graph: dict[str, Any], requested_delivery_status: str | None = N
     allowed_statuses, disclosure_required = _allowed_statuses(graph, issues, formal_ready, provenance.get("review_provenance_level"))
     if provenance.get("review_provenance_level") in {"declared_separate_session", "self_review_fallback", "not_run"}:
         disclosure_required = True
-    disclosures = [DETERMINISTIC_VALIDATION_DISCLOSURE] if deterministic_validation_unavailable else []
+    disclosures = [SCHEMA_PROFILE_UNAVAILABLE_DISCLOSURE] if schema_profile_unavailable else []
     if disclosures:
         disclosure_required = True
     if requested_delivery_status == INQUIRY_STATUS and not any(i.get("severity") in {"critical", "major"} for i in issues):

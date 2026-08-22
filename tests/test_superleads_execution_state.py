@@ -348,7 +348,7 @@ class SuperleadsExecutionStateTest(unittest.TestCase):
         )
         self.assertEqual("继续扩展（可指定 30 / 50 / 100 家，或直接说数量）", summary["next_step_options"][0]["text"])
         self.assertEqual(
-            "对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；较慢；产量降、耗时增；可分批产出）",
+            "对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；交付表格文件 + 配套报告；较慢；产量降、耗时增；可分批产出）",
             summary["next_step_options"][2]["text"],
         )
         self.assertEqual(
@@ -425,7 +425,8 @@ class SuperleadsExecutionStateTest(unittest.TestCase):
             ],
             [item["key"] for item in available_file_options],
         )
-        self.assertIn("导出表格文件", available_file_options[0]["text"])
+        self.assertIn("换格式重新导出 / 重命名工作簿", available_file_options[0]["text"])
+        self.assertIn("标准交付已包含表格文件", available_file_options[0]["text"])
 
     def test_search_combination_coverage_uses_first_query_group_ownership_and_preserves_hints(self) -> None:
         state = create_execution_state(

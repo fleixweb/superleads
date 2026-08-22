@@ -4,6 +4,18 @@ All notable changes to this project are documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.8] - 2026-08-21
+
+### Fixed
+
+- Make an audited standard development list deliver an official workbook as the primary artifact plus a companion Markdown report, while preserving the existing discovery-pool delivery behavior and file-capability fallback.
+- Apply local-path, host-runtime-detail, and support-footer rules to the final chat response itself, and keep spreadsheet and pipeline failure messages free of internal component details.
+- Require explicit runtime context before treating module, dependency, installation, import, or interpreter wording as an internal-detail leak, so normal solar, LED, battery, HVAC, packaging, and translation-service descriptions remain deliverable.
+- Narrow the Chinese runtime anchors to dependency-specific environment and validation phrases, preserving environmental, certification, inspection, and measurement wording in normal trade deliverables.
+- Remove ambiguous operating-environment and installation-package anchors from the runtime-detail guard while retaining explicit component-unavailable leakage phrases.
+- Distinguish a fully skipped deterministic validation path from a completed core business-rule validation whose supplemental structure check was unavailable, using separate accurate disclosures.
+- Inline the no-runtime-install and no-borrowed-interpreter policy into batch execution guidance, and align host-runtime wording across cross-platform and workbook-export rules.
+
 ## [0.2.7] - 2026-08-21
 
 ### Fixed

@@ -159,8 +159,6 @@ GENERIC_INTERNAL_LANGUAGE = [
     "Traceback",
     "ImportError",
     "ModuleNotFoundError",
-    "解释器",
-    "依赖缺失",
     "模块名",
     "preflight_capabilities.py",
     "PYTHONPATH",
@@ -169,6 +167,13 @@ GENERIC_INTERNAL_LANGUAGE = [
 
 # These terms also occur in normal foreign-trade delivery. Match them only
 # when their surrounding words make the runtime meaning explicit.
+# The upstream D1 fix keeps runtime component details out of Agent-facing
+# diagnostics. This validator is only defense in depth: because a match is
+# fail-closed for the whole delivery, precision takes priority over recall.
+# Limit automatic matching to foreign-trade-unambiguous terms such as pip,
+# PYTHONPATH, venv, jsonschema, openpyxl, ModuleNotFoundError, 虚拟环境,
+# 隔离环境, and .py filenames. Add explicit short phrases for new wording;
+# do not add broad dependency-neighborhood anchors.
 INTERNAL_RUNTIME_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "runtime script filename",
@@ -181,6 +186,47 @@ INTERNAL_RUNTIME_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "internal adapter context",
         re.compile(r"(?:适配器(?:报告|判定|\s*(?:ID|id)|(?:状态|结果)?(?:失败|不可用|受限))|同一失败适配器)"),
+    ),
+    (
+        "runtime dependency identifier",
+        re.compile(r"(?i)\b(?:jsonschema|openpyxl|referencing|requirements\.txt)\b"),
+    ),
+    (
+        "runtime dependency operation",
+        re.compile(
+            r"(?i)(?:\bpip(?:\s+install)?\b|\bPYTHONPATH\b|\bvenv\b|"
+            r"虚拟环境|隔离环境|临时隔离|重新运行.{0,8}校验|"
+            r"缺少依赖|依赖缺失|依赖不可用|依赖问题|安装依赖|补齐依赖|依赖未安装|"
+            r"缺少模块|模块不可用|模块缺失|缺少组件|组件不可用|组件缺失|"
+            r"未能完成校验|无法完成校验|"
+            r"\b(?:runtime|python)\b[^。！？.!?\n]{0,30}\b(?:path|environment|interpreter)\b|"
+            r"\b(?:path|environment|interpreter)\b[^。！？.!?\n]{0,30}\b(?:runtime|python)\b|"
+            r"(?:\bpython\b|\bruntime\b|脚本|运行时|import\s+error|"
+            r"(?:本|当前|校验|导出|执行|隔离)环境|确定性校验|校验脚本|校验链)"
+            r"[^。！？.!?\n]{0,80}"
+            r"(?:安装|补齐|缺少|缺失|不可用|依赖|模块(?!化)|\b(?:module|package|dependency)\b)|"
+            r"(?:安装|补齐|缺少|缺失|不可用|依赖|模块(?!化)|\b(?:module|package|dependency)\b)[^。！？.!?\n]{0,80}"
+            r"(?:\bpython\b|\bruntime\b|脚本|运行时|import\s+error|"
+            r"(?:本|当前|校验|导出|执行|隔离)环境|确定性校验|校验脚本|校验链))"
+        ),
+    ),
+    (
+        "runtime import context",
+        re.compile(
+            r"(?i)(?:(?:\b(?:error|ModuleNotFoundError|package|dependency|python)\b)"
+            r"[^。！？.!?\n]{0,30}\bimport\b|\bimport\b[^。！？.!?\n]{0,30}"
+            r"\b(?:error|ModuleNotFoundError|package|dependency|python)\b)"
+        ),
+    ),
+    (
+        "runtime interpreter context",
+        re.compile(
+            r"(?i)(?:(?:\bpython\b|\bruntime\b|\bscript\b|\benvironment\b)"
+            r"[^。！？.!?\n]{0,30}\binterpreter\b|\binterpreter\b[^。！？.!?\n]{0,30}"
+            r"(?:\bpython\b|\bruntime\b|\bscript\b|\benvironment\b)|"
+            r"(?:python|运行时|脚本|环境)[^。！？.!?\n]{0,30}解释器|解释器[^。！？.!?\n]{0,30}"
+            r"(?:python|运行时|脚本|环境))"
+        ),
     ),
 )
 

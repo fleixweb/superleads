@@ -41,7 +41,7 @@ class SchemaValidationTest(unittest.TestCase):
                 schema_validation_errors({}, schema_path)
         self.assertIn("#/$defs/DoesNotExist", str(raised.exception))
 
-    def test_missing_schema_dependencies_explain_bundled_requirements_or_no_script_delivery(self) -> None:
+    def test_missing_schema_dependencies_use_a_stable_neutral_message(self) -> None:
         class MissingSchemaDependencies(importlib.abc.MetaPathFinder):
             def find_spec(self, name: str, path: object = None, target: object = None) -> object:
                 if name.split(".")[0] in {"jsonschema", "referencing"}:
@@ -65,10 +65,9 @@ class SchemaValidationTest(unittest.TestCase):
             sys.modules.update(cached_modules)
 
         message = str(raised.exception)
-        self.assertTrue(message.startswith("jsonschema is unavailable:"))
-        self.assertIn("bundled requirements.txt", message)
-        self.assertIn("no-script path", message)
-        self.assertIn("本环境未运行确定性校验", message)
+        self.assertEqual("补充形状校验档案不可用", message)
+        for forbidden in ("jsonschema", "requirements.txt", "pip", "安装", "解释器", "venv", "PYTHONPATH"):
+            self.assertNotIn(forbidden, message)
 
     def test_dependency_declaration_covers_schema_and_xlsx_runtime_dependencies(self) -> None:
         requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")

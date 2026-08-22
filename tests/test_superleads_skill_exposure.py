@@ -250,7 +250,7 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
         for template in (batch, default):
             self.assertIn("## 下一步可选", template)
             self.assertIn("- 继续扩展（可指定 30 / 50 / 100 家，或直接说数量）", template)
-            self.assertIn("对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验", template)
+            self.assertIn("对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；交付表格文件 + 配套报告", template)
             self.assertIn("只补社媒 / 地图 / 贸易记录信号（不做主体与联系人核验", template)
             self.assertNotIn("下一步可选：", template)
             self.assertNotIn("· 继续扩展", template)
@@ -325,6 +325,26 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
         self.assertIn("任何 `scripts/*.py`", policy)
         self.assertIn("脚本是加速器，不是交付前提", policy)
         self.assertIn("无脚本的等价路径", policy)
+        self.assertIn("本次已完成核心业务规则校验；补充结构检查未运行。", policy)
+
+    def test_product_market_runtime_distinguishes_skipped_and_supplemental_checks(self) -> None:
+        runtime = (ROOT / "shared" / "references" / "product-market-runtime.md").read_text(encoding="utf-8")
+        self.assertIn("整个确定性脚本校验链未运行", runtime)
+        self.assertIn("本环境未运行确定性校验", runtime)
+        self.assertIn("本次已完成核心业务规则校验；补充结构检查未运行。", runtime)
+
+    def test_batch_reference_inlines_runtime_dependency_prohibition(self) -> None:
+        batch = (ROOT / "shared" / "references" / "batch-discovery-execution.md").read_text(encoding="utf-8")
+        self.assertIn("tool-capability-policy.md:7", batch)
+        self.assertIn("不得运行时安装依赖、创建临时依赖目录或设置 `PYTHONPATH`", batch)
+        self.assertIn("不得借用其他应用程序的 Python 环境、虚拟环境或解释器", batch)
+
+    def test_workbook_runtime_and_cross_platform_rules_share_interpreter_boundary(self) -> None:
+        workbook = (ROOT / "shared" / "internal-stages" / "exporting-lead-workbooks.md").read_text(encoding="utf-8")
+        cross_platform = (ROOT / "shared" / "policies" / "cross-platform-rules.md").read_text(encoding="utf-8")
+        for content in (workbook, cross_platform):
+            self.assertIn("宿主自带 runtime 解释器", content)
+            self.assertIn("不得借用其他应用程序的 Python 环境、虚拟环境或解释器", content)
 
     def test_every_public_entry_handles_help_without_tools_or_routing_execution(self) -> None:
         for skill_name in PUBLIC_SKILLS:
@@ -397,7 +417,35 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
         ):
             self.assertIn(marker, discovery)
         self.assertIn("只补社媒 / 地图 / 贸易记录信号（不做主体与联系人核验；较快，仍属候选池，不升级为已验证）", batch)
-        self.assertIn("对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；较慢；产量降、耗时增；可分批产出）", batch)
+        self.assertIn("对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；交付表格文件 + 配套报告；较慢；产量降、耗时增；可分批产出）", batch)
+
+    def test_standard_delivery_requires_official_workbook_and_markdown_outputs(self) -> None:
+        formal = (ROOT / "shared" / "references" / "using-superleads-formal-delivery.md").read_text(encoding="utf-8")
+        exporter = (ROOT / "shared" / "internal-stages" / "exporting-lead-workbooks.md").read_text(encoding="utf-8")
+        batch = (ROOT / "shared" / "references" / "batch-discovery-execution.md").read_text(encoding="utf-8")
+        default = (ROOT / "shared" / "references" / "default-discovery-reference.md").read_text(encoding="utf-8")
+
+        for content in (formal, exporter):
+            self.assertIn("standard_development_list", content)
+            self.assertIn("工作簿主产物", content)
+            self.assertIn("Markdown 配套报告", content)
+            self.assertIn("export_workbook.py", content)
+            self.assertIn("--mode standard --format auto", content)
+            self.assertIn("export_superleads_markdown.py", content)
+            self.assertIn("--route bulk_customer_development", content)
+        for content in (batch, default):
+            self.assertIn("标准开发名单的默认主产物", content)
+            self.assertIn("配套 Markdown 报告", content)
+        self.assertIn("initial_lead_list 保持现有交付行为", formal)
+
+    def test_terminal_dialog_uses_the_same_visible_output_and_footer_contract(self) -> None:
+        formal = (ROOT / "shared" / "references" / "using-superleads-formal-delivery.md").read_text(encoding="utf-8")
+        guidance = (ROOT / "shared" / "references" / "superleads-user-guidance.md").read_text(encoding="utf-8")
+        for content in (formal, guidance):
+            self.assertIn("最终对话答复", content)
+            self.assertIn("validate_superleads_user_visible_output.py", content)
+            self.assertIn("append_final_footer()", content)
+        self.assertIn("只说明当前交付层级或能力缺口", formal)
 
     def test_adapter_local_404_has_an_executable_current_session_recovery_path(self) -> None:
         policy = (ROOT / "shared" / "policies" / "tool-capability-policy.md").read_text(encoding="utf-8")

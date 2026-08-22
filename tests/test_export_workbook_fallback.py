@@ -54,7 +54,45 @@ class ExportWorkbookFallbackTest(unittest.TestCase):
             self.assertEqual("csv", payload["format"])
             self.assertIn("XLSX export unavailable", stderr.getvalue())
             self.assertIn("UTF-8-SIG CSV", stderr.getvalue())
+            self.assertNotIn("openpyxl", stderr.getvalue())
+            self.assertNotIn("No module named", stderr.getvalue())
             self.assertTrue(list(output.glob("*.csv")))
+            self.assertFalse(list(output.glob("*.xlsx")))
+
+    def test_explicit_xlsx_failure_uses_a_stable_neutral_message(self) -> None:
+        fixture = ROOT / "evals" / "fixtures" / "pass_customer_background_chillys_markdown.json"
+        original_import = builtins.__import__
+
+        def missing_openpyxl(name: str, *args: object, **kwargs: object) -> object:
+            if name == "openpyxl" or name.startswith("openpyxl."):
+                raise ModuleNotFoundError("No module named 'openpyxl'")
+            return original_import(name, *args, **kwargs)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "export"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with patch("builtins.__import__", side_effect=missing_openpyxl), patch.object(
+                sys,
+                "argv",
+                [
+                    "export_workbook.py",
+                    str(fixture),
+                    "--output-dir",
+                    str(output),
+                    "--mode",
+                    "background",
+                    "--format",
+                    "xlsx",
+                ],
+            ), contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                result = export_workbook.main()
+
+            self.assertEqual(1, result)
+            self.assertIn("XLSX export unavailable", stderr.getvalue())
+            self.assertNotIn("openpyxl", stderr.getvalue())
+            self.assertNotIn("No module named", stderr.getvalue())
+            self.assertFalse(list(output.glob("*.csv")))
             self.assertFalse(list(output.glob("*.xlsx")))
 
 

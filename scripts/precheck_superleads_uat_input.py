@@ -137,10 +137,10 @@ def _contains_enum_error(error: Any) -> bool:
 def _schema_precheck(graph: dict[str, Any], schema_name: str) -> list[dict[str, str]]:
     try:
         errors = schema_validation_errors(graph, SCHEMA_DIR / schema_name)
-    except SchemaResolutionError as exc:
+    except SchemaResolutionError:
         return [_issue(
             "uat_precheck_schema_profile_unavailable",
-            f"schema profile cannot be loaded: {exc}",
+            "补充形状校验档案不可用",
             "shared/schemas",
             severity="major",
             focus="enum_values",

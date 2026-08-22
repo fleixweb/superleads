@@ -1,7 +1,7 @@
 # Cross-platform Rules
 
 - Use Python 3 and `pathlib` for scripts.
-- When running a Superleads script, prefer the host-provided runtime interpreter; fall back to a system interpreter only when the host runtime is unavailable. The host runtime normally includes dependencies declared in `requirements.txt`, while a system interpreter often does not. If neither can run the required deterministic step, record the capability gap and downgrade the deliverable; do not modify the user's system environment, install packages globally, or tell the user to do so.
+- When running a Superleads script, prefer the current host's host-provided runtime interpreter (宿主自带 runtime 解释器); fall back to a system interpreter only when the host runtime is unavailable. Missing dependencies do not authorize runtime installation, temporary dependency directories, `PYTHONPATH`, or interpreter hunting: 不得借用其他应用程序的 Python 环境、虚拟环境或解释器. If neither can run the required deterministic step, record the capability gap and downgrade the deliverable without exposing these internal details.
 - Interpreter selection, dependency availability, module names, and installation status are internal execution details and must not appear in user-visible output. Switch interpreters silently; if the work cannot complete, state the affected delivery tier or missing capability in business language without module names or installation commands.
 - Do not hard-code Windows, macOS, Linux, WSL, or user-specific paths.
 - Use JSON as the script interchange format.

@@ -148,11 +148,8 @@ def _validator(schema_path: Path) -> Any:
     try:
         import jsonschema  # type: ignore
     except ImportError as exc:
-        raise SchemaResolutionError(
-            f"jsonschema is unavailable: {exc}; prepare the supported dependencies from the bundled requirements.txt "
-            "before deterministic validation, or follow the no-script path and mark 本环境未运行确定性校验; "
-            "do not modify the user's system environment, install packages globally, or borrow another application's interpreter"
-        ) from exc
+        # Runtime diagnostics stay neutral; setup guidance belongs to maintainer docs.
+        raise SchemaResolutionError("补充形状校验档案不可用") from exc
     # jsonschema <= 4.10 predates ``referencing.Registry``. The bundle makes
     # every external repository reference a verified local pointer, avoiding
     # the deprecated RefResolver and working-directory-dependent URI stores.

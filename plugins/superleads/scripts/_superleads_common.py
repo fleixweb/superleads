@@ -35,6 +35,7 @@ ID_FIELDS = {
 FIXED_FINDING_STATUS = "verified_fixed"
 NON_BLOCKING_DISCLOSURE_STATUSES = {"accepted_with_disclosure", "rejected_with_reviewer_reason"}
 DETERMINISTIC_VALIDATION_DISCLOSURE = "本环境未运行确定性校验"
+SCHEMA_PROFILE_UNAVAILABLE_DISCLOSURE = "本次已完成核心业务规则校验；补充结构检查未运行。"
 
 EMAIL_RE = re.compile(r"(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b")
 URL_RE = re.compile(r"(?i)https?://[^\s<>\"']+")

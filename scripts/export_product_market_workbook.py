@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from _superleads_common import DETERMINISTIC_VALIDATION_DISCLOSURE, ensure_list as common_ensure_list, has_text, is_safe_public_http_url
+from _superleads_common import DETERMINISTIC_VALIDATION_DISCLOSURE, SCHEMA_PROFILE_UNAVAILABLE_DISCLOSURE, ensure_list as common_ensure_list, has_text, is_safe_public_http_url
 from audit_product_market_analysis import audit_graph
 from user_visible_status_projection import (
     humanize_enum_value,
@@ -1325,7 +1325,7 @@ def build_sheets(graph: dict[str, Any], audit: dict[str, Any] | None = None) -> 
     disclosures = [
         str(item)
         for item in common_ensure_list(audit, "disclosures")
-        if item == DETERMINISTIC_VALIDATION_DISCLOSURE
+        if item in {DETERMINISTIC_VALIDATION_DISCLOSURE, SCHEMA_PROFILE_UNAVAILABLE_DISCLOSURE}
     ] if isinstance(audit, dict) else []
     for disclosure in disclosures:
         sheets["信息来源与待确认事项"].append({

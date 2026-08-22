@@ -24,6 +24,7 @@ from export_superleads_markdown import (
     build_product_market_markdown,
 )
 from export_workbook import build_sheets
+from _superleads_common import DETERMINISTIC_VALIDATION_DISCLOSURE, SCHEMA_PROFILE_UNAVAILABLE_DISCLOSURE
 from superleads_execution_state import create_execution_state, record_candidate
 from superleads_user_guidance import append_final_footer
 from validate_superleads_user_visible_output import (
@@ -118,7 +119,7 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         markdown, issues = markdown_exporter._build_standard_bulk_markdown(graph, audit)
 
         self.assertEqual([], issues)
-        self.assertIn("- 导出表格文件（当前环境支持文件导出）", markdown)
+        self.assertIn("- 换格式重新导出 / 重命名工作簿（标准交付已包含表格文件）", markdown)
         self.assertNotIn("当前环境可继续在对话内输出表格", markdown)
 
     def test_visible_validator_rejects_unavailable_part_or_import_role_as_l2_disqualification(self) -> None:
@@ -405,7 +406,7 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         self.assertIn("已观察到的本地术语 + Region Q + 维修厂", markdown)
         self.assertIn("## 下一步可选", markdown)
         self.assertIn("继续扩展（可指定 30 / 50 / 100 家，或直接说数量）", markdown)
-        self.assertIn("对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；较慢；产量降、耗时增", markdown)
+        self.assertIn("对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；交付表格文件 + 配套报告；较慢；产量降、耗时增", markdown)
         self.assertIn("只补社媒 / 地图 / 贸易记录信号（不做主体与联系人核验；较快，仍属候选池，不升级为已验证）", markdown)
         self.assertIn("\n- 已观察到的本地术语 + Region Q + 维修厂", markdown)
         self.assertIn("\n- 继续扩展（可指定 30 / 50 / 100 家，或直接说数量）", markdown)
@@ -559,16 +560,14 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
             "Traceback",
             "ImportError",
             "ModuleNotFoundError",
-            "解释器",
-            "依赖缺失",
             "模块名",
             "preflight_capabilities.py",
             "PYTHONPATH",
             "工作区目录",
         }
         self.assertTrue(expected.issubset(GENERIC_INTERNAL_LANGUAGE))
-        self.assertTrue({".py", "预检", "适配器", "模块", "python", "interpreter", "依赖", "referencing"}.isdisjoint(GENERIC_INTERNAL_LANGUAGE))
-        self.assertEqual(3, len(INTERNAL_RUNTIME_PATTERNS))
+        self.assertTrue({".py", "预检", "适配器", "模块", "python", "interpreter", "解释器", "依赖", "依赖缺失", "referencing"}.isdisjoint(GENERIC_INTERNAL_LANGUAGE))
+        self.assertGreaterEqual(len(INTERNAL_RUNTIME_PATTERNS), 5)
 
         issues = validate(
             "当前系统 Python 缺少它依赖的 jsonschema。",
@@ -583,6 +582,12 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         for text, phrase in (
             ("preflight_capabilities.py 对当前能力进行了预检。", "preflight_capabilities.py"),
             ("我会通过 PYTHONPATH 重试当前校验。", "PYTHONPATH"),
+            ("The runtime path is unavailable for this export.", "runtime dependency operation"),
+            ("当前环境缺少依赖，暂时不能完成导出。", "runtime dependency operation"),
+            ("This module is unavailable in the current runtime.", "runtime dependency operation"),
+            ("A package import failed during validation.", "runtime import context"),
+            ("Python interpreter is unavailable for validation.", "runtime interpreter context"),
+            ("当前 Python 解释器不可用。", "runtime interpreter context"),
         ):
             with self.subTest(text=text):
                 issues = validate(text, "product_outbound_market_analysis", min_tables=0)
@@ -606,10 +611,173 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
             "候选客户官网为 example.com.py 的巴拉圭进口商。",
             "越南要求装运前预检报告。",
             "本轮分析电源适配器的公开价格；候选官网为 example.com.py；越南的装运前预检报告仍待确认。",
+            "本轮确认进口商角色、import duty、包装材料和纸浆进口公开信息。",
+            "Company provides translation and interpreter services.",
+            "当前市场依赖进口，本地产能有限。",
         ):
             with self.subTest(text=text):
                 issues = validate(text, "product_outbound_market_analysis", min_tables=0)
                 self.assertNotIn("user_visible_internal_language", {item["code"] for item in issues})
+
+    def test_visible_validator_allows_foreign_trade_terms_that_resemble_runtime_words(self) -> None:
+        allowed_samples = (
+            "客户类型：光伏模块安装商与分销商。",
+            "主营太阳能模块进口与安装。",
+            "该公司提供模块化厂房安装服务。",
+            "产品含 LED 模块，安装于户外广告牌。",
+            "公开信息：电池模块安装线已投产。",
+            "客户为空调安装商，业务依赖进口压缩机。",
+            "官网称设备安装需要依赖其认证团队。",
+            "Public page mentions PV module import from China.",
+            "Business: solar module import and distribution.",
+            "Customer type: solar module importer and distributor.",
+            "Company provides translation and interpreter services.",
+            "Battery pack dependency on imported cells is noted.",
+            "该市场原纸依赖进口，本地产能有限。",
+            "主营包装材料，含 import duty 说明。",
+            "德国工业传感器进口商，官网列出安装指南。",
+            "逆变器模块安装商为工商业屋顶项目提供服务。",
+            "LED 显示屏模块安装与售后维护由当地团队负责。",
+            "该经销商进口冷却模块并提供现场安装。",
+            "HVAC equipment imports depend on seasonal demand.",
+            "The distributor handles power module imports and local installation.",
+            "Solar panel mounting system installer and module distributor.",
+            "Modular cleanroom installation is the company's core service.",
+            "Dependence on imported copper remains high.",
+            "目标客户是储能电池包组装商与模块供应商。",
+            "官网提供泵站安装手册及进口备件目录。",
+            "Paper packaging importer relies on certified pulp suppliers.",
+            "Conference interpreter services are listed under business support.",
+            "模块安装已完成。当前环境温度为 25°C。",
+            "The module installation is complete. The runtime is eight hours.",
+        )
+        for text in allowed_samples:
+            with self.subTest(text=text):
+                issues = validate(text, "product_outbound_market_analysis", min_tables=0)
+                self.assertNotIn(
+                    "user_visible_internal_language",
+                    {item["code"] for item in issues},
+                )
+
+    def test_visible_validator_continues_blocking_runtime_leakage(self) -> None:
+        blocked_samples = (
+            "当前交付为\"发现候选池\"，本环境因缺少 jsonschema 依赖，未能完成完整确定性校验。",
+            "当前校验环境缺少隔离依赖，我会在临时隔离环境补齐后再运行最终检查，不改动你的项目文件。",
+            "请先执行 pip install -r requirements.txt",
+            "[下载标准开发名单](C:/Users/Lenovo/Documents/Codex/outputs/名单.md)",
+            "报告已写入 file:///home/u/out/report.md",
+        )
+        for text in blocked_samples:
+            with self.subTest(text=text):
+                issues = validate(text, "product_outbound_market_analysis", min_tables=0)
+                self.assertIn(
+                    "user_visible_internal_language",
+                    {item["code"] for item in issues},
+                )
+
+    def test_visible_validator_keeps_runtime_leakage_blocked_after_anchor_narrowing(self) -> None:
+        blocked_samples = (
+            "本环境因缺少 jsonschema 依赖，未能完成完整确定性校验。",
+            "当前校验环境缺少隔离依赖，我会在临时隔离环境补齐后再运行最终检查。",
+            "请先执行 pip install -r requirements.txt",
+            "本环境缺少必要依赖，未能生成工作簿。",
+            "运行环境缺少组件，无法完成导出。",
+            "由于依赖问题，本次未能完成校验。",
+            "未安装 openpyxl，改为输出 CSV。",
+            "Python 运行时不可用，已降级交付。",
+            "校验脚本所需模块不可用。",
+            "当前环境缺少校验依赖。",
+            "需要先补齐运行时依赖。",
+            "ModuleNotFoundError: No module named x",
+            "设置 PYTHONPATH 后重试",
+        )
+        for text in blocked_samples:
+            with self.subTest(text=text):
+                issues = validate(text, "product_outbound_market_analysis", min_tables=0)
+                self.assertIn(
+                    "user_visible_internal_language",
+                    {item["code"] for item in issues},
+                )
+
+    def test_visible_validator_allows_trade_language_after_runtime_anchor_narrowing(self) -> None:
+        allowed_samples = (
+            "设备运行环境温度 -20~50℃，安装简便。",
+            "产品运行环境要求洁净，需配套模块化机柜。",
+            "该产业依赖环境政策支持，本地缺少配套产能。",
+            "随机附安装包与备用模块。",
+            "官网标注安装包内含固定件与密封模块。",
+            "计量校验证书由第三方出具，含安装位置说明。",
+            "出口前需完成环境与安全校验，设备安装后验收。",
+            "工作环境粉尘大，客户依赖进口滤芯。",
+        )
+        for text in allowed_samples:
+            with self.subTest(text=text):
+                issues = validate(text, "product_outbound_market_analysis", min_tables=0)
+                self.assertNotIn(
+                    "user_visible_internal_language",
+                    {item["code"] for item in issues},
+                )
+
+    def test_visible_validator_allows_environmental_trade_language_and_canonical_disclosures(self) -> None:
+        allowed_samples = (
+            "该公司通过 ISO 14001 环境管理体系认证，提供设备安装服务。",
+            "产品符合欧盟环境法规，包装模块可回收。",
+            "官网提到环境友好型模块化冷库安装方案。",
+            "出口需提供环境影响评估与安装验收报告。",
+            "公开资料显示其洁净室环境下完成模块安装。",
+            "该工厂环境温控依赖进口机组。",
+            "第三方校验机构出具了模块化产线安装报告。",
+            "客户类型：光伏模块安装商与分销商。",
+            "主营太阳能模块进口与安装。",
+            "该公司提供模块化厂房安装服务。",
+            "产品含 LED 模块，安装于户外广告牌。",
+            "公开信息：电池模块安装线已投产。",
+            "客户为空调安装商，业务依赖进口压缩机。",
+            "官网称设备安装需要依赖其认证团队。",
+            "该市场原纸依赖进口，本地产能有限。",
+            "德国工业传感器进口商，官网列出安装指南。",
+            "Company provides translation and interpreter services.",
+            "Battery pack dependency on imported cells is noted.",
+            DETERMINISTIC_VALIDATION_DISCLOSURE,
+            SCHEMA_PROFILE_UNAVAILABLE_DISCLOSURE,
+        )
+        for text in allowed_samples:
+            with self.subTest(text=text):
+                issues = validate(text, "product_outbound_market_analysis", min_tables=0)
+                self.assertNotIn(
+                    "user_visible_internal_language",
+                    {item["code"] for item in issues},
+                )
+
+    def test_visible_validator_covers_additional_environmental_certification_language(self) -> None:
+        allowed_samples = (
+            "企业通过 RoHS 环保合规审核并提供检测报告。",
+            "产品符合 REACH 要求，材料成分可追溯。",
+            "计量校准证书已随设备资料一并提供。",
+            "第三方检测报告列明噪声与能耗指标。",
+            "工厂取得职业健康安全管理体系认证。",
+            "包装材料满足可回收设计要求。",
+            "供应商提供碳足迹核算与审计记录。",
+            "设备出厂前完成电气安全检验。",
+        )
+        for text in allowed_samples:
+            with self.subTest(text=text):
+                issues = validate(text, "product_outbound_market_analysis", min_tables=0)
+                self.assertNotIn(
+                    "user_visible_internal_language",
+                    {item["code"] for item in issues},
+                )
+
+    def test_terminal_dialog_rejects_runtime_recovery_path_and_missing_footer(self) -> None:
+        text = (
+            "[下载标准开发名单](C:/Users/Lenovo/Documents/Codex/越南巡演音响_标准开发名单.md)\n"
+            "当前校验环境缺少隔离依赖，我会在临时隔离环境补齐后再运行最终检查。"
+        )
+        issues = validate(text, "bulk_customer_development", min_tables=0)
+        codes = {item["code"] for item in issues}
+        self.assertIn("user_visible_internal_language", codes)
+        self.assertIn("user_visible_support_footer_missing", codes)
+        self.assertTrue(any(item.get("value") == "local path" for item in issues))
 
     def test_visible_validator_reuses_common_local_path_detection_without_echoing_path(self) -> None:
         self.assertTrue({"file://", "/home/", "/tmp/"}.isdisjoint(GENERIC_INTERNAL_LANGUAGE))

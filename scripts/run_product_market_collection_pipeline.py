@@ -241,10 +241,10 @@ def main() -> int:
     try:
         graph = load_market_fixture(Path(args.graph))
         collection_input = _load_json_object(Path(args.collection_input))
-    except Exception as exc:  # noqa: BLE001 - CLI emits structured error
+    except Exception:  # noqa: BLE001 - CLI emits structured error
         result = _base_result("load")
         result.update({
-            "issues": [issue("critical", "market_collection_pipeline_load_failed", f"could not load graph or collection input: {exc}", "input")],
+            "issues": [issue("critical", "market_collection_pipeline_load_failed", "could not load graph or collection input", "input")],
             "issue_count": 1,
         })
         print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -274,10 +274,10 @@ def main() -> int:
             }
             _write_json(Path(args.pipeline_manifest), manifest_payload)
             result["pipeline_manifest_path"] = str(Path(args.pipeline_manifest))
-    except Exception as exc:  # noqa: BLE001 - keep CLI structured
+    except Exception:  # noqa: BLE001 - keep CLI structured
         result = _base_result("runtime")
         result.update({
-            "issues": [issue("critical", "market_collection_pipeline_runtime_failed", f"pipeline failed: {exc}", "pipeline")],
+            "issues": [issue("critical", "market_collection_pipeline_runtime_failed", "pipeline execution failed", "pipeline")],
             "issue_count": 1,
         })
         print(json.dumps(result, ensure_ascii=False, indent=2))

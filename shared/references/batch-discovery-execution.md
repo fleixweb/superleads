@@ -9,7 +9,10 @@ material-triage request.
 
 Read `superleads-user-guidance.md` for terminal-delivery footer rules and
 `user-intake.md` for batch minimum scope. Read
-`../policies/tool-capability-policy.md` only when availability affects the
+`../policies/tool-capability-policy.md`; its deterministic-validation dependency
+rule at `tool-capability-policy.md:7` is mandatory before any recovery attempt:
+不得运行时安装依赖、创建临时依赖目录或设置 `PYTHONPATH`，不得借用其他应用程序的 Python 环境、虚拟环境或解释器；缺少所需能力时走既有无脚本路径。 This prohibition
+is inlined here and does not depend on waiting until availability affects the
 deliverable. For default discovery, read `default-discovery-reference.md`,
 starting with `default-discovery-minimal-skeleton.example.json`; open its full
 reference only for status, contact, or conflict boundaries. Before a formal
@@ -73,7 +76,7 @@ not a request to select a number or an instruction to wait for a reply:
 
 - 继续扩展（可指定 30 / 50 / 100 家，或直接说数量）
 - 换搜索组合再找一批（换产品词 / 换客户类型，国家不变）
-- 对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；较慢；产量降、耗时增；可分批产出）
+- 对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；交付表格文件 + 配套报告；较慢；产量降、耗时增；可分批产出）
 - 只补社媒 / 地图 / 贸易记录信号（不做主体与联系人核验；较快，仍属候选池，不升级为已验证）
 - 选 1 家做单一客户背调
 ```
@@ -120,18 +123,28 @@ coverage limit. If the target cannot be reached without relaxing current
 business-relevance rules, state the shortfall and use only observed coverage
 signals: `本组合已产出 N 家，距目标 M 家还差 M-N 家；继续检索的新增主体与已有池重合度约 X%，接近该组合当前公开检索可见范围。要补足到 M 家，建议换搜索组合（换产品词 / 换客户类型）。` Fill `N` and `X` only from this Run's recorded coverage; do not invent them. Point to the recorded `尚未覆盖的组合` hints where present. Do not pad the result by lowering relevance, and do not call the combination exhausted, complete, or globally exhaustive.
 
-Excel is not a menu item and is not coupled to deep verification. A later
-Excel/CSV request, format conversion, workbook renaming, or re-export after a
-current result is nevertheless a continuation of that result's delivery chain,
-not an independent table-generation task. File output depends on the current
-host's actually available file-execution capability. If that capability is
-absent, say that chat tables remain available and Excel generation needs a
-file-execution environment; never promise an unavailable artifact. If formal
-validation, audit, or export cannot run, describe the completed evidence range
-in a chat table, state the missing step and how to continue, and disclose
-`本环境未运行确定性校验` when it was not run. Do not use `标准开发名单` or create a
-substitute file in that path, and do not use another skill, tool, script, or
-custom sheet structure to simulate a formal deliverable.
+For `standard_development_list`, the 标准开发名单的默认主产物 is the official
+workbook, accompanied by a 配套 Markdown 报告. Generate both from the same
+audited graph through `scripts/export_workbook.py --mode standard --format
+auto --manifest <manifest>` and `scripts/export_superleads_markdown.py --route
+bulk_customer_development`; do not hand-build or substitute either artifact.
+List the workbook filename and type separately from the Markdown report
+filename and type. If workbook output falls back to UTF-8-SIG CSV, describe it
+only as a CSV table in business language. `initial_lead_list` discovery-pool
+delivery is unchanged.
+
+File output still depends on the current host's actually available file-write
+capability. If it is absent, deliver through the existing in-chat fallback,
+state only the affected delivery tier or capability gap, and never promise an
+unavailable file. If validation, audit, or export cannot run, describe the
+completed evidence range and continuation path without naming the result
+`标准开发名单`. Disclose `本环境未运行确定性校验` only when no deterministic
+script validation ran. When the core business-rule validation completed but
+only the supplemental structure check did not run, use the accurate disclosure
+`本次已完成核心业务规则校验；补充结构检查未运行。` Do not use another skill, tool,
+script, or custom sheet structure to simulate a formal deliverable. A later
+format conversion, workbook rename, or re-export is a continuation of the same
+delivery chain, not an independent table-generation task.
 
 For honest coverage and omitted-combination wording, follow
 `default-discovery-reference.md` rather than promising an exhaustive result.

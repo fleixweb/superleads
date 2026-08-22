@@ -12,19 +12,32 @@ description: "Use when a Superleads discovery pool, deep check, or standard list
 
 ## Purpose
 
-Create user-facing workbook or Markdown outputs after verification. Default
+Create user-facing workbook and Markdown outputs after verification. Default
 customer-development output is a discovery candidate pool, not a recommended
-customer shortlist. Prefer Markdown when the user wants to read the report
-directly in Codex / ChatGPT app, prefer XLSX when available for spreadsheet
-handoff, and fall back to UTF-8-SIG CSV files.
+customer shortlist. Select the artifact set from the audited `delivery_status`:
+`initial_lead_list` keeps its existing candidate-pool behavior, while
+`standard_development_list` must produce a 工作簿主产物 plus a Markdown 配套报告
+from the same audited graph.
+
+For the standard artifact set, invoke only the official commands:
+`scripts/export_workbook.py <graph> --mode standard --format auto --manifest <manifest>`
+and `scripts/export_superleads_markdown.py <graph> --route bulk_customer_development --output <report>.md --format json`.
+The workbook is the primary operational deliverable; the Markdown file is its
+readable companion. List both filenames and file types separately in the
+terminal delivery. Do not change the standard workbook's six fixed sheets.
 
 For spreadsheet export, use `--format auto` (or omit it) by default. It writes
 XLSX when the workbook component is available and UTF-8-SIG CSV when it is not.
 Use `--format xlsx` only when the user explicitly requires an XLSX file; an
-explicit XLSX request must fail rather than silently producing CSV. If the
-deterministic validator cannot run because its dependencies are unavailable,
-follow the no-script delivery path and mark `本环境未运行确定性校验`; do not borrow
-another application's interpreter or virtual environment.
+explicit XLSX request must fail rather than silently producing CSV. Superleads
+may use the current host's 宿主自带 runtime 解释器 when it is already exposed and
+usable. It must not install missing dependencies at runtime, create a temporary
+dependency directory, set `PYTHONPATH`, or search for an alternative runtime;
+不得借用其他应用程序的 Python 环境、虚拟环境或解释器。 When the required script
+path therefore cannot run, follow the no-script delivery path and mark
+`本环境未运行确定性校验`. If core business-rule validation completed and only
+the supplemental structure check did not run, use the accurate distinct
+disclosure `本次已完成核心业务规则校验；补充结构检查未运行。` instead.
 
 If the current legal validated graph, allowed output mode, validation, audit, or
 exporter result is absent, do not use another skill, tool, script, or code to
