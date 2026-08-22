@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from _superleads_common import contains_local_path
+from _superleads_common import contains_local_path, trace_schema_metadata
 from superleads_user_guidance import has_exactly_one_final_footer
 
 
@@ -165,15 +165,15 @@ GENERIC_INTERNAL_LANGUAGE = [
     "工作区目录",
 ]
 
-# These terms also occur in normal foreign-trade delivery. Match them only
-# when their surrounding words make the runtime meaning explicit.
-# The upstream D1 fix keeps runtime component details out of Agent-facing
-# diagnostics. This validator is only defense in depth: because a match is
-# fail-closed for the whole delivery, precision takes priority over recall.
-# Limit automatic matching to foreign-trade-unambiguous terms such as pip,
-# PYTHONPATH, venv, jsonschema, openpyxl, ModuleNotFoundError, 虚拟环境,
-# 隔离环境, and .py filenames. Add explicit short phrases for new wording;
-# do not add broad dependency-neighborhood anchors.
+# These terms also occur in normal foreign-trade delivery. Match only closed-
+# world runtime identifiers and explicit internal contexts. Do not infer an
+# Agent's recovery behavior from open-world business prose: Chinese or other
+# language descriptions of modules, installation, environments, or interpreters
+# are inherently ambiguous, create recurring product-text collisions, and can
+# be bypassed simply by switching languages. The concrete recovery objects
+# remain covered by the identifiers below and by the runtime_provenance audit.
+# Four rounds of narrowing still produced 11/15 -> 7/24 -> 4/29 -> 7/39
+# false-positive collisions, so this branch does not converge.
 INTERNAL_RUNTIME_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "runtime script filename",
@@ -192,25 +192,6 @@ INTERNAL_RUNTIME_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
         re.compile(r"(?i)\b(?:jsonschema|openpyxl|referencing|requirements\.txt)\b"),
     ),
     (
-        "runtime dependency operation",
-        re.compile(
-            r"(?i)(?:\bpip(?:\s+install)?\b|\bPYTHONPATH\b|\bvenv\b|"
-            r"虚拟环境|隔离环境|临时隔离|重新运行.{0,8}校验|"
-            r"缺少依赖|依赖缺失|依赖不可用|依赖问题|安装依赖|补齐依赖|依赖未安装|"
-            r"缺少模块|模块不可用|模块缺失|缺少组件|组件不可用|组件缺失|"
-            r"未能完成校验|无法完成校验|"
-            r"\b(?:runtime|python)\b[^。！？.!?\n]{0,30}\b(?:path|environment|interpreter)\b|"
-            r"\b(?:path|environment|interpreter)\b[^。！？.!?\n]{0,30}\b(?:runtime|python)\b|"
-            r"(?:\bpython\b|\bruntime\b|脚本|运行时|import\s+error|"
-            r"(?:本|当前|校验|导出|执行|隔离)环境|确定性校验|校验脚本|校验链)"
-            r"[^。！？.!?\n]{0,80}"
-            r"(?:安装|补齐|缺少|缺失|不可用|依赖|模块(?!化)|\b(?:module|package|dependency)\b)|"
-            r"(?:安装|补齐|缺少|缺失|不可用|依赖|模块(?!化)|\b(?:module|package|dependency)\b)[^。！？.!?\n]{0,80}"
-            r"(?:\bpython\b|\bruntime\b|脚本|运行时|import\s+error|"
-            r"(?:本|当前|校验|导出|执行|隔离)环境|确定性校验|校验脚本|校验链))"
-        ),
-    ),
-    (
         "runtime import context",
         re.compile(
             r"(?i)(?:(?:\b(?:error|ModuleNotFoundError|package|dependency|python)\b)"
@@ -223,9 +204,7 @@ INTERNAL_RUNTIME_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
         re.compile(
             r"(?i)(?:(?:\bpython\b|\bruntime\b|\bscript\b|\benvironment\b)"
             r"[^。！？.!?\n]{0,30}\binterpreter\b|\binterpreter\b[^。！？.!?\n]{0,30}"
-            r"(?:\bpython\b|\bruntime\b|\bscript\b|\benvironment\b)|"
-            r"(?:python|运行时|脚本|环境)[^。！？.!?\n]{0,30}解释器|解释器[^。！？.!?\n]{0,30}"
-            r"(?:python|运行时|脚本|环境))"
+            r"(?:\bpython\b|\bruntime\b|\bscript\b|\benvironment\b))"
         ),
     ),
 )
@@ -818,6 +797,21 @@ def validate(
     for phrase in GENERIC_INTERNAL_LANGUAGE:
         if _phrase_matches(text, phrase):
             issues.append(_issue("user_visible_internal_language", f"internal language leaked: {phrase}", phrase))
+
+    trace_meta = trace_schema_metadata()
+    for token in trace_meta["direct_identifiers"]:
+        if re.search(rf"(?<![A-Za-z0-9_]){re.escape(token)}(?![A-Za-z0-9_])", text):
+            issues.append(_issue("trace_user_visible_internal_leak", f"trace identifier leaked: {token}", token))
+    structured = sorted(trace_meta["structured_keys"] | {"interpreter_source", "runtime_provenance"})
+    for key in structured:
+        if re.search(rf"(?<![A-Za-z0-9_]){re.escape(key)}\s*[:=]", text, re.IGNORECASE):
+            issues.append(_issue("trace_user_visible_internal_leak", f"structured trace key leaked: {key}", key))
+    runtime_values = sorted(trace_meta.get("enum_values", frozenset()), key=len, reverse=True)
+    if runtime_values:
+        value_pattern = "|".join(re.escape(value) for value in runtime_values)
+        for label in ("解释器来源", "运行时来源"):
+            if re.search(rf"{label}\s*[:：=]\s*(?:{value_pattern})(?![A-Za-z0-9_])", text, re.IGNORECASE):
+                issues.append(_issue("trace_user_visible_internal_leak", f"structured trace label leaked: {label}", label))
 
     if _contains_visible_local_path(text):
         issues.append(_issue(

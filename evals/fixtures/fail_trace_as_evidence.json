@@ -1,0 +1,7 @@
+{
+  "extends": "pass_geography_searchlog_standard.json",
+  "patches": [
+    {"op": "add", "path": "/runs/0/tool_attempts", "value": [{"attempt_id": "trace-att-1", "sequence": 1, "capability": "source.open", "adapter_id": "fixture_open", "operation": "open", "outcome": "not_verified", "failure_class": "not_applicable"}]},
+    {"op": "replace", "path": "/claims/0/typed_value/text", "value": "trace-att-1"}
+  ]
+}

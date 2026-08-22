@@ -1,0 +1,6 @@
+{
+  "extends": "pass_default_discovery_candidate_pool.json",
+  "patches": [
+    {"op": "add", "path": "/candidates/0/source_restrictions", "value": "synthetic"}
+  ]
+}

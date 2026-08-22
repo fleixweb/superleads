@@ -1,0 +1,6 @@
+{
+  "extends": "pass_default_discovery_candidate_pool.json",
+  "patches": [
+    {"op": "add", "path": "/runs/0/runtime_provenance", "value": {"interpreter_source": "other_application", "runtime_installation": "observed", "provenance_status": "assessed"}}
+  ]
+}

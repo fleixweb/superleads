@@ -29,6 +29,7 @@ from _superleads_common import (
     source_evidence_scope,
     targeting_rule_maps,
     issue,
+    is_non_blocking_trace_issue,
     load_json,
     normalized_contact_derives_from_literal,
     review_finding_blocks_delivery,
@@ -45,6 +46,18 @@ FORMAL_STATUSES = {"standard_development_list", "full_review_package"}
 POSITIVE_DISPOSITIONS = {"重点开发", "推荐跟进"}
 FORMAL_RUN_STATUSES = {"checked"}
 INQUIRY_STATUS = "inquiry_followup_queue"
+
+
+def _delivery_issue_blocks(item: dict[str, Any]) -> bool:
+    """Keep approved trace-quality majors visible without blocking delivery."""
+    severity = item.get("severity")
+    if severity == "critical":
+        return True
+    if severity != "major":
+        return False
+    code = str(item.get("code") or "")
+    normalized = code.removeprefix("validation_")
+    return not is_non_blocking_trace_issue({**item, "code": normalized})
 
 
 def _review_modes(graph: dict[str, Any]) -> set[str]:
@@ -251,7 +264,7 @@ def _allowed_statuses(
     formal_ready: bool,
     provenance_level: str | None,
 ) -> tuple[list[str], bool]:
-    if any(i.get("severity") in {"critical", "major"} for i in issues):
+    if any(_delivery_issue_blocks(i) for i in issues):
         return [], False
     modes = _review_modes(graph)
     if "not_run" in modes:
@@ -424,7 +437,7 @@ def audit_graph(graph: dict[str, Any], requested_delivery_status: str | None = N
 
     formal_gate_issues = _formal_delivery_gate_issues(graph, ids)
     inquiry_gate_issues = _inquiry_delivery_gate_issues(graph, ids) if requested_delivery_status == INQUIRY_STATUS else []
-    formal_ready = not any(i.get("severity") in {"critical", "major"} for i in formal_gate_issues)
+    formal_ready = not any(_delivery_issue_blocks(i) for i in formal_gate_issues)
     if requested_delivery_status in FORMAL_STATUSES:
         issues.extend(formal_gate_issues)
     if requested_delivery_status == INQUIRY_STATUS:
@@ -478,7 +491,7 @@ def audit_graph(graph: dict[str, Any], requested_delivery_status: str | None = N
     disclosures = [SCHEMA_PROFILE_UNAVAILABLE_DISCLOSURE] if schema_profile_unavailable else []
     if disclosures:
         disclosure_required = True
-    if requested_delivery_status == INQUIRY_STATUS and not any(i.get("severity") in {"critical", "major"} for i in issues):
+    if requested_delivery_status == INQUIRY_STATUS and not any(_delivery_issue_blocks(i) for i in issues):
         allowed_statuses = [INQUIRY_STATUS]
     if requested_delivery_status in FORMAL_STATUSES:
         if requested_delivery_status not in allowed_statuses:
@@ -487,7 +500,7 @@ def audit_graph(graph: dict[str, Any], requested_delivery_status: str | None = N
     if requested_delivery_status == "full_review_package":
         issues.append(issue("critical", "full_review_unavailable_in_local_deployment", "This local deployment does not provide full_review_package", "delivery_status"))
 
-    blocking = any(i.get("severity") in {"critical", "major"} for i in issues)
+    blocking = any(_delivery_issue_blocks(i) for i in issues)
     if blocking:
         delivery_status = "needs_correction"
         allowed_statuses = []

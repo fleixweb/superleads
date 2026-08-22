@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from _superleads_common import SCHEMA_PROFILE_UNAVAILABLE_DISCLOSURE, has_text, issue
+from _superleads_common import SCHEMA_PROFILE_UNAVAILABLE_DISCLOSURE, has_text, is_non_blocking_trace_issue, issue
 from validate_product_market_analysis import as_list, ensure_list, load_market_fixture, validate_graph
 
 READY_STATUS = "ready_with_limitations"
@@ -326,8 +326,16 @@ def _collect_limitations(graph: dict[str, Any]) -> list[dict[str, str]]:
     return limitations
 
 
+def _delivery_issue_blocks(item: dict[str, Any]) -> bool:
+    if item.get("severity") == "critical":
+        return True
+    if item.get("severity") != "major":
+        return False
+    return not is_non_blocking_trace_issue(item)
+
+
 def _delivery_status_from_issues(issues: list[dict[str, str]]) -> str:
-    blocking = [item for item in issues if item.get("severity") in {"critical", "major"}]
+    blocking = [item for item in issues if _delivery_issue_blocks(item)]
     if not blocking:
         return READY_STATUS
     codes = {item.get("code") for item in blocking}

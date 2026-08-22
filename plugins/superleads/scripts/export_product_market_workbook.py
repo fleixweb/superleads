@@ -18,6 +18,7 @@ from typing import Any
 
 from _superleads_common import DETERMINISTIC_VALIDATION_DISCLOSURE, SCHEMA_PROFILE_UNAVAILABLE_DISCLOSURE, ensure_list as common_ensure_list, has_text, is_safe_public_http_url
 from audit_product_market_analysis import audit_graph
+from export_workbook import redact_trace_source_projection_sheets
 from user_visible_status_projection import (
     humanize_enum_value,
     market_row_status_basis,
@@ -1333,7 +1334,7 @@ def build_sheets(graph: dict[str, Any], audit: dict[str, Any] | None = None) -> 
             "状态": "说明",
             "用户可见备注": disclosure,
         })
-    return sheets
+    return redact_trace_source_projection_sheets(sheets, audit)
 
 
 def _headers_for_sheet(sheet_name: str, rows: list[dict[str, str]]) -> list[str]:

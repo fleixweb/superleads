@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import functools
 import hashlib
 import ipaddress
 import json
@@ -11,6 +12,79 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qsl, urlsplit
+
+
+TRACE_SCHEMA_PATH = Path(__file__).resolve().parents[1] / "shared" / "schemas" / "run.schema.json"
+TRACE_IDENTIFIER_RE = re.compile(r"(?<![A-Za-z0-9_])[a-z][a-z0-9_]*(?:_[a-z0-9_]+)+(?![A-Za-z0-9_])")
+
+
+def _trace_schema_node(schema: dict[str, Any], node: Any) -> Any:
+    if isinstance(node, dict) and isinstance(node.get("$ref"), str):
+        ref = node["$ref"]
+        if ref.startswith("#/$defs/"):
+            return schema.get("$defs", {}).get(ref.removeprefix("#/$defs/"), {})
+    return node
+
+
+def _walk_trace_properties(schema: dict[str, Any], node: Any, names: set[str], enum_values: set[str]) -> None:
+    node = _trace_schema_node(schema, node)
+    if not isinstance(node, dict):
+        return
+    properties = node.get("properties")
+    if isinstance(properties, dict):
+        for name, child in properties.items():
+            if isinstance(name, str):
+                names.add(name)
+            resolved = _trace_schema_node(schema, child)
+            if isinstance(resolved, dict) and isinstance(resolved.get("enum"), list):
+                enum_values.update(str(value) for value in resolved["enum"])
+            _walk_trace_properties(schema, resolved, names, enum_values)
+    if isinstance(node.get("enum"), list):
+        enum_values.update(str(value) for value in node["enum"])
+
+
+@functools.lru_cache(maxsize=1)
+def _cached_trace_schema_metadata(schema_path: str) -> dict[str, Any]:
+    schema = load_json(schema_path)
+    defs = schema.get("$defs", {}) if isinstance(schema, dict) else {}
+    names: set[str] = set()
+    enum_values: set[str] = set()
+    for definition in ("toolAttempt", "runtimeProvenance"):
+        _walk_trace_properties(schema, defs.get(definition, {}), names, enum_values)
+    direct = frozenset(name for name in names if "_" in name)
+    structured = frozenset(name for name in names if "_" not in name)
+    return {
+        "direct_identifiers": direct,
+        "structured_keys": structured,
+        "enum_values": frozenset(enum_values),
+        "trace_identifier_pattern": TRACE_IDENTIFIER_RE,
+    }
+
+
+def trace_schema_metadata(schema_path: str | Path | None = None) -> dict[str, Any]:
+    """Derive trace boundary metadata from the two trace schema definitions."""
+    if schema_path is None:
+        return _cached_trace_schema_metadata(str(TRACE_SCHEMA_PATH))
+    return _cached_trace_schema_metadata.__wrapped__(str(Path(schema_path).resolve()))
+
+
+def is_non_blocking_trace_issue(item: dict[str, Any]) -> bool:
+    """Return whether a reported trace issue is a non-blocking major."""
+    if item.get("severity") != "major":
+        return False
+    code = item.get("code")
+    if code in {
+        "adapter_retry_after_failure",
+        "access_restricted_retry",
+        "empty_capability_probe",
+        "adapter_provider_not_exposed",
+        "attempt_result_binding_missing",
+    }:
+        return True
+    if code == "trace_user_visible_internal_leak":
+        path = str(item.get("path") or "").casefold()
+        return "source" in path or "原文" in path or "归属" in path or "excerpt" in path
+    return False
 
 GRAPH_ARRAY_KEYS = [
     "runs", "briefs", "plans", "candidates", "sources", "observations", "entities",

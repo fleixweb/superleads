@@ -27,6 +27,7 @@ from _superleads_common import (
     review_provenance_disclosure,
     review_provenance_snapshot,
     user_provided_source_display,
+    trace_schema_metadata,
     write_json,
 )
 from user_visible_status_projection import project_market_row_status
@@ -168,6 +169,106 @@ def redact_local_paths(value:Any)->Any:
     if isinstance(value,dict): return {key:redact_local_paths(item) for key,item in value.items()}
     return value
 
+SOURCE_PROJECTION_KEYS = frozenset({
+    "原文", "来源上下文", "归属证据", "归属证据/待确认原因",
+    "原文摘录或材料定位", "看到的原话或位置",
+    "source_literal", "source_context", "association_evidence_text",
+    "source_excerpt_quote", "source_locator",
+})
+
+
+def redact_trace_source_projection(value: Any, identifiers: frozenset[str] | None = None) -> tuple[Any, bool]:
+    """Mask schema-derived trace identifiers only in source projection fields."""
+    metadata = trace_schema_metadata()
+    pattern = metadata["trace_identifier_pattern"]
+    direct = identifiers or metadata["direct_identifiers"]
+    if isinstance(value, str):
+        changed = False
+        structured_pattern = re.compile(r"(?<![A-Za-z0-9_])(" + "|".join(re.escape(name) for name in sorted(direct, key=len, reverse=True)) + r")(?:\s*[:=]\s*[^\s,;|，；。]+)?", re.IGNORECASE) if direct else None
+        if structured_pattern is not None:
+            def replace_structured(match: re.Match[str]) -> str:
+                nonlocal changed
+                changed = True
+                return "[已隐藏内部标识]"
+            value = structured_pattern.sub(replace_structured, value)
+        def replace(match: re.Match[str]) -> str:
+            nonlocal changed
+            token = match.group(0)
+            if token in direct:
+                changed = True
+                return "[已隐藏内部标识]"
+            return token
+        return pattern.sub(replace, value), changed
+    if isinstance(value, list):
+        changed = False
+        output = []
+        for item in value:
+            redacted, item_changed = redact_trace_source_projection(item, direct)
+            output.append(redacted)
+            changed = changed or item_changed
+        return output, changed
+    if isinstance(value, dict):
+        changed = False
+        output = {}
+        for key, item in value.items():
+            if key in SOURCE_PROJECTION_KEYS:
+                redacted, item_changed = redact_trace_source_projection(item, direct)
+            elif isinstance(item, (dict, list)):
+                redacted, item_changed = redact_trace_source_projection(item, direct)
+            else:
+                redacted, item_changed = item, False
+            output[key] = redacted
+            changed = changed or item_changed
+        return output, changed
+    return value, False
+
+
+def _record_trace_projection_issue(audit: dict[str, Any] | None, path: str) -> None:
+    if not isinstance(audit, dict):
+        return
+    issues = audit.setdefault("issues", [])
+    if not isinstance(issues, list):
+        return
+    issue = {
+        "severity": "major",
+        "code": "trace_user_visible_internal_leak",
+        "message": "Trace identifier was masked from a source projection field",
+        "path": path,
+    }
+    if not any(
+        isinstance(item, dict)
+        and item.get("code") == issue["code"]
+        and item.get("path") == path
+        for item in issues
+    ):
+        issues.append(issue)
+    audit["issue_count"] = len(issues)
+
+
+def redact_trace_source_projection_sheets(
+    sheets: dict[str, list[dict[str, Any]]],
+    audit: dict[str, Any] | None = None,
+) -> dict[str, list[dict[str, Any]]]:
+    output: dict[str, list[dict[str, Any]]] = {}
+    for sheet, rows in sheets.items():
+        new_rows: list[dict[str, Any]] = []
+        for row_index, row in enumerate(rows):
+            if not isinstance(row, dict):
+                new_rows.append(row)
+                continue
+            new_row: dict[str, Any] = {}
+            for key, item in row.items():
+                if key in SOURCE_PROJECTION_KEYS:
+                    redacted, changed = redact_trace_source_projection(item)
+                    new_row[key] = redacted
+                    if changed:
+                        _record_trace_projection_issue(audit, f"{sheet}[{row_index}].{key}")
+                else:
+                    new_row[key] = item
+            new_rows.append(new_row)
+        output[sheet] = new_rows
+    return output
+
 def redact_delivery_sheets(sheets:dict[str,list[dict[str,Any]]], forbidden:set[str])->dict[str,list[dict[str,Any]]]:
     return {name:[redact_delivery_value(row,forbidden) for row in rows] for name,rows in sheets.items()}
 
@@ -180,7 +281,8 @@ DELIVERY_INTERNAL_KEYS={
 def redact_delivery_internals(value:Any)->Any:
     """Keep SearchLog/session/tool internals out of user artifacts."""
     if isinstance(value,list): return [redact_delivery_internals(item) for item in value]
-    if isinstance(value,dict): return {key:redact_delivery_internals(item) for key,item in value.items() if key not in DELIVERY_INTERNAL_KEYS}
+    trace_keys = set(trace_schema_metadata()["direct_identifiers"]) | {"tool_attempts", "runtime_provenance"}
+    if isinstance(value,dict): return {key:redact_delivery_internals(item) for key,item in value.items() if key not in DELIVERY_INTERNAL_KEYS and key not in trace_keys}
     return value
 
 def source_display(source:dict[str,Any], observation:dict[str,Any]|None=None)->str:
@@ -886,9 +988,9 @@ def build_inquiry_sheets(graph:dict[str,Any])->dict[str,list[dict[str,Any]]]:
 
 def build_sheets(graph:dict[str,Any], audit:dict[str,Any], mode:str)->dict[str,list[dict[str,Any]]]:
     if mode=="inquiry":
-        return build_inquiry_sheets(graph)
+        return redact_trace_source_projection_sheets(build_inquiry_sheets(graph), audit)
     if mode=="initial":
-        return build_initial_sheets(graph,audit)
+        return redact_trace_source_projection_sheets(build_initial_sheets(graph,audit), audit)
     entities=idx(graph,"entities","entity_id"); contacts=idx(graph,"contact_points","contact_id"); sources=idx(graph,"sources","source_id"); observations=idx(graph,"observations","observation_id")
     run=get_current_run(graph)
     brief_id=current_brief_id(graph)
@@ -969,7 +1071,7 @@ def build_sheets(graph:dict[str,Any], audit:dict[str,Any], mode:str)->dict[str,l
     sheets["已排除客户"]=[{"公司名称":entities.get(d.get("entity_id"),{}).get("name") or d.get("candidate_id") or "待确认对象","方向状态":scope_status_user_label(d.get("overall_status")),"说明":d.get("decision_summary")} for d in ensure_list(graph,"scope_decisions") if isinstance(d,dict) and d.get("brief_id")==brief_id and d.get("run_id")==run_id and d.get("overall_status") in {"out_of_scope","reference_only"}]
     sheets["检查说明"]=[{"检查时间":audit.get("audited_at"),"交付级别":{"standard_development_list":"标准开发名单","full_review_package":"完整核查版"}.get(audit.get("delivery_status"),"发现候选池"),"检查结果":"未发现影响交付的问题" if not audit.get("issues") else "存在待处理问题"}]
     wanted=INITIAL_SHEETS if mode=="initial" else FULL_SHEETS if mode=="full" else DEFAULT_SHEETS
-    return {name:sheets.get(name,[]) for name in wanted}
+    return redact_trace_source_projection_sheets({name:sheets.get(name,[]) for name in wanted}, audit)
 
 def safe_filename(name:str)->str: return re.sub(r"[\\/:*?\"<>|]+","_",name)
 
@@ -1061,7 +1163,7 @@ def main()->int:
             return 1
         sheets=build_background_report_sheets(scope)
         hidden_contacts=hold_contact_values(graph) | background_contact_values_to_redact(scope["projection"])
-        sheets=redact_local_paths(redact_delivery_sheets(sheets,hidden_contacts))
+        sheets=redact_local_paths(redact_trace_source_projection_sheets(redact_delivery_sheets(sheets,hidden_contacts)))
         out=Path(a.output_dir) if a.output_dir else Path(a.output_path).parent; chosen=a.format
         if a.output_path and Path(a.output_path).suffix.casefold()==".xlsx" and chosen=="auto": chosen="xlsx"
         if chosen=="auto":
@@ -1096,7 +1198,7 @@ def main()->int:
     empty_sheet_statuses=public_enrichment_empty_sheet_statuses(graph)
     if provenance_disclosure and provenance.get("review_provenance_level") in {"declared_separate_session", "not_run"} and "风险与说明" in sheets:
         sheets["风险与说明"].append({"提示级别":"说明","说明":provenance_disclosure})
-    sheets=redact_local_paths(redact_delivery_sheets(sheets,hold_contact_values(graph))); out=Path(a.output_dir) if a.output_dir else Path(a.output_path).parent; chosen=a.format
+    sheets=redact_local_paths(redact_trace_source_projection_sheets(redact_delivery_sheets(sheets,hold_contact_values(graph)))); out=Path(a.output_dir) if a.output_dir else Path(a.output_path).parent; chosen=a.format
     if a.output_path and Path(a.output_path).suffix.casefold()==".xlsx" and chosen=="auto": chosen="xlsx"
     if chosen=="auto":
         try: import openpyxl; chosen="xlsx"  # noqa

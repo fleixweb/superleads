@@ -32,6 +32,7 @@ from export_workbook import (
     default_discovery_relevance_label_to_raw,
     project_default_discovery_basis_status,
     hold_contact_values,
+    redact_trace_source_projection_sheets,
     redact_delivery_sheets,
     redact_local_paths,
 )
@@ -829,7 +830,9 @@ def build_background_markdown(graph: dict[str, Any]) -> tuple[str | None, list[d
     sheets = build_background_report_sheets(scope)
     projection = scope.get("projection") if isinstance(scope.get("projection"), dict) else graph
     hidden_contacts = hold_contact_values(graph) | background_contact_values_to_redact(projection)
-    sheets = redact_local_paths(redact_delivery_sheets(sheets, hidden_contacts))
+    sheets = redact_trace_source_projection_sheets(
+        redact_local_paths(redact_delivery_sheets(sheets, hidden_contacts)),
+    )
 
     overview_rows = [_sanitize_background_overview_row(row) for row in sheets.get("客户一眼看懂", []) if isinstance(row, dict)]
     overview_rows.extend([

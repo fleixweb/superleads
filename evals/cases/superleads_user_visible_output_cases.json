@@ -460,6 +460,14 @@
         "公开进口身份",
         "不合格"
       ]
+    },
+    {
+      "name": "fail trace identifier in agent-authored output",
+      "fixture": "evals/user_visible_outputs/fail_trace_user_visible_leak.md",
+      "route": "bulk_customer_development",
+      "expected": "fail",
+      "min_tables": 0,
+      "expected_error_codes": ["trace_user_visible_internal_leak"]
     }
   ]
 }

@@ -1,0 +1,4 @@
+{
+  "extends": "pass_default_discovery_candidate_pool.json",
+  "patches": []
+}

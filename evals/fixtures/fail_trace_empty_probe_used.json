@@ -1,0 +1,8 @@
+{
+  "extends": "pass_default_discovery_candidate_pool.json",
+  "patches": [
+    {"op": "add", "path": "/runs/0/tool_attempts", "value": [
+      {"attempt_id": "att-empty-used", "sequence": 1, "capability": "search.web", "adapter_id": "fixture_search", "operation": "search", "outcome": "verified", "failure_class": "not_applicable", "notes": "used to authorize formal delivery"}
+    ]}
+  ]
+}

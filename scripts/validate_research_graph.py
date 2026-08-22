@@ -57,6 +57,7 @@ from _superleads_common import (
     resolve_capability_adapter_reports,
     source_has_safe_public_http_urls,
     source_evidence_scope,
+    trace_schema_metadata,
     targeting_contract_required,
     targeting_rule_maps,
     issue,
@@ -1144,6 +1145,142 @@ def _default_discovery_candidate_structure_issues(graph: dict[str, Any]) -> list
     return issues
 
 
+_TRACE_OBSERVATION_CAPABILITIES = {
+    "source.open", "browser.render", "document.extract", "mail.read",
+}
+
+
+def _trace_value_contains(value: Any, needles: set[str]) -> bool:
+    if not needles:
+        return False
+    if isinstance(value, dict):
+        return any(_trace_value_contains(k, needles) or _trace_value_contains(v, needles) for k, v in value.items())
+    if isinstance(value, list):
+        return any(_trace_value_contains(item, needles) for item in value)
+    return any(needle in str(value) for needle in needles) if isinstance(value, str) else False
+
+
+def _trace_attempt_used_for_authorization(run: dict[str, Any], attempt: dict[str, Any], graph: dict[str, Any]) -> bool:
+    text = " ".join(str(attempt.get(field) or "") for field in ("notes", "operation", "outcome"))
+    lowered = text.casefold()
+    if any(token in lowered for token in ("authoriz", "formal delivery", "capability", "交付", "授权", "能力")):
+        return True
+    attempt_id = attempt.get("attempt_id")
+    if not has_text(attempt_id):
+        return False
+    for collection in ("claims", "claim_evidence", "assessments", "scope_decisions", "review_attestations", "review_findings", "audits"):
+        if any(_trace_value_contains(item, {str(attempt_id)}) for item in ensure_list(graph, collection)):
+            return True
+    return False
+
+
+def _run_trace_issues(graph: dict[str, Any], ids: dict[str, dict[str, dict[str, Any]]]) -> list[dict[str, str]]:
+    """Validate optional Run-local process trace without promoting it to evidence."""
+    issues: list[dict[str, str]] = []
+    run_items = ensure_list(graph, "runs")
+    search_logs = ids.get("search_logs", {})
+    observations = ids.get("observations", {})
+    for run_index, run in enumerate(run_items):
+        if not isinstance(run, dict):
+            continue
+        run_id = run.get("run_id")
+        attempts = run.get("tool_attempts")
+        if not isinstance(attempts, list):
+            attempts = []
+        seen_attempt_ids: set[str] = set()
+        seen_sequences: set[int] = set()
+        prior_sequence: int | None = None
+        ordered = []
+        for attempt_index, attempt in enumerate(attempts):
+            if not isinstance(attempt, dict):
+                continue
+            path = f"runs[{run_index}].tool_attempts[{attempt_index}]"
+            attempt_id = attempt.get("attempt_id")
+            if has_text(attempt_id):
+                if str(attempt_id) in seen_attempt_ids:
+                    issues.append(issue("major", "trace_attempt_id_duplicate", "tool_attempts attempt_id must be unique within a Run", f"{path}.attempt_id"))
+                seen_attempt_ids.add(str(attempt_id))
+            sequence = attempt.get("sequence")
+            if isinstance(sequence, int) and not isinstance(sequence, bool):
+                if sequence in seen_sequences:
+                    issues.append(issue("major", "trace_sequence_duplicate", "tool_attempts sequence must be unique within a Run", f"{path}.sequence"))
+                if prior_sequence is not None and sequence <= prior_sequence:
+                    issues.append(issue("major", "trace_sequence_not_increasing", "tool_attempts sequence must strictly increase by stored order", f"{path}.sequence"))
+                prior_sequence = sequence
+                seen_sequences.add(sequence)
+            ordered.append((sequence if isinstance(sequence, int) else 10**9 + attempt_index, attempt_index, attempt))
+
+        permanently_disabled: set[tuple[str, str]] = set()
+        transient_failures: dict[tuple[str, str], int] = {}
+        exposed_inventory: set[str] = set()
+        reports = adapter_reports_from_run(run)
+        if reports:
+            result = resolve_capability_adapter_reports(reports)
+            exposed_inventory.update(str(item.get("adapter_id")) for item in result.get("adapter_results", []) if isinstance(item, dict) and has_text(item.get("adapter_id")))
+        for report in reports:
+            if isinstance(report, dict):
+                adapter = report.get("adapter")
+                if isinstance(adapter, dict) and has_text(adapter.get("adapter_id")):
+                    exposed_inventory.add(str(adapter["adapter_id"]))
+        for _, attempt_index, attempt in sorted(ordered):
+            path = f"runs[{run_index}].tool_attempts[{attempt_index}]"
+            capability = attempt.get("capability")
+            adapter_id = attempt.get("adapter_id")
+            key = (str(capability), str(adapter_id))
+            failure_class = attempt.get("failure_class")
+            outcome = attempt.get("outcome")
+            if has_text(adapter_id) and exposed_inventory and str(adapter_id) not in exposed_inventory:
+                severity = "critical" if _trace_attempt_used_for_authorization(run, attempt, graph) else "major"
+                issues.append(issue(severity, "adapter_provider_not_exposed", "Attempt adapter_id is not present in the Run's exposed provider inventory", f"{path}.adapter_id"))
+            if key in permanently_disabled:
+                issues.append(issue("critical", "adapter_retry_after_failure", "The same failed adapter was retried after a not_found or missing_tool result", path))
+            elif key in transient_failures:
+                transient_failures[key] += 1
+                issues.append(issue("major", "adapter_retry_after_failure", "Timeout/http_error adapter retry is recorded as a bounded process-quality issue", path))
+            if failure_class in {"not_found", "missing_tool"}:
+                permanently_disabled.add(key)
+            elif failure_class in {"timeout", "http_error"}:
+                transient_failures.setdefault(key, 0)
+            elif failure_class == "access_restricted" and key in transient_failures:
+                issues.append(issue("major", "access_restricted_retry", "Access-restricted adapter result must not be bypassed by repeated meaningless calls", path))
+
+            if outcome != "verified" or not has_text(capability):
+                continue
+            required_field = "search_log_id" if capability == "search.web" else "observation_id" if capability in _TRACE_OBSERVATION_CAPABILITIES else None
+            if required_field is None:
+                continue
+            bound_id = attempt.get(required_field)
+            if not has_text(bound_id):
+                severity = "critical" if _trace_attempt_used_for_authorization(run, attempt, graph) else "major"
+                issues.append(issue(severity, "empty_capability_probe", "Verified capability attempt lacks the required SearchLog/Observation binding", f"{path}.{required_field}"))
+                continue
+            bound = (search_logs if required_field == "search_log_id" else observations).get(str(bound_id))
+            if not isinstance(bound, dict) or (has_text(run_id) and has_text(bound.get("run_id")) and bound.get("run_id") != run_id) or bound.get("capability") != capability:
+                issues.append(issue("major", "attempt_result_binding_missing", "Verified attempt binding is missing, cross-Run, or capability-mismatched", f"{path}.{required_field}"))
+
+        provenance = run.get("runtime_provenance")
+        if not isinstance(provenance, dict):
+            continue
+        source = provenance.get("interpreter_source")
+        observed_fields = ("runtime_installation", "temporary_dependency_directory", "pythonpath_modified", "borrowed_environment")
+        if source == "other_application" or any(provenance.get(field) == "observed" for field in observed_fields):
+            issues.append(issue("critical", "runtime_self_service_violation", "Run runtime provenance records a borrowed or self-installed execution environment", f"runs[{run_index}].runtime_provenance"))
+
+    attempt_ids: set[str] = set()
+    for run in run_items:
+        if not isinstance(run, dict):
+            continue
+        for attempt in run.get("tool_attempts", []) if isinstance(run.get("tool_attempts"), list) else []:
+            if isinstance(attempt, dict) and has_text(attempt.get("attempt_id")):
+                attempt_ids.add(str(attempt.get("attempt_id")))
+    if attempt_ids:
+        for collection in ("claims", "claim_evidence", "assessments", "scope_decisions", "review_attestations", "review_findings", "audits"):
+            for index, item in enumerate(ensure_list(graph, collection)):
+                if isinstance(item, dict) and _trace_value_contains(item, attempt_ids):
+                    issues.append(issue("critical", "trace_evidence_reference_forbidden", "Process trace entries must never be used as business evidence or authorization", f"{collection}[{index}]"))
+    return issues
+
+
 def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
     issues: list[dict[str, str]] = []
     issues.extend(_schema_validation_issues(graph))
@@ -1261,6 +1398,7 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
                                 f"runs[{idx}].capabilities.{capability}",
                             ))
 
+    issues.extend(_run_trace_issues(graph, ids))
     run_items = ensure_list(graph, "runs")
     valid_runs = [run for run in run_items if isinstance(run, dict) and has_text(run.get("run_id"))]
     multi_run_graph = len(run_items) > 1

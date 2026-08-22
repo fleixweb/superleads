@@ -146,7 +146,12 @@
           "type": "string",
           "enum": ["planning_only", "draft_matrix", "ready_with_limitations", "blocked_needs_input", "needs_correction"]
         },
-        "not_executed_modules": {"$ref": "#/$defs/StringList"}
+        "not_executed_modules": {"$ref": "#/$defs/StringList"},
+        "tool_attempts": {
+          "type": "array",
+          "items": {"$ref": "run.schema.json#/$defs/toolAttempt"}
+        },
+        "runtime_provenance": {"$ref": "run.schema.json#/$defs/runtimeProvenance"}
       }
     },
     "MarketAnalysisBrief": {

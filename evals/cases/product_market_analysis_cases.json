@@ -3,6 +3,22 @@
   "validator": "scripts/validate_product_market_analysis.py",
   "cases": [
     {
+      "fixture": "fail_market_trace_as_evidence.json",
+      "market_validate": "fail",
+      "expected_error_codes": ["trace_evidence_reference_forbidden"],
+      "market_audit": "fail",
+      "market_export_csv": "fail",
+      "market_export_markdown": "skip"
+    },
+    {
+      "fixture": "market_pass_trace_binding_quality.json",
+      "market_validate": "fail",
+      "expected_error_codes": ["attempt_result_binding_missing"],
+      "market_audit": "pass",
+      "market_export_csv": "pass",
+      "market_export_markdown": "pass"
+    },
+    {
       "fixture": "market_pass_codex_web_run_search_plus_curl_source_open.json",
       "market_validate": "pass",
       "market_audit": "pass",

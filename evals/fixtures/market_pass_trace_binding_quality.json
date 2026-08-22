@@ -1,0 +1,6 @@
+{
+  "extends": "market_pass_xingheng_minimum_boundary.json",
+  "patches": [
+    {"op": "add", "path": "/runs/0/tool_attempts", "value": [{"attempt_id": "market-quality-att", "sequence": 1, "capability": "source.open", "adapter_id": "fixture_open", "operation": "open", "outcome": "verified", "failure_class": "not_applicable", "observation_id": "missing-observation"}]}
+  ]
+}

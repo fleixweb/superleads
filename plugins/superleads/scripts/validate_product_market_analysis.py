@@ -33,6 +33,8 @@ from _superleads_common import (
     resolve_capability_adapter_reports,
 )
 from schema_validation import SchemaResolutionError, schema_validation_errors
+from _superleads_common import all_id_maps as _research_id_maps
+from validate_research_graph import _run_trace_issues as _shared_run_trace_issues
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "shared" / "schemas"
@@ -539,6 +541,29 @@ def _id_maps(graph: dict[str, Any]) -> dict[str, dict[str, dict[str, Any]]]:
                 collection[str(item[id_field])] = item
         maps[key] = collection
     return maps
+
+
+def _market_trace_issues(graph: dict[str, Any], ids: dict[str, dict[str, dict[str, Any]]]) -> list[dict[str, str]]:
+    issues = list(_shared_run_trace_issues(graph, _research_id_maps(graph)))
+    attempt_ids = {
+        str(attempt.get("attempt_id"))
+        for run in ensure_list(graph, "runs") if isinstance(run, dict)
+        for attempt in (run.get("tool_attempts") if isinstance(run.get("tool_attempts"), list) else [])
+        if isinstance(attempt, dict) and has_text(attempt.get("attempt_id"))
+    }
+    if not attempt_ids:
+        return issues
+    def contains(value: Any) -> bool:
+        if isinstance(value, dict):
+            return any(contains(k) or contains(v) for k, v in value.items())
+        if isinstance(value, list):
+            return any(contains(item) for item in value)
+        return isinstance(value, str) and any(token in value for token in attempt_ids)
+    for collection in ("evidence_cards", "matrix_rows", "gaps", "authority_profiles", "authority_identity_evidence", "authority_capabilities", "authority_verification_records", "conflicts", "corroboration_records", "freshness_records"):
+        for index, item in enumerate(ensure_list(graph, collection)):
+            if isinstance(item, dict) and contains(item):
+                issues.append(issue("critical", "trace_evidence_reference_forbidden", "Process trace entries must never support product-market evidence or matrix conclusions", f"{collection}[{index}]"))
+    return issues
 
 
 def _add_issue(issues: list[dict[str, str]], severity: str, code: str, message: str, path: str) -> None:
@@ -2018,6 +2043,7 @@ def validate_graph(graph: dict[str, Any]) -> list[dict[str, str]]:
     issues: list[dict[str, str]] = []
     issues.extend(_schema_validation_issues(graph))
     ids = _id_maps(graph)
+    issues.extend(_market_trace_issues(graph, ids))
     observations_by_source: dict[str, list[dict[str, Any]]] = {}
     for obs in ensure_list(graph, "observations"):
         if isinstance(obs, dict) and has_text(obs.get("source_id")):

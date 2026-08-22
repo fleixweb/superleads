@@ -4,6 +4,25 @@ All notable changes to this project are documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-08-22
+
+### Added
+
+- Add optional Run-local `tool_attempts` and `runtime_provenance` trace fields for
+  auditable adapter sequencing and runtime provenance. Missing or `unknown` trace
+  data is recorded as `not_assessed` and does not change any existing判定结果。
+
+### Compatibility
+
+- This is a MINOR release: the new fields are optional, and legacy research
+  graphs without them retain their prior判定结果 unchanged。All 56 pass fixtures
+  remain identical to the 0.2.8 baseline results.
+
+### Fixed
+
+- Remove open-world Chinese proximity matching from the user-visible runtime
+  detail guard; retain closed-world identifiers and structured trace checks.
+
 ## [0.2.8] - 2026-08-21
 
 ### Fixed

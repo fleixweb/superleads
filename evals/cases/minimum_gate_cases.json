@@ -43,6 +43,15 @@
       "fail_multi_email_normalized.json",
       "fail_phone_suffix_truncation.json",
       "fail_nonready_entity_mismatch.json"
+      ,"fail_trace_not_found_retry.json"
+      ,"fail_trace_missing_tool_retry.json"
+      ,"pass_trace_timeout_retry_success.json"
+      ,"fail_trace_timeout_retry_over_limit.json"
+      ,"fail_trace_attempt_binding_missing.json"
+      ,"fail_trace_empty_probe_used.json"
+      ,"pass_trace_empty_probe_unused.json"
+      ,"fail_trace_runtime_self_service.json"
+      ,"fail_trace_as_evidence.json"
     ],
     "deep": [
       "pass_minimal_graph.json",
@@ -594,6 +603,51 @@
       "validate": "fail",
       "audit_standard": "fail",
       "export_standard": "fail"
+    },
+    {
+      "fixture": "fail_trace_not_found_retry.json",
+      "validate": "fail",
+      "audit": "fail"
+    },
+    {
+      "fixture": "fail_trace_missing_tool_retry.json",
+      "validate": "fail",
+      "audit": "fail"
+    },
+    {
+      "fixture": "pass_trace_timeout_retry_success.json",
+      "validate": "fail",
+      "audit": "pass"
+    },
+    {
+      "fixture": "fail_trace_timeout_retry_over_limit.json",
+      "validate": "fail",
+      "audit": "pass"
+    },
+    {
+      "fixture": "fail_trace_attempt_binding_missing.json",
+      "validate": "fail",
+      "audit": "pass"
+    },
+    {
+      "fixture": "fail_trace_empty_probe_used.json",
+      "validate": "fail",
+      "audit": "fail"
+    },
+    {
+      "fixture": "pass_trace_empty_probe_unused.json",
+      "validate": "fail",
+      "audit": "pass"
+    },
+    {
+      "fixture": "fail_trace_runtime_self_service.json",
+      "validate": "fail",
+      "audit": "fail"
+    },
+    {
+      "fixture": "fail_trace_as_evidence.json",
+      "validate": "fail",
+      "audit": "fail"
     }
   ]
 }

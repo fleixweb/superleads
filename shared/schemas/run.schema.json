@@ -107,10 +107,48 @@
         "self_review_fallback",
         "not_run"
       ]
+    },
+    "tool_attempts": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/toolAttempt"}
+    },
+    "runtime_provenance": {
+      "$ref": "#/$defs/runtimeProvenance"
     }
   },
   "$defs": {
     "capabilityStatus": {"type": "string", "enum": ["available", "missing", "unknown"]},
+    "toolAttempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {"type": "string", "minLength": 1},
+        "sequence": {"type": "integer", "minimum": 1},
+        "capability": {"type": "string", "minLength": 1},
+        "adapter_id": {"type": ["string", "null"], "minLength": 1},
+        "operation": {"type": "string", "minLength": 1},
+        "concrete_tool": {"type": ["string", "null"], "minLength": 1},
+        "outcome": {"type": "string", "enum": ["verified", "failed", "missing", "not_verified", "unknown"]},
+        "failure_class": {"type": "string", "enum": ["not_applicable", "not_found", "missing_tool", "timeout", "http_error", "access_restricted", "unknown"]},
+        "search_log_id": {"type": ["string", "null"]},
+        "observation_id": {"type": ["string", "null"]},
+        "notes": {"type": ["string", "null"]}
+      }
+    },
+    "runtimeProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["interpreter_source"],
+      "properties": {
+        "interpreter_source": {"type": "string", "enum": ["host_runtime", "system", "unavailable", "other_application", "unknown"]},
+        "runtime_installation": {"type": "string", "enum": ["not_observed", "observed", "unknown"]},
+        "temporary_dependency_directory": {"type": "string", "enum": ["not_observed", "observed", "unknown"]},
+        "pythonpath_modified": {"type": "string", "enum": ["not_observed", "observed", "unknown"]},
+        "borrowed_environment": {"type": "string", "enum": ["not_observed", "observed", "unknown"]},
+        "provenance_status": {"type": "string", "enum": ["assessed", "not_assessed"]},
+        "notes": {"type": ["string", "null"]}
+      }
+    },
     "executionState": {
       "type": "object",
       "additionalProperties": false,
