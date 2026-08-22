@@ -4,6 +4,10 @@ Use this reference after `using-superleads` has selected a formal public-source
 route or a real-business UAT. It contains deferred execution and delivery rules;
 the entry Skill should not repeat them.
 
+When the deterministic script path is unavailable, use the single fallback
+contract in `no-script-delivery-contract.md`; this reference does not maintain a
+second equivalent no-script checklist.
+
 ## Capability gate
 
 Before formal customer development, customer background research, or

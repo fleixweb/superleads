@@ -4,6 +4,9 @@ Capability discovery starts from the current host's actual tool inventory, not f
 
 ## Script portability
 
+无脚本交付的唯一契约是
+`../references/no-script-delivery-contract.md`；本政策只定义能力边界和禁止事项，不复制第二套无脚本交付清单。
+
 任何 `scripts/*.py` 在 `SKILL.md` 中出现时，都必须同时给出无脚本的等价路径。脚本是加速器，不是交付前提；Python 或 shell 不可用不等于宿主的搜索、来源打开或文档能力不可用。无脚本路径必须内联执行相同的路由、证据和用户可见边界；整个确定性脚本校验链未运行时标注“本环境未运行确定性校验”。如果核心业务规则校验已经运行并通过，只是补充结构检查未运行，则改用“本次已完成核心业务规则校验；补充结构检查未运行。”，不得把它写成整个确定性校验未执行。这项兼容约定不允许把搜索摘要升级为事实，也不放宽主体、联系人、来源或访问限制。缺少校验依赖时不得为了跑通脚本在运行时安装依赖、创建临时依赖目录或设置 `PYTHONPATH`；不得搜索、借用或调用其他应用程序的 Python 环境、虚拟环境或解释器，包括其他 Agent、IDE 或桌面应用自带的 venv；必须走无脚本路径，并按实际执行范围使用上述对应标注。
 
 ## Runtime-detail visibility

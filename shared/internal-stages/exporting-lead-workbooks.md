@@ -51,6 +51,8 @@ formal workbook.
 Read `../../shared/references/output-schema.md` and
 `../../shared/references/status-labels.md`, plus
 `../../shared/references/superleads-user-guidance.md` for terminal user-delivery footer rules. Use
+`../../shared/references/no-script-delivery-contract.md` as the single
+no-script fallback contract; do not duplicate its checklist here. Use
 `../../scripts/export_superleads_markdown.py` for the unified three-route
 Markdown delivery layer. Use `../../scripts/export_workbook.py` for customer
 development / customer-background XLSX or CSV export. Use

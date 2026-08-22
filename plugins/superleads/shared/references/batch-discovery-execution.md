@@ -17,6 +17,9 @@ deliverable. For default discovery, read `default-discovery-reference.md`,
 starting with `default-discovery-minimal-skeleton.example.json`; open its full
 reference only for status, contact, or conflict boundaries. Before a formal
 bulk route or real-business UAT, read `using-superleads-formal-delivery.md`.
+The no-script fallback checklist and disclosure semantics have one owner:
+`no-script-delivery-contract.md`; do not maintain a second equivalent checklist
+in this reference.
 
 ## Intake and Mode Rules
 

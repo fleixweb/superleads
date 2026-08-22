@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from check_superleads_plugin_distribution import check_distribution
+from check_superleads_rule_consistency import check_rule_consistency
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "dist" / "superleads"
@@ -58,6 +59,10 @@ def _package_metrics(output: Path) -> tuple[int, int]:
 
 def build_package(output: Path) -> dict[str, Any]:
     output = output.resolve()
+    rule_issues = check_rule_consistency(ROOT)
+    if rule_issues:
+        codes = "; ".join(issue["code"] for issue in rule_issues)
+        raise ValueError(f"source rule consistency check failed: {codes}")
     _clear_output(output)
 
     for relative in RUNTIME_DIRECTORIES:

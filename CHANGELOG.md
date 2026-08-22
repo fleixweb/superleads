@@ -15,6 +15,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 - Remove ambiguous operating-environment and installation-package anchors from the runtime-detail guard while retaining explicit component-unavailable leakage phrases.
 - Distinguish a fully skipped deterministic validation path from a completed core business-rule validation whose supplemental structure check was unavailable, using separate accurate disclosures.
 - Inline the no-runtime-install and no-borrowed-interpreter policy into batch execution guidance, and align host-runtime wording across cross-platform and workbook-export rules.
+- Make the no-script delivery contract and cross-cutting rule ownership explicit, link all public entry points to that single contract, and fail package builds when the ownership check drifts.
 
 ## [0.2.7] - 2026-08-21
 

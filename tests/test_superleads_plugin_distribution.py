@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -66,6 +67,16 @@ class SuperleadsPluginDistributionTest(unittest.TestCase):
                 (ROOT / "requirements.txt").read_text(encoding="utf-8"),
                 (output / "requirements.txt").read_text(encoding="utf-8"),
             )
+
+    def test_build_fails_when_rule_ownership_is_inconsistent(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "superleads"
+            with mock.patch(
+                "build_superleads_plugin_package.check_rule_consistency",
+                return_value=[{"code": "rule_consumer_not_linked", "path": "skills/example/SKILL.md"}],
+            ):
+                with self.assertRaisesRegex(ValueError, "rule_consumer_not_linked"):
+                    build_package(output)
 
     def test_built_runtime_package_excludes_legacy_hooks_directory(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
