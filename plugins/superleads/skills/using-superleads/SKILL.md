@@ -6,9 +6,10 @@ description: "Use for a concrete batch discovery request with product or keyword
 # 批量发现公开客户信息
 
 正式进入 L2 前，先按 `../../shared/references/no-script-delivery-contract.md`
-做产物能力预检：宿主必须提供 `session_artifact_dir` 字段或
-`SUPERLEADS_SESSION_ARTIFACT_DIR` 环境变量，且目录已存在、可写。判不出来
-默认按不存在处理，先告知用户本环境只能交付对话内工作表，由用户决定是否继续。
+做产物能力预检：优先使用 `session_artifact_dir` 字段或
+`SUPERLEADS_SESSION_ARTIFACT_DIR` 环境变量指向的可写目录；没有时回退到当前可写的
+工作区根目录。不得新建或使用 `work/`、`tmp/`、`out/` 等运行期临时子目录作为交付
+位置；两级目录都不可用时，先告知用户本环境只能交付对话内工作表，由用户决定是否继续。
 无脚本批量 Markdown 严格读取
 `../../shared/references/bulk-customer-development-l1-template.md` 或
 `../../shared/references/bulk-customer-development-l2-template.md`。

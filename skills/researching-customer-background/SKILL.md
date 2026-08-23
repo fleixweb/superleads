@@ -173,18 +173,19 @@ Superleads 的主路径不变：
 
 对话表格每张最多六列。URL、原文摘录和复杂来源定位只放在最后的“信息从哪里来”；前五张表不堆砌证据细节。
 
-如果用户明确要在 Codex / ChatGPT app 中直接阅读正式 Markdown 报告，按 `../../shared/policies/cross-platform-rules.md` 选择宿主自带 runtime 解释器，调用 `scripts/export_superleads_markdown.py`，参数为 `graph.json --route customer_background_research --output report.md --format json`。
+如果用户明确要在 Codex / ChatGPT app 中直接阅读正式 Markdown 报告，按 `../../shared/policies/cross-platform-rules.md` 选择宿主自带 runtime 解释器，调用 `scripts/export_superleads_markdown.py`，参数为 `graph.json --route customer_background_research --output <session-artifact-dir>/report.md --format json`。
 
 客户背调 Markdown 正式交付必须有已保存的 graph JSON 和 Markdown exporter 返回的
 `ok=true`。不要声称 `export_superleads_markdown.py` 或 Markdown exporter 只支持
 批量客户开发；它支持 `customer_background_research`。如果该命令失败，返回失败
 payload 或改交付 CSV/XLSX，不要把手写研究摘要称为正式 Markdown 报告。
 
-任何正式文件交付前都要确认宿主提供的 `session_artifact_dir` 字段或
-`SUPERLEADS_SESSION_ARTIFACT_DIR` 环境变量指向已存在且可写的会话产物目录。
-判不出来默认按不存在处理，直接走对话内工作表，不把任意 cwd 当作交付目录。
+任何正式文件交付前都要优先确认 `session_artifact_dir` 字段或
+`SUPERLEADS_SESSION_ARTIFACT_DIR` 环境变量指向已存在且可写的会话产物目录；
+没有可用显式目录时回退到当前可写的工作区根目录。不得新建或使用 `work/`、`tmp/`、
+`out/` 等运行期临时子目录；两级目录都不可用时才直接走对话内工作表。
 
-如需 CSV / XLSX 交接，按 `../../shared/policies/cross-platform-rules.md` 选择宿主自带 runtime 解释器，调用 `scripts/export_workbook.py`，参数为 `graph.json --output-dir out --mode background --format csv`，导出同样的六张固定表；有 `suspected_trade_records` 时同步追加同名条件 sheet。两类导出都只展示当前背景对象、其证据支持的关联主体与线索，不会输出无关批量客户或正式名单内容。
+如需 CSV / XLSX 交接，按 `../../shared/policies/cross-platform-rules.md` 选择宿主自带 runtime 解释器，调用 `scripts/export_workbook.py`，参数为 `graph.json --output-dir <session-artifact-dir> --mode background --format csv`，导出同样的六张固定表；有 `suspected_trade_records` 时同步追加同名条件 sheet。两类导出都只展示当前背景对象、其证据支持的关联主体与线索，不会输出无关批量客户或正式名单内容。
 
 向用户说明已生成产物时，只写每个产物的文件名与文件类型；生成多个产物时必须逐个列出，不得只提其中一个。用户可见正文和阶段性进度旁白都不得写盘符、绝对路径、目录层级或 `file://` URL，也不得手工构造宿主文件引用或附件指令；具体路径与附件呈现交由宿主文件机制处理。
 

@@ -245,7 +245,7 @@ and standalone clarifications do not. A user requesting a chat-readable formal
 report must use the unified Markdown delivery layer. Under
 `../policies/cross-platform-rules.md`, select the host-provided runtime
 interpreter and invoke `scripts/export_superleads_markdown.py` with
-`graph.json --route auto --output report.md --format json`.
+`graph.json --route auto --output <session-artifact-dir>/report.md --format json`.
 
 Do not hand-render a workbook as a substitute Markdown report, relabel internal
 signal statuses as `依据状态`, or claim successful formal export without a saved

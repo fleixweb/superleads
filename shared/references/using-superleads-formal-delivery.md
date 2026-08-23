@@ -144,14 +144,17 @@ lacks file-write capability, follow the existing in-chat fallback, identify
 the affected delivery tier or capability gap, and never promise a file the
 current host cannot generate.
 
-进入 L2 之前，first confirm the file-delivery preflight. The host must
-provide `session_artifact_dir` or `SUPERLEADS_SESSION_ARTIFACT_DIR`; the path
-must resolve to an existing writable directory. If it is unknown or invalid,
-默认按不存在处理，tell the user this environment can only deliver a 对话内工作表,
-and ask whether to continue before graph construction or deep verification.
-The orchestrating Agent is responsible for passing the resolved path to
-`scripts/export_workbook.py --output-dir` and for placing the Markdown
-`--output` in the same directory.
+进入 L2 之前，first confirm the file-delivery preflight. Prefer an existing
+writable directory from `session_artifact_dir` or
+`SUPERLEADS_SESSION_ARTIFACT_DIR`; otherwise use the current writable
+工作区根目录（cwd）. Do not create or select a model-owned runtime 临时子目录 such
+as `work/`, `tmp/`, or `out/` for delivery. Only when the explicit directory
+and workspace root are both unavailable should the Agent tell the user this
+environment can only deliver a 对话内工作表 and ask whether to continue before
+graph construction or deep verification. The orchestrating Agent remains
+responsible for passing the resolved path to `scripts/export_workbook.py --output-dir`
+and for placing the Markdown `--output` in the same directory;
+the exporters do not guess a destination.
 
 For the current L2 Run, set `max_tool_calls_per_run` to 默认 160 and allow an
 explicit configured value up to 最高 240. Count only `search.web` and

@@ -302,6 +302,7 @@ class PreflightCapabilitiesTest(unittest.TestCase):
 
         self.assertEqual("available", result["file_delivery"]["status"])
         self.assertEqual(artifact_dir, result["file_delivery"]["directory"])
+        self.assertEqual("host_field", result["file_delivery"]["source"])
         self.assertEqual("formal_research_ready", result["max_output_without_manual_sources"])
 
     def test_artifact_directory_environment_variable_is_used_when_host_field_is_absent(self) -> None:
@@ -312,22 +313,64 @@ class PreflightCapabilitiesTest(unittest.TestCase):
 
         self.assertEqual("available", result["file_delivery"]["status"])
         self.assertEqual(artifact_dir, result["file_delivery"]["directory"])
+        self.assertEqual("environment", result["file_delivery"]["source"])
 
-    def test_unknown_or_invalid_artifact_directory_defaults_to_chat_only(self) -> None:
-        with patch.dict(os.environ, {}, clear=True):
+    def test_writable_workspace_cwd_is_used_when_no_explicit_artifact_directory_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace_dir, patch.dict(
+            os.environ, {}, clear=True
+        ), patch.object(
+            preflight_capabilities.Path, "cwd", return_value=Path(workspace_dir)
+        ):
             result = preflight_capabilities.preflight({
                 "capabilities": {"search.web": "available", "source.open": "available"},
             })
+
+        self.assertEqual("available", result["file_delivery"]["status"])
+        self.assertEqual(workspace_dir, result["file_delivery"]["directory"])
+        self.assertEqual("workspace_cwd", result["file_delivery"]["source"])
+        self.assertIsNone(result["file_delivery"]["fallback"])
+
+    def test_invalid_explicit_artifact_directory_falls_back_to_writable_workspace_cwd(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace_dir, patch.dict(
+            os.environ, {}, clear=True
+        ), patch.object(
+            preflight_capabilities.Path, "cwd", return_value=Path(workspace_dir)
+        ):
+            result = preflight_capabilities.preflight({
+                "capabilities": {"search.web": "available", "source.open": "available"},
+                "session_artifact_dir": "/path/that/does/not/exist",
+            })
+
+        self.assertEqual("available", result["file_delivery"]["status"])
+        self.assertEqual(workspace_dir, result["file_delivery"]["directory"])
+        self.assertEqual("workspace_cwd", result["file_delivery"]["source"])
+
+    def test_unwritable_workspace_cwd_defaults_to_chat_only(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace_dir, patch.dict(
+            os.environ, {}, clear=True
+        ), patch.object(
+            preflight_capabilities.Path, "cwd", return_value=Path(workspace_dir)
+        ), patch.object(
+            preflight_capabilities.os, "access", return_value=False
+        ):
+            result = preflight_capabilities.preflight({
+                "capabilities": {"search.web": "available", "source.open": "available"},
+            })
+
         self.assertEqual("unavailable", result["file_delivery"]["status"])
         self.assertEqual("chat_only", result["file_delivery"]["fallback"])
-        self.assertIn("宿主未提供可验证", result["file_delivery"]["message"])
+        self.assertIn("工作区根目录均不存在或不可写", result["file_delivery"]["message"])
 
-        invalid = preflight_capabilities.preflight({
-            "capabilities": {"search.web": "available", "source.open": "available"},
-            "session_artifact_dir": "/path/that/does/not/exist",
-        })
-        self.assertEqual("unavailable", invalid["file_delivery"]["status"])
-        self.assertEqual("chat_only", invalid["file_delivery"]["fallback"])
+    def test_unavailable_workspace_cwd_defaults_to_chat_only(self) -> None:
+        with patch.dict(os.environ, {}, clear=True), patch.object(
+            preflight_capabilities.Path, "cwd", side_effect=OSError("cwd unavailable")
+        ):
+            result = preflight_capabilities.preflight({
+                "capabilities": {"search.web": "available", "source.open": "available"},
+            })
+
+        self.assertEqual("unavailable", result["file_delivery"]["status"])
+        self.assertEqual("chat_only", result["file_delivery"]["fallback"])
 
 
 if __name__ == "__main__":

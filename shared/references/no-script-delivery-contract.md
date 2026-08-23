@@ -58,11 +58,17 @@ the official exporter did not run successfully.
 
 ## Session artifact directory
 
-Treat file delivery as available only when the host supplies a non-empty
-`session_artifact_dir` field or the `SUPERLEADS_SESSION_ARTIFACT_DIR`
-environment variable and the resolved value is an existing writable directory.
-If the value is missing, invalid, or cannot be checked, 默认按不存在处理: do not
-write into an arbitrary cwd and do not claim delivery. Use a 对话内工作表.
+Resolve file delivery in this order: first use a non-empty
+`session_artifact_dir` field or `SUPERLEADS_SESSION_ARTIFACT_DIR` environment
+variable when it points to an existing writable directory; otherwise use the
+current writable 工作区根目录（cwd）. Only when neither level is usable should
+file delivery fall back to a 对话内工作表.
+
+Do not create or use a model-owned runtime temporary subdirectory such as
+`work/`, `tmp/`, or `out/` as the delivery location. The writable workspace
+root is the allowed second-level fallback. Never expose the resolved path,
+manually construct a host attachment directive, or claim delivery before the
+file was actually generated.
 
 The orchestrating Agent passes the resolved directory explicitly to
 `scripts/export_workbook.py --output-dir` and places the Markdown export's

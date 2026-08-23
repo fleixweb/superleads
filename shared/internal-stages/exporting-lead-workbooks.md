@@ -66,8 +66,9 @@ Completed CSV/XLSX and chat-readable exports follow the shared footer rules only
 
 无脚本版式必须读取 `../../shared/references/bulk-customer-development-l1-template.md`
 或 `../../shared/references/bulk-customer-development-l2-template.md`。进入 L2 前
-必须确认 `session_artifact_dir` 或 `SUPERLEADS_SESSION_ARTIFACT_DIR` 指向已存在可写目录；
-判不出来默认按不存在，先走对话内工作表。
+优先确认 `session_artifact_dir` 或 `SUPERLEADS_SESSION_ARTIFACT_DIR` 指向已存在可写目录；
+没有可用显式目录时回退到当前可写的工作区根目录。不得新建或使用 `work/`、`tmp/`、
+`out/` 等运行期临时子目录；两级目录都不可用时才走对话内工作表。
 
 ## Sheet sets
 
@@ -91,15 +92,15 @@ Use the unified Markdown delivery command when the user wants a readable report
 inside a chat, Codex, or ChatGPT app:
 
 ```bash
-python3 scripts/export_superleads_markdown.py graph.json --route auto --output report.md --format json
+python3 scripts/export_superleads_markdown.py graph.json --route auto --output <session-artifact-dir>/report.md --format json
 ```
 
 Explicit routes:
 
 ```bash
-python3 scripts/export_superleads_markdown.py graph.json --route bulk_customer_development --output bulk-report.md --format json
-python3 scripts/export_superleads_markdown.py graph.json --route customer_background_research --output background-report.md --format json
-python3 scripts/export_superleads_markdown.py graph.json --route product_outbound_market_analysis --output market-report.md --format json
+python3 scripts/export_superleads_markdown.py graph.json --route bulk_customer_development --output <session-artifact-dir>/bulk-report.md --format json
+python3 scripts/export_superleads_markdown.py graph.json --route customer_background_research --output <session-artifact-dir>/background-report.md --format json
+python3 scripts/export_superleads_markdown.py graph.json --route product_outbound_market_analysis --output <session-artifact-dir>/market-report.md --format json
 ```
 
 The Markdown command renders only already-audited workbook or matrix
@@ -150,9 +151,9 @@ python3 scripts/check_superleads_formal_markdown_delivery.py --fixture shared/re
 For spreadsheet export, keep using:
 
 ```bash
-python3 scripts/export_workbook.py graph.json --output-dir out --mode initial --format csv
-python3 scripts/export_workbook.py graph.json --output-dir out --mode background --format csv
-python3 scripts/export_product_market_workbook.py market-graph.json --output-dir out --format csv --markdown market-report.md --manifest manifest.json
+python3 scripts/export_workbook.py graph.json --output-dir <session-artifact-dir> --mode initial --format csv
+python3 scripts/export_workbook.py graph.json --output-dir <session-artifact-dir> --mode background --format csv
+python3 scripts/export_product_market_workbook.py market-graph.json --output-dir <session-artifact-dir> --format csv --markdown <session-artifact-dir>/market-report.md --manifest manifest.json
 ```
 
 ## Export rules

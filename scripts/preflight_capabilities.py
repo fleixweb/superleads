@@ -24,46 +24,50 @@ SESSION_ARTIFACT_ENV = "SUPERLEADS_SESSION_ARTIFACT_DIR"
 
 
 def resolve_session_artifact_dir(payload: dict[str, Any] | None) -> dict[str, Any]:
-    """Resolve a host-owned session artifact directory without guessing a cwd.
-
-    The host field takes precedence over the environment variable. An absent,
-    non-existent, non-directory, or non-writable value is unavailable.
-    """
+    """Resolve a writable delivery directory using the host-to-workspace ladder."""
     host_value = payload.get("session_artifact_dir") if isinstance(payload, dict) else None
-    source = "host_field" if isinstance(host_value, str) and host_value.strip() else None
-    raw_value = host_value if source else os.environ.get(SESSION_ARTIFACT_ENV)
-    if source is None and isinstance(raw_value, str) and raw_value.strip():
-        source = "environment"
-    if not isinstance(raw_value, str) or not raw_value.strip():
-        return {
-            "status": "unavailable",
-            "directory": None,
-            "source": None,
-            "fallback": "chat_only",
-            "message": "宿主未提供可验证的会话产物目录；默认按不可用处理，改为对话内工作表。",
-        }
-    directory = Path(raw_value).expanduser()
+    candidates: list[tuple[str, Any]] = []
+    if isinstance(host_value, str) and host_value.strip():
+        candidates.append(("host_field", host_value))
+    environment_value = os.environ.get(SESSION_ARTIFACT_ENV)
+    if isinstance(environment_value, str) and environment_value.strip():
+        candidates.append(("environment", environment_value))
     try:
-        is_valid = directory.is_dir() and os.access(directory, os.W_OK)
+        workspace_cwd = Path.cwd()
     except OSError:
-        is_valid = False
-    if not is_valid:
+        workspace_cwd = None
+    if workspace_cwd is not None:
+        candidates.append(("workspace_cwd", workspace_cwd))
+
+    for source, raw_value in candidates:
+        directory = raw_value if isinstance(raw_value, Path) else Path(raw_value).expanduser()
+        try:
+            if not directory.is_dir() or not os.access(directory, os.W_OK):
+                continue
+            resolved = str(directory.resolve())
+        except OSError:
+            continue
+        message = (
+            "宿主已提供可写会话产物目录；导出器必须显式使用该目录。"
+            if source in {"host_field", "environment"}
+            else "宿主目录不可用，已回退到可写工作区根目录；导出器必须显式使用该目录。"
+        )
         return {
-            "status": "unavailable",
-            "directory": None,
+            "status": "available",
+            "directory": resolved,
             "source": source,
-            "fallback": "chat_only",
-            "message": "宿主提供的会话产物目录不存在、不是目录或不可写；默认改为对话内工作表。",
+            "fallback": None,
+            "message": message,
+            "export_workbook_output_dir": resolved,
+            "markdown_output_parent": resolved,
         }
-    resolved = str(directory.resolve())
+
     return {
-        "status": "available",
-        "directory": resolved,
-        "source": source,
-        "fallback": None,
-        "message": "宿主已提供可写会话产物目录；导出器必须显式使用该目录。",
-        "export_workbook_output_dir": resolved,
-        "markdown_output_parent": resolved,
+        "status": "unavailable",
+        "directory": None,
+        "source": None,
+        "fallback": "chat_only",
+        "message": "宿主目录和工作区根目录均不存在或不可写；改为对话内工作表。",
     }
 
 def normalize_status(raw: Any) -> str:

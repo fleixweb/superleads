@@ -517,17 +517,20 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
         self.assertIn("不按安装方式推断", adapters)
         self.assertIn("不沿用历史会话结论", adapters)
 
-    def test_l2_preflight_requires_a_verifiable_session_artifact_directory(self) -> None:
+    def test_l2_preflight_uses_explicit_artifact_directory_then_workspace_root(self) -> None:
         formal = (ROOT / "shared" / "references" / "using-superleads-formal-delivery.md").read_text(encoding="utf-8")
         no_script = (ROOT / "shared" / "references" / "no-script-delivery-contract.md").read_text(encoding="utf-8")
+        guidance = (ROOT / "shared" / "references" / "superleads-user-guidance.md").read_text(encoding="utf-8")
+        export_stage = (ROOT / "shared" / "internal-stages" / "exporting-lead-workbooks.md").read_text(encoding="utf-8")
         using_skill = (ROOT / "skills" / "using-superleads" / "SKILL.md").read_text(encoding="utf-8")
         background_skill = (ROOT / "skills" / "researching-customer-background" / "SKILL.md").read_text(encoding="utf-8")
 
-        for content in (formal, no_script, using_skill, background_skill):
+        for content in (formal, no_script, guidance, export_stage, using_skill, background_skill):
             self.assertIn("session_artifact_dir", content)
             self.assertIn("SUPERLEADS_SESSION_ARTIFACT_DIR", content)
-            self.assertIn("默认按不存在处理", content)
+            self.assertIn("工作区根目录", content)
             self.assertIn("对话内工作表", content)
+            self.assertRegex(content, r"临时子目录|work/.*tmp/.*out/")
         self.assertIn("export_workbook.py --output-dir", formal)
         self.assertIn("进入 L2 之前", formal)
 
