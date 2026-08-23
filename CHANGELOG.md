@@ -4,6 +4,39 @@ All notable changes to this project are documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-08-23
+
+### Added
+
+- Publish no-script L1 and L2 bulk-customer Markdown templates with fixed
+  section order, canonical table headers, conditional public-signal sections,
+  and embedded examples. Register the templates as the authoritative owners
+  of the no-script user-visible layout.
+- Add optional Run-local L2 budget fields: `max_tool_calls_per_run` and
+  `interim_delivery_batch_size`. L2 defaults to 160 counted web-search/source-
+  open calls, permits configuration up to 240, and delivers an interim batch
+  after every 3 completed candidates. Existing 2-query/1-open enrichment limits
+  remain unchanged.
+
+### Changed
+
+- Split `initial_lead_list` from the explicit L1 public-signal supplement:
+  default L1 output omits social, map, and third-party trade sections; those
+  sections are emitted only when the supplement is explicitly requested.
+- Define a three-level file-delivery ladder: host-provided artifact directory,
+  writable workspace root, then chat-only fallback. Runtime-created `work/`,
+  `tmp/`, and `out/` subdirectories are not valid delivery locations.
+
+### Fixed
+
+- Restore file delivery in hosts that do not set the optional artifact-directory
+  environment variable by falling back to the writable workspace root while
+  keeping exporter destinations explicit and preserving path/attachment safety
+  boundaries.
+- Add regression coverage for the artifact-directory ladder, invalid explicit
+  directories, unavailable cwd, L1 public-signal supplements, and user-visible
+  Markdown boundary behavior.
+
 ## [0.3.0] - 2026-08-22
 
 ### Added
