@@ -312,7 +312,7 @@ class PublicEnrichmentTest(unittest.TestCase):
         self.assertIn("Example Buyer", markdown)
         self.assertNotIn("发现候选池样表（候选池不是正式开发名单）", markdown)
 
-    def test_default_discovery_projects_social_map_and_trade_sections(self) -> None:
+    def test_default_discovery_omits_l2_public_signal_sections(self) -> None:
         graph = enriched_graph()
         graph["candidates"][0]["brand_name"] = "Alpha Brand"
         issues = validate_graph(graph)
@@ -338,18 +338,32 @@ class PublicEnrichmentTest(unittest.TestCase):
         self.assertEqual("initial_lead_list", delivery_status)
         self.assertIsNotNone(markdown)
         for expected in (
+            "品牌名称",
+            "Alpha Brand",
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, markdown)
+        for omitted in ("社媒与公开职业线索", "地图与经营地址", "第三方贸易摘要"):
+            self.assertNotIn(omitted, markdown)
+
+    def test_explicit_l1_public_signal_supplement_keeps_canonical_sections(self) -> None:
+        graph = enriched_graph()
+        markdown, export_issues, delivery_status = build_bulk_markdown(
+            graph,
+            include_public_signal_sections=True,
+        )
+        self.assertEqual([], export_issues)
+        self.assertEqual("initial_lead_list", delivery_status)
+        self.assertIsNotNone(markdown)
+        assert markdown is not None
+        for expected in (
             "社媒与公开职业线索",
             "地图与经营地址",
             "第三方贸易摘要",
             "第三方贸易数据聚合站公开摘要，非官方海关记录",
-            "品牌名称",
-            "Alpha Brand",
             "公开职位只是角色线索，不等于采购负责人或采购权限。",
-            "来源受限：该公开页面需要登录、验证码、付费访问、人工验证或当前 AI 无法正常读取。",
-            "本轮未检索",
         ):
-            with self.subTest(expected=expected):
-                self.assertIn(expected, markdown)
+            self.assertIn(expected, markdown)
 
     def test_opened_social_or_map_item_requires_matching_opened_observation(self) -> None:
         graph = enriched_graph()
@@ -752,7 +766,10 @@ class PublicEnrichmentTest(unittest.TestCase):
 
         issues = validate_graph(graph)
         self.assertEqual([], issues)
-        markdown, export_issues, delivery_status = build_bulk_markdown(graph)
+        markdown, export_issues, delivery_status = build_bulk_markdown(
+            graph,
+            include_public_signal_sections=True,
+        )
         self.assertEqual([], export_issues)
         self.assertEqual("initial_lead_list", delivery_status)
         for expected in (

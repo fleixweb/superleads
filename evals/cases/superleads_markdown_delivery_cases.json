@@ -9,7 +9,7 @@
       "route": "auto",
       "expected_route": "bulk_customer_development",
       "expected": "pass",
-      "min_tables": 10,
+      "min_tables": 8,
       "must_contain": [
         "我理解你卖的是",
         "本次优先找",
@@ -24,10 +24,6 @@
         "公开信号已匹配当前范围",
         "已排除 / 仅作参考",
         "联系方式汇总",
-        "社媒与公开职业线索",
-        "地图与经营地址",
-        "第三方贸易摘要",
-        "第三方贸易数据聚合站公开摘要，非官方海关记录",
         "联系人 / 公开职业线索",
         "待确认原因",
         "Jordan Lee",
@@ -48,7 +44,35 @@
         "产品出海市场分析",
         "EvidenceCard",
         "SearchLog",
-        "| Jordan Lee | person_name |"
+        "| Jordan Lee | person_name |",
+        "社媒与公开职业线索",
+        "地图与经营地址",
+        "第三方贸易摘要"
+      ]
+    },
+    {
+      "name": "bulk customer development explicit L1 public signal supplement",
+      "fixture": "evals/fixtures/pass_default_discovery_candidate_pool.json",
+      "route": "auto",
+      "expected_route": "bulk_customer_development",
+      "expected": "pass",
+      "include_public_signal_sections": true,
+      "min_tables": 11,
+      "must_contain": [
+        "发现候选池样表",
+        "社媒与公开职业线索",
+        "地图与经营地址",
+        "第三方贸易摘要",
+        "第三方贸易数据聚合站公开摘要，非官方海关记录",
+        "| 公司名称 | 平台 | 页面类型 | 页面名称 / 人员 | 公开职位或部门 | 公开联系入口 | 主体关联依据 | 来源状态 | 观察时间 | 来源 / 链接 | 不能推出的内容 |",
+        "| 公司名称 | 地图平台 | 商户名称 | 地址 | 公开电话 | 经营场景 | 主体关联依据 | 来源状态 | 观察时间 | 来源 / 链接 | 不能推出的内容 |",
+        "| 公司名称 | 状态 | 进出口方向 | 对方名称 | 记录日期 | 产品名称或 HS | 起运地或目的地 | 主体匹配状态 | 来源 / 链接 | 观察时间 | 不能推出的内容 |"
+      ],
+      "must_not_contain": [
+        "推荐客户",
+        "采购概率",
+        "EvidenceCard",
+        "SearchLog"
       ]
     },
     {
@@ -57,7 +81,7 @@
       "route": "auto",
       "expected_route": "bulk_customer_development",
       "expected": "pass",
-      "min_tables": 10,
+      "min_tables": 8,
       "must_contain": [
         "The Telegraph",
         "Photograph",

@@ -48,7 +48,7 @@ ROUTES = (
 )
 
 MIN_TABLES = {
-    "bulk_customer_development": 10,
+    "bulk_customer_development": 8,
     "customer_background_research": 6,
     "product_outbound_market_analysis": 7,
 }
@@ -128,6 +128,14 @@ def _md_escape(value: Any) -> str:
     if len(text) > 420:
         text = text[:417].rstrip() + "…"
     return text.replace("\\", "\\\\").replace("|", "\\|").replace("\n", "<br>")
+
+
+_BARE_PUBLIC_URL = re.compile(r"(?<![<(])https?://[A-Za-z0-9._~:/?#\[\]@!$&'*+,;=%-]+")
+
+
+def _visible_source_text(value: Any) -> str:
+    text = _safe_text(value)
+    return _BARE_PUBLIC_URL.sub(lambda match: f"<{match.group(0)}>", text)
 
 
 def _table(headers: list[str], rows: list[dict[str, Any]]) -> list[str]:
@@ -285,6 +293,7 @@ def _source_lookup(rows: list[dict[str, Any]]) -> dict[str, list[str]]:
         source = _first_nonempty(row.get("来源说明"), row.get("来源"), row.get("发现来源"))
         link = _safe_text(row.get("来源链接") or row.get("发现链接"))
         combined = source if link == "未提供" else f"{source}；{link}"
+        combined = _visible_source_text(combined)
         if name == "未提供" or combined == "未提供":
             continue
         lookup.setdefault(name, []).append(combined)
@@ -469,6 +478,8 @@ def _delivery_status_issue(requested: str, allowed: list[Any]) -> dict[str, Any]
 def build_bulk_markdown(
     graph: dict[str, Any],
     requested_delivery_status: str | None = None,
+    *,
+    include_public_signal_sections: bool = False,
 ) -> tuple[str | None, list[dict[str, Any]], str | None]:
     audit = audit_lead_graph(graph)
     if not audit.get("ok"):
@@ -492,11 +503,20 @@ def build_bulk_markdown(
             "message": f"Unsupported bulk delivery status: {audit.get('delivery_status')}",
             "path": "delivery_status",
         }], None
-    text, issues = _build_initial_bulk_markdown(graph, audit)
+    text, issues = _build_initial_bulk_markdown(
+        graph,
+        audit,
+        include_public_signal_sections=include_public_signal_sections,
+    )
     return text, issues, delivery_status
 
 
-def _build_initial_bulk_markdown(graph: dict[str, Any], audit: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
+def _build_initial_bulk_markdown(
+    graph: dict[str, Any],
+    audit: dict[str, Any],
+    *,
+    include_public_signal_sections: bool = False,
+) -> tuple[str, list[dict[str, Any]]]:
     sheets = build_lead_sheets(graph, audit, "initial")
     sheets = redact_local_paths(redact_delivery_sheets(sheets, hold_contact_values(graph)))
     brief = _current_brief(graph)
@@ -533,7 +553,9 @@ def _build_initial_bulk_markdown(graph: dict[str, Any], audit: dict[str, Any]) -
         relevance = _first_nonempty(row.get("业务相关性"), row.get("方向状态"), "待确认")
         basis_status = _candidate_basis_status(candidate, row, relevance)
         contact_text = "；".join(contacts.get(name, [])) or _first_nonempty(row.get("官网/域名"), "待确认")
-        source_text = "；".join(sources.get(name, [])) or _first_nonempty(row.get("发现来源"), row.get("发现链接"), "来源 / 来源状态待确认")
+        source_text = _visible_source_text(
+            "；".join(sources.get(name, [])) or _first_nonempty(row.get("发现来源"), row.get("发现链接"), "来源 / 来源状态待确认")
+        )
         confirm = "；".join(
             item for item in (
                 _safe_text(row.get("下一步待验证")),
@@ -570,7 +592,9 @@ def _build_initial_bulk_markdown(graph: dict[str, Any], audit: dict[str, Any]) -
             "归入原因": _first_nonempty(row.get("用户排除项/已观察冲突"), row.get("相关性依据"), row.get("说明"), "命中排除或仅作参考边界"),
             "依据状态": _candidate_basis_status(candidate, row, "明确排除/不相关") if candidate else "可作为线索",
             "是否可由用户改判": "可以；若用户确认该类主体仍可开发，应重新进入发现候选池核查。",
-            "来源 / 来源状态": "；".join(sources.get(name, [])) or _first_nonempty(row.get("发现来源"), row.get("发现链接"), "来源 / 来源状态待确认"),
+            "来源 / 来源状态": _visible_source_text(
+                "；".join(sources.get(name, [])) or _first_nonempty(row.get("发现来源"), row.get("发现链接"), "来源 / 来源状态待确认")
+            ),
         })
 
     pending_rows: list[dict[str, Any]] = []
@@ -619,6 +643,7 @@ def _build_initial_bulk_markdown(graph: dict[str, Any], audit: dict[str, Any]) -
             source_text = f"{source_note}；{source_link}"
         else:
             source_text = source_note if source_note != "未提供" else "来源状态待确认"
+        source_text = _visible_source_text(source_text)
         contact_rows.append({
             "对象": _first_nonempty(row.get("公司/线索名称"), row.get("公司名称"), row.get("主体"), "待确认归属线索"),
             "联系人 / 公开职业线索": person_clue,
@@ -654,8 +679,8 @@ def _build_initial_bulk_markdown(graph: dict[str, Any], audit: dict[str, Any]) -
             continue
         source_rows.append({
             "对象": _first_nonempty(row.get("公司/线索名称"), "候选线索"),
-            "来源 / 来源状态": _first_nonempty(row.get("来源说明"), "公开入口待复核"),
-            "链接": _safe_text(row.get("来源链接")),
+            "来源 / 来源状态": _visible_source_text(_first_nonempty(row.get("来源说明"), "公开入口待复核")),
+            "链接": _visible_source_text(row.get("来源链接")),
         })
 
     search_combination_rows, uncovered_combination_hints, next_step_options = _search_combination_rows(
@@ -705,29 +730,30 @@ def _build_initial_bulk_markdown(graph: dict[str, Any], audit: dict[str, Any]) -
         ["对象", "联系人 / 公开职业线索", "联系方式", "类型", "可用状态", "待确认原因", "来源 / 链接"],
         contact_rows,
     )
-    _append_table(
-        lines,
-        "社媒与公开职业线索",
-        ["公司名称", "平台", "页面类型", "页面名称 / 人员", "公开职位或部门", "公开联系入口", "主体关联依据", "来源状态", "观察时间", "来源 / 链接", "不能推出的内容"],
-        social_rows,
-    )
-    _append_table(
-        lines,
-        "地图与经营地址",
-        ["公司名称", "地图平台", "商户名称", "地址", "公开电话", "经营场景", "主体关联依据", "来源状态", "观察时间", "来源 / 链接", "不能推出的内容"],
-        map_rows,
-    )
-    lines.extend([
-        "## 第三方贸易摘要",
-        "",
-        "第三方贸易数据聚合站公开摘要，非官方海关记录。只保留本轮可见字段，不代表完整贸易记录，也不能推出采购意愿、采购权限、从中国采购事实或未来订单。",
-        "",
-    ])
-    lines.extend(_table(
-        ["公司名称", "状态", "进出口方向", "对方名称", "记录日期", "产品名称或 HS", "起运地或目的地", "主体匹配状态", "来源 / 链接", "观察时间", "不能推出的内容"],
-        trade_rows,
-    ))
-    lines.append("")
+    if include_public_signal_sections:
+        _append_table(
+            lines,
+            "社媒与公开职业线索",
+            ["公司名称", "平台", "页面类型", "页面名称 / 人员", "公开职位或部门", "公开联系入口", "主体关联依据", "来源状态", "观察时间", "来源 / 链接", "不能推出的内容"],
+            social_rows,
+        )
+        _append_table(
+            lines,
+            "地图与经营地址",
+            ["公司名称", "地图平台", "商户名称", "地址", "公开电话", "经营场景", "主体关联依据", "来源状态", "观察时间", "来源 / 链接", "不能推出的内容"],
+            map_rows,
+        )
+        lines.extend([
+            "## 第三方贸易摘要",
+            "",
+            "第三方贸易数据聚合站公开摘要，非官方海关记录。只保留本轮可见字段，不代表完整贸易记录，也不能推出采购意愿、采购权限、从中国采购事实或未来订单。",
+            "",
+        ])
+        lines.extend(_table(
+            ["公司名称", "状态", "进出口方向", "对方名称", "记录日期", "产品名称或 HS", "起运地或目的地", "主体匹配状态", "来源 / 链接", "观察时间", "不能推出的内容"],
+            trade_rows,
+        ))
+        lines.append("")
     _append_table(lines, "搜索覆盖与收敛", ["本轮查了哪些方向", "覆盖国家/语言/来源类型", "新增/重复", "来源受限或未执行", "覆盖/收敛说明"], coverage_rows)
     _append_table(lines, "待确认事项", ["对象", "待确认事项", "下一步", "状态"], pending_rows)
     _append_table(lines, "已排除 / 仅作参考", ["分区", "对象", "归入原因", "依据状态", "是否可由用户改判", "来源 / 来源状态"], excluded_rows)
@@ -957,6 +983,7 @@ def build_markdown(
     input_path: Path,
     route: str,
     requested_delivery_status: str | None = None,
+    include_public_signal_sections: bool = False,
 ) -> tuple[str | None, list[dict[str, Any]], str, str | None]:
     raw = load_json(input_path)
     if not isinstance(raw, dict):
@@ -981,7 +1008,11 @@ def build_markdown(
         text, issues, delivery_status = build_background_markdown(graph)
     elif actual_route == "bulk_customer_development":
         graph = resolved_for_route if resolved_for_route is not raw else raw
-        text, issues, delivery_status = build_bulk_markdown(graph, requested_delivery_status=requested_delivery_status)
+        text, issues, delivery_status = build_bulk_markdown(
+            graph,
+            requested_delivery_status=requested_delivery_status,
+            include_public_signal_sections=include_public_signal_sections,
+        )
     else:
         return None, [{"severity": "critical", "code": "markdown_delivery_unknown_route", "message": f"Unknown route: {route}", "path": "route"}], actual_route, None
     if text is not None:
@@ -1002,6 +1033,11 @@ def main() -> int:
         choices=("initial_lead_list", "standard_development_list"),
         help="Bulk delivery view to render; only an audit-approved downward override is accepted.",
     )
+    parser.add_argument(
+        "--include-public-signal-sections",
+        action="store_true",
+        help="Explicit L1 supplement: include social, map, and third-party trade sections.",
+    )
     parser.add_argument("--output", type=Path, help="Markdown output path. If omitted with --format markdown, writes to stdout.")
     parser.add_argument("--format", choices=("json", "markdown"), default="json")
     parser.add_argument("--skip-user-visible-validation", action="store_true", help="Generate without running the Slice T user-visible validator")
@@ -1011,6 +1047,7 @@ def main() -> int:
         args.input,
         args.route,
         requested_delivery_status=args.delivery_status,
+        include_public_signal_sections=args.include_public_signal_sections,
     )
     if text is None:
         payload = {

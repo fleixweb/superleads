@@ -7,7 +7,7 @@
       "fixture": "evals/user_visible_outputs/bulk_customer_development_us_generator_aftermarket.md",
       "route": "bulk_customer_development",
       "expected": "pass",
-      "min_tables": 10,
+      "min_tables": 8,
       "must_contain": [
         "我理解你卖的是",
         "本次优先找",
@@ -20,21 +20,19 @@
         "公开信号已匹配当前范围",
         "已排除 / 仅作参考",
         "联系方式汇总",
-        "社媒与公开职业线索",
-        "地图与经营地址",
-        "第三方贸易摘要",
-        "第三方贸易数据聚合站公开摘要，非官方海关记录",
         "搜索覆盖与收敛",
         "风险与说明",
         "已有明确依据",
-        "需补充资料",
         "来源受限"
       ],
       "must_not_contain": [
         "推荐客户",
         "采购概率",
         "产品出海市场分析",
-        "客户背调报告"
+        "客户背调报告",
+        "社媒与公开职业线索",
+        "地图与经营地址",
+        "第三方贸易摘要"
       ]
     },
     {
@@ -42,7 +40,7 @@
       "fixture": "evals/user_visible_outputs/pass_bulk_customer_purchase_intent_pending.md",
       "route": "bulk_customer_development",
       "expected": "pass",
-      "min_tables": 10,
+      "min_tables": 8,
       "must_contain": [
         "采购意愿待确认",
         "候选池不是正式开发名单",
@@ -51,10 +49,6 @@
         "待确认",
         "来源受限",
         "联系方式汇总",
-        "社媒与公开职业线索",
-        "地图与经营地址",
-        "第三方贸易摘要",
-        "第三方贸易数据聚合站公开摘要，非官方海关记录",
         "搜索覆盖与收敛",
         "风险与说明",
         "已有明确依据",
@@ -64,6 +58,29 @@
         "换搜索组合再找一批",
         "标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；交付表格文件 + 配套报告；较慢；产量降、耗时增",
         "只补社媒 / 地图 / 贸易记录信号（不做主体与联系人核验；较快，仍属候选池，不升级为已验证）"
+      ],
+      "must_not_contain": [
+        "推荐客户",
+        "采购概率",
+        "客户背调报告",
+        "产品出海市场分析",
+        "社媒与公开职业线索",
+        "地图与经营地址",
+        "第三方贸易摘要"
+      ]
+    },
+    {
+      "name": "bulk customer development L1 public signal supplement fixture",
+      "fixture": "evals/user_visible_outputs/pass_bulk_customer_l1_public_signal_supplement.md",
+      "route": "bulk_customer_development",
+      "expected": "pass",
+      "min_tables": 11,
+      "must_contain": [
+        "发现候选池样表",
+        "社媒与公开职业线索",
+        "地图与经营地址",
+        "第三方贸易摘要",
+        "第三方贸易数据聚合站公开摘要，非官方海关记录"
       ],
       "must_not_contain": [
         "推荐客户",
@@ -429,7 +446,10 @@
       ],
       "must_not_contain": [
         "本次输出为标准开发名单",
-        "客户信息总表"
+        "客户信息总表",
+        "社媒与公开职业线索",
+        "地图与经营地址",
+        "第三方贸易摘要"
       ]
     },
     {

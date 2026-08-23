@@ -306,7 +306,7 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         self.assertEqual(0, return_code)
         self.assertTrue(payload["ok"])
         self.assertEqual("initial_lead_list", payload["delivery_status"])
-        self.assertGreaterEqual(payload["table_count"], 10)
+        self.assertGreaterEqual(payload["table_count"], 8)
 
     def test_exporter_cli_rejects_upward_delivery_status_override(self) -> None:
         stdout = StringIO()
@@ -414,6 +414,63 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         self.assertNotIn("importer-combination-internal-only", markdown)
         self.assertNotIn("run-menu-internal-only", markdown)
         self.assertLess(markdown.index("## 本轮搜索组合"), markdown.index("## 下一步可选"))
+
+    def test_l1_exporter_requires_explicit_public_signal_supplement_for_three_sections(self) -> None:
+        graph = _load(BULK_FIXTURE)
+        default_markdown, default_issues, _ = build_bulk_markdown(graph)
+        supplement_markdown, supplement_issues, _ = build_bulk_markdown(
+            graph,
+            include_public_signal_sections=True,
+        )
+        self.assertEqual([], default_issues)
+        self.assertEqual([], supplement_issues)
+        self.assertIsNotNone(default_markdown)
+        self.assertIsNotNone(supplement_markdown)
+        for title in ("社媒与公开职业线索", "地图与经营地址", "第三方贸易摘要"):
+            self.assertNotIn(title, default_markdown)
+            self.assertIn(title, supplement_markdown)
+
+    def test_l1_status_mentions_do_not_trigger_supplement_section_contract(self) -> None:
+        report = (ROOT / "evals" / "user_visible_outputs" / "bulk_customer_development_us_generator_aftermarket.md").read_text(encoding="utf-8")
+        marker = "\n## Superleads 支持"
+        body, footer = report.split(marker, 1)
+        text = body.rstrip() + "\n\n本轮未核验社媒与公开职业线索。\n" + marker + footer
+
+        issues = validate(text, "bulk_customer_development", min_tables=8)
+
+        self.assertEqual([], issues)
+
+    def test_l1_supplement_requires_all_canonical_section_headings(self) -> None:
+        report = (ROOT / "evals" / "user_visible_outputs" / "pass_bulk_customer_l1_public_signal_supplement.md").read_text(encoding="utf-8")
+        malformed = report.replace("## 地图与经营地址\n", "", 1)
+
+        issues = validate(malformed, "bulk_customer_development", min_tables=11)
+
+        missing = {
+            issue["value"]
+            for issue in issues
+            if issue["code"] == "user_visible_missing_required_text"
+        }
+        self.assertIn("## 地图与经营地址", missing)
+
+        prose_only = report.replace("## 地图与经营地址", "地图与经营地址（本轮补充说明）", 1).replace("## 第三方贸易摘要", "第三方贸易摘要（本轮补充说明）", 1)
+        prose_issues = validate(prose_only, "bulk_customer_development", min_tables=11)
+        prose_missing = {
+            issue["value"]
+            for issue in prose_issues
+            if issue["code"] == "user_visible_missing_required_text"
+        }
+        self.assertTrue({"## 地图与经营地址", "## 第三方贸易摘要"}.issubset(prose_missing))
+
+    def test_l1_fenced_heading_does_not_trigger_supplement_contract(self) -> None:
+        report = (ROOT / "evals" / "user_visible_outputs" / "bulk_customer_development_us_generator_aftermarket.md").read_text(encoding="utf-8")
+        marker = "\n## Superleads 支持"
+        body, footer = report.split(marker, 1)
+        text = body.rstrip() + "\n\n```markdown\n## 社媒与公开职业线索\n## 地图与经营地址\n## 第三方贸易摘要\n```\n" + marker + footer
+
+        issues = validate(text, "bulk_customer_development", min_tables=8)
+
+        self.assertEqual([], issues)
 
     def test_background_report_asks_about_verification_basis_without_follow_up_advice(self) -> None:
         graph = _load(BACKGROUND_FIXTURE)

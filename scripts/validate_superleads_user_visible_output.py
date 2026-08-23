@@ -17,31 +17,29 @@ from _superleads_common import contains_local_path, trace_schema_metadata
 from superleads_user_guidance import has_exactly_one_final_footer
 
 
+BULK_INITIAL_REQUIRED = [
+    "我理解你卖的是",
+    "本次优先找",
+    "本次不纳入",
+    "判断依据将重点看",
+    "候选客户",
+    "当前看到的业务信号",
+    "业务相关性",
+    "依据状态",
+    "可用联系入口",
+    "还要确认什么",
+    "来源 / 来源状态",
+    "候选池",
+    "公开信号已匹配当前范围",
+    "已排除 / 仅作参考",
+    "联系方式汇总",
+    "搜索覆盖与收敛",
+    "风险与说明",
+    "待确认",
+]
+
 ROUTE_REQUIRED: dict[str, list[str]] = {
-    "bulk_customer_development": [
-        "我理解你卖的是",
-        "本次优先找",
-        "本次不纳入",
-        "判断依据将重点看",
-        "候选客户",
-        "当前看到的业务信号",
-        "业务相关性",
-        "依据状态",
-        "可用联系入口",
-        "还要确认什么",
-        "来源 / 来源状态",
-        "候选池",
-        "公开信号已匹配当前范围",
-        "已排除 / 仅作参考",
-        "联系方式汇总",
-        "社媒与公开职业线索",
-        "地图与经营地址",
-        "第三方贸易摘要",
-        "第三方贸易数据聚合站公开摘要，非官方海关记录",
-        "搜索覆盖与收敛",
-        "风险与说明",
-        "待确认",
-    ],
+    "bulk_customer_development": BULK_INITIAL_REQUIRED,
     "customer_background_research": [
         "一句话先说清",
         "客户一眼看懂",
@@ -86,6 +84,46 @@ BULK_STANDARD_REQUIRED = [
     "风险与说明",
     "公开信号已匹配当前范围",
 ]
+
+BULK_L1_PUBLIC_SIGNAL_SUPPLEMENT_REQUIRED = [
+    "| 公司名称 | 平台 | 页面类型 | 页面名称 / 人员 | 公开职位或部门 | 公开联系入口 | 主体关联依据 | 来源状态 | 观察时间 | 来源 / 链接 | 不能推出的内容 |",
+    "| 公司名称 | 地图平台 | 商户名称 | 地址 | 公开电话 | 经营场景 | 主体关联依据 | 来源状态 | 观察时间 | 来源 / 链接 | 不能推出的内容 |",
+    "第三方贸易数据聚合站公开摘要，非官方海关记录",
+    "| 公司名称 | 状态 | 进出口方向 | 对方名称 | 记录日期 | 产品名称或 HS | 起运地或目的地 | 主体匹配状态 | 来源 / 链接 | 观察时间 | 不能推出的内容 |",
+]
+
+_BULK_L1_PUBLIC_SIGNAL_HEADINGS = (
+    "社媒与公开职业线索",
+    "地图与经营地址",
+    "第三方贸易摘要",
+)
+
+
+def _bulk_l1_public_signal_headings(text: str) -> set[str]:
+    headings: set[str] = set()
+    fence_char: str | None = None
+    fence_length = 0
+    for line in text.splitlines():
+        fence = re.match(r"^[ \t]{0,3}(`{3,}|~{3,})", line)
+        if fence:
+            token = fence.group(1)
+            if fence_char is None:
+                fence_char = token[0]
+                fence_length = len(token)
+            elif token[0] == fence_char and len(token) >= fence_length:
+                fence_char = None
+                fence_length = 0
+            continue
+        if fence_char is not None:
+            continue
+        match = re.match(r"^[ \t]{0,3}##[ \t]+(.+?)[ \t]*$", line)
+        if match and match.group(1) in _BULK_L1_PUBLIC_SIGNAL_HEADINGS:
+            headings.add(match.group(1))
+    return headings
+
+
+def _has_bulk_l1_public_signal_heading(text: str) -> bool:
+    return bool(_bulk_l1_public_signal_headings(text))
 
 _STANDARD_DELIVERY_CLAIM = re.compile(
     r"(?:本次(?:输出|交付)为|已(?:输出|交付|生成)(?:一份)?|这是|以下为)\s*标准开发名单|^\s*#{1,6}\s*标准开发名单\s*[。:：.!！]?\s*$",
@@ -748,6 +786,15 @@ def validate(
     claims_standard_delivery = route == "bulk_customer_development" and _STANDARD_DELIVERY_CLAIM.search(text) is not None
     if route == "bulk_customer_development" and (delivery_status == "standard_development_list" or claims_standard_delivery):
         required = BULK_STANDARD_REQUIRED
+    elif route == "bulk_customer_development" and _has_bulk_l1_public_signal_heading(text):
+        required = BULK_INITIAL_REQUIRED + BULK_L1_PUBLIC_SIGNAL_SUPPLEMENT_REQUIRED
+        missing_supplement_headings = [
+            f"## {title}"
+            for title in _BULK_L1_PUBLIC_SIGNAL_HEADINGS
+            if title not in _bulk_l1_public_signal_headings(text)
+        ]
+        for heading in missing_supplement_headings:
+            issues.append(_issue("user_visible_missing_required_text", f"missing required phrase: {heading}", heading))
     if route == "product_outbound_market_analysis" and "本轮范围：" in text:
         # A scoped report names both the selected scope and the modules not
         # executed this round. It still renders only fixed tables plus the

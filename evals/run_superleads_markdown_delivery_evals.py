@@ -129,6 +129,8 @@ def _case(py: str, case: dict[str, Any], tmp_path: Path, index: int) -> dict[str
     out = tmp_path / f"markdown_delivery_{index}.md"
     expect = 0 if case.get("expected", "pass") == "pass" else 1
     cmd = [py, str(DELIVERER), str(fixture), "--route", str(case.get("route", "auto")), "--output", str(out), "--format", "json"]
+    if case.get("include_public_signal_sections"):
+        cmd.append("--include-public-signal-sections")
     delivery = run(cmd, expect)
     parsed = _parse_json_output(str(delivery.get("output", "")))
     problems: list[str] = []
