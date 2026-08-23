@@ -517,6 +517,65 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
         self.assertIn("不按安装方式推断", adapters)
         self.assertIn("不沿用历史会话结论", adapters)
 
+    def test_l2_preflight_requires_a_verifiable_session_artifact_directory(self) -> None:
+        formal = (ROOT / "shared" / "references" / "using-superleads-formal-delivery.md").read_text(encoding="utf-8")
+        no_script = (ROOT / "shared" / "references" / "no-script-delivery-contract.md").read_text(encoding="utf-8")
+        using_skill = (ROOT / "skills" / "using-superleads" / "SKILL.md").read_text(encoding="utf-8")
+        background_skill = (ROOT / "skills" / "researching-customer-background" / "SKILL.md").read_text(encoding="utf-8")
+
+        for content in (formal, no_script, using_skill, background_skill):
+            self.assertIn("session_artifact_dir", content)
+            self.assertIn("SUPERLEADS_SESSION_ARTIFACT_DIR", content)
+            self.assertIn("默认按不存在处理", content)
+            self.assertIn("对话内工作表", content)
+        self.assertIn("export_workbook.py --output-dir", formal)
+        self.assertIn("进入 L2 之前", formal)
+
+    def test_l2_budget_and_interim_delivery_contract_is_numeric_and_run_local(self) -> None:
+        paths = (
+            ROOT / "shared" / "references" / "batch-discovery-execution.md",
+            ROOT / "shared" / "references" / "using-superleads-formal-delivery.md",
+            ROOT / "shared" / "references" / "default-discovery-reference.md",
+            ROOT / "shared" / "internal-stages" / "writing-research-plans.md",
+            ROOT / "shared" / "internal-stages" / "executing-research-plans.md",
+        )
+        combined = "\n".join(path.read_text(encoding="utf-8") for path in paths)
+        for marker in (
+            "默认 160",
+            "最高 240",
+            "search.web",
+            "source.open",
+            "不统计文件写入、校验、审计或脚本调用",
+            "L1",
+            "每完成 3 家",
+        ):
+            self.assertIn(marker, combined)
+
+        strategy = (ROOT / "shared" / "references" / "bulk-execution-strategy.md").read_text(encoding="utf-8")
+        self.assertIn("L2", strategy)
+        self.assertIn("每完成 3 家", strategy)
+
+    def test_no_script_bulk_delivery_links_to_the_canonical_l1_l2_templates(self) -> None:
+        consumers = (
+            ROOT / "shared" / "references" / "no-script-delivery-contract.md",
+            ROOT / "shared" / "references" / "output-schema.md",
+            ROOT / "shared" / "internal-stages" / "exporting-lead-workbooks.md",
+            ROOT / "skills" / "using-superleads" / "SKILL.md",
+        )
+        for path in consumers:
+            content = path.read_text(encoding="utf-8")
+            self.assertIn("bulk-customer-development-l1-template.md", content)
+            self.assertIn("bulk-customer-development-l2-template.md", content)
+
+        writing = (ROOT / "shared" / "internal-stages" / "writing-research-plans.md").read_text(encoding="utf-8")
+        executing = (ROOT / "shared" / "internal-stages" / "executing-research-plans.md").read_text(encoding="utf-8")
+        for content in (writing, executing):
+            self.assertIn("L1", content)
+            self.assertIn("整段省略", content)
+            self.assertIn("社媒与公开职业线索", content)
+            self.assertIn("地图与经营地址", content)
+            self.assertIn("第三方贸易摘要", content)
+
 
 if __name__ == "__main__":
     unittest.main()

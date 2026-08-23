@@ -2,8 +2,9 @@
 """Preflight Superleads tool capability availability."""
 from __future__ import annotations
 
-import argparse, json
+import argparse, json, os
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 from _superleads_common import (
     CODEX_CLI_ADAPTER_OWNED_CAPABILITIES,
@@ -19,6 +20,51 @@ CAPABILITY_RULES={
 AVAILABLE={True,"true","available","yes","present","enabled"}; UNAVAILABLE={False,"false","unavailable","no","missing","disabled"}
 FORMAL_RESEARCH_MESSAGE = "本轮环境无法联网检索并打开可记录来源，不能完成 Superleads 正式外贸研究。请切换到具备 Web Search 和来源打开能力的 Agent/环境后重试。若只需整理已有资料，可以继续，但那不是市场分析或客户开发报告。"
 NOT_ASSESSED_MESSAGE = "未提供可判断的宿主能力信息，本次未评估。请先清点当前会话实际暴露的检索与来源打开操作，再以 --input 传入后重跑；或直接按无脚本路径检查宿主能力。"
+SESSION_ARTIFACT_ENV = "SUPERLEADS_SESSION_ARTIFACT_DIR"
+
+
+def resolve_session_artifact_dir(payload: dict[str, Any] | None) -> dict[str, Any]:
+    """Resolve a host-owned session artifact directory without guessing a cwd.
+
+    The host field takes precedence over the environment variable. An absent,
+    non-existent, non-directory, or non-writable value is unavailable.
+    """
+    host_value = payload.get("session_artifact_dir") if isinstance(payload, dict) else None
+    source = "host_field" if isinstance(host_value, str) and host_value.strip() else None
+    raw_value = host_value if source else os.environ.get(SESSION_ARTIFACT_ENV)
+    if source is None and isinstance(raw_value, str) and raw_value.strip():
+        source = "environment"
+    if not isinstance(raw_value, str) or not raw_value.strip():
+        return {
+            "status": "unavailable",
+            "directory": None,
+            "source": None,
+            "fallback": "chat_only",
+            "message": "宿主未提供可验证的会话产物目录；默认按不可用处理，改为对话内工作表。",
+        }
+    directory = Path(raw_value).expanduser()
+    try:
+        is_valid = directory.is_dir() and os.access(directory, os.W_OK)
+    except OSError:
+        is_valid = False
+    if not is_valid:
+        return {
+            "status": "unavailable",
+            "directory": None,
+            "source": source,
+            "fallback": "chat_only",
+            "message": "宿主提供的会话产物目录不存在、不是目录或不可写；默认改为对话内工作表。",
+        }
+    resolved = str(directory.resolve())
+    return {
+        "status": "available",
+        "directory": resolved,
+        "source": source,
+        "fallback": None,
+        "message": "宿主已提供可写会话产物目录；导出器必须显式使用该目录。",
+        "export_workbook_output_dir": resolved,
+        "markdown_output_parent": resolved,
+    }
 
 def normalize_status(raw: Any) -> str:
     value=raw.strip().lower() if isinstance(raw,str) else raw
@@ -272,6 +318,7 @@ def preflight(payload: dict[str,Any]|None) -> dict[str,Any]:
         "discovery_snapshot_status": discovery_status,
         "discovery_snapshot_message": discovery_message,
         "downgrade_notes": notes,
+        "file_delivery": resolve_session_artifact_dir(payload),
     }
     if capability_failure is not None:
         result["capability_failure"] = capability_failure
@@ -295,7 +342,7 @@ def preflight(payload: dict[str,Any]|None) -> dict[str,Any]:
     return result
 
 def main()->int:
-    p=argparse.ArgumentParser(); p.add_argument("--input"); p.add_argument("--output"); p.add_argument("--require-formal-research", action="store_true"); p.add_argument("--format",choices=["text","json"],default="text"); a=p.parse_args()
+    p=argparse.ArgumentParser(); p.add_argument("--input"); p.add_argument("--output"); p.add_argument("--require-formal-research", action="store_true"); p.add_argument("--require-file-delivery", action="store_true"); p.add_argument("--format",choices=["text","json"],default="text"); a=p.parse_args()
     result=preflight(load_json(a.input) if a.input else None)
     if a.output: write_json(a.output,result)
     if a.format=="json": print(json.dumps(result,ensure_ascii=False,indent=2))
@@ -303,8 +350,12 @@ def main()->int:
         print(f"max_output_without_manual_sources: {result['max_output_without_manual_sources']}")
         if result["formal_research_status"] == "not_assessed":
             print("formal_research_status: not_assessed")
+        if a.require_file_delivery:
+            print(f"file_delivery_status: {result['file_delivery']['status']}")
         for note in result["downgrade_notes"]: print(f"downgrade: {note}")
-    if not a.require_formal_research or result["formal_research_status"] == "ready":
-        return 0
-    return 2 if result["formal_research_status"] == "not_assessed" else 1
+    if a.require_formal_research and result["formal_research_status"] != "ready":
+        return 2 if result["formal_research_status"] == "not_assessed" else 1
+    if a.require_file_delivery and result["file_delivery"]["status"] != "available":
+        return 1
+    return 0
 if __name__=="__main__": raise SystemExit(main())

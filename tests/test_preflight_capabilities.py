@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import io
+import os
+import tempfile
 import sys
 import unittest
 from contextlib import redirect_stdout
@@ -110,6 +112,25 @@ class PreflightCapabilitiesTest(unittest.TestCase):
 
                 if status == "not_assessed":
                     self.assertIn("formal_research_status: not_assessed", output.getvalue())
+
+    def test_require_file_delivery_blocks_when_session_artifact_dir_is_unavailable(self) -> None:
+        output = io.StringIO()
+        with patch.object(
+            preflight_capabilities,
+            "preflight",
+            return_value={
+                "formal_research_status": "ready",
+                "max_output_without_manual_sources": "formal_research_ready",
+                "downgrade_notes": [],
+                "file_delivery": {"status": "unavailable", "message": "chat only"},
+            },
+        ), patch.object(
+            sys,
+            "argv",
+            ["preflight_capabilities.py", "--require-file-delivery", "--format", "text"],
+        ), redirect_stdout(output):
+            self.assertEqual(1, preflight_capabilities.main())
+        self.assertIn("file_delivery_status: unavailable", output.getvalue())
 
     def test_shell_only_report_does_not_authorize_self_reported_search(self) -> None:
         payload = self.load_fixture("preflight_codex_shell_http_source_open.json")
@@ -270,6 +291,43 @@ class PreflightCapabilitiesTest(unittest.TestCase):
         self.assertEqual("needs_host_capability_check", result["discovery_snapshot_status"])
         self.assertIn("宿主实际暴露", result["discovery_snapshot_message"])
         self.assertNotIn("停止快速候选池", result["discovery_snapshot_message"])
+
+    def test_artifact_directory_from_host_field_is_required_for_file_delivery(self) -> None:
+        with tempfile.TemporaryDirectory() as artifact_dir:
+            result = preflight_capabilities.preflight({
+                "platform": "chatgpt_desktop",
+                "capabilities": {"search.web": "available", "source.open": "available"},
+                "session_artifact_dir": artifact_dir,
+            })
+
+        self.assertEqual("available", result["file_delivery"]["status"])
+        self.assertEqual(artifact_dir, result["file_delivery"]["directory"])
+        self.assertEqual("formal_research_ready", result["max_output_without_manual_sources"])
+
+    def test_artifact_directory_environment_variable_is_used_when_host_field_is_absent(self) -> None:
+        with tempfile.TemporaryDirectory() as artifact_dir, patch.dict(
+            os.environ, {"SUPERLEADS_SESSION_ARTIFACT_DIR": artifact_dir}, clear=False
+        ):
+            result = preflight_capabilities.preflight({"capabilities": {"search.web": "available", "source.open": "available"}})
+
+        self.assertEqual("available", result["file_delivery"]["status"])
+        self.assertEqual(artifact_dir, result["file_delivery"]["directory"])
+
+    def test_unknown_or_invalid_artifact_directory_defaults_to_chat_only(self) -> None:
+        with patch.dict(os.environ, {}, clear=True):
+            result = preflight_capabilities.preflight({
+                "capabilities": {"search.web": "available", "source.open": "available"},
+            })
+        self.assertEqual("unavailable", result["file_delivery"]["status"])
+        self.assertEqual("chat_only", result["file_delivery"]["fallback"])
+        self.assertIn("宿主未提供可验证", result["file_delivery"]["message"])
+
+        invalid = preflight_capabilities.preflight({
+            "capabilities": {"search.web": "available", "source.open": "available"},
+            "session_artifact_dir": "/path/that/does/not/exist",
+        })
+        self.assertEqual("unavailable", invalid["file_delivery"]["status"])
+        self.assertEqual("chat_only", invalid["file_delivery"]["fallback"])
 
 
 if __name__ == "__main__":

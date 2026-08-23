@@ -91,7 +91,7 @@
 
 达到 `standard_development_list` 后，官方工作簿是标准开发名单的默认主产物，并同时交付配套 Markdown 报告；两者分别由官方工作簿导出器和 Markdown 导出器生成，并在终局答复中分别列出文件名和文件类型。`initial_lead_list` 发现候选池的交付行为不变。文件输出仍须按当前宿主实际具备的文件写出能力决定；不具备时按既有对话内降级路径交付，不承诺无法生成的文件，不得降低证据、联系人或来源约束。
 
-社媒、地图和第三方贸易摘要有一条仅在用户明确要求时触发的 L1 信号补充路径：每个类别使用有限预算，同一 Run 对相同 canonical/final URL 去重，并为每个已请求类别如实填写既有 `collection_status`，不得留空或伪装为已完成。该路径不生成 Entity / Claim / ClaimEvidence / ScopeDecision / Assessment，不做联系人归属核验，不升级业务相关性状态；候选仍是候选。社媒或地图搜索摘要中的人名、职位、电话、地址和经营场景不得写成已观察事实。`补社媒 / 地图 / 贸易记录信号`只补这些状态；选择`深度核验`时，整份名单的必做信号与联系人归属核验规则见 `batch-discovery-execution.md` 的「Deep-Verification Completeness」和 `using-superleads-formal-delivery.md` 的 L2 规则。
+社媒、地图和第三方贸易摘要有一条仅在用户明确要求时触发的 L1 信号补充路径：维持既有每候选每类别最多 2 次查询、1 次打开，同一 Run 对相同 canonical/final URL 去重，并为每个已请求类别如实填写既有 `collection_status`，不得留空或伪装为已完成。默认 L1 整段省略「社媒与公开职业线索」「地图与经营地址」「第三方贸易摘要」，只在候选表或待确认项标“未核验”；用户明确要求补充时才插入这三个段落。该路径不生成 Entity / Claim / ClaimEvidence / ScopeDecision / Assessment，不做联系人归属核验，不升级业务相关性状态；候选仍是候选。社媒或地图搜索摘要中的人名、职位、电话、地址和经营场景不得写成已观察事实。`补社媒 / 地图 / 贸易记录信号`只补这些状态；选择`深度核验`时，整份名单的必做信号与联系人归属核验规则见 `batch-discovery-execution.md` 的「Deep-Verification Completeness」和 `using-superleads-formal-delivery.md` 的 L2 规则。L2 的 `max_tool_calls_per_run` 默认 160、最高 240，只统计 `search.web` 和 `source.open`，不统计文件写入、校验、审计或脚本调用；L1 已消耗次数不进入 L2 配额，每完成 3 家交付一批。
 
 联系人深挖、全量图谱、正式审核与 Markdown 导出只在用户明确要求“正式开发名单、完整核验、深度背调、正式报告或 Markdown 导出”时加载。超过预算必须写 `not_searched` 和“本轮未检索”，不能写成未发现或不存在。
 

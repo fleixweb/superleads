@@ -36,6 +36,11 @@ Full review workbook:
 
 Avoid exposing internal artifact names such as Candidate Preview, Research Draft, Audit Package, Entity, ClaimEvidence, ContactClaim, or DeliveryManifest as user-facing sheet names.
 
+无脚本批量 Markdown 的逐字版式由
+[`bulk-customer-development-l1-template.md`](./bulk-customer-development-l1-template.md)
+和 [`bulk-customer-development-l2-template.md`](./bulk-customer-development-l2-template.md)
+分别负责 L1/L2；工作簿 sheet 名不是 Markdown 版式定义。
+
 ## Unified Markdown delivery
 
 For chat-readable delivery, use `scripts/export_superleads_markdown.py` after

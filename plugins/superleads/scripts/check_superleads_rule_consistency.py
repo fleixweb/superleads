@@ -28,11 +28,28 @@ DISCLOSURE_CONSUMERS = (
 )
 OWNERSHIP_MARKERS = (
     ("no-script-delivery-contract.md", "无脚本交付"),
+    ("bulk-customer-development-l1-template.md", "L1 用户可见 Markdown 版式"),
+    ("bulk-customer-development-l2-template.md", "L2 用户可见 Markdown 版式"),
     ("scripts/_superleads_common.py", "Canonical disclosure"),
     ("scripts/validate_superleads_user_visible_output.py", "最终用户可见边界"),
     ("scripts/audit_delivery.py", "交付门禁"),
     ("scripts/validate_research_graph.py", "结构门禁"),
 )
+
+BULK_TEMPLATE_MARKERS = {
+    "shared/references/bulk-customer-development-l1-template.md": (
+        "发现候选池样表（候选池不是正式开发名单）",
+        "默认 L1 **整段省略**",
+        "只有用户明确要求“补社媒 / 地图 / 贸易记录信号”时",
+        "| 分区 | 候选客户 | 品牌名称 | 国家/地区 | 可能客户角色 | 当前看到的业务信号 | 业务相关性 | 依据状态 | 可用联系入口 | 还要确认什么 | 来源 / 来源状态 |",
+    ),
+    "shared/references/bulk-customer-development-l2-template.md": (
+        "本次输出为标准开发名单",
+        "| 公司名称 | 官网 | 国家/地区 | 客户类型 | 公开信息状态 | 缺失项 | 需人工核查 | 方向状态 | 说明 |",
+        "| 公司名称 | 联系方式类型 | 联系方式 | 原文 | 联系人 | 职位/部门 | 状态 | 来源上下文 | 归属证据 | 来源说明 | 来源链接 | 需人工核查说明 |",
+        "暂无可展示记录",
+    ),
+}
 
 
 def _read(root: Path, relative: str) -> str:
@@ -74,6 +91,14 @@ def check_rule_consistency(root: Path) -> list[dict[str, str]]:
         if marker not in ownership or label not in ownership:
             issues.append({"code": "ownership_marker_missing", "marker": marker, "label": label,
                            "path": "shared/references/rule-ownership.md"})
+    for relative, markers in BULK_TEMPLATE_MARKERS.items():
+        template = _read(root, relative)
+        if not template:
+            issues.append({"code": "bulk_template_missing", "path": relative})
+            continue
+        for marker in markers:
+            if marker not in template:
+                issues.append({"code": "bulk_template_marker_missing", "marker": marker, "path": relative})
     validator = _read(root, "scripts/validate_superleads_user_visible_output.py")
     if "has_exactly_one_final_footer" not in validator or "contains_local_path" not in validator:
         issues.append({"code": "terminal_validator_boundary_missing", "path": "scripts/validate_superleads_user_visible_output.py"})

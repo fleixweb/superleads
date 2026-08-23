@@ -110,6 +110,13 @@ phone, address, or business context is still not an observed fact. When the
 budget is exhausted or a source is restricted, mark that outcome truthfully;
 do not leave a category blank or present it as completed.
 
+The existing candidate enrichment policy remains 2 queries and 1 open per
+category/candidate. The current L2 Run counts only `search.web` and
+`source.open` against `max_tool_calls_per_run`: 默认 160, configurable to 最高
+240. 不统计文件写入、校验、审计或脚本调用, and L1 calls are outside the new
+L2 allowance. Every completed group of three candidates is an interim delivery
+boundary（每完成 3 家交付一批）; do not wait for the generic 20-subject threshold.
+
 The full-list contact-intelligence collection and attribution review is also
 mandatory L2 work. Read `../internal-stages/collecting-contact-intelligence.md`
 and `../policies/contact-intelligence-policy.md`: extract only from opened

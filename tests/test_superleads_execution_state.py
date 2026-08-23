@@ -22,6 +22,7 @@ from superleads_execution_state import (
     record_candidate,
     record_checkpoint_artifacts,
     record_expansion_scale_choice,
+    record_tool_call,
     record_milestone,
     restore_checkpoint,
     snapshot_checkpoint,
@@ -522,6 +523,81 @@ class SuperleadsExecutionStateTest(unittest.TestCase):
         self.assertIn("search_combination", run_schema["$defs"]["executionQueryGroup"]["properties"])
         self.assertIn("execution_budget", plan_schema["properties"])
         self.assertIn("execution_order", plan_schema["properties"]["query_groups"]["items"]["properties"])
+
+        plan_budget = plan_schema["properties"]["execution_budget"]
+        run_budget = run_schema["$defs"]["executionBudget"]
+        for budget in (plan_budget, run_budget):
+            self.assertIn("max_tool_calls_per_run", budget["properties"])
+            self.assertIn("interim_delivery_batch_size", budget["properties"])
+            self.assertNotIn("max_tool_calls_per_run", budget.get("required", []))
+            self.assertNotIn("interim_delivery_batch_size", budget.get("required", []))
+
+    def test_formal_research_budget_defaults_to_160_calls_and_batches_three_candidates(self) -> None:
+        state = create_execution_state(
+            "run-l2-default",
+            query_groups=[{"group_id": "website", "execution_order": "independent"}],
+            budget={},
+            task_mode="formal_research",
+            route="bulk_customer_development",
+        )
+        self.assertEqual(160, state["budget"]["max_tool_calls_per_run"])
+        self.assertEqual(3, state["budget"]["interim_delivery_batch_size"])
+        self.assertEqual(0, status_summary(state)["counted_tool_call_count"])
+
+    def test_formal_research_budget_accepts_240_but_rejects_more(self) -> None:
+        state = create_execution_state(
+            "run-l2-240",
+            query_groups=[{"group_id": "website", "execution_order": "independent"}],
+            budget={"max_tool_calls_per_run": 240, "interim_delivery_batch_size": 4},
+            task_mode="formal_research",
+        )
+        self.assertEqual(240, state["budget"]["max_tool_calls_per_run"])
+        self.assertEqual(4, state["budget"]["interim_delivery_batch_size"])
+        with self.assertRaises(ValueError):
+            create_execution_state(
+                "run-l2-too-large",
+                query_groups=[{"group_id": "website"}],
+                budget={"max_tool_calls_per_run": 241},
+                task_mode="formal_research",
+            )
+
+    def test_plan_budget_fields_are_forwarded_to_the_formal_run(self) -> None:
+        state = create_execution_state_from_plan(
+            "run-l2-plan-budget",
+            plan={
+                "query_groups": [{"group_id": "website"}],
+                "execution_budget": {
+                    "max_tool_calls_per_run": 200,
+                    "interim_delivery_batch_size": 5,
+                },
+            },
+            route="bulk_customer_development",
+            task_mode="formal_research",
+        )
+        self.assertEqual(200, state["budget"]["max_tool_calls_per_run"])
+        self.assertEqual(5, state["budget"]["interim_delivery_batch_size"])
+
+    def test_l1_calls_do_not_consume_a_new_l2_run_allowance(self) -> None:
+        l1 = create_execution_state("run-l1", query_groups=[], budget={}, task_mode="discovery_snapshot")
+        self.assertFalse(record_tool_call(l1, operation="search.web")["counted"])
+        l2 = create_execution_state("run-l2-after-l1", query_groups=[], budget={}, task_mode="formal_research")
+        self.assertEqual(0, status_summary(l2)["counted_tool_call_count"])
+
+    def test_only_l2_search_and_source_open_calls_consume_run_budget(self) -> None:
+        state = create_execution_state(
+            "run-l2-counted",
+            query_groups=[{"group_id": "website"}],
+            budget={"max_tool_calls_per_run": 2},
+            task_mode="formal_research",
+        )
+        self.assertTrue(record_tool_call(state, operation="search.web")["counted"])
+        self.assertTrue(record_tool_call(state, operation="source.open")["counted"])
+        self.assertEqual(2, status_summary(state)["counted_tool_call_count"])
+        self.assertEqual({"status": "budget_exhausted", "counted": False}, record_tool_call(state, operation="search.web"))
+        self.assertEqual(2, status_summary(state)["counted_tool_call_count"])
+        for operation in ("file.write", "validator", "script.call", "audit"):
+            self.assertFalse(record_tool_call(state, operation=operation)["counted"])
+        self.assertEqual(2, status_summary(state)["counted_tool_call_count"])
 
     def test_execution_state_schema_declares_helper_checkpoint_fields(self) -> None:
         run_schema = json.loads((ROOT / "shared" / "schemas" / "run.schema.json").read_text(encoding="utf-8"))

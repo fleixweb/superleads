@@ -21,6 +21,10 @@ optional Source, Observation, Contact, or Entity record.
 
 Execute and report phase boundaries as `breadth_search`, `source_verification`, `supplement`, and `serial_decision`. At each boundary record scope, query coverage, candidate count, opened-source count, unconfirmed count, source-restricted count, unexecuted count, and the next phase. Without a host-reported parallel or streaming facility, say “分批执行”; do not claim background or concurrent execution. On interruption, restore the last same-Run checkpoint and continue only incomplete groups. A cache hit is a reused current opened source, never a new observation or a historical fact.
 
+For L2, start a new Run-local allowance at zero: `max_tool_calls_per_run` 默认
+160、最高 240. Count only `search.web` and `source.open`; 不统计文件写入、校验、
+审计或脚本调用, and do not import L1 counts. Emit an interim worksheet 每完成 3 家.
+
 ## Required references
 
 Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/claim-and-source-policy.md`, and `../../shared/schemas/source-observation.schema.json`. For default discovery, follow `../../shared/references/default-discovery-reference.md` and start from `default-discovery-minimal-skeleton.example.json` for Candidate and SearchLog shape. Consult the complete reference only when actual sources, contact visibility, or identity conflict require those optional objects.
@@ -48,6 +52,8 @@ Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/c
    and third-party trade aggregation as not_searched / 未核验 unless the user
    explicitly requests that category. Use finite budgets and dedupe
    canonical/final URLs within the same Run.
+   In the default L1 report, 整段省略 `社媒与公开职业线索`、`地图与经营地址`、
+   `第三方贸易摘要`; insert them only for the explicit L1 supplement path.
 
 ## Codex CLI Native Search
 

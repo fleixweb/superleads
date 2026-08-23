@@ -5,6 +5,14 @@ description: "Use for a concrete batch discovery request with product or keyword
 
 # 批量发现公开客户信息
 
+正式进入 L2 前，先按 `../../shared/references/no-script-delivery-contract.md`
+做产物能力预检：宿主必须提供 `session_artifact_dir` 字段或
+`SUPERLEADS_SESSION_ARTIFACT_DIR` 环境变量，且目录已存在、可写。判不出来
+默认按不存在处理，先告知用户本环境只能交付对话内工作表，由用户决定是否继续。
+无脚本批量 Markdown 严格读取
+`../../shared/references/bulk-customer-development-l1-template.md` 或
+`../../shared/references/bulk-customer-development-l2-template.md`。
+
 ## 裸启动
 
 用户只输入 `@` 或 `@superleads` 时，根据用户语言逐字返回下方对应代码块内的全部内容，不得改写、扩展、删减条目或改变顺序：

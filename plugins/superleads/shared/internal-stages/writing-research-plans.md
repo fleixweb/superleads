@@ -19,6 +19,12 @@ For default discovery, this is an internal/on-demand guide within the single
 
 Every plan must state finite query-group, candidate, and core-source-open limits; whether contacts, trade summaries, or historical references are included; and coverage/low-increment stop conditions. Mark only independent search/open groups `execution_order: independent`. Entity merge, conflict treatment, Claim promotion, Review, Audit, and formal export remain `serial`. Record stage checkpoints for Brief, groups, SearchLogs, opened sources, Observations, dedupe results, and incomplete work. Reuse a same-Run normalized URL by recording a group association rather than reopening it; older Run material is only “历史参考，需重新核验”.
 
+For L2, preserve the required candidate policy at 2 queries / 1 open per
+category. Add optional `max_tool_calls_per_run`（默认 160，最高 240）and
+`interim_delivery_batch_size`（默认 3）to the plan. Only `search.web` and
+`source.open` consume this L2 allowance; 不统计文件写入、校验、审计或脚本调用,
+and L1 usage does not carry over. Plan an interim handoff 每完成 3 家.
+
 ## Required references
 
 Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/claim-and-source-policy.md`, and `../../shared/schemas/plan.schema.json`.
@@ -28,6 +34,8 @@ Read `../../shared/policies/tool-capability-policy.md`, `../../shared/policies/c
 1. Query groups tied to the current brief only.
 2. Fast candidate-pool default categories: `website`, `directory`, `document`, and `search_result`. Plan a run-wide first batch of 10 candidates for an unambiguous product + market + customer-type request; `max_candidates_per_run` is the stopping gate, while `max_candidates_per_group` remains only a per-group ceiling. Mark social, map, trade aggregation, and person-contact coverage as `not_searched` / 未核验 unless explicitly requested.
 3. Fast candidate-pool contact targets are only `email`, `phone`, and `contact_form`, with a visible status. `social_company`, `social_person`, `person_name`, `job_title`, `address`, `map_phone`, and `public_trade_summary` are opt-in supplements.
+   Default L1 output must 整段省略 `社媒与公开职业线索`、`地图与经营地址`、
+   `第三方贸易摘要`; only an explicit supplement request plans those sections.
 4. Default business-relevance criteria for `directly_related`, `possibly_related`, `explicitly_excluded_or_unrelated`, `identity_pending`, and `insufficient_information`.
 5. Public-signal collection targets and statuses for website/contact, trade record, China relation, and product description/HS.
 6. Claim evidence requirements only for explicit deep-check tasks, including which claims need first-party or high-authority sources.

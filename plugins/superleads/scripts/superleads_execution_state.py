@@ -25,6 +25,10 @@ MILESTONE_METRICS = {
     "formal_report_complete_seconds",
 }
 MAX_EXPANSION_SCALE = 500
+COUNTED_L2_OPERATIONS = frozenset({"search.web", "source.open"})
+DEFAULT_L2_MAX_TOOL_CALLS = 160
+MAX_L2_MAX_TOOL_CALLS = 240
+DEFAULT_INTERIM_DELIVERY_BATCH_SIZE = 3
 
 
 def normalize_run_url(url: str) -> str:
@@ -119,6 +123,17 @@ def _positive_budget_value(value: Any, *, field: str, default: int) -> int:
     return resolved
 
 
+def _l2_tool_call_budget(value: Any, *, task_mode: str) -> int | None:
+    if task_mode != "formal_research" and value is None:
+        return None
+    resolved = DEFAULT_L2_MAX_TOOL_CALLS if value is None else value
+    if isinstance(resolved, bool) or not isinstance(resolved, int) or resolved < 1:
+        raise ValueError("max_tool_calls_per_run must be a positive integer")
+    if resolved > MAX_L2_MAX_TOOL_CALLS:
+        raise ValueError(f"max_tool_calls_per_run must not exceed {MAX_L2_MAX_TOOL_CALLS}")
+    return resolved
+
+
 def _append_incomplete_work(state: dict[str, Any], work: str) -> None:
     incomplete = state.setdefault("incomplete_work", [])
     if work not in incomplete:
@@ -172,6 +187,16 @@ def create_execution_state(
         field="max_core_opens_per_candidate",
         default=2,
     )
+    max_tool_calls_per_run = _l2_tool_call_budget(budget.get("max_tool_calls_per_run"), task_mode=task_mode)
+    interim_delivery_batch_size = budget.get("interim_delivery_batch_size")
+    if interim_delivery_batch_size is None and task_mode == "formal_research":
+        interim_delivery_batch_size = DEFAULT_INTERIM_DELIVERY_BATCH_SIZE
+    elif interim_delivery_batch_size is not None:
+        interim_delivery_batch_size = _positive_budget_value(
+            interim_delivery_batch_size,
+            field="interim_delivery_batch_size",
+            default=DEFAULT_INTERIM_DELIVERY_BATCH_SIZE,
+        )
     stop_conditions = budget.get("stop_conditions") or []
     if not isinstance(stop_conditions, list) or any(not isinstance(item, str) or not item.strip() for item in stop_conditions):
         raise ValueError("stop_conditions must be a list of non-empty strings")
@@ -188,6 +213,8 @@ def create_execution_state(
             "max_candidates_per_group": max_candidates_per_group,
             "max_candidates_per_run": max_candidates_per_run,
             "max_core_opens_per_candidate": max_core_opens_per_candidate,
+            "max_tool_calls_per_run": max_tool_calls_per_run,
+            "interim_delivery_batch_size": interim_delivery_batch_size,
             "include_contacts": bool(budget.get("include_contacts", False)),
             "include_trade_records": bool(budget.get("include_trade_records", False)),
             "include_historical_references": bool(budget.get("include_historical_references", False)),
@@ -255,6 +282,8 @@ def create_execution_state_from_plan(
             "max_candidates_per_group": budget_source.get("max_candidates_per_group") or (10 if task_mode == "discovery_snapshot" else 5),
             "max_candidates_per_run": budget_source.get("max_candidates_per_run") if "max_candidates_per_run" in budget_source else (10 if task_mode == "discovery_snapshot" else None),
             "max_core_opens_per_candidate": budget_source.get("max_core_opens_per_candidate") or 2,
+            "max_tool_calls_per_run": budget_source.get("max_tool_calls_per_run"),
+            "interim_delivery_batch_size": budget_source.get("interim_delivery_batch_size"),
             "include_contacts": bool(budget_source.get("include_contacts", False)),
             "include_trade_records": bool(budget_source.get("include_trade_records", False)),
             "include_historical_references": bool(budget_source.get("include_historical_references", False)),
@@ -265,6 +294,34 @@ def create_execution_state_from_plan(
         route=route,
         uncovered_combination_hints=plan.get("uncovered_combination_hints"),
     )
+
+
+def record_tool_call(state: dict[str, Any], *, operation: str) -> dict[str, Any]:
+    """Record only current L2 ``search.web`` and ``source.open`` calls.
+
+    File writes, validators, audits, and script invocations are deliberately
+    outside this allowance. A new formal Run starts at zero; L1 state is not
+    carried into the L2 counter.
+    """
+    if operation not in COUNTED_L2_OPERATIONS or state.get("task_mode") != "formal_research":
+        return {"counted": False, "reason": "not_counted"}
+    budget = state.get("budget") if isinstance(state.get("budget"), dict) else {}
+    limit = budget.get("max_tool_calls_per_run")
+    if limit is None:
+        return {"counted": False, "reason": "not_counted"}
+    metrics = state.setdefault("metrics", _metrics())
+    used = sum(int(metrics.get(key, 0)) for key in (
+        "search_success_count",
+        "search_failure_count",
+        "source_open_success_count",
+        "source_restricted_count",
+    ))
+    if used >= int(limit):
+        _append_incomplete_work(state, "L2 search/source tool-call budget exhausted")
+        return {"status": "budget_exhausted", "counted": False}
+    metric = "search_success_count" if operation == "search.web" else "source_open_success_count"
+    metrics[metric] = int(metrics.get(metric, 0)) + 1
+    return {"counted": True, "remaining": int(limit) - used - 1}
 
 
 def begin_phase(state: dict[str, Any], phase: str) -> None:
@@ -550,6 +607,12 @@ def status_summary(state: dict[str, Any]) -> dict[str, Any]:
     restricted = sum(1 for group in groups if group.get("status") == "source_restricted")
     not_executed = sum(1 for group in groups if group.get("status") in {"not_executed", "budget_exhausted"})
     metrics = state.get("metrics") if isinstance(state.get("metrics"), dict) else {}
+    counted_tool_calls = sum(int(metrics.get(key, 0)) for key in (
+        "search_success_count",
+        "search_failure_count",
+        "source_open_success_count",
+        "source_restricted_count",
+    ))
     candidate_count = len(state.get("candidate_ids", []))
     search_combination_coverage: list[dict[str, Any]] = []
     first_owned_candidate_ids: set[str] = set()
@@ -591,6 +654,7 @@ def status_summary(state: dict[str, Any]) -> dict[str, Any]:
         "source_restricted_count": restricted,
         "not_executed_count": not_executed,
         "opened_source_count": int(metrics.get("opened_source_count", 0)),
+        "counted_tool_call_count": counted_tool_calls,
         "candidate_count": candidate_count,
         "next_step_options": next_step_options,
         "search_combination_coverage": search_combination_coverage,

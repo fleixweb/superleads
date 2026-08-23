@@ -20,8 +20,8 @@ customer shortlist. Select the artifact set from the audited `delivery_status`:
 from the same audited graph.
 
 For the standard artifact set, invoke only the official commands:
-`scripts/export_workbook.py <graph> --mode standard --format auto --manifest <manifest>`
-and `scripts/export_superleads_markdown.py <graph> --route bulk_customer_development --output <report>.md --format json`.
+`scripts/export_workbook.py <graph> --output-dir <session-artifact-dir> --mode standard --format auto --manifest <manifest>`
+and `scripts/export_superleads_markdown.py <graph> --route bulk_customer_development --output <session-artifact-dir>/<report>.md --format json`.
 The workbook is the primary operational deliverable; the Markdown file is its
 readable companion. List both filenames and file types separately in the
 terminal delivery. Do not change the standard workbook's six fixed sheets.
@@ -63,6 +63,11 @@ skeleton show the base initial sheet set; consult the complete reference only
 for optional contact-status and conflict presentation.
 
 Completed CSV/XLSX and chat-readable exports follow the shared footer rules only when presented as a terminal user delivery. Progress updates and standalone clarifications do not append the footer.
+
+无脚本版式必须读取 `../../shared/references/bulk-customer-development-l1-template.md`
+或 `../../shared/references/bulk-customer-development-l2-template.md`。进入 L2 前
+必须确认 `session_artifact_dir` 或 `SUPERLEADS_SESSION_ARTIFACT_DIR` 指向已存在可写目录；
+判不出来默认按不存在，先走对话内工作表。
 
 ## Sheet sets
 

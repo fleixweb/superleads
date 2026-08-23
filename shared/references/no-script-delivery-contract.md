@@ -4,6 +4,12 @@ This is the authoritative contract for a delivery when the deterministic
 scripts cannot run. Policy, Skill, and internal-stage documents may summarize
 this contract, but must link here instead of maintaining a second checklist.
 
+Bulk customer-development Markdown layout is owned by
+[`bulk-customer-development-l1-template.md`](./bulk-customer-development-l1-template.md)
+for `initial_lead_list` and
+[`bulk-customer-development-l2-template.md`](./bulk-customer-development-l2-template.md)
+for `standard_development_list`. Do not infer the Markdown layout from workbook sheet names.
+
 ## Common boundary
 
 The no-script path uses the same route, evidence, identity, contact, review,
@@ -49,3 +55,15 @@ for or borrow another application's interpreter or virtual environment. Use
 this contract for the manual self-check and deliver only the level supported by
 the evidence actually completed. Never claim a formal file was generated when
 the official exporter did not run successfully.
+
+## Session artifact directory
+
+Treat file delivery as available only when the host supplies a non-empty
+`session_artifact_dir` field or the `SUPERLEADS_SESSION_ARTIFACT_DIR`
+environment variable and the resolved value is an existing writable directory.
+If the value is missing, invalid, or cannot be checked, 默认按不存在处理: do not
+write into an arbitrary cwd and do not claim delivery. Use a 对话内工作表.
+
+The orchestrating Agent passes the resolved directory explicitly to
+`scripts/export_workbook.py --output-dir` and places the Markdown export's
+`--output` inside the same directory. Exporters do not guess a destination.
