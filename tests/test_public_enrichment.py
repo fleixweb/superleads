@@ -303,6 +303,34 @@ def add_opened_trade_summary(graph: dict[str, object]) -> dict[str, object]:
 
 
 class PublicEnrichmentTest(unittest.TestCase):
+    def test_material_business_relevance_requires_a_resolved_matched_entity(self) -> None:
+        for relevance in (
+            "directly_related",
+            "possibly_related",
+            "explicitly_excluded_or_unrelated",
+        ):
+            with self.subTest(relevance=relevance):
+                graph = enriched_graph()
+                candidate = graph["candidates"][0]
+                candidate["business_relevance_status"] = relevance
+                candidate["identity_resolution_status"] = "unresolved"
+                candidate.pop("entity_id", None)
+
+                codes = {issue["code"] for issue in validate_graph(graph)}
+
+                self.assertIn("default_discovery_material_relevance_identity_unresolved", codes)
+
+    def test_unresolved_candidate_can_remain_insufficient_information(self) -> None:
+        graph = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        epsilon = next(candidate for candidate in graph["candidates"] if candidate["candidate_id"] == "cand_epsilon_001")
+
+        self.assertEqual("unresolved", epsilon["identity_resolution_status"])
+        self.assertEqual("insufficient_information", epsilon["business_relevance_status"])
+        self.assertNotIn(
+            "default_discovery_material_relevance_identity_unresolved",
+            {issue["code"] for issue in validate_graph(graph)},
+        )
+
     def test_formal_markdown_smoke_accepts_standard_workbook_projection(self) -> None:
         issues, payload, markdown = check_generated_markdown(STANDARD_FIXTURE)
 
@@ -457,6 +485,19 @@ class PublicEnrichmentTest(unittest.TestCase):
         self.assertIn("default_discovery_enrichment_capability_not_allowed", codes)
         self.assertIn("default_discovery_enrichment_value_not_in_excerpt", codes)
         self.assertIn("default_discovery_enrichment_identity_pending_required", codes)
+
+    def test_unresolved_candidate_cannot_receive_opened_social_or_map_as_observed(self) -> None:
+        for signal_key in ("social_company", "social_person", "map_listing"):
+            with self.subTest(signal_key=signal_key):
+                graph = enriched_graph()
+                candidate = graph["candidates"][0]
+                candidate["identity_resolution_status"] = "unresolved"
+                candidate["business_relevance_status"] = "insufficient_information"
+                candidate.pop("entity_id", None)
+
+                codes = {issue["code"] for issue in validate_graph(graph)}
+
+                self.assertIn("default_discovery_enrichment_candidate_identity_unresolved", codes)
 
     def test_trade_rows_are_non_official_and_restricted_records_keep_next_step(self) -> None:
         graph = enriched_graph()
@@ -789,9 +830,9 @@ class PublicEnrichmentTest(unittest.TestCase):
     def test_formal_markdown_smoke_reads_candidate_statuses_only_from_candidate_pool_table(self) -> None:
         markdown = """## 发现候选池样表（候选池不是正式开发名单）
 
-| 分区 | 候选客户 | 依据状态 |
-| --- | --- | --- |
-| 待确认 | Example Importer | 来源受限 |
+| 候选主体 | 国家 / 可能角色 | 主体状态 | 业务关联 | 当前关键公开信号 | 公开联系入口 |
+| --- | --- | --- | --- | --- | --- |
+| Example Importer | Region Q / 经销商 | 主体待确认 | 可能相关 | 来源受限 | 待确认 |
 
 ## 社媒与公开职业线索
 
@@ -800,7 +841,7 @@ class PublicEnrichmentTest(unittest.TestCase):
 | Example Importer | 已有明确依据 |
 """
         rows = _candidate_pool_rows(markdown)
-        self.assertEqual(["| 待确认 | Example Importer | 来源受限 |"], rows)
+        self.assertEqual(["| Example Importer | Region Q / 经销商 | 主体待确认 | 可能相关 | 来源受限 | 待确认 |"], rows)
 
 
 if __name__ == "__main__":

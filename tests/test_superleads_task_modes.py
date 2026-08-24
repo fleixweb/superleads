@@ -217,7 +217,7 @@ class SuperleadsTaskModesTest(unittest.TestCase):
         self.assertIn("50", "\n".join(response["response_lines"]))
         self.assertIn("100", "\n".join(response["response_lines"]))
         self.assertIn("直接说数量", "\n".join(response["response_lines"]))
-        self.assertIn("只补社媒 / 地图 / 贸易记录信号（不做主体与联系人核验；较快", "\n".join(response["response_lines"]))
+        self.assertIn("只补社媒 / 地图 / 贸易记录信号（记录主体关联状态，不做深度联系人归属核验；较快", "\n".join(response["response_lines"]))
         self.assertIn("深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；交付表格文件 + 配套报告；较慢", "\n".join(response["response_lines"]))
 
     def test_part_number_country_and_customer_type_is_an_unambiguous_bulk_request(self) -> None:

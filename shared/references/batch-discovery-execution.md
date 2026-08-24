@@ -80,7 +80,7 @@ not a request to select a number or an instruction to wait for a reply:
 - 继续扩展（可指定 30 / 50 / 100 家，或直接说数量）
 - 换搜索组合再找一批（换产品词 / 换客户类型，国家不变）
 - 对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；交付表格文件 + 配套报告；较慢；产量降、耗时增；可分批产出）
-- 只补社媒 / 地图 / 贸易记录信号（不做主体与联系人核验；较快，仍属候选池，不升级为已验证）
+- 只补社媒 / 地图 / 贸易记录信号（记录主体关联状态，不做深度联系人归属核验；较快，仍属候选池，不升级为正式核验）
 - 选 1 家做单一客户背调
 ```
 
@@ -94,10 +94,16 @@ lower output and higher time cost, allow batched delivery, and retain unverified
 or source-restricted rows as such. Reuse only the existing formal-route terms
 `深度核验`, `标准开发名单`, and `联系人归属核验`; do not add trigger words.
 
-`补社媒 / 地图 / 贸易记录信号` is an explicit L1 supplement only: it updates
-bounded public-signal collection states and does not perform entity or contact
-association verification. The L1 supplement keeps only the status rules in
-`default-discovery-reference.md`; it is not a substitute for deep verification.
+`补社媒 / 地图 / 贸易记录信号` is an explicit L1 supplement only. L1 does not
+perform deep contact-association review or formal qualification review, but
+every collected public signal must record its subject-association status.
+Opened social, map, and trade fragments may be retained and combined into a
+clearly labeled work judgment; no search-summary value, inferred value, or
+otherwise unobserved value becomes an observed fact or Claim. When two resolved
+Entities exist, use the existing `entity_relationships`; unresolved Candidates
+remain at Candidate-level identity status and must not be silently merged. The
+L1 supplement keeps the status rules in `default-discovery-reference.md`; it is
+not a substitute for deep verification.
 
 ## Deep-Verification Completeness
 

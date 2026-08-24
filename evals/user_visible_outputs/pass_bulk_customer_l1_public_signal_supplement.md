@@ -13,12 +13,21 @@
 
 ## 发现候选池样表（候选池不是正式开发名单）
 
-| 分区 | 候选客户 | 品牌名称 | 国家/地区 | 可能客户角色 | 当前看到的业务信号 | 业务相关性 | 依据状态 | 可用联系入口 | 还要确认什么 | 来源 / 来源状态 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 公开信号已匹配当前范围 | Alpha Distributor | 未提供 | Region Q | 经销商 / 分销商 | distributes sample product；公开销售邮箱 | 直接相关 | 已有明确依据 | sales@alpha.example（可直接使用）；Jordan Lee（待确认归属） | 补查供应商入口或采购页面；是否有 supplier portal 待补查 | 官网产品页；官网与目录交叉发现；Alpha Distributor；<https://alpha.example/products>；<https://alpha.example> |
-| 待确认 | Beta Industrial Supplies | 未提供 | Region R | 工业供应商 | 公开联系电话；存在 contact form | 可能相关 | 来源受限 | 442070001111（建议核查后使用） | 补开产品目录页确认 sample product；产品线是否包含 sample product 待确认；部分目录详情页需登录 | 公开目录与联系页；Beta Industrial Supplies；<https://beta.example/contact> |
-| 待确认 | Delta Trading | 未提供 | Region R | 待确认 | 名称相同但主体未可靠归并 | 主体待确认 | 说法冲突待复核 | 待确认 | 核对地址、域名与注册主体；贸易记录是否属于该公司待核 | 同名目录与贸易摘要；Delta Trading；<https://directory.example/delta> |
-| 待确认 | Epsilon Group | 未提供 | 待确认 | 待确认 | 尚未找到可打开官网 | 信息不足 | 来源受限 | 待确认 | 补搜官网或目录详情页；官网未知；业务未知；联系方式未知；无更多公开资料 | 展会名单仅有名称；Epsilon Group；<https://fair.example/eps> |
+| 候选主体 | 国家 / 可能角色 | 主体状态 | 业务关联 | 当前关键公开信号 | 公开联系入口 |
+| --- | --- | --- | --- | --- | --- |
+| Alpha Distributor | Region Q；经销商 / 分销商 | 已匹配主体 | 直接相关 | distributes sample product；公开销售邮箱 | sales@alpha.example（可直接使用）；Jordan Lee（待确认归属） |
+| Beta Industrial Supplies | Region R；工业供应商 | 已匹配主体 | 可能相关 | 公开联系电话；存在 contact form | 442070001111（建议核查后使用） |
+| Delta Trading | Region R；待确认 | 主体待确认 | 信息不足 | 名称相同但主体未可靠归并 | 待确认 |
+| Epsilon Group | 待确认；待确认 | 主体未解析 | 信息不足 | 尚未找到可打开官网 | 待确认 |
+
+## 候选详情与回溯
+
+| 候选主体 | 品牌 / 域名 | 主体归并依据 | 业务关联依据 | 来源 / 状态 | 待确认与冲突 |
+| --- | --- | --- | --- | --- | --- |
+| Alpha Distributor | 未提供；https://alpha.example | 官网域名与公司名称一致 | 官网写明 distributes sample product | 官网产品页；<https://alpha.example/products> | 补查供应商入口或采购页面 |
+| Beta Industrial Supplies | https://beta.example | 名称+官网一致 | 目录提到 industrial supplies 与相关 accessories | 公开目录与联系页；来源受限 | 补开产品目录页确认 sample product |
+| Delta Trading | 未提供 | 同名结果暂不合并 | 同名公开目录与贸易摘要地址不一致 | 同名目录与贸易摘要；<https://directory.example/delta> | 核对地址、域名与注册主体 |
+| Epsilon Group | 未提供 | 仅保留原始名称线索 | 展会名单只有公司名，暂无官网与业务描述 | 展会名单仅有名称；来源受限 | 补搜官网或目录详情页 |
 
 ## 联系方式汇总
 

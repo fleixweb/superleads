@@ -336,6 +336,30 @@ def _candidate_basis_status(candidate: dict[str, Any], row: dict[str, Any], rele
     return project_default_discovery_basis_status(candidate, normalized_relevance)
 
 
+def _candidate_identity_status(candidate: dict[str, Any], row: dict[str, Any]) -> str:
+    explicit = _safe_text(row.get("主体匹配状态"))
+    if explicit != "未提供":
+        return explicit
+    return {
+        "matched": "已匹配主体",
+        "pending": "主体待确认",
+        "conflicted": "主体冲突待复核",
+        "unresolved": "主体未解析",
+        "not_applicable": "不适用",
+    }.get(str(candidate.get("identity_resolution_status") or ""), "主体待确认")
+
+
+def _candidate_business_status(candidate: dict[str, Any], row: dict[str, Any], relevance_label: str) -> str:
+    relevance = default_discovery_relevance_label_to_raw(relevance_label)
+    return {
+        "directly_related": "直接相关",
+        "possibly_related": "可能相关",
+        "explicitly_excluded_or_unrelated": "明确排除/不相关",
+        "identity_pending": "信息不足",
+        "insufficient_information": "信息不足",
+    }.get(relevance, relevance_label if relevance_label != "未提供" else "信息不足")
+
+
 def _candidate_country(candidate: dict[str, Any], row: dict[str, Any]) -> str:
     return _first_nonempty(
         row.get("国家/地区"),
@@ -539,6 +563,7 @@ def _build_initial_bulk_markdown(
     sources = _source_lookup(sheets.get("官网与来源链接", []))
     candidates_by_name = _candidate_by_name(graph)
     candidate_rows: list[dict[str, Any]] = []
+    candidate_detail_rows: list[dict[str, Any]] = []
     for row in sheets.get("发现候选池", []):
         if not isinstance(row, dict):
             continue
@@ -552,6 +577,8 @@ def _build_initial_bulk_markdown(
         )
         relevance = _first_nonempty(row.get("业务相关性"), row.get("方向状态"), "待确认")
         basis_status = _candidate_basis_status(candidate, row, relevance)
+        identity_status = _candidate_identity_status(candidate, row)
+        business_status = _candidate_business_status(candidate, row, relevance)
         contact_text = "；".join(contacts.get(name, [])) or _first_nonempty(row.get("官网/域名"), "待确认")
         source_text = _visible_source_text(
             "；".join(sources.get(name, [])) or _first_nonempty(row.get("发现来源"), row.get("发现链接"), "来源 / 来源状态待确认")
@@ -565,17 +592,43 @@ def _build_initial_bulk_markdown(
             if item != "未提供"
         ) or "采购角色、产品适配、区域和是否接受外部供应商资料待确认"
         candidate_rows.append({
-            "分区": _bulk_partition(relevance, basis_status),
-            "候选客户": name,
-            "品牌名称": _first_nonempty(row.get("品牌名称"), candidate.get("brand_name")),
-            "国家/地区": _candidate_country(candidate, row),
-            "可能客户角色": _candidate_role(candidate, row),
-            "当前看到的业务信号": signal,
-            "业务相关性": relevance,
-            "依据状态": basis_status,
-            "可用联系入口": contact_text,
-            "还要确认什么": confirm,
-            "来源 / 来源状态": source_text,
+            "候选主体": name,
+            "国家 / 可能角色": f"{_candidate_country(candidate, row)}；{_candidate_role(candidate, row)}",
+            "主体状态": identity_status,
+            "业务关联": business_status,
+            "当前关键公开信号": signal,
+            "公开联系入口": contact_text,
+        })
+        identity_basis = "；".join(_display_items(candidate.get("identity_resolution_basis"))) or _first_nonempty(row.get("去重依据"), "尚无可回溯的主体归并依据")
+        business_basis = _first_nonempty(row.get("相关性依据"), candidate.get("business_relevance_basis"), "业务关联依据待补充")
+        source_status_parts = [source_text]
+        restrictions = _display_items(candidate.get("source_restrictions"))
+        if restrictions:
+            source_status_parts.append(f"来源受限：{'；'.join(restrictions)}")
+        elif basis_status == "来源受限":
+            source_status_parts.append("来源受限")
+        pending_parts = []
+        conflicts = _display_items(candidate.get("excluded_or_conflicting_signals"))
+        if conflicts:
+            pending_parts.append(f"冲突：{'；'.join(conflicts)}")
+        unknowns = _display_items(candidate.get("unknowns"))
+        if unknowns:
+            pending_parts.append(f"未知：{'；'.join(unknowns)}")
+        next_steps = _display_items(candidate.get("next_verification_steps"))
+        if next_steps:
+            pending_parts.append(f"下一步：{'；'.join(next_steps)}")
+        if not pending_parts:
+            pending_parts.append(confirm)
+        candidate_detail_rows.append({
+            "候选主体": name,
+            "品牌 / 域名": "；".join(item for item in (
+                _first_nonempty(row.get("品牌名称"), candidate.get("brand_name")),
+                _first_nonempty(row.get("官网/域名"), candidate.get("website"), candidate.get("domain")),
+            ) if item != "未提供") or "未提供",
+            "主体归并依据": identity_basis,
+            "业务关联依据": business_basis,
+            "来源 / 状态": "；".join(dict.fromkeys(item for item in source_status_parts if item and item != "未提供")) or "来源状态待确认",
+            "待确认与冲突": "；".join(pending_parts),
         })
 
     excluded_rows: list[dict[str, Any]] = []
@@ -715,9 +768,16 @@ def _build_initial_bulk_markdown(
     _append_table(
         lines,
         "发现候选池样表（候选池不是正式开发名单）",
-        ["分区", "候选客户", "品牌名称", "国家/地区", "可能客户角色", "当前看到的业务信号", "业务相关性", "依据状态", "可用联系入口", "还要确认什么", "来源 / 来源状态"],
+        ["候选主体", "国家 / 可能角色", "主体状态", "业务关联", "当前关键公开信号", "公开联系入口"],
         candidate_rows,
     )
+    _append_table(
+        lines,
+        "候选详情与回溯",
+        ["候选主体", "品牌 / 域名", "主体归并依据", "业务关联依据", "来源 / 状态", "待确认与冲突"],
+        candidate_detail_rows,
+    )
+    lines.extend(["详情区保留品牌名称、当前看到的业务信号、业务相关性、可用联系入口、还要确认什么、域名、归并依据、业务依据、来源状态和待确认冲突，便于逐条回溯。", "公开信号已匹配当前范围仅表示当前范围内存在相应公开信号，不代表客户价值或采购意愿。", ""])
     if search_combination_rows:
         _append_table(lines, "本轮搜索组合", ["产品词", "国家/市场", "客户类型", "新增主体"], search_combination_rows)
     if uncovered_combination_hints:

@@ -381,7 +381,7 @@ def _candidate_identity_label(candidate:dict[str,Any], entity:dict[str,Any])->st
     mapping = {
         "matched": "已匹配主体",
         "pending": "主体待确认",
-        "conflicted": "主体冲突待核",
+        "conflicted": "主体冲突待复核",
         "unresolved": "主体未解析",
         "not_applicable": "不适用",
     }
@@ -717,28 +717,29 @@ def project_default_discovery_basis_status(candidate:dict[str,Any], relevance:st
     relevance = default_discovery_relevance_label_to_raw(relevance)
     signal_summary = candidate.get("signal_summary") if isinstance(candidate.get("signal_summary"),dict) else {}
     identity_status = str(candidate.get("identity_resolution_status") or "")
-    row_status = "candidate"
-    if relevance == "identity_pending" or identity_status in {"pending", "conflicted"}:
-        row_status = "conflict_pending_review"
+    # Identity, business relevance, and source reachability are orthogonal.
+    # Keep the old workbook column as a short evidence/basis projection, but
+    # never turn a merely unresolved weak-name lead into a conflict claim.
+    if identity_status == "conflicted":
+        return "说法冲突待复核"
     signal_statuses = [
         state.get("status")
         for state in signal_summary.values()
         if isinstance(state, dict)
     ]
-    if row_status == "candidate" and any(status == "identity_pending" for status in signal_statuses):
-        row_status = "conflict_pending_review"
-    if row_status == "candidate" and (
+    if any(status == "identity_pending" for status in signal_statuses):
+        return "需补充资料"
+    if (
         any(status == "source_restricted" for status in signal_statuses)
         or bool(candidate.get("source_restrictions"))
     ):
-        row_status = "source_restricted"
-    if row_status == "candidate" and relevance == "insufficient_information":
-        row_status = "not_provided"
-    if row_status == "candidate":
-        business_match = signal_summary.get("business_match") if isinstance(signal_summary,dict) else None
-        if isinstance(business_match,dict) and business_match.get("status") == "observed":
-            row_status = "verified"
-    return project_market_row_status({"status": row_status})
+        return "来源受限"
+    if relevance in {"identity_pending", "insufficient_information"}:
+        return "需补充资料"
+    business_match = signal_summary.get("business_match") if isinstance(signal_summary,dict) else None
+    if isinstance(business_match,dict) and business_match.get("status") == "observed":
+        return "已有明确依据"
+    return "可作为线索"
 
 
 def _initial_basis_status(candidate:dict[str,Any], relevance:str)->str:

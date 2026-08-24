@@ -576,7 +576,7 @@ def build_next_step_options(
         options.extend([
             {"key": "change_search_combination", "text": "换搜索组合再找一批（换产品词 / 换客户类型，国家不变）"},
             {"key": "deep_verify_full_list", "text": "对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；交付表格文件 + 配套报告；较慢；产量降、耗时增；可分批产出）"},
-            {"key": "supplement_public_signals", "text": "只补社媒 / 地图 / 贸易记录信号（不做主体与联系人核验；较快，仍属候选池，不升级为已验证）"},
+            {"key": "supplement_public_signals", "text": "只补社媒 / 地图 / 贸易记录信号（记录主体关联状态，不做深度联系人归属核验；较快，仍属候选池，不升级为正式核验）"},
             {"key": "single_customer_background", "text": "选 1 家做单一客户背调"},
         ])
         return options

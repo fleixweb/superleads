@@ -353,7 +353,7 @@ class SuperleadsExecutionStateTest(unittest.TestCase):
             summary["next_step_options"][2]["text"],
         )
         self.assertEqual(
-            "只补社媒 / 地图 / 贸易记录信号（不做主体与联系人核验；较快，仍属候选池，不升级为已验证）",
+            "只补社媒 / 地图 / 贸易记录信号（记录主体关联状态，不做深度联系人归属核验；较快，仍属候选池，不升级为正式核验）",
             summary["next_step_options"][3]["text"],
         )
 

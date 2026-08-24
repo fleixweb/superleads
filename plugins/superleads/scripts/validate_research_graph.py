@@ -894,6 +894,14 @@ def _public_enrichment_issues(graph: dict[str, Any], candidate: dict[str, Any], 
                         issues.append(issue("critical", "default_discovery_enrichment_search_summary_field_forbidden", "Search summaries are URL clues only and cannot expose people, contact, map, or association facts", f"{item_path}.{field}"))
         if collection_status != "public_page_opened":
             continue
+        entity_id = candidate.get("entity_id")
+        if candidate.get("identity_resolution_status") != "matched" or not has_text(entity_id) or entity_id not in ids["entities"]:
+            issues.append(issue(
+                "critical",
+                "default_discovery_enrichment_candidate_identity_unresolved",
+                "Opened social or map values cannot be attached as observed Candidate facts until the Candidate is matched to a resolved Entity; retain ambiguous material as identity_pending clues",
+                state_path,
+            ))
         items = [item for item in as_list(state.get("items")) if isinstance(item, dict)]
         if not items:
             issues.append(issue("critical", "default_discovery_enrichment_opened_item_missing", f"Opened {signal_key} requires at least one visible item", f"{state_path}.items"))
@@ -1105,8 +1113,18 @@ def _default_discovery_candidate_structure_issues(graph: dict[str, Any]) -> list
             issues.append(issue("critical", "default_discovery_candidate_discovery_source_missing", "Discovery Candidate requires a recorded discovery source", path))
         if not [item for item in as_list(candidate.get("dedupe_basis")) if has_text(item)]:
             issues.append(issue("critical", "default_discovery_candidate_dedupe_basis_missing", "Discovery Candidate requires a dedupe basis", f"{path}.dedupe_basis"))
-        if candidate.get("business_relevance_status") not in {"directly_related", "possibly_related", "explicitly_excluded_or_unrelated", "identity_pending", "insufficient_information"}:
+        relevance_status = candidate.get("business_relevance_status")
+        if relevance_status not in {"directly_related", "possibly_related", "explicitly_excluded_or_unrelated", "identity_pending", "insufficient_information"}:
             issues.append(issue("critical", "default_discovery_candidate_relevance_missing", "Discovery Candidate requires a business relevance status", f"{path}.business_relevance_status"))
+        if relevance_status in {"directly_related", "possibly_related", "explicitly_excluded_or_unrelated"}:
+            entity_id = candidate.get("entity_id")
+            if candidate.get("identity_resolution_status") != "matched" or not has_text(entity_id) or entity_id not in ids["entities"]:
+                issues.append(issue(
+                    "critical",
+                    "default_discovery_material_relevance_identity_unresolved",
+                    "Direct, possible, or excluded business relevance requires a Candidate matched to an existing Entity; unresolved weak-name clues remain insufficient_information or identity_pending",
+                    f"{path}.identity_resolution_status",
+                ))
         if not [item for item in as_list(candidate.get("business_relevance_basis")) if has_text(item)]:
             issues.append(issue("critical", "default_discovery_candidate_relevance_basis_missing", "Discovery Candidate requires observed relevance basis", f"{path}.business_relevance_basis"))
         summary = candidate.get("signal_summary")
@@ -1120,7 +1138,7 @@ def _default_discovery_candidate_structure_issues(graph: dict[str, Any]) -> list
                 state = summary.get(signal_key)
                 if not isinstance(state, dict) or state.get("status") not in signal_statuses:
                     issues.append(issue("critical", "default_discovery_candidate_signal_status_missing", f"Discovery Candidate requires a valid {signal_key} signal status", f"{path}.signal_summary.{signal_key}"))
-            if candidate.get("business_relevance_status") in {"directly_related", "possibly_related", "explicitly_excluded_or_unrelated"}:
+            if relevance_status in {"directly_related", "possibly_related", "explicitly_excluded_or_unrelated"}:
                 business_match = summary.get("business_match")
                 if not isinstance(business_match, dict) or business_match.get("status") != "observed":
                     issues.append(issue("critical", "default_discovery_business_match_not_observed", "Material business relevance requires business_match.status=observed", f"{path}.signal_summary.business_match.status"))

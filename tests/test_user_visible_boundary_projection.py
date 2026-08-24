@@ -23,7 +23,7 @@ from export_superleads_markdown import (
     build_markdown,
     build_product_market_markdown,
 )
-from export_workbook import build_sheets
+from export_workbook import build_sheets, project_default_discovery_basis_status
 from _superleads_common import DETERMINISTIC_VALIDATION_DISCLOSURE, SCHEMA_PROFILE_UNAVAILABLE_DISCLOSURE
 from superleads_execution_state import create_execution_state, record_candidate
 from superleads_user_guidance import append_final_footer
@@ -61,6 +61,55 @@ def _load(path: Path) -> dict[str, object]:
 
 
 class UserVisibleBoundaryProjectionTest(unittest.TestCase):
+    def test_identity_and_business_projection_keep_pending_distinct_from_conflict(self) -> None:
+        cases = (
+            ("matched", "identity_pending", "已匹配主体", "信息不足", "需补充资料"),
+            ("matched", "insufficient_information", "已匹配主体", "信息不足", "需补充资料"),
+            ("pending", "identity_pending", "主体待确认", "信息不足", "需补充资料"),
+            ("pending", "insufficient_information", "主体待确认", "信息不足", "需补充资料"),
+            ("conflicted", "identity_pending", "主体冲突待复核", "信息不足", "说法冲突待复核"),
+            ("unresolved", "identity_pending", "主体未解析", "信息不足", "需补充资料"),
+            ("unresolved", "insufficient_information", "主体未解析", "信息不足", "需补充资料"),
+        )
+        for identity, relevance, identity_label, business_label, basis_label in cases:
+            with self.subTest(identity=identity, relevance=relevance):
+                graph = _load(BULK_FIXTURE)
+                candidate = graph["candidates"][0]
+                candidate["identity_resolution_status"] = identity
+                candidate["business_relevance_status"] = relevance
+                candidate["signal_summary"]["business_match"]["status"] = "not_searched"
+                candidate["signal_summary"]["website_contact"]["status"] = "not_searched"
+                candidate["source_restrictions"] = []
+                self.assertEqual(basis_label, project_default_discovery_basis_status(candidate, relevance))
+                markdown, issues, _ = build_bulk_markdown(graph)
+                self.assertEqual([], issues)
+                assert markdown is not None
+                line = next(item for item in markdown.splitlines() if "Alpha Distributor" in item)
+                self.assertIn(identity_label, line)
+                self.assertIn(business_label, line)
+                if identity != "conflicted":
+                    self.assertNotIn("主体冲突待复核", line)
+
+    def test_bulk_legacy_main_table_cannot_satisfy_six_column_contract(self) -> None:
+        report = (ROOT / "evals" / "user_visible_outputs" / "bulk_customer_development_us_generator_aftermarket.md").read_text(encoding="utf-8")
+        new_header = "| 候选主体 | 国家 / 可能角色 | 主体状态 | 业务关联 | 当前关键公开信号 | 公开联系入口 |"
+        legacy_header = "| 分区 | 候选客户 | 品牌名称 | 国家/地区 | 可能客户角色 | 当前看到的业务信号 | 业务相关性 | 依据状态 | 可用联系入口 | 还要确认什么 | 来源 / 来源状态 |"
+        self.assertIn(new_header, report)
+        legacy = report.replace(new_header, legacy_header, 1)
+        marker = "\n## Superleads 支持"
+        body, footer = legacy.split(marker, 1)
+        legacy = body.rstrip() + (
+            "\n候选主体 国家 / 可能角色 主体状态 业务关联 当前关键公开信号 公开联系入口\n"
+            "公开信号已匹配当前范围仅表示当前范围内存在相应公开信号。\n"
+        ) + marker + footer
+
+        issues = validate(legacy, "bulk_customer_development", min_tables=8)
+
+        self.assertIn(
+            "user_visible_bulk_initial_structure_missing",
+            {issue["code"] for issue in issues},
+        )
+
     def test_visible_validator_cli_accepts_standard_bulk_delivery_status(self) -> None:
         with patch.object(
             sys,
@@ -362,6 +411,38 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         for wording in FORBIDDEN_DECISION_WORDING:
             self.assertNotIn(wording, markdown)
 
+    def test_bulk_markdown_keeps_unresolved_insufficient_distinct_from_conflict(self) -> None:
+        markdown, issues, delivery_status = build_bulk_markdown(_load(BULK_FIXTURE))
+
+        self.assertEqual([], issues)
+        self.assertEqual("initial_lead_list", delivery_status)
+        assert markdown is not None
+        epsilon_line = next(line for line in markdown.splitlines() if "Epsilon Group" in line)
+        delta_line = next(line for line in markdown.splitlines() if "Delta Trading" in line)
+
+        self.assertIn("主体未解析", epsilon_line)
+        self.assertIn("信息不足", epsilon_line)
+        self.assertNotIn("说法冲突待复核", epsilon_line)
+        self.assertIn("主体待确认", delta_line)
+        self.assertNotIn("主体冲突待复核", delta_line)
+        self.assertIn("信息不足", delta_line)
+
+    def test_bulk_markdown_main_table_is_compact_and_keeps_trace_details(self) -> None:
+        markdown, issues, delivery_status = build_bulk_markdown(_load(BULK_FIXTURE))
+
+        self.assertEqual([], issues)
+        self.assertEqual("initial_lead_list", delivery_status)
+        assert markdown is not None
+        self.assertIn(
+            "| 候选主体 | 国家 / 可能角色 | 主体状态 | 业务关联 | 当前关键公开信号 | 公开联系入口 |",
+            markdown,
+        )
+        self.assertNotIn("| 分区 | 候选客户 | 品牌名称 | 国家/地区 |", markdown)
+        self.assertIn("## 候选详情与回溯", markdown)
+        self.assertIn("| 候选主体 | 品牌 / 域名 | 主体归并依据 | 业务关联依据 | 来源 / 状态 | 待确认与冲突 |", markdown)
+        self.assertIn("Alpha Distributor", markdown)
+        self.assertIn("官网域名与公司名称一致", markdown)
+
     def test_bulk_markdown_does_not_expose_internal_query_group_ids(self) -> None:
         markdown, issues, delivery_status = build_bulk_markdown(_load(BULK_FIXTURE))
 
@@ -407,7 +488,7 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         self.assertIn("## 下一步可选", markdown)
         self.assertIn("继续扩展（可指定 30 / 50 / 100 家，或直接说数量）", markdown)
         self.assertIn("对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；交付表格文件 + 配套报告；较慢；产量降、耗时增", markdown)
-        self.assertIn("只补社媒 / 地图 / 贸易记录信号（不做主体与联系人核验；较快，仍属候选池，不升级为已验证）", markdown)
+        self.assertIn("只补社媒 / 地图 / 贸易记录信号（记录主体关联状态，不做深度联系人归属核验；较快，仍属候选池，不升级为正式核验）", markdown)
         self.assertIn("\n- 已观察到的本地术语 + Region Q + 维修厂", markdown)
         self.assertIn("\n- 继续扩展（可指定 30 / 50 / 100 家，或直接说数量）", markdown)
         self.assertNotIn("\n· ", markdown)

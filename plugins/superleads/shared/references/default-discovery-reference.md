@@ -7,7 +7,7 @@
 
 两份样例均由 `evals/run_evals.py` 从共享 references 直接验证（validate 通过、initial 审计通过、initial 导出通过），因此文档与测试不会各自漂移。**请勿把它们复制进 `evals/fixtures/`；需要失败用例时从它们派生或在语义上明确关联。**
 
-> 默认发现**不要求生成** Entity、Claim、ClaimEvidence、ScopeDecision、Assessment、ReviewAttestation、Audit、DeliveryManifest，也不要求完整联系人归属核验。它们只在实际来源、联系方式、主体冲突或用户明确要求的按需深查中按需增加。
+> 默认发现**不要求生成** Entity、Claim、ClaimEvidence、ScopeDecision、Assessment、ReviewAttestation、Audit、DeliveryManifest，也不要求完整联系人归属核验。保留为 `insufficient_information` 的弱线索可不建 Entity；但要输出直接相关、可能相关或明确排除的实质业务分类时，必须先归并到现有 Entity。其余对象按实际来源、联系方式、主体冲突或用户明确要求按需增加。
 
 ---
 
@@ -17,7 +17,7 @@
 
 > “帮我找英国经销商/批发商，产品是不锈钢保温杯。”
 
-默认批量发现先从**最小骨架**开始：`runs / briefs / plans / candidates / search_logs`。Candidate 不要求 Entity、Source、Observation、ContactPoint 或 ContactClaim。只有 Agent 实际打开来源并需要保存可核验原文、展示可见联系方式或处理主体冲突时，才按需增加 Source / Observation / Contact 等对象。
+默认批量发现先从**最小骨架**开始：`runs / briefs / plans / candidates / search_logs`。弱线索 Candidate 不要求 Entity、Source、Observation、ContactPoint 或 ContactClaim；只有 Agent 实际打开来源并需要保存可核验原文、展示可见联系方式、处理主体冲突，或要给出实质业务分类时，才按需增加 Source / Observation / Entity / Contact 等对象。
 
 完整参考样例用于理解五类相关性、公开信息覆盖状态、联系方式三态和排除记录；它不是每轮默认发现要照抄的图谱模板。
 
@@ -38,12 +38,13 @@
 
 `website` 若填写：只接受**安全公开 HTTP(S) URL 或纯公开域名**（如 `example.com`），不自动补协议，不接受 userinfo / 敏感 query/fragment 参数 / 私网 / 非 HTTP(S)。`source_url`、`discovery_refs[].url`、信号 `items[].source_url`、SearchLog `result_url` 同样只接受安全公开 HTTP(S) URL。
 
-`初筛客户名单` 不是默认发现的安全独立层级；当前实现应以 `发现候选池` 承载默认弱证据交付，并在候选池内部用 `分区`、`依据状态` 和公开信号说明表达中间态。
+`初筛客户名单` 不是默认发现的安全独立层级；当前实现应以 `发现候选池` 承载默认弱证据交付，并在候选池内部用主体状态、业务关联、来源状态和公开信号说明表达中间态。
 
-默认发现的 `依据状态` 先看降级信号、再判断是否能显示 `已有明确依据`：同一 Candidate
-的任一公开信号出现 `identity_pending` 时显示 `说法冲突待复核`；任一公开信号出现
-`source_restricted` 或 `source_restrictions` 非空时显示 `来源受限`；只有没有这些降级
-信号时，`business_match.status = observed` 才能显示为 `已有明确依据`。
+默认发现的用户可见状态必须把主体归属、业务资料和来源可达性分开表达。Candidate
+本身为 `identity_resolution_status = unresolved` 且业务资料不足时，应显示“主体未解析”与“信息不足”；
+不能把“尚未归并”误写成“说法冲突待复核”。`pending` 表示主体待确认，`conflicted` 表示主体冲突待复核；
+只有确有相互矛盾的来源或口径时才使用冲突标签。任一公开信号出现 `source_restricted` 或
+`source_restrictions` 非空时，另行显示“来源受限”。
 
 ---
 
@@ -59,7 +60,13 @@
 | `identity_pending` | 同名/域名/地址/贸易记录不能可靠归属同一主体，**不得拼接** | Summit Trading |
 | `explicitly_excluded_or_unrelated` | 已观察到错误市场/竞品原厂等明确排除事实；**保留在「已排除客户」，不静默删除** | Ironforge Manufacturing |
 
-`directly_related` / `possibly_related` / `explicitly_excluded_or_unrelated` 要求 `signal_summary.business_match.status = observed`，且至少一条带来源标签或安全公开 URL 的说明。`identity_pending` / `insufficient_information` 反而应保留主体冲突、未知与来源缺口，不要为了填表造信号。
+`directly_related` / `possibly_related` / `explicitly_excluded_or_unrelated` 要求
+`identity_resolution_status = matched`、`entity_id` 能解析到现有 Entity、
+`signal_summary.business_match.status = observed`，且至少一条带来源标签或安全公开 URL 的说明。
+`unresolved + insufficient_information` 是合法的正交组合：主体尚未安全归并，同时公开业务资料不足；
+它不等于冲突。`pending/conflicted + identity_pending` 用于表达主体待确认或主体冲突，不能吞掉单纯的资料不足。
+跨来源碎片可以保留并串联成标注清楚的“工作判断”（例如“官网、目录和贸易摘要分别指向同一方向”），
+但工作判断不能把未观察到的值升级为已观察事实，也不能替代主体归并证据。
 
 ---
 
@@ -83,7 +90,7 @@
 - 继续扩展（可指定 30 / 50 / 100 家，或直接说数量）
 - 换搜索组合再找一批（换产品词 / 换客户类型，国家不变）
 - 对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；交付表格文件 + 配套报告；较慢；产量降、耗时增；可分批产出）
-- 只补社媒 / 地图 / 贸易记录信号（不做主体与联系人核验；较快，仍属候选池，不升级为已验证）
+- 只补社媒 / 地图 / 贸易记录信号（记录主体关联状态，不做深度联系人归属核验；较快，仍属候选池，不升级为正式核验）
 - 选 1 家做单一客户背调
 ```
 
@@ -91,7 +98,7 @@
 
 达到 `standard_development_list` 后，官方工作簿是标准开发名单的默认主产物，并同时交付配套 Markdown 报告；两者分别由官方工作簿导出器和 Markdown 导出器生成，并在终局答复中分别列出文件名和文件类型。`initial_lead_list` 发现候选池的交付行为不变。文件输出仍须按当前宿主实际具备的文件写出能力决定；不具备时按既有对话内降级路径交付，不承诺无法生成的文件，不得降低证据、联系人或来源约束。
 
-社媒、地图和第三方贸易摘要有一条仅在用户明确要求时触发的 L1 信号补充路径：维持既有每候选每类别最多 2 次查询、1 次打开，同一 Run 对相同 canonical/final URL 去重，并为每个已请求类别如实填写既有 `collection_status`，不得留空或伪装为已完成。默认 L1 整段省略「社媒与公开职业线索」「地图与经营地址」「第三方贸易摘要」，只在候选表或待确认项标“未核验”；用户明确要求补充时才插入这三个段落。该路径不生成 Entity / Claim / ClaimEvidence / ScopeDecision / Assessment，不做联系人归属核验，不升级业务相关性状态；候选仍是候选。社媒或地图搜索摘要中的人名、职位、电话、地址和经营场景不得写成已观察事实。`补社媒 / 地图 / 贸易记录信号`只补这些状态；选择`深度核验`时，整份名单的必做信号与联系人归属核验规则见 `batch-discovery-execution.md` 的「Deep-Verification Completeness」和 `using-superleads-formal-delivery.md` 的 L2 规则。L2 的 `max_tool_calls_per_run` 默认 160、最高 240，只统计 `search.web` 和 `source.open`，不统计文件写入、校验、审计或脚本调用；L1 已消耗次数不进入 L2 配额，每完成 3 家交付一批。
+社媒、地图和第三方贸易摘要有一条仅在用户明确要求时触发的 L1 信号补充路径：维持既有每候选每类别最多 2 次查询、1 次打开，同一 Run 对相同 canonical/final URL 去重，并为每个已请求类别如实填写既有 `collection_status`，不得留空或伪装为已完成。默认 L1 整段省略「社媒与公开职业线索」「地图与经营地址」「第三方贸易摘要」，只在候选表或待确认项标“未核验”；用户明确要求补充时才插入这三个段落。该路径不做深度联系人归属核验或正式资格审核，但每个已采集公开信号都必须记录其主体关联状态；无法安全归并的材料只能保留为 Candidate 级线索，不能伪装成已归属主体。该路径不生成 Entity / Claim / ClaimEvidence / ScopeDecision / Assessment 的正式图谱对象，也不升级业务相关性状态；跨来源材料可以形成标注清楚的工作判断，但不得把摘要、推断或未观察值写成已观察事实。若两个主体都已解析为 Entity，沿用现有 `entity_relationships`（如 `same_as`、`brand_of`、`legal_entity_of`、`branch_of`、`needs_manual_review`）记录关系；未解析 Candidate 不强建 EntityRelationship。社媒或地图搜索摘要中的人名、职位、电话、地址和经营场景不得写成已观察事实。`补社媒 / 地图 / 贸易记录信号`只补这些状态；选择`深度核验`时，整份名单的必做信号与联系人归属核验规则见 `batch-discovery-execution.md` 的「Deep-Verification Completeness」和 `using-superleads-formal-delivery.md` 的 L2 规则。L2 的 `max_tool_calls_per_run` 默认 160、最高 240，只统计 `search.web` 和 `source.open`，不统计文件写入、校验、审计或脚本调用；L1 已消耗次数不进入 L2 配额，每完成 3 家交付一批。
 
 联系人深挖、全量图谱、正式审核与 Markdown 导出只在用户明确要求“正式开发名单、完整核验、深度背调、正式报告或 Markdown 导出”时加载。超过预算必须写 `not_searched` 和“本轮未检索”，不能写成未发现或不存在。
 
@@ -133,7 +140,7 @@
 
 ## 公开页面与受限处理
 
-只使用当前 Run 实际成功并报告为 `available` 的 `search.web`、`source.open`、`browser.render` 或 `document.extract`。`social.visible.read`、`maps.lookup` 等能力名称不能证明宿主一定提供了相应工具；没有独立读取器时，正常打开的公司社媒和地图页面分别作为 `medium: social`、`medium: map` 的普通公开来源记录。已打开的社媒、地图或贸易项必须绑定 `discovered_public`、`access_boundary: public_no_login` 的 Source，以及同一 Run 的 Observation；所有展示字段都要能在 Observation 的可见摘录中复核。名称相同或地址相同不足以归并，必须保留主体待确认。
+只使用当前 Run 实际成功并报告为 `available` 的 `search.web`、`source.open`、`browser.render` 或 `document.extract`。`social.visible.read`、`maps.lookup` 等能力名称不能证明宿主一定提供了相应工具；没有独立读取器时，正常打开的公司社媒和地图页面分别作为 `medium: social`、`medium: map` 的普通公开来源记录。已打开的社媒、地图或贸易项必须绑定 `discovered_public`、`access_boundary: public_no_login` 的 Source，以及同一 Run 的 Observation；所有展示字段都要能在 Observation 的可见摘录中复核。名称相同或地址相同不足以归并，必须保留主体待确认。主体归并是业务分类的前置判断：只有已匹配到现有 Entity 的 Candidate 才能承载直接、可能或明确排除的实质业务分类；无法安全归并时，保留 Candidate 级 `identity_resolution_status` 和对应信号状态。
 
 页面需要登录、出现验证码、返回 403、Cloudflare/人工验证、付费墙、明确禁止自动化、动态空壳或无可靠主体关联时，立即停止该 URL 的自动读取，不重试、不绕过、不使用账号、Cookie、Token、密钥、代理或付费 API。记录“来源受限”，并在 Candidate、覆盖/收敛说明和待确认事项中给出以下对应建议：
 

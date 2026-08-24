@@ -4,6 +4,22 @@ All notable changes to this project are documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-08-24
+
+### Changed
+
+- Connect L1 candidate business relevance to resolved entities while preserving
+  separate identity and evidence-status projections.
+- Keep the six-column candidate pool contract aligned across Markdown,
+  workbook, templates, and user-visible validation.
+
+### Fixed
+
+- Prevent restricted-source rows from being promoted to `已有明确依据` in
+  exclusion and legacy tables, with mirrored regression coverage.
+- Clarify the L1 meaning of `需补充资料` and preserve distinct pending,
+  conflicted, and unresolved identity labels.
+
 ## [0.3.1] - 2026-08-23
 
 ### Added

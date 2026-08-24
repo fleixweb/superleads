@@ -251,7 +251,7 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
             self.assertIn("## 下一步可选", template)
             self.assertIn("- 继续扩展（可指定 30 / 50 / 100 家，或直接说数量）", template)
             self.assertIn("对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；交付表格文件 + 配套报告", template)
-            self.assertIn("只补社媒 / 地图 / 贸易记录信号（不做主体与联系人核验", template)
+            self.assertIn("只补社媒 / 地图 / 贸易记录信号（记录主体关联状态，不做深度联系人归属核验", template)
             self.assertNotIn("下一步可选：", template)
             self.assertNotIn("· 继续扩展", template)
 
@@ -411,12 +411,12 @@ class SuperleadsSkillExposureTest(unittest.TestCase):
             "canonical/final URL",
             "collection_status",
             "不生成 Entity / Claim / ClaimEvidence / ScopeDecision / Assessment",
-            "不做联系人归属核验",
+            "不做深度联系人归属核验",
             "不升级业务相关性状态",
             "不得写成已观察事实",
         ):
             self.assertIn(marker, discovery)
-        self.assertIn("只补社媒 / 地图 / 贸易记录信号（不做主体与联系人核验；较快，仍属候选池，不升级为已验证）", batch)
+        self.assertIn("只补社媒 / 地图 / 贸易记录信号（记录主体关联状态，不做深度联系人归属核验；较快，仍属候选池，不升级为正式核验）", batch)
         self.assertIn("对上述名单做深度核验 → 标准开发名单（含社媒 / 地图 / 贸易记录 + 联系人归属核验；交付表格文件 + 配套报告；较慢；产量降、耗时增；可分批产出）", batch)
 
     def test_standard_delivery_requires_official_workbook_and_markdown_outputs(self) -> None:

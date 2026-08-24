@@ -51,6 +51,14 @@ Default discovery user-visible partitions:
 - `identity_pending`: 公司名称、域名、地址、贸易记录或联系方式无法可靠归属同一主体。
 - `insufficient_information`: 已发现线索，但当前公开材料不足。
 
+主体归属与业务资料是两个正交维度：
+
+- `identity_resolution_status = unresolved` + `business_relevance_status = insufficient_information`：主体信息尚不足以解析，业务资料也不足；用户端分别显示“主体未解析”和“信息不足”，不写成冲突。
+- `identity_resolution_status = pending/conflicted` + `business_relevance_status = identity_pending`：现有材料涉及主体待确认或主体冲突；用户端分别显示“主体待确认”或“主体冲突待复核”。
+- 只有 `identity_resolution_status = matched` 且 `entity_id` 指向现有 Entity，才能投影 `directly_related`、`possibly_related` 或 `explicitly_excluded_or_unrelated`。
+
+跨来源碎片可以保留并组合成标注清楚的工作判断；工作判断必须列出来源与主体关联状态，且不得把搜索摘要、推断值或未观察值写成已观察事实。两个已解析 Entity 之间沿用 `entity_relationships`；未解析 Candidate 留在 Candidate 级 identity 状态。
+
 # Public Signal Status Labels
 
 - `observed`: 已观察
@@ -79,7 +87,7 @@ Default discovery user-visible partitions:
 | 按已知数据计算 | 用已核实数字按明示公式计算，只支持公式结果。 |
 | 多来源方向一致 | 多个独立弱来源指向同一方向，但不等于官方确认。 |
 | 可作为线索 | 有公开信号或参考来源，可用于下一步核验。 |
-| 需补充资料 | 缺用户、产品、技术、实物、订单或供应链材料。 |
+| 需补充资料 | 产品出海市场分析中缺用户、产品、技术、实物、订单或供应链材料；发现候选池中则表示主体尚未归并或公开业务资料不足，待 Superleads 在深度核验 / L2 补查。 |
 | 需权威/专业复核 | 需要主管机关、报关行、认证机构、承运人、律师、进口商等复核。 |
 | 资料过旧需复核 | 来源过旧、日期未知或超过事实域复核窗口。 |
 | 来源受限 | 来源未打开、付费墙、摘要页、登录墙或只能看到片段。 |
@@ -89,9 +97,11 @@ Default discovery user-visible partitions:
 
 投影优先级：未执行 / 不适用 / 冲突 / 来源受限 / 资料过旧 / 权威未核实 / 缺材料 优先于 `verified`。用户可见表格必须分开展示业务/规则结论、依据状态和用户材料状态。
 
+发现候选池里的“需补充资料”不是要求用户交材料：补查方是 Superleads 的深度核验 / L2；具体要核对的主体、公开业务资料和下一步，逐条见候选详情表的「待确认与冲突」列（来自 Candidate 的 `unknowns` 与 `next_verification_steps`）。发现候选池的「依据状态」按降级优先级投影，不能读作“我们对这家了解多少”的排序。例如同一份默认发现样例中，展会名单线索 `Peak Bottle Co` 投影为“来源受限”，而同名主体待归并的 `Summit Trading` 投影为“需补充资料”；前者的 `source_restrictions` 降级规则先命中，并不表示它比后者拥有更多公开资料。
+
 批量客户开发的默认发现候选池同样遵守该优先级：分区只描述公开信号与当前用户边界的关系，
-不表示客户价值、跟进优先级或采购意愿。同一 Candidate 的任一公开信号为
-`identity_pending` 时，`依据状态` 应显示 `说法冲突待复核`；任一公开信号为
-`source_restricted` 或 Candidate 记录了 `source_restrictions` 时，应显示 `来源受限`。
-只有在没有这些降级信号时，`business_match.status = observed` 才可投影为
-`已有明确依据`。
+不表示客户价值、跟进优先级或采购意愿。主体状态、业务关联和来源状态分列投影：
+`unresolved` 显示“主体未解析”，`pending` 显示“主体待确认”，`conflicted` 显示
+“主体冲突待复核”，`insufficient_information` 显示“信息不足”。不能因某一信号为
+`identity_pending` 就把未解析或资料不足一律改写为“说法冲突待复核”。任一公开信号为
+`source_restricted` 或 Candidate 记录了 `source_restrictions` 时，来源维度显示“来源受限”。

@@ -208,7 +208,13 @@ def _markdown_table_rows(text: str, heading: str) -> list[str]:
         return []
     section = text.split(marker, 1)[1].split("\n## ", 1)[0]
     rows = [line for line in section.splitlines() if line.startswith("|")]
-    return [line for line in rows if not set(line.replace("|", "").strip()) <= {"-", ":", " "} and "候选客户" not in line]
+    return [
+        line
+        for line in rows
+        if not set(line.replace("|", "").strip()) <= {"-", ":", " "}
+        and "候选客户" not in line
+        and "候选主体" not in line
+    ]
 
 
 def _candidate_pool_rows(text: str) -> list[str]:
@@ -248,9 +254,11 @@ def check_generated_markdown(fixture: Path) -> tuple[list[dict[str, str]], dict[
     else:
         required_text.extend([
             "发现候选池样表（候选池不是正式开发名单）",
-            "| 分区 | 候选客户 |",
-            "业务相关性",
-            "依据状态",
+            "| 候选主体 | 国家 / 可能角色 | 主体状态 | 业务关联 | 当前关键公开信号 | 公开联系入口 |",
+            "## 候选详情与回溯",
+            "| 候选主体 | 品牌 / 域名 | 主体归并依据 | 业务关联依据 | 来源 / 状态 | 待确认与冲突 |",
+            "主体状态",
+            "业务关联",
             "联系方式汇总",
             "搜索覆盖与收敛",
             "已排除 / 仅作参考",
@@ -263,6 +271,7 @@ def check_generated_markdown(fixture: Path) -> tuple[list[dict[str, str]], dict[
         forbidden_headers.append("发现候选池样表（候选池不是正式开发名单）")
     else:
         forbidden_headers.append("| 公司名称 | 国家/地区 | 官网/域名 |")
+        forbidden_headers.append("| 分区 | 候选客户 | 品牌名称 | 国家/地区 | 可能客户角色 | 当前看到的业务信号 | 业务相关性 | 依据状态 | 可用联系入口 | 还要确认什么 | 来源 / 来源状态 |")
     for needle in forbidden_headers:
         if needle in text:
             issues.append(_issue("formal_markdown_raw_workbook_render_detected", f"generated Markdown looks like raw workbook sheet render: {needle}"))
@@ -279,10 +288,10 @@ def check_generated_markdown(fixture: Path) -> tuple[list[dict[str, str]], dict[
                 issues.append(_issue("formal_markdown_standard_row_missing", "standard Markdown must render the verified customer-information row", name))
     else:
         row_expectations = {
-            "HydraTrade Supplies": ("发现候选池样表（候选池不是正式开发名单）", ("公开信号已匹配当前范围", "直接相关", "已有明确依据")),
-            "Northshore Drinkware Distributors": ("发现候选池样表（候选池不是正式开发名单）", ("待确认", "可能相关", "来源受限")),
-            "Peak Bottle Co": ("发现候选池样表（候选池不是正式开发名单）", ("待确认", "信息不足", "来源受限")),
-            "Summit Trading": ("发现候选池样表（候选池不是正式开发名单）", ("待确认", "主体待确认", "说法冲突待复核")),
+            "HydraTrade Supplies": ("发现候选池样表（候选池不是正式开发名单）", ("直接相关", "已匹配主体")),
+            "Northshore Drinkware Distributors": ("发现候选池样表（候选池不是正式开发名单）", ("可能相关", "已匹配主体")),
+            "Peak Bottle Co": ("发现候选池样表（候选池不是正式开发名单）", ("信息不足", "主体未解析")),
+            "Summit Trading": ("发现候选池样表（候选池不是正式开发名单）", ("主体待确认", "信息不足")),
             "Ironforge Manufacturing": ("已排除 / 仅作参考", ("已排除 / 仅作参考", "已排除 / 仅作参考", "已有明确依据")),
         }
         candidate_rows = _candidate_pool_rows(text)

@@ -22,21 +22,37 @@ BULK_INITIAL_REQUIRED = [
     "本次优先找",
     "本次不纳入",
     "判断依据将重点看",
-    "候选客户",
-    "当前看到的业务信号",
-    "业务相关性",
-    "依据状态",
-    "可用联系入口",
-    "还要确认什么",
+    "候选主体",
+    "国家 / 可能角色",
+    "主体状态",
+    "业务关联",
+    "当前关键公开信号",
+    "公开联系入口",
+    "候选详情与回溯",
+    "品牌 / 域名",
+    "主体归并依据",
+    "业务关联依据",
+    "来源 / 状态",
+    "待确认与冲突",
     "来源 / 来源状态",
     "候选池",
-    "公开信号已匹配当前范围",
     "已排除 / 仅作参考",
     "联系方式汇总",
     "搜索覆盖与收敛",
     "风险与说明",
     "待确认",
 ]
+
+BULK_INITIAL_TABLE_CONTRACTS = (
+    (
+        "发现候选池六列主表",
+        "| 候选主体 | 国家 / 可能角色 | 主体状态 | 业务关联 | 当前关键公开信号 | 公开联系入口 |",
+    ),
+    (
+        "候选详情与回溯六列表",
+        "| 候选主体 | 品牌 / 域名 | 主体归并依据 | 业务关联依据 | 来源 / 状态 | 待确认与冲突 |",
+    ),
+)
 
 ROUTE_REQUIRED: dict[str, list[str]] = {
     "bulk_customer_development": BULK_INITIAL_REQUIRED,
@@ -674,7 +690,32 @@ def _is_table_separator(line: str) -> bool:
     return bool(stripped.startswith("|") and stripped.endswith("|") and re.fullmatch(r"\|[\s:\-|]+\|", stripped) and "---" in stripped)
 
 
+def _has_visible_markdown_table_header(text: str, header: str) -> bool:
+    """Return whether an exact table header appears outside a fenced block."""
+    lines = text.splitlines()
+    fence_char: str | None = None
+    fence_length = 0
+    for index, line in enumerate(lines[:-1]):
+        fence = re.match(r"^[ \t]{0,3}(`{3,}|~{3,})", line)
+        if fence:
+            token = fence.group(1)
+            if fence_char is None:
+                fence_char = token[0]
+                fence_length = len(token)
+            elif token[0] == fence_char and len(token) >= fence_length:
+                fence_char = None
+                fence_length = 0
+            continue
+        if fence_char is not None:
+            continue
+        if line.strip() == header and _is_table_separator(lines[index + 1]):
+            return True
+    return False
+
+
 def _bulk_basis_status_consistency_issues(text: str) -> list[dict[str, str]]:
+    # The six-column candidate table no longer exposes 依据状态. Keep this
+    # guard for legacy rows and the excluded/reference table that still does.
     issues: list[dict[str, str]] = []
     lines = text.splitlines()
     index = 0
@@ -683,27 +724,35 @@ def _bulk_basis_status_consistency_issues(text: str) -> list[dict[str, str]]:
             index += 1
             continue
         headers = _split_markdown_row(lines[index])
-        if "业务相关性" not in headers or "依据状态" not in headers:
+        if "依据状态" not in headers:
             index += 2
             continue
-        relevance_index = headers.index("业务相关性")
         basis_index = headers.index("依据状态")
+        subject_index = next(
+            (headers.index(label) for label in ("业务相关性", "对象", "候选主体", "公司名称") if label in headers),
+            None,
+        )
         row_index = index + 2
         while row_index < len(lines) and lines[row_index].strip().startswith("|"):
             if _is_table_separator(lines[row_index]):
                 row_index += 1
                 continue
             cells = _split_markdown_row(lines[row_index])
-            if len(cells) > max(relevance_index, basis_index):
+            if len(cells) > basis_index:
                 basis = cells[basis_index]
                 row_text = " | ".join(cells)
                 has_restricted_marker = any(marker in row_text for marker in BULK_SOURCE_RESTRICTED_MARKERS)
                 negated_restricted = any(marker in row_text for marker in ("无来源受限", "未记录明显受限来源"))
                 if basis == "已有明确依据" and has_restricted_marker and not negated_restricted:
+                    subject = (
+                        cells[subject_index].strip()
+                        if subject_index is not None and len(cells) > subject_index and cells[subject_index].strip()
+                        else row_text[:160]
+                    )
                     issues.append(_issue(
                         "bulk_basis_status_source_restricted_promoted",
                         "bulk row with source-restricted material must not project basis status as 已有明确依据",
-                        cells[relevance_index],
+                        subject,
                     ))
             row_index += 1
         index = row_index
@@ -816,6 +865,15 @@ def validate(
     for phrase in required + list(extra_required or []):
         if phrase not in text:
             issues.append(_issue("user_visible_missing_required_text", f"missing required phrase: {phrase}", phrase))
+
+    if route == "bulk_customer_development" and not (delivery_status == "standard_development_list" or claims_standard_delivery):
+        for contract_name, header in BULK_INITIAL_TABLE_CONTRACTS:
+            if not _has_visible_markdown_table_header(text, header):
+                issues.append(_issue(
+                    "user_visible_bulk_initial_structure_missing",
+                    f"initial candidate-pool delivery is missing the {contract_name}",
+                    contract_name,
+                ))
 
     if claims_standard_delivery:
         missing_standard_structure = [phrase for phrase in BULK_STANDARD_REQUIRED if phrase not in text]
