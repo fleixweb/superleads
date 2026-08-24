@@ -16,8 +16,10 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from route_superleads_intake import classify, norm
 from superleads_task_modes import (
     LATEST_VERSION_UNCONFIRMED,
+    _is_help_request,
     check_latest_version,
     classify_task_mode,
+    detect_language,
     is_explicit_update_request,
     normalize_remote_version,
     read_active_plugin_version,
@@ -122,6 +124,20 @@ class SuperleadsTaskModesTest(unittest.TestCase):
         for text, expected in cases.items():
             with self.subTest(text=text):
                 self.assertEqual(expected, classify_task_mode(text))
+
+    def test_empty_input_is_bare_metadata_help_and_uses_zh_fallback(self) -> None:
+        for text in ("", "   "):
+            with self.subTest(text=repr(text)):
+                self.assertTrue(_is_help_request(text))
+                self.assertEqual("metadata", classify_task_mode(text))
+                self.assertEqual("zh", detect_language(text))
+
+    def test_empty_input_locale_is_used_without_changing_non_empty_language(self) -> None:
+        self.assertEqual("en", detect_language("", locale="en-US"))
+        self.assertEqual("zh", detect_language("   ", locale="zh-CN"))
+        self.assertEqual("zh", detect_language("造纸机械+阿联酋+造纸工厂"))
+        self.assertEqual("en", detect_language("paper machinery + UAE + paper mills"))
+        self.assertEqual("discovery_snapshot", classify_task_mode("造纸机械+阿联酋+造纸工厂"))
 
     def test_material_only_intake_stays_at_user_visible_triage(self) -> None:
         for text in (

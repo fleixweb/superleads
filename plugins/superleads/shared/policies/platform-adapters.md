@@ -2,9 +2,9 @@
 
 Map platform-specific tools to Superleads capabilities before planning or execution. If a platform cannot provide a capability, record it in Run Context and lower the deliverable tier instead of inventing evidence.
 
-Before probing a named tool, inspect the tools the current host actually exposes. ChatGPT Desktop, Codex CLI, Claude Code, Hermes, and WorkBuddy may use different concrete names for the same `search.web` or `source.open` capability. Never call `web__run`, `web_search`, WebSearch, or another adapter merely because it appears in this document; use it only when that exact operation is present in the current host. A failure from one adapter applies only to that adapter. Do not retry the same failed adapter, but do check another already-exposed native provider before concluding that the host has no Web capability.
+Before probing a named tool, inspect the tools the current host actually exposes. ChatGPT Desktop, Codex CLI, Claude Code, Hermes, and WorkBuddy may use different concrete names for the same `search.web` or `source.open` capability. Never call `web__run`, `web_search`, WebSearch, or another adapter merely because it appears in this document; use it only when that exact operation is present in the current host. A missing or unexposed tool, `missing-tool`, or tool-level 404 is capability absence and is not retried. A timeout, rate limit, 5xx, adapter-internal error, or single-call exception is adapter-local call failure: retry that adapter at most three times with a changed query direction before declaring the capability unavailable. A second already-exposed native provider remains preferable when available.
 
-宿主能力按当前会话的实际操作结果记录。不按安装方式推断，不沿用历史会话结论，不因某个适配器失败就判定整类能力不可用；同一平台在不同会话可能暴露不同工具。
+宿主能力按当前会话的实际操作结果记录。恢复前先查看宿主实际暴露的操作，不按安装方式推断，不沿用历史会话结论，不因某个适配器失败就判定整类能力不可用；同一平台在不同会话可能暴露不同工具。
 
 ## Runtime Host Identity
 
@@ -35,7 +35,8 @@ For ChatGPT Desktop, prefer the app's actually exposed built-in browsing/search 
 | `maps.lookup` | maps MCP/browser | host-provided map lookup, if exposed | map/browser | map lookup | map workflow | Map phone/address can be contact clue with source note. |
 | `memory.recall` | local memory/MemOS | host-provided session memory, if exposed | project memory | memory | workflow memory | Use only to prioritize plans; never Claim/Assessment evidence. |
 
-快速候选池不运行正式研究 preflight。若同一失败适配器返回 404 或超时，停止重试该适配器，并按 `tool-capability-policy.md` 的恢复顺序查看当前会话实际暴露的操作（即宿主实际暴露的操作）：直接使用另一条已暴露的原生检索或来源打开操作完成下一次实际工作；仅在不存在该操作时降级为用户资料整理或有界查询计划。不得伪造候选、来源或正式图谱，也不得以 shell/curl 代替公开检索。
+快速候选池不运行正式研究 preflight。若工具未暴露、返回 `missing-tool` 或工具本身返回 404，按能力缺失处理并停止重试该失败适配器；若只是超时、限流、5xx 或单次调用失败，则按 `tool-capability-policy.md` 更换查询词、语言、`site:` 限定或目录方向，最多尝试三次。存在另一条已暴露的原生检索或来源打开操作时优先使用；单 provider 也不能因一次失败就停止。不得伪造候选、来源或正式图谱，也不得以 shell/curl 代替公开检索。
+不得用原请求重试同一失败适配器。
 
 ## Codex CLI Native Web Search
 

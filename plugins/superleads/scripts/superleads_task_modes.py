@@ -142,7 +142,8 @@ def _contains(text: str, markers: tuple[str, ...]) -> bool:
 def _is_help_request(text: str) -> bool:
     normalized = text.strip()
     return (
-        normalized == "@"
+        not normalized
+        or normalized == "@"
         or
         normalized.casefold() == "@superleads"
         or _CHINESE_HELP.fullmatch(normalized) is not None
@@ -409,9 +410,16 @@ def _update_response_line(result: dict[str, Any], language: str) -> str:
     return f"Confirmed remote version: {remote} ({source_label_en})."
 
 
-def detect_language(text: str) -> str:
-    """Choose the response language from the submitted prompt."""
-    return "zh" if re.search(r"[\u4e00-\u9fff]", text) else "en"
+def detect_language(text: str, *, locale: str | None = None) -> str:
+    """Choose language from text, using host locale only when text is empty."""
+    if text and text.strip():
+        return "zh" if re.search(r"[\u4e00-\u9fff]", text) else "en"
+    locale_text = str(locale or "").strip().casefold()
+    if locale_text.startswith("en"):
+        return "en"
+    if locale_text.startswith("zh"):
+        return "zh"
+    return "zh"
 
 
 def metadata_response(
@@ -421,9 +429,10 @@ def metadata_response(
     fetch_latest_version: Callable[[], Any] | None = None,
     session_cache: MutableMapping[str, Any] | None = None,
     checked_at: str | None = None,
+    locale: str | None = None,
 ) -> dict[str, Any]:
     """Return a metadata response without any implicit cache or network access."""
-    language = detect_language(text)
+    language = detect_language(text, locale=locale)
     normalized = _normalized(text)
     version_request = _VERSION_REQUEST.search(normalized) is not None
     update_request = is_explicit_update_request(text)

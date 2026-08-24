@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] - 2026-08-25
+
+### Fixed
+
+- Route empty or whitespace-only activation into the static Superleads help path, with locale-aware language selection and Chinese fallback.
+- Distinguish missing search capability from transient call failures; retry changed search directions up to three times before declaring a capability unavailable.
+- Keep transient-search failure messages in user-facing business language and block internal adapter/runtime terminology from bulk deliveries.
+
 ## [0.3.2] - 2026-08-24
 
 ### Changed

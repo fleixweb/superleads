@@ -1,6 +1,6 @@
 # Tool Capability Policy
 
-Capability discovery starts from the current host's actual tool inventory, not from a preferred adapter name in this repository. A named adapter is eligible only when the host exposes that operation. One adapter's 404, timeout, or missing-tool response is adapter-local: do not retry the same failed adapter, but do check another already-exposed native provider before declaring `search.web` unavailable. In particular, a Codex `web__run` failure must not erase a verified ChatGPT Desktop, Claude Code, Hermes, or WorkBuddy capability.
+Capability discovery starts from the current host's actual tool inventory, not from a preferred adapter name in this repository. A named adapter is eligible only when the host exposes that operation. Separate capability-missing failures from call failures: an unexposed tool, `missing-tool`, or the tool itself returning 404 is a missing capability and must not be retried; a timeout, rate limit, 5xx, adapter-internal error, or other single-call exception means the capability exists but this attempt failed. In particular, a Codex `web__run` failure must not erase a verified ChatGPT Desktop, Claude Code, Hermes, or WorkBuddy capability.
 
 ## Script portability
 
@@ -15,9 +15,12 @@ Capability discovery starts from the current host's actual tool inventory, not f
 
 ## Adapter-local failure recovery
 
-当一次实际检索或来源打开返回 404、超时或缺少工具时，停止重试该失败适配器。依次查看当前会话实际暴露的操作，确认是否已有不同的已暴露原生检索或来源打开操作；若有，直接用它完成当前请求所需的下一次实际检索或来源打开，而不是再做空的能力探测。成功检索只记录为检索能力；只有实际打开来源并保留 URL、可见原文和位置后，才记录来源打开能力。
+当一次实际检索或来源打开失败时，先区分能力缺失和调用失败。工具未暴露、返回 `missing-tool` 或工具本身返回 404 时，停止重试该失败适配器，按不可用处理；超时、限流、5xx、适配器内部错误或单次调用异常时，能力仍视为存在，应在同一适配器上继续尝试，但同一 Run 对同一能力最多 3 次。每次重试必须更换查询词、语言、`site:` 限定或本地目录/行业协会名录方向，不得原样重发。若有第二个已经暴露的原生检索或来源打开操作，优先使用它；单 provider 宿主也必须先换查询方向，而不是一击出局。三次调用失败后才允许把该能力标为不可用。成功检索只记录为检索能力；只有实际打开来源并保留 URL、可见原文和位置后，才记录来源打开能力。
 
-若当前会话没有另一条已暴露的原生来源路径，快速发现只能降级为用户资料整理或有界查询计划；正式公开来源研究按正式门禁停止。不得以 shell/curl 代替公开检索，不得伪造候选、来源、正式图谱或事实。用户可见说明只交代当前可用的交付层级和所需能力，不暴露适配器或错误细节。
+若能力确实缺失，快速发现只能降级为用户资料整理或有界查询计划；正式公开来源研究按正式门禁停止，并建议用户切换到具备所需能力的环境。若能力存在但 3 次更换方向后仍失败，也不得伪造候选、来源、正式图谱或事实；应说明已尝试的次数，建议用户提供名录/注册库链接、上传已有名单或稍后重试，不要求切换环境。用户可见说明只交代当前可用的交付层级和下一步，不暴露适配器、provider 或错误细节。
+
+恢复前先查看当前会话实际暴露的操作；若存在不同的已暴露原生检索或来源打开操作，优先直接使用它。
+不得以 shell/curl 代替公开检索。
 
 | Capability | Highest allowed layer | Rule |
 |---|---|---|
@@ -42,11 +45,13 @@ Capability discovery starts from the current host's actual tool inventory, not f
 
 Formal public-source foreign-trade research requires both `search.web` and at
 least one source-opening capability: `source.open`, `browser.render`, or
-`document.extract`. If either prerequisite is missing, stop formal customer
-development, customer background research, and product-market analysis. Tell
-the user to switch to an Agent/environment with Web Search and source-opening
-capability. Do not present a research plan, discovery candidate pool, or
-market report as a substitute delivery.
+`document.extract`. If either prerequisite is genuinely missing, stop formal
+customer development, customer background research, and product-market
+analysis, and tell the user to switch to an Agent/environment with Web Search
+and source-opening capability. If a capability exists but its calls have
+failed, use the bounded changed-query recovery above before declaring it
+missing. Do not present a research plan, discovery candidate pool, or market
+report as a substitute delivery.
 
 An internal source plan may still be produced for later execution, but is not a
 user-facing formal deliverable. Reviewing only materials the user already

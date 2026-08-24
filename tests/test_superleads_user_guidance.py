@@ -69,6 +69,15 @@ class SuperleadsUserGuidanceTest(unittest.TestCase):
                 self.assertEqual([], response["operations"])
                 self.assertTrue(response["response_lines"])
 
+    def test_empty_input_returns_the_zh_bare_help_block(self) -> None:
+        for text in ("", "   "):
+            with self.subTest(text=repr(text)):
+                response = superleads_user_guidance.static_help_response(text)
+                self.assertIsNotNone(response)
+                self.assertEqual("zh", response["language"])
+                self.assertEqual("static_compact_help", response["response_contract"])
+                self.assertIn("批量开发客户", "\n".join(response["response_lines"]))
+
     def test_static_help_does_not_intercept_real_tasks(self) -> None:
         for text in (
             "帮我开发美国保温杯客户",

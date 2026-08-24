@@ -86,14 +86,18 @@ Browser Render can read a public social or map URL, record it as an ordinary
 
 Start from the 宿主实际暴露的 search/source tools. Do not call `web__run`,
 `web_search`, or another named adapter unless that operation exists in the
-current host. If one provider returns 404 or times out, do not retry the
-同一失败适配器 and do not use shell/curl as a substitute for `search.web`.
-Check another native provider only when it is already exposed by the host.
-For fast discovery, degrade to the successful native provider, user-provided
-material, or a query plan; never create a partial formal graph. Only a formal
-route hard-stops after the completed host inventory confirms that no usable
-search plus source-opening path exists. Do not install, configure, or depend
-on an external tool server.
+current host. A missing or unexposed tool, `missing-tool`, or tool-level 404 is
+an unavailable capability and is not retried. A timeout, rate limit, 5xx,
+adapter-internal error, or single-call exception is a failed call, not missing
+capability: retry the same adapter at most three times in this Run, changing the
+query, language, `site:` restriction, or directory/association direction each
+time. Use a second already-exposed native provider first when one exists, but a
+single-provider host still has the changed-query recovery path; 不得用原请求重试
+同一失败适配器. Do not use
+shell/curl as a substitute for `search.web`. After three failed calls, mark the
+capability unavailable. Never create a partial formal graph; only a formal
+route hard-stops for a genuinely missing capability or exhausted attempts. Do
+not install, configure, or depend on an external tool server.
 
 The native search adapter controls only `search.web` and `source.open`; keep
 independently available rendering and document capabilities in the Run rather

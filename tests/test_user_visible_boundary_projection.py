@@ -746,6 +746,8 @@ class UserVisibleBoundaryProjectionTest(unittest.TestCase):
         for text in (
             "能力预检脚本给出了受限结果。",
             "适配器报告显示该操作不可用。",
+            "当前公开检索返回适配器错误。",
+            "没有第二个原生搜索入口。",
             "不要重试同一失败适配器。",
             "scripts/validate_report.py 需要在内部路径运行。",
         ):

@@ -182,6 +182,16 @@
       ]
     },
     {
+      "name": "fail bulk customer adapter error wording",
+      "fixture": "evals/user_visible_outputs/fail_bulk_customer_adapter_error_language.md",
+      "route": "bulk_customer_development",
+      "expected": "fail",
+      "min_tables": 2,
+      "expected_error_codes": [
+        "user_visible_internal_language"
+      ]
+    },
+    {
       "name": "fail bulk customer missing basis status",
       "fixture": "evals/user_visible_outputs/fail_bulk_customer_missing_basis_status.md",
       "route": "bulk_customer_development",

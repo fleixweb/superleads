@@ -203,7 +203,7 @@ class PreflightCapabilitiesTest(unittest.TestCase):
         self.assertFalse(result["capability_failure"]["retry"])
         self.assertIn("404", result["formal_research_message"])
 
-    def test_web_run_timeout_is_one_shot_capability_failure(self) -> None:
+    def test_web_run_timeout_is_retryable_without_declaring_search_missing(self) -> None:
         payload = {
             "platform": "codex_cli",
             "capability_adapter_report": {
@@ -221,14 +221,50 @@ class PreflightCapabilitiesTest(unittest.TestCase):
                         },
                     }
                 },
-                "canonical_capabilities": {"search.web": "missing", "source.open": "unknown"},
+                "canonical_capabilities": {"search.web": "unknown", "source.open": "unknown"},
             },
         }
 
         result = preflight_capabilities.preflight(payload)
 
         self.assertEqual("timeout", result["capability_failure"]["reason"])
+        self.assertTrue(result["capability_failure"]["retry"])
+        self.assertEqual(1, result["capability_failure"]["attempts"])
+        self.assertEqual("unknown", result["capabilities"]["search.web"]["status"])
+        self.assertNotIn("切换到具备 Web Search 和来源打开能力", result["formal_research_message"])
+
+    def test_web_run_transient_failures_exhaust_after_three_changed_attempts(self) -> None:
+        failed_attempts = [
+            {"status": "failed", "error": "timeout", "query": query}
+            for query in ("paper machinery UAE", "paper equipment United Arab Emirates", "site:uae.example paper mill machinery")
+        ]
+        payload = {
+            "platform": "codex_cli",
+            "capability_adapter_report": {
+                "platform": "codex_cli",
+                "adapter": {"adapter_id": "codex_cli_web_run", "adapter_version": "1"},
+                "detected_at": "2026-08-17T00:00:00Z",
+                "detection": "current_session_web__run_search_query",
+                "host_tools": {
+                    "web__run": {
+                        "status": "available",
+                        "operations": {
+                            "search_query": failed_attempts,
+                            "open": {"status": "not_verified"},
+                        },
+                    }
+                },
+                "canonical_capabilities": {"search.web": "unknown", "source.open": "unknown"},
+            },
+        }
+
+        result = preflight_capabilities.preflight(payload)
+
+        self.assertEqual("missing", result["capabilities"]["search.web"]["status"])
         self.assertFalse(result["capability_failure"]["retry"])
+        self.assertEqual(3, result["capability_failure"]["attempts"])
+        self.assertIn("已尝试 3 次", result["formal_research_message"])
+        self.assertNotIn("切换到具备 Web Search 和来源打开能力", result["formal_research_message"])
 
     def test_chatgpt_desktop_native_capabilities_are_not_overridden_by_codex_probe_failure(self) -> None:
         result = preflight_capabilities.preflight({

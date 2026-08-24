@@ -618,12 +618,13 @@ def classify(
     preflight_callback: Callable[[], Any] | None = None,
     network_callback: Callable[[], Any] | None = None,
     cache_scan_callback: Callable[[], Any] | None = None,
+    locale: str | None = None,
 ) -> dict[str, Any]:
     """Route intake without invoking caller-supplied operational callbacks."""
     del preflight_callback, network_callback, cache_scan_callback
     interaction_mode = classify_task_mode(text)
     if interaction_mode == "metadata":
-        static_help = static_help_response(text)
+        static_help = static_help_response(text, locale=locale)
         if static_help is not None:
             return static_help
         if is_status_request(text):
@@ -635,6 +636,7 @@ def classify(
             active_root=active_root,
             fetch_latest_version=fetch_latest_version,
             session_cache=session_cache,
+            locale=locale,
         )
     if interaction_mode == "material_triage":
         return _material_triage_response(text)

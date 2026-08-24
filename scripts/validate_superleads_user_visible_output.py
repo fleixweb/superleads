@@ -239,7 +239,10 @@ INTERNAL_RUNTIME_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ),
     (
         "internal adapter context",
-        re.compile(r"(?:适配器(?:报告|判定|\s*(?:ID|id)|(?:状态|结果)?(?:失败|不可用|受限))|同一失败适配器)"),
+        re.compile(
+            r"(?:适配器(?:报告|判定|错误|\s*(?:ID|id)|(?:状态|结果)?(?:失败|不可用|受限))|"
+            r"同一失败适配器|原生搜索入口|来源打开入口)"
+        ),
     ),
     (
         "runtime dependency identifier",

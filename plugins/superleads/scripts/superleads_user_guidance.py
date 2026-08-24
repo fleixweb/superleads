@@ -120,13 +120,14 @@ def _compact_guide_lines(language: str) -> list[str]:
     return lines
 
 
-def static_help_response(text: str) -> dict[str, Any] | None:
+def static_help_response(text: str, *, locale: str | None = None) -> dict[str, Any] | None:
     """Return a narrow, static help response without research operations."""
     started = perf_counter()
     normalized = text.strip()
-    compact = normalized.lower() in {"@", "@superleads"}
+    compact = not normalized or normalized.lower() in {"@", "@superleads"}
     if compact:
-        language = "zh"
+        locale_text = str(locale or "").strip().casefold()
+        language = "en" if locale_text.startswith("en") else "zh"
     elif _CHINESE_HELP.fullmatch(normalized):
         language = "zh"
     elif _ENGLISH_HELP.fullmatch(normalized):
